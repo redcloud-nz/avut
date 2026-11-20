@@ -21,11 +21,13 @@ directly:
 | ---------------------- | -------------------------- | ---------------------------------------------------------------------------------- |
 | D4H Equipment Brand    | `D4HEquipmentBrandLink`    | `brand: D4HEquipmentBrandRef & Partial<Pick<D4HEquipmentBrand, "owner">>`          |
 | D4H Equipment Category | `D4HEquipmentCategoryLink` | `category: D4HEquipmentCategoryRef & Partial<Pick<D4HEquipmentCategory, "owner">>` |
-| D4H Equipment Item     | `D4HEquipmentItemLink`     | `item: D4HEquipmentItemRef`, optional `label`                                      |
+| D4H Equipment Item     | `D4HEquipmentItemLink`     | `item: D4HEquipmentItemRef`, optional `label` and `member`                         |
 | D4H Equipment Model    | `D4HEquipmentModelLink`    | `model: D4HEquipmentModelRef & Partial<Pick<D4HEquipmentModel, "owner">>`          |
 | D4H Equipment Type     | `D4HEquipmentTypeLink`     | `type: D4HEquipmentKindRef & Partial<Pick<D4HEquipmentKind, "owner">>`             |
+| D4H Issued Type        | `D4HIssuedTypeLink`        | `teamId: number`, `type: D4HEquipmentKindRef`                                      |
 | D4H Member             | `D4HMemberLink`            | `member: Omit<D4HMemberRef, "name"> & { name: string \| null }`                    |
 | D4H Team               | `D4HTeamLink`              | `team: D4HTeamRef`                                                                 |
+| I3 Bundle              | `I3BundleLink`             | `bundle: I3BundleRef`                                                              |
 | I3 Template            | `I3TemplateLink`           | `template: I3TemplateRef`                                                          |
 | Organisation Group     | `OrganizationGroupLink`    | `group: OrganizationGroupRef`                                                      |
 | Person                 | `PersonLink`               | `person: PersonRef & Partial<Pick<PersonData, "email">>`                           |
@@ -34,7 +36,12 @@ directly:
 | Skill Package          | `SkillPackageLink`         | `skillPackage: SkillPackageRef`                                                    |
 | Team                   | `TeamLink`                 | `team: TeamRef & Partial<Pick<TeamData, "description">>`                           |
 | Team Membership        | `TeamMembershipLink`       | `teamMembership: TeamMembershipRef`                                                |
-| User                   | `UserLink`                 | `user: UserRef & Partial<Pick<UserData, "email">>`                                 |
+| User (system admin)    | `UserLink`                 | `user: UserRef & Partial<Pick<UserData, "email">>`                                 |
+| User (org admin)       | `OrgUserLink`              | `user: UserRef & Partial<Pick<UserData, "email">>`                                 |
+
+`UserLink` goes to the system admin's user page (`/system/admin/users/[user_id]`), which only
+system admins can open. On an org-scoped page use `OrgUserLink`, which goes to the user's page in
+the current organization's admin (`/orgs/[slug]/admin/users/[user_id]`).
 
 The D4H wrappers have a few quirks of their own:
 
@@ -51,7 +58,6 @@ The D4H wrappers have a few quirks of their own:
 - A catalogue record's `owner` (category, type, brand, model) is the resolved owner with its
   `title`, which the hover card shows. A caller building the ref from a template's snapshot
   titles adds the owner it looked up, or leaves it out.
-- Equipment models have no page, so `D4HEquipmentModelLink` links to the model's brand page.
 - D4H brand and model ids on an item can be `null`; render those as plain text at the call
   site rather than building a link.
 

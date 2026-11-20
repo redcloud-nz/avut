@@ -6,7 +6,7 @@
 
 import { useRouter } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -38,6 +38,7 @@ import { trpc } from "@/trpc/client";
  * lists those organisations first.
  */
 export function UserSettings_CloseAccount_Dialog({ email }: { email: string }) {
+    const idPrefix = useId();
     const router = useRouter();
     const [confirmText, setConfirmText] = useState("");
 
@@ -107,11 +108,11 @@ export function UserSettings_CloseAccount_Dialog({ email }: { email: string }) {
                     </Alert>
                 )}
                 <Field>
-                    <FieldLabel htmlFor="close-account-confirm">
+                    <FieldLabel htmlFor={`${idPrefix}-confirm`}>
                         Type <span className="font-mono">{email}</span> to confirm
                     </FieldLabel>
                     <Input
-                        id="close-account-confirm"
+                        id={`${idPrefix}-confirm`}
                         autoComplete="off"
                         value={confirmText}
                         onChange={(e) => setConfirmText(e.target.value)}

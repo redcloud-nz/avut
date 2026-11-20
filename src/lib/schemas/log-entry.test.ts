@@ -50,6 +50,7 @@ describe("moduleIdForObjectType", () => {
     it("attributes org-admin entities to the org-admin module", () => {
         expect(moduleIdForObjectType("Person")).toBe("org-admin");
         expect(moduleIdForObjectType("Team")).toBe("org-admin");
+        expect(moduleIdForObjectType("TeamUser")).toBe("org-admin");
         expect(moduleIdForObjectType("D4HAccessToken")).toBe("org-admin");
     });
 
@@ -63,7 +64,8 @@ describe("moduleIdForObjectType", () => {
         expect(moduleIdForObjectType("SkillCheckSession")).toBe("skill-track");
     });
 
-    it("attributes i3 templates to d4h-i3", () => {
+    it("attributes i3 templates and bundles to d4h-i3", () => {
+        expect(moduleIdForObjectType("I3Bundle")).toBe("d4h-i3");
         expect(moduleIdForObjectType("I3Template")).toBe("d4h-i3");
         expect(moduleIdForObjectType("I3TemplateVariant")).toBe("d4h-i3");
     });
@@ -85,6 +87,7 @@ describe("objectTypesForModule", () => {
         expect(objectTypesForModule("d4h-i3").sort()).toEqual([
             "D4HEquipmentItem",
             "D4HTask",
+            "I3Bundle",
             "I3Template",
             "I3TemplateVariant",
         ]);
@@ -105,6 +108,8 @@ describe("objectTypesForModule", () => {
 describe("Operations", () => {
     it("names the multi-entry operations that exist today", () => {
         expect(Object.keys(Operations).sort()).toEqual([
+            "d4h-nag-opt-out",
+            "d4h-nag-run",
             "d4h-team-import",
             "d4h-team-link",
             "d4h-team-sync",

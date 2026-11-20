@@ -29,6 +29,7 @@ const accessToken = {
     organizationId: null,
     userId: null,
     label: "Test token",
+    access: "ReadWrite",
     serverCode: "ap",
     token: "fake-token",
     metadata: { d4HTeams: [], d4HOrganisations: [] },
@@ -158,7 +159,6 @@ describe("d4hTasksRouter", () => {
         return d4hTasksRouter.createCaller(
             createAuthenticatedMockContext({
                 user: { id: T.user },
-                // `organizationProcedure` always folds in `organization: ["view"]`.
                 permissions: { organization: ["view"], ...perms },
                 prisma: db,
             }),

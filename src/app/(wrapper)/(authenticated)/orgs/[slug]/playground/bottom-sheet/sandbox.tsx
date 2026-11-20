@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
@@ -273,6 +273,7 @@ const CODE = `// DialogContent has no padding of its own — compose it from thr
 </DialogContent>`;
 
 export function BottomSheet_Sandbox() {
+    const idPrefix = useId();
     const [longForm, setLongForm] = useState(true);
     const [slowMs, setSlowMs] = useState(1500);
     const [failFetch, setFailFetch] = useState(false);
@@ -295,24 +296,30 @@ export function BottomSheet_Sandbox() {
             controls={
                 <div className="flex flex-col gap-3">
                     <div className="flex items-center gap-2">
-                        <Switch id="long-form" checked={longForm} onCheckedChange={setLongForm} />
-                        <Label htmlFor="long-form">
+                        <Switch
+                            id={`${idPrefix}-long-form`}
+                            checked={longForm}
+                            onCheckedChange={setLongForm}
+                        />
+                        <Label htmlFor={`${idPrefix}-long-form`}>
                             Long form (adds Location, Duration, Team, Lead assessor, Instructions,
                             and two checkboxes — tall enough to force scrolling on a phone)
                         </Label>
                     </div>
                     <div className="flex items-center gap-2">
                         <Switch
-                            id="fail-fetch"
+                            id={`${idPrefix}-fail-fetch`}
                             checked={failFetch}
                             onCheckedChange={setFailFetch}
                         />
-                        <Label htmlFor="fail-fetch">Make the “slow data” fetch fail</Label>
+                        <Label htmlFor={`${idPrefix}-fail-fetch`}>
+                            Make the “slow data” fetch fail
+                        </Label>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Label htmlFor="slow-ms">Fetch delay (ms)</Label>
+                        <Label htmlFor={`${idPrefix}-slow-ms`}>Fetch delay (ms)</Label>
                         <Input
-                            id="slow-ms"
+                            id={`${idPrefix}-slow-ms`}
                             type="number"
                             className="w-28"
                             value={slowMs}
@@ -333,7 +340,10 @@ export function BottomSheet_Sandbox() {
                         <Button variant="outline">Dialogue</Button>
                     </DialogTrigger>
                     <DialogContent>
-                        <SandboxSessionFields idPrefix="dialogue" longForm={longForm} />
+                        <SandboxSessionFields
+                            idPrefix={`${idPrefix}-dialogue`}
+                            longForm={longForm}
+                        />
                     </DialogContent>
                 </Dialog>
 

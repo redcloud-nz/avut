@@ -274,6 +274,7 @@ describe("settings organization settings", () => {
         const caller = settingsRouter.createCaller(
             createAuthenticatedMockContext({
                 user: { id: UserId.create() },
+                permissions: null,
                 prisma: db,
             }),
         );

@@ -42,8 +42,8 @@ export const getServerQueryClient = cache(makeQueryClient);
  * client proxy produces, which is what lets a prefetch here satisfy a `useSuspenseQuery`
  * there.
  *
- * Never use the `trpc` export from `@/trpc/client` in a server component — its `queryFn`
- * goes back over HTTP unauthenticated.
+ * Never use the `trpc` export from `@/trpc/client` in a server component — on the server its
+ * `queryFn` fails every call (see `serverRenderLink`).
  */
 export const trpc = createTRPCOptionsProxy({
     ctx: createTrpcContext,

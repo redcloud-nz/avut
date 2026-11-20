@@ -35,7 +35,7 @@ export default async function SkillTrack_Index_Page(props: PageProps<`/orgs/[slu
                 <Std.IndexPage title="Skill Track">
                     <ItemGroup>
                         <Protect permissions={{ roleGrant: ["skills-assessor"] }}>
-                            <Item asChild>
+                            <Item variant="outline" asChild>
                                 <Link href={route("/orgs/[slug]/skill-track/assessors", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Assessors</ItemTitle>
@@ -50,7 +50,7 @@ export default async function SkillTrack_Index_Page(props: PageProps<`/orgs/[slu
                             </Item>
                         </Protect>
                         <Protect permissions={{ skillPackageSubscription: ["view"] }}>
-                            <Item asChild>
+                            <Item variant="outline" asChild>
                                 <Link href={route("/orgs/[slug]/skill-track/packages", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Packages</ItemTitle>
@@ -65,7 +65,7 @@ export default async function SkillTrack_Index_Page(props: PageProps<`/orgs/[slu
                             </Item>
                         </Protect>
                         <Protect permissions={{ skillPackageSubscription: ["view"] }}>
-                            <Item asChild>
+                            <Item variant="outline" asChild>
                                 <Link href={route("/orgs/[slug]/skill-track/skills", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Skills</ItemTitle>
@@ -80,12 +80,12 @@ export default async function SkillTrack_Index_Page(props: PageProps<`/orgs/[slu
                             </Item>
                         </Protect>
                         <Protect permissions={{ skillCheck: ["view"] }}>
-                            <Item asChild>
+                            <Item variant="outline" asChild>
                                 <Link href={route("/orgs/[slug]/skill-track/checks", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Checks</ItemTitle>
                                         <ItemDescription>
-                                            View recent skill checks and their results.
+                                            Search skill checks and their results.
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>
@@ -95,7 +95,7 @@ export default async function SkillTrack_Index_Page(props: PageProps<`/orgs/[slu
                             </Item>
                         </Protect>
                         <Protect permissions={{ skillCheckSession: ["view"] }}>
-                            <Item asChild>
+                            <Item variant="outline" asChild>
                                 <Link href={route("/orgs/[slug]/skill-track/sessions", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Sessions</ItemTitle>
@@ -110,7 +110,7 @@ export default async function SkillTrack_Index_Page(props: PageProps<`/orgs/[slu
                             </Item>
                         </Protect>
                         <Protect permissions={{ skillCheck: ["view"] }}>
-                            <Item asChild>
+                            <Item variant="outline" asChild>
                                 <Link href={route("/orgs/[slug]/skill-track/reports", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Reports</ItemTitle>

@@ -12,6 +12,7 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
 import { TeamId } from "@/lib/schemas/team";
 import { TeamMembershipId } from "@/lib/schemas/team-membership";
+import { revalidateTeam } from "@/server/cache/team-revalidate";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import { EXECUTION_STALE_MS } from "@/server/services/batch-update-plans";
 import { createMockPrisma } from "@/test/create-prisma-mock";
@@ -23,6 +24,10 @@ import { teamsRouter } from "./teams-router";
 // ctx.prisma (the injected mock), so stubbing server-only is enough to let the module load
 // under jsdom.
 vi.mock("server-only", () => ({}));
+
+// The routers clear a team's cached lookup after writes. `revalidateTag` throws outside a Next.js
+// request/render store, so stub it.
+vi.mock("@/server/cache/team-revalidate", () => ({ revalidateTeam: vi.fn(async () => {}) }));
 
 // The D4H linking procedures touch only getConfiguredD4HAccessToken and the
 // cached fetch helpers in @/server/d4h-api/client — stubbed here (same pattern as
@@ -62,6 +67,7 @@ vi.mock("@/server/d4h-access-token", () => ({
         organizationId: null,
         userId: null,
         label: "Test token",
+        access: "ReadWrite",
         serverCode: "us",
         token: "fake-token",
         metadata: { d4HTeams: [], d4HOrganisations: [] },
@@ -119,8 +125,6 @@ describe("teamsRouter.getTeam", () => {
         return teamsRouter.createCaller(
             createAuthenticatedMockContext({
                 user: { id: T.user },
-                // `organizationProcedure` always folds in `organization: ["view"]`, so the
-                // mock context has to grant it alongside the procedure's own permission.
                 permissions: { team: ["view"], organization: ["view"] },
                 prisma: db,
             }),
@@ -173,6 +177,7 @@ describe("teamsRouter D4H sync plans", () => {
                 id: T.team,
                 organizationId: T.org,
                 name: "Alpha",
+                slug: "alpha",
                 description: "First team",
                 properties: {},
                 tags: [],
@@ -237,12 +242,14 @@ describe("teamsRouter D4H sync plans", () => {
         const { db, T, caller, createPlan } = await seed();
 
         const { planId } = await createPlan();
+        vi.mocked(revalidateTeam).mockClear();
         const { plan: executed } = await caller.executeD4HTeamSyncPlan({
             organizationId: T.org,
             planId,
             skipItemIds: [],
         });
 
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["alpha"]]);
         expect(executed).toMatchObject({ id: planId, teamId: T.team });
         expect(executed.payload.counts).toMatchObject({ additions: 1, archivals: 1 });
 
@@ -275,42 +282,78 @@ describe("teamsRouter D4H sync plans", () => {
         expect(row).toMatchObject({ status: "Completed", logBatchId: batch!.id });
     });
 
+    it("clears the team's cache when a claimed sync fails after its items ran", async () => {
+        const { T, db, caller, createPlan } = await seed();
+        const { planId } = await createPlan();
+
+        // The executor reads the link (with a `select`) twice: after the claim, then after the
+        // items ran. Report a different link the second time, so the run fails once claimed.
+        const originalFindUnique = db.team_D4H.findUnique.bind(db.team_D4H) as (
+            args: unknown,
+        ) => Promise<unknown>;
+        let linkChecks = 0;
+        const findSpy = vi
+            .spyOn(db.team_D4H, "findUnique")
+            .mockImplementation(((args: { select?: unknown }) =>
+                args.select && ++linkChecks === 2
+                    ? Promise.resolve({ d4hTeamId: 1 })
+                    : originalFindUnique(args)) as never);
+        vi.mocked(revalidateTeam).mockClear();
+        try {
+            await expect(
+                caller.executeD4HTeamSyncPlan({ organizationId: T.org, planId, skipItemIds: [] }),
+            ).rejects.toMatchObject({ code: "CONFLICT" });
+        } finally {
+            findSpy.mockRestore();
+        }
+
+        expect(linkChecks).toBe(2);
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["alpha"]]);
+    });
+
     it("takes over a membership a concurrent manual add created first instead of crashing", async () => {
         const { db, T, caller, createPlan } = await seed();
 
         const { planId } = await createPlan();
 
-        // Simulate a concurrent manual add winning the race: it creates an unlinked
+        // Simulate a concurrent manual add winning the race: it commits an unlinked
         // TeamMembership row for Grace between the executor's lookup and its own create, so the
-        // create loses to the unique constraint on (teamId, personId) — see issue #164.
+        // create loses to the unique constraint on (teamId, personId) — see issue #164. The row
+        // lands after the lookup rather than inside the create, because the executor's
+        // transaction rolls back whatever is written while it runs.
+        const originalFindUnique = db.teamMembership.findUnique.bind(db.teamMembership) as (
+            args: unknown,
+        ) => Promise<unknown>;
         const originalCreate = db.teamMembership.create.bind(db.teamMembership) as (
             args: unknown,
         ) => Promise<unknown>;
-        const createSpy = vi.spyOn(db.teamMembership, "create") as unknown as {
-            mockImplementationOnce: (
-                fn: (args: { data: Record<string, unknown> }) => unknown,
-            ) => void;
-            mockRestore: () => void;
-        };
-        createSpy.mockImplementationOnce((args) => {
-            return (async () => {
-                const { d4h: _linked, ...manual } = args.data;
-                await originalCreate({
-                    ...args,
-                    data: { ...manual, id: TeamMembershipId.create() },
-                });
-                const raceError = new Error("Unique constraint failed on (teamId, personId)");
-                Object.assign(raceError, { code: "P2002" });
-                throw raceError;
-            })();
-        });
+        let raced = false;
+        const findSpy = vi.spyOn(db.teamMembership, "findUnique").mockImplementation(((args: {
+            where: { teamId_personId?: { teamId: TeamId; personId: PersonId } };
+        }) =>
+            (async () => {
+                const row = await originalFindUnique(args);
+                const key = args.where.teamId_personId;
+                if (key && !raced) {
+                    raced = true;
+                    await originalCreate({
+                        data: {
+                            id: TeamMembershipId.create(),
+                            organizationId: T.org,
+                            ...key,
+                            status: "Active",
+                        },
+                    });
+                }
+                return row;
+            })()) as never);
 
         const { outcomes } = await caller.executeD4HTeamSyncPlan({
             organizationId: T.org,
             planId,
             skipItemIds: [],
         });
-        createSpy.mockRestore();
+        findSpy.mockRestore();
 
         expect(outcomes).toContainEqual({ itemId: "add:501", result: "applied" });
         const grace = await db.person.findFirstOrThrow({
@@ -420,7 +463,9 @@ describe("teamsRouter D4H sync plans", () => {
         const { db, T, caller, createPlan } = await seed();
         const { planId } = await createPlan();
 
+        vi.mocked(revalidateTeam).mockClear();
         await caller.unlinkTeamFromD4H({ organizationId: T.org, teamId: T.team });
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["alpha"]]);
 
         const row = await db.batchUpdatePlan.findUniqueOrThrow({ where: { id: planId } });
         expect(row.status).toBe("Superseded");
@@ -487,7 +532,14 @@ describe("teamsRouter link to D4H", () => {
             data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
         });
         await db.team.create({
-            data: { id: T.team, organizationId: T.org, name: "Alpha", properties: {}, tags: [] },
+            data: {
+                id: T.team,
+                organizationId: T.org,
+                name: "Alpha",
+                slug: "alpha",
+                properties: {},
+                tags: [],
+            },
         });
         const caller = teamsRouter.createCaller(
             createAuthenticatedMockContext({
@@ -521,6 +573,7 @@ describe("teamsRouter link to D4H", () => {
     it("linkTeamToD4H links the team and imports nobody", async () => {
         const { db, T, caller } = await seed();
 
+        vi.mocked(revalidateTeam).mockClear();
         const { updated } = await caller.linkTeamToD4H({
             organizationId: T.org,
             teamId: T.team,
@@ -528,6 +581,7 @@ describe("teamsRouter link to D4H", () => {
         });
 
         expect(updated.d4h?.d4hTeamId).toBe(4242);
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["alpha"]]);
         await expectLinkedWithoutImport(db, T.team);
     });
 });
@@ -639,6 +693,15 @@ describe("teamsRouter.listTeamMemberships", () => {
         });
 
         expect(amy.person.email).toBe("amy@example.com");
+    });
+
+    it("includes the person's status", async () => {
+        const [amy] = await makeCaller().listTeamMemberships({
+            organizationId: T.org,
+            teamId: T.team,
+        });
+
+        expect(amy.person.status).toBe("Active");
     });
 
     it("maps the D4H snapshot when present and null otherwise", async () => {
@@ -868,12 +931,15 @@ describe("teamsRouter.createTeam / deleteTeam", () => {
     }
 
     it("creates a team and records a Create log entry", async () => {
+        vi.mocked(revalidateTeam).mockClear();
         const { created } = await makeCaller({ team: ["create"] }).createTeam({
             organizationId: T.org,
-            create: { name: "Rescue", description: "R", tags: [], properties: {} },
+            create: { name: "Rescue", slug: "rescue", description: "R", tags: [], properties: {} },
         });
 
         expect(created.name).toBe("Rescue");
+        // Clears whatever a team that held the slug before left cached.
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["rescue"]]);
         const row = await db.team.findUnique({ where: { id: created.id } });
         expect(row).toMatchObject({ organizationId: T.org, name: "Rescue" });
 
@@ -887,13 +953,15 @@ describe("teamsRouter.createTeam / deleteTeam", () => {
     it("soft-deletes a team and records a Delete log entry", async () => {
         const { created } = await makeCaller({ team: ["create"] }).createTeam({
             organizationId: T.org,
-            create: { name: "Doomed", description: "", tags: [], properties: {} },
+            create: { name: "Doomed", slug: "doomed", description: "", tags: [], properties: {} },
         });
 
+        vi.mocked(revalidateTeam).mockClear();
         await makeCaller({ team: ["delete"] }).deleteTeam({
             organizationId: T.org,
             teamId: created.id,
         });
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["doomed"]]);
 
         const row = await db.team.findUnique({ where: { id: created.id } });
         expect(row).toMatchObject({ status: "Deleted" });
@@ -910,6 +978,191 @@ describe("teamsRouter.createTeam / deleteTeam", () => {
                 teamId: TeamId.create(),
             }),
         ).rejects.toThrow(/not found/i);
+    });
+});
+
+describe("teamsRouter team slugs", () => {
+    const T = {
+        org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
+        team: TeamId.create(),
+        otherOrgTeam: TeamId.create(),
+        user: nanoId16(),
+    };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.organization.create({
+            data: { id: T.otherOrg, name: "Other", slug: "other", createdAt: new Date() },
+        });
+        await db.team.create({
+            data: {
+                id: T.team,
+                organizationId: T.org,
+                name: "Alpha",
+                slug: "alpha",
+                properties: {},
+                tags: [],
+            },
+        });
+        await db.team.create({
+            data: {
+                id: T.otherOrgTeam,
+                organizationId: T.otherOrg,
+                name: "Bravo",
+                slug: "bravo",
+                properties: {},
+                tags: [],
+            },
+        });
+    });
+
+    function makeCaller() {
+        return teamsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { organization: ["view"], team: ["create", "update"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    async function updateAlpha(slug: string | null) {
+        return makeCaller().updateTeam({
+            organizationId: T.org,
+            teamId: T.team,
+            update: { name: "Alpha", slug, description: "", tags: [], properties: {} },
+        });
+    }
+
+    it("creates a team with a slug", async () => {
+        const { created } = await makeCaller().createTeam({
+            organizationId: T.org,
+            create: { name: "Charlie", slug: "charlie", description: "", tags: [], properties: {} },
+        });
+
+        expect(created.slug).toBe("charlie");
+        expect(await db.team.findUnique({ where: { id: created.id } })).toMatchObject({
+            slug: "charlie",
+        });
+    });
+
+    it("refuses to create a team with a slug held by a team in another org", async () => {
+        const error = await makeCaller()
+            .createTeam({
+                organizationId: T.org,
+                create: { name: "Delta", slug: "bravo", description: "", tags: [], properties: {} },
+            })
+            .catch((e: unknown) => e);
+
+        expect(error).toMatchObject({
+            code: "CONFLICT",
+            cause: { name: "FieldConflictError", fieldName: "slug" },
+        });
+        // The message names neither the holding team nor its org.
+        expect((error as Error).message).toBe('The slug "bravo" is already taken.');
+        expect(await db.team.findMany({ where: { name: "Delta" } })).toHaveLength(0);
+    });
+
+    it("maps a unique violation from a racing write to the slug conflict", async () => {
+        vi.spyOn(db, "$transaction").mockRejectedValueOnce(
+            Object.assign(new Error("Unique constraint failed"), { code: "P2002" }),
+        );
+
+        await expect(
+            makeCaller().createTeam({
+                organizationId: T.org,
+                create: { name: "Echo", slug: "echo", description: "", tags: [], properties: {} },
+            }),
+        ).rejects.toMatchObject({
+            code: "CONFLICT",
+            cause: { name: "FieldConflictError", fieldName: "slug" },
+        });
+    });
+
+    it("keeps the team's own slug without a conflict", async () => {
+        vi.mocked(revalidateTeam).mockClear();
+        const { updated } = await makeCaller().updateTeam({
+            organizationId: T.org,
+            teamId: T.team,
+            update: { name: "Alpha 2", slug: "alpha", description: "", tags: [], properties: {} },
+        });
+
+        expect(updated).toMatchObject({ name: "Alpha 2", slug: "alpha" });
+        // The team's cached lookup (`getTeamBySlug`) is cleared once.
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["alpha"]]);
+    });
+
+    it("refuses to update to a slug held by a team in another org", async () => {
+        await expect(updateAlpha("bravo")).rejects.toMatchObject({
+            code: "CONFLICT",
+            cause: { name: "FieldConflictError", fieldName: "slug" },
+        });
+        expect(await db.team.findUnique({ where: { id: T.team } })).toMatchObject({
+            slug: "alpha",
+        });
+    });
+
+    it("clears the slug with null and logs the change", async () => {
+        vi.mocked(revalidateTeam).mockClear();
+        const { updated } = await updateAlpha(null);
+
+        // Both slugs: the old one's cached team, and the new (null, a no-op).
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["alpha"], [null]]);
+
+        expect(updated.slug).toBeNull();
+        expect(await db.team.findUnique({ where: { id: T.team } })).toMatchObject({ slug: null });
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "Team", objectId: T.team, action: "Update" },
+        });
+        expect(entries.at(-1)?.changes).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ path: ["slug"], prev: "alpha", curr: null }),
+            ]),
+        );
+    });
+
+    it("refuses to create a team with a reserved slug", async () => {
+        await expect(
+            makeCaller().createTeam({
+                organizationId: T.org,
+                create: {
+                    name: "Foxtrot",
+                    slug: "admin",
+                    description: "",
+                    tags: [],
+                    properties: {},
+                },
+            }),
+        ).rejects.toMatchObject({ code: "BAD_REQUEST", message: "That slug is reserved." });
+        expect(await db.team.findMany({ where: { name: "Foxtrot" } })).toHaveLength(0);
+    });
+
+    it("refuses to change a team's slug to a reserved one", async () => {
+        await expect(updateAlpha("settings")).rejects.toMatchObject({
+            code: "BAD_REQUEST",
+            message: "That slug is reserved.",
+        });
+    });
+
+    it("updates a team whose stored slug has since become reserved", async () => {
+        await db.team.update({ where: { id: T.team }, data: { slug: "admin" } });
+
+        // A name-only edit resends the stored slug, which must still be accepted.
+        const { updated: renamed } = await makeCaller().updateTeam({
+            organizationId: T.org,
+            teamId: T.team,
+            update: { name: "Alpha 3", slug: "admin", description: "", tags: [], properties: {} },
+        });
+        expect(renamed).toMatchObject({ name: "Alpha 3", slug: "admin" });
+
+        const { updated } = await updateAlpha(null);
+
+        expect(updated.slug).toBeNull();
     });
 });
 
@@ -936,6 +1189,7 @@ describe("teamsRouter.archiveTeam / restoreTeam", () => {
                 id: T.team,
                 organizationId: T.org,
                 name: "Alpha",
+                slug: "alpha",
                 description: "First team",
                 properties: {},
                 tags: [],
@@ -963,11 +1217,13 @@ describe("teamsRouter.archiveTeam / restoreTeam", () => {
     }
 
     it("archives an active team and records an Archive log entry", async () => {
+        vi.mocked(revalidateTeam).mockClear();
         const { updated } = await makeCaller().archiveTeam({
             organizationId: T.org,
             teamId: T.team,
         });
         expect(updated.status).toBe("Archived");
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["alpha"]]);
 
         const entries = await db.logEntry.findMany({
             where: { objectType: "Team", objectId: T.team, action: "Archive" },
@@ -989,11 +1245,13 @@ describe("teamsRouter.archiveTeam / restoreTeam", () => {
     });
 
     it("restores an archived team and records a Restore log entry", async () => {
+        vi.mocked(revalidateTeam).mockClear();
         const { updated } = await makeCaller().restoreTeam({
             organizationId: T.org,
             teamId: T.team,
         });
         expect(updated.status).toBe("Active");
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["alpha"]]);
 
         const entries = await db.logEntry.findMany({
             where: { objectType: "Team", objectId: T.team, action: "Restore" },
@@ -1046,6 +1304,7 @@ describe("teamsRouter.deleteTeam / recoverTeam", () => {
                 id: T.team,
                 organizationId: T.org,
                 name: "Alpha",
+                slug: "alpha",
                 description: "",
                 properties: {},
                 tags: [],
@@ -1092,10 +1351,12 @@ describe("teamsRouter.deleteTeam / recoverTeam", () => {
     });
 
     it("soft-deletes the team without touching its memberships", async () => {
+        vi.mocked(revalidateTeam).mockClear();
         await makeCaller({ team: ["delete"] }).deleteTeam({
             organizationId: T.org,
             teamId: T.team,
         });
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["alpha"]]);
 
         const team = await db.team.findUnique({ where: { id: T.team } });
         expect(team).toMatchObject({ status: "Deleted" });
@@ -1120,11 +1381,13 @@ describe("teamsRouter.deleteTeam / recoverTeam", () => {
     });
 
     it("recovers a deleted team back to Active and records a Recover log entry", async () => {
+        vi.mocked(revalidateTeam).mockClear();
         const { updated } = await makeCaller({ team: ["delete"] }).recoverTeam({
             organizationId: T.org,
             teamId: T.team,
         });
         expect(updated.status).toBe("Active");
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["alpha"]]);
 
         const entries = await db.logEntry.findMany({
             where: { objectType: "Team", objectId: T.team, action: "Recover" },
@@ -1593,7 +1856,11 @@ describe("teamsRouter.getOrganizationD4H", () => {
     /** A non-member who isn't a site admin: holds no permissions in the organization. */
     const asOutsider = () =>
         teamsRouter.createCaller(
-            createAuthenticatedMockContext({ user: { id: T.outsider }, prisma: db }),
+            createAuthenticatedMockContext({
+                user: { id: T.outsider },
+                permissions: null,
+                prisma: db,
+            }),
         );
 
     it("returns the link to a site admin who isn't a member", async () => {

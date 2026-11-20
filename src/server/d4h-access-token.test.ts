@@ -13,6 +13,7 @@ import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 
 import {
+    getD4HNagAccessToken,
     resolveD4HCredential,
     toD4HCredentialRef,
     type D4HCredentialRef,
@@ -155,5 +156,95 @@ describe("resolveD4HCredential", () => {
                 z.ZodError,
             );
         });
+    });
+});
+
+describe("getD4HNagAccessToken", () => {
+    const T = {
+        org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
+        user: UserId.create(),
+        orgCredential: ProviderCredentialId.create(),
+        personalCredential: ProviderCredentialId.create(),
+        otherOrgCredential: ProviderCredentialId.create(),
+    };
+
+    const prisma = createMockPrisma();
+
+    beforeAll(async () => {
+        db.current = prisma;
+
+        for (const id of [T.org, T.otherOrg]) {
+            await prisma.organization.create({
+                data: { id, name: id, slug: id, createdAt: new Date() },
+            });
+        }
+
+        await prisma.user.create({
+            data: { id: T.user, name: "U", email: `${T.user}@x.test`, emailVerified: true },
+        });
+
+        const seed = (id: string, organizationId: string, userId: string | null) =>
+            prisma.providerCredential.create({
+                data: {
+                    id,
+                    provider: "D4H",
+                    organizationId,
+                    userId,
+                    groupId: null,
+                    label: "Seeded",
+                    token: "encrypted:secret",
+                    status: "OK",
+                    expiresAt: new Date("2036-01-01T00:00:00Z"),
+                    metadata: {
+                        provider: "D4H",
+                        serverCode: "us",
+                        d4HTeams: [],
+                        d4HOrganisations: [],
+                    },
+                },
+            });
+
+        await seed(T.orgCredential, T.org, null);
+        await seed(T.personalCredential, T.org, T.user);
+        await seed(T.otherOrgCredential, T.otherOrg, null);
+    });
+
+    async function withSetting(value: string | null) {
+        await prisma.organizationConfig.deleteMany({
+            where: { organizationId: T.org, key: "modules.d4h-nag.d4hTokenId" },
+        });
+        if (value !== null) {
+            await prisma.organizationConfig.create({
+                data: { organizationId: T.org, key: "modules.d4h-nag.d4hTokenId", value },
+            });
+        }
+    }
+
+    it("returns null when the setting is unset", async () => {
+        await withSetting(null);
+
+        expect(await getD4HNagAccessToken(prisma, T.org)).toBeNull();
+    });
+
+    it.each([
+        { name: "a personal token's id", tokenId: () => T.personalCredential },
+        { name: "another org's token id", tokenId: () => T.otherOrgCredential },
+        { name: "an id that names no credential", tokenId: () => ProviderCredentialId.create() },
+        { name: "a value that isn't a credential id", tokenId: () => "not-an-id" },
+    ])("returns null for $name", async ({ tokenId }) => {
+        await withSetting(tokenId());
+
+        expect(await getD4HNagAccessToken(prisma, T.org)).toBeNull();
+    });
+
+    it("resolves the org's own token, decrypted", async () => {
+        await withSetting(T.orgCredential);
+
+        const token = await getD4HNagAccessToken(prisma, T.org);
+
+        expect(token?.id).toBe(T.orgCredential);
+        expect(token?.userId).toBeNull();
+        expect(token?.token).toBe("secret");
     });
 });

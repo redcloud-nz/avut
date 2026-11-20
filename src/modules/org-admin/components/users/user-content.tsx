@@ -5,6 +5,7 @@
 
 "use client";
 
+import { ArrowUpRightIcon } from "lucide-react";
 import Link from "next/link";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -14,20 +15,17 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    DataItem,
-    DataItemDateValue,
-    DataItemTitle,
-    DataItemValue,
-    DataList,
-} from "@/components/ui/data-item";
+import { Button } from "@/components/ui/button";
+import { CardContent } from "@/components/ui/card";
+import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { UserId } from "@/lib/schemas/user";
 import { AdminModule_UpdateUser_Dialog } from "@/modules/org-admin/components/users/update-user";
 import { AdminModule_User_Menu } from "@/modules/org-admin/components/users/user-menu";
+import { AdminModule_UserTeams_Card } from "@/modules/org-admin/components/users/user-teams-card";
 import { trpc } from "@/trpc/client";
 
 export function AdminModule_User_Content({ userId }: { userId: UserId }) {
@@ -74,26 +72,18 @@ export function AdminModule_User_Content({ userId }: { userId: UserId }) {
                     </Saratoga.Header>
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>User Details</CardTitle>
-                                    <CardAction>
-                                        <Protect permissions={{ member: ["update"] }}>
-                                            <AdminModule_UpdateUser_Dialog
-                                                organizationUser={member}
-                                            />
-                                        </Protect>
-                                    </CardAction>
-                                </CardHeader>
+                            <RecordCard
+                                label="User"
+                                action={
+                                    <Protect permissions={{ member: ["update"] }}>
+                                        <AdminModule_UpdateUser_Dialog organizationUser={member} />
+                                    </Protect>
+                                }
+                            >
                                 <CardContent>
                                     <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>User ID</DataItemTitle>
-                                            <DataItemValue className="font-mono">
-                                                {member.user.id}
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem inline>
+                                        <RecordCardId label="User ID" id={member.user.id} />
+                                        <DataItem>
                                             <DataItemTitle>Name</DataItemTitle>
                                             <DataItemValue>{member.user.name}</DataItemValue>
                                         </DataItem>
@@ -101,7 +91,7 @@ export function AdminModule_User_Content({ userId }: { userId: UserId }) {
                                             <DataItemTitle>Email</DataItemTitle>
                                             <DataItemValue>{member.user.email}</DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Roles</DataItemTitle>
                                             <DataItemValue>
                                                 {OrganizationRole.formatList(member.role)}
@@ -109,31 +99,34 @@ export function AdminModule_User_Content({ userId }: { userId: UserId }) {
                                         </DataItem>
                                     </DataList>
                                 </CardContent>
-                            </Card>
+                            </RecordCard>
                             {linkedPerson && (
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>Linked Person</CardTitle>
-                                    </CardHeader>
+                                <RecordCard
+                                    label="Linked Person"
+                                    updatedAt={linkedPerson.updatedAt}
+                                    historyHref={route(
+                                        "/orgs/[slug]/admin/personnel/[person_id]/history",
+                                        { slug, person_id: linkedPerson.id },
+                                    )}
+                                    action={
+                                        <Button variant="ghost" size="icon" asChild>
+                                            <Link
+                                                href={route(
+                                                    "/orgs/[slug]/admin/personnel/[person_id]",
+                                                    { slug, person_id: linkedPerson.id },
+                                                )}
+                                                aria-label="Open person"
+                                                title="Open person"
+                                            >
+                                                <ArrowUpRightIcon />
+                                            </Link>
+                                        </Button>
+                                    }
+                                >
                                     <CardContent>
                                         <DataList>
-                                            <DataItem inline>
-                                                <DataItemTitle>Person ID</DataItemTitle>
-                                                <DataItemValue className="font-mono">
-                                                    <Link
-                                                        href={route(
-                                                            "/orgs/[slug]/admin/personnel/[person_id]",
-                                                            {
-                                                                slug,
-                                                                person_id: linkedPerson.id,
-                                                            },
-                                                        )}
-                                                    >
-                                                        {linkedPerson.id}
-                                                    </Link>
-                                                </DataItemValue>
-                                            </DataItem>
-                                            <DataItem inline>
+                                            <RecordCardId label="Person ID" id={linkedPerson.id} />
+                                            <DataItem>
                                                 <DataItemTitle>Name</DataItemTitle>
                                                 <DataItemValue>{linkedPerson.name}</DataItemValue>
                                             </DataItem>
@@ -141,26 +134,21 @@ export function AdminModule_User_Content({ userId }: { userId: UserId }) {
                                                 <DataItemTitle>Email</DataItemTitle>
                                                 <DataItemValue>{linkedPerson.email}</DataItemValue>
                                             </DataItem>
-                                            <DataItem inline>
-                                                <DataItemTitle>Status</DataItemTitle>
-                                                <DataItemValue>{linkedPerson.status}</DataItemValue>
-                                            </DataItem>
+                                            {linkedPerson.status !== "Active" && (
+                                                <DataItem>
+                                                    <DataItemTitle>Status</DataItemTitle>
+                                                    <DataItemValue>
+                                                        {linkedPerson.status}
+                                                    </DataItemValue>
+                                                </DataItem>
+                                            )}
                                         </DataList>
                                     </CardContent>
-                                </Card>
+                                </RecordCard>
                             )}
                         </Saratoga.Column>
                         <Saratoga.Column slot="secondary">
-                            <Card>
-                                <CardContent>
-                                    <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Created</DataItemTitle>
-                                            <DataItemDateValue date={member.createdAt} />
-                                        </DataItem>
-                                    </DataList>
-                                </CardContent>
-                            </Card>
+                            <AdminModule_UserTeams_Card userId={userId} />
                         </Saratoga.Column>
                     </Saratoga.Columns>
                 </Saratoga.Root>

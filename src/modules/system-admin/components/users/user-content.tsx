@@ -4,28 +4,35 @@
  */
 "use client";
 
+import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
+import { useId } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
+import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import {
-    DataItem,
-    DataItemDateValue,
-    DataItemTitle,
-    DataItemValue,
-    DataList,
-} from "@/components/ui/data-item";
+    Item,
+    ItemActions,
+    ItemContent,
+    ItemDescription,
+    ItemGroup,
+    ItemTitle,
+} from "@/components/ui/item";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { route } from "@/lib/routes";
+import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { UserId } from "@/lib/schemas/user";
 import { SystemAdmin_UserActions_Menu } from "@/modules/system-admin/components/users/user-actions-menu";
 import { trpc } from "@/trpc/client";
 
 export function SystemAdmin_User_Content({ userId }: { userId: UserId }) {
     const { data: user } = useSuspenseQuery(trpc.users.getUser.queryOptions({ userId }));
+    const organizationsHeadingId = useId();
 
     return (
         <>
@@ -39,7 +46,11 @@ export function SystemAdmin_User_Content({ userId }: { userId: UserId }) {
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
-                        <Saratoga.Title>{user.name}</Saratoga.Title>
+                        <Saratoga.Title
+                            badges={user.banned && <Badge variant="outline">Banned</Badge>}
+                        >
+                            {user.name}
+                        </Saratoga.Title>
                         <Saratoga.Actions>
                             <SystemAdmin_UserActions_Menu user={user} />
                         </Saratoga.Actions>
@@ -47,19 +58,11 @@ export function SystemAdmin_User_Content({ userId }: { userId: UserId }) {
 
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Identity</CardTitle>
-                                </CardHeader>
+                            <RecordCard label="User">
                                 <CardContent>
                                     <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>User ID</DataItemTitle>
-                                            <DataItemValue className="font-mono">
-                                                {user.id}
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem inline>
+                                        <RecordCardId label="User ID" id={user.id} />
+                                        <DataItem>
                                             <DataItemTitle>Name</DataItemTitle>
                                             <DataItemValue>{user.name}</DataItemValue>
                                         </DataItem>
@@ -67,88 +70,68 @@ export function SystemAdmin_User_Content({ userId }: { userId: UserId }) {
                                             <DataItemTitle>Email</DataItemTitle>
                                             <DataItemValue>{user.email}</DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Email verified</DataItemTitle>
                                             <DataItemValue>
                                                 {user.emailVerified ? "Yes" : "No"}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>System role</DataItemTitle>
                                             <DataItemValue>{user.role}</DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Status</DataItemTitle>
-                                            <DataItemValue>
-                                                {user.banned ? "Banned" : "Active"}
-                                            </DataItemValue>
-                                        </DataItem>
                                     </DataList>
                                 </CardContent>
-                            </Card>
-
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Organisation Memberships</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    {user.organizations.length === 0 ? (
-                                        <p className="text-sm text-muted-foreground">
-                                            No organisation memberships.
-                                        </p>
-                                    ) : (
-                                        <table className="w-full text-sm">
-                                            <thead>
-                                                <tr className="text-left text-muted-foreground">
-                                                    <th className="py-1 pr-4 font-medium">
-                                                        Organisation
-                                                    </th>
-                                                    <th className="py-1 pr-4 font-medium">Slug</th>
-                                                    <th className="py-1 font-medium">Role</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {user.organizations.map((org) => (
-                                                    <tr key={org.id} className="border-t">
-                                                        <td className="py-1 pr-4">
-                                                            <Link
-                                                                href={route(
-                                                                    "/system/admin/organizations/[organizationId]",
-                                                                    { organizationId: org.id },
-                                                                )}
-                                                                className="underline-offset-2 hover:underline"
-                                                            >
-                                                                {org.name}
-                                                            </Link>
-                                                        </td>
-                                                        <td className="py-1 pr-4 font-mono text-xs">
-                                                            {org.slug}
-                                                        </td>
-                                                        <td className="py-1">
-                                                            <Badge variant="secondary">
-                                                                {org.role}
-                                                            </Badge>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    )}
-                                </CardContent>
-                            </Card>
+                            </RecordCard>
                         </Saratoga.Column>
 
                         <Saratoga.Column slot="secondary">
-                            <Card>
-                                <CardContent>
-                                    <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Created</DataItemTitle>
-                                            <DataItemDateValue date={user.createdAt} />
-                                        </DataItem>
-                                    </DataList>
-                                </CardContent>
-                            </Card>
+                            <section aria-labelledby={organizationsHeadingId} className="space-y-2">
+                                <div className="flex min-h-8 items-center justify-between gap-2 pl-1">
+                                    <h2
+                                        id={organizationsHeadingId}
+                                        className="text-base font-medium"
+                                    >
+                                        Organisations
+                                    </h2>
+                                </div>
+                                {user.organizations.length === 0 ? (
+                                    <p className="pl-1 text-sm text-muted-foreground">
+                                        No organisation memberships.
+                                    </p>
+                                ) : (
+                                    <ItemGroup className="gap-2">
+                                        {user.organizations.map((org) => (
+                                            <Item
+                                                key={org.id}
+                                                variant="outline"
+                                                role="listitem"
+                                                asChild
+                                            >
+                                                <Link
+                                                    href={route(
+                                                        "/system/admin/organizations/[organizationId]",
+                                                        { organizationId: org.id },
+                                                    )}
+                                                >
+                                                    <ItemContent>
+                                                        <ItemTitle>{org.name}</ItemTitle>
+                                                        <ItemDescription>
+                                                            {OrganizationRole.formatList(org.role)}
+                                                        </ItemDescription>
+                                                    </ItemContent>
+                                                    <ItemActions>
+                                                        <ChevronRightIcon
+                                                            aria-hidden
+                                                            className="size-4 text-muted-foreground"
+                                                        />
+                                                    </ItemActions>
+                                                </Link>
+                                            </Item>
+                                        ))}
+                                    </ItemGroup>
+                                )}
+                            </section>
                         </Saratoga.Column>
                     </Saratoga.Columns>
                 </Saratoga.Root>

@@ -7,7 +7,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { TRPCError } from "@trpc/server";
 
-import { Roles, type Role } from "@/lib/permissions";
+import { hasAnyRoleWithPermissions, type Role } from "@/lib/permissions";
 import { LogEntryId, LogEntryObjectId, LogObjectType } from "@/lib/schemas/log-entry";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationNoteId } from "@/lib/schemas/organization-note";
@@ -104,7 +104,10 @@ describe("history.listObjectHistory", () => {
         return historyRouter.createCaller({
             ...createAuthenticatedMockContext({ user: { id: T.user }, prisma: db }),
             hasPermission: async (_organizationId, required) =>
-                assertHasPermissionResult(Roles[role].authorize(required), required),
+                assertHasPermissionResult(
+                    { success: hasAnyRoleWithPermissions([role], required) },
+                    required,
+                ),
         });
     }
 
@@ -148,7 +151,7 @@ describe("history.listObjectHistory", () => {
         await expect(caller.listObjectHistory(tokenInput)).resolves.toEqual({
             entries: [],
             nextCursor: null,
-            names: { Person: {}, Skill: {}, SkillGroup: {}, SkillPackage: {} },
+            names: { Person: {}, Skill: {}, SkillGroup: {}, SkillPackage: {}, Team: {} },
         });
     });
 
@@ -170,7 +173,10 @@ describe("history.listObjectHistory", () => {
             ...createAuthenticatedMockContext({ user: { id: T.user }, prisma: db }),
             hasPermission: async (_organizationId, required) => {
                 if (required.organizationNote) throw new TRPCError({ code: "FORBIDDEN" });
-                assertHasPermissionResult(Roles.member.authorize(required), required);
+                assertHasPermissionResult(
+                    { success: hasAnyRoleWithPermissions(["member"], required) },
+                    required,
+                );
             },
         });
 
@@ -185,7 +191,10 @@ describe("history.listObjectHistory", () => {
             ...createAuthenticatedMockContext({ user: { id: T.user }, prisma: db }),
             hasPermission: async (_organizationId, required) => {
                 if (required.organizationNote) throw new TRPCError({ code: "FORBIDDEN" });
-                assertHasPermissionResult(Roles.member.authorize(required), required);
+                assertHasPermissionResult(
+                    { success: hasAnyRoleWithPermissions(["member"], required) },
+                    required,
+                );
             },
         });
 
@@ -209,9 +218,10 @@ describe("history.listObjectHistory", () => {
         await makeCaller("admin").listObjectHistory(personInput);
 
         // `admin` holds neither `skillCheckSession:view` nor `skillPackage:view`, which gates
-        // `Skill` and `SkillGroup` as well as `SkillPackage`.
+        // `Skill` and `SkillGroup` as well as `SkillPackage`, nor `i3Bundle:view`.
         const expected = LogObjectType.values.filter(
             (type) =>
+                type !== "I3Bundle" &&
                 type !== "SkillCheckSession" &&
                 type !== "Skill" &&
                 type !== "SkillGroup" &&
@@ -228,7 +238,7 @@ describe("history.listObjectHistory", () => {
             await expect(makeCaller("skills-author").listObjectHistory(input)).resolves.toEqual({
                 entries: [],
                 nextCursor: null,
-                names: { Person: {}, Skill: {}, SkillGroup: {}, SkillPackage: {} },
+                names: { Person: {}, Skill: {}, SkillGroup: {}, SkillPackage: {}, Team: {} },
             });
             vi.mocked(ObjectHistory.list).mockClear();
 
@@ -256,7 +266,10 @@ describe("history.listObjectHistory", () => {
             hasPermission: async (_organizationId, required) => {
                 // Only the `OrganizationMembership` related-type check asks for `member`.
                 if (required.member) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-                assertHasPermissionResult(Roles.admin.authorize(required), required);
+                assertHasPermissionResult(
+                    { success: hasAnyRoleWithPermissions(["admin"], required) },
+                    required,
+                );
             },
         });
 

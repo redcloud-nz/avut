@@ -11,14 +11,10 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    DataItem,
-    DataItemDateValue,
-    DataItemTitle,
-    DataItemValue,
-    DataList,
-} from "@/components/ui/data-item";
+import { Badge } from "@/components/ui/badge";
+import { CardContent } from "@/components/ui/card";
+import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillId } from "@/lib/schemas/skill";
@@ -61,29 +57,46 @@ export function SkillPackageBuilder_Skill_Content({ skillId }: { skillId: SkillI
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
-                        <Saratoga.Title>{skill.name}</Saratoga.Title>
+                        <Saratoga.Title
+                            badges={
+                                skill.status !== "Active" && (
+                                    <Badge variant="outline">{skill.status}</Badge>
+                                )
+                            }
+                        >
+                            {skill.name}
+                        </Saratoga.Title>
                         <Saratoga.Actions>
                             <SkillPackageBuilder_Skill_Menu skill={skill} />
                         </Saratoga.Actions>
                     </Saratoga.Header>
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Skill Details</CardTitle>
-                                    <CardAction>
-                                        <Protect permissions={{ skillPackage: ["update"] }}>
-                                            <SkillPackageBuilder_UpdateSkill_Dialog skill={skill} />
-                                        </Protect>
-                                    </CardAction>
-                                </CardHeader>
+                            <RecordCard
+                                label="Skill"
+                                updatedAt={skill.updatedAt}
+                                historyHref={route(
+                                    "/orgs/[slug]/skill-package-builder/packages/[package_id]/skills/[skill_id]/history",
+                                    {
+                                        slug: organization.slug,
+                                        package_id: skill.skillPackageId,
+                                        skill_id: skill.id,
+                                    },
+                                )}
+                                action={
+                                    <Protect permissions={{ skillPackage: ["update"] }}>
+                                        <SkillPackageBuilder_UpdateSkill_Dialog skill={skill} />
+                                    </Protect>
+                                }
+                            >
                                 <CardContent>
                                     <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Skill ID</DataItemTitle>
-                                            <DataItemValue>{skill.id}</DataItemValue>
+                                        <RecordCardId label="Skill ID" id={skill.id} />
+                                        <DataItem>
+                                            <DataItemTitle>Name</DataItemTitle>
+                                            <DataItemValue>{skill.name}</DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Package</DataItemTitle>
                                             <DataItemValue>
                                                 <Link
@@ -99,7 +112,7 @@ export function SkillPackageBuilder_Skill_Content({ skillId }: { skillId: SkillI
                                                 </Link>
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Group</DataItemTitle>
                                             <DataItemValue>
                                                 <Link
@@ -116,21 +129,17 @@ export function SkillPackageBuilder_Skill_Content({ skillId }: { skillId: SkillI
                                                 </Link>
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Name</DataItemTitle>
-                                            <DataItemValue>{skill.name}</DataItemValue>
-                                        </DataItem>
                                         <DataItem>
                                             <DataItemTitle>Description</DataItemTitle>
                                             <DataItemValue>{skill.description}</DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Required</DataItemTitle>
                                             <DataItemValue>
                                                 {skill.defaultRequired ? "Yes" : "No"}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Revalidation Frequency</DataItemTitle>
                                             <DataItemValue>
                                                 {skill.frequency
@@ -138,29 +147,9 @@ export function SkillPackageBuilder_Skill_Content({ skillId }: { skillId: SkillI
                                                     : "None"}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Status</DataItemTitle>
-                                            <DataItemValue>{skill.status}</DataItemValue>
-                                        </DataItem>
                                     </DataList>
                                 </CardContent>
-                            </Card>
-                        </Saratoga.Column>
-                        <Saratoga.Column slot="secondary">
-                            <Card>
-                                <CardContent>
-                                    <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Created</DataItemTitle>
-                                            <DataItemDateValue date={skill.createdAt} />
-                                        </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Updated</DataItemTitle>
-                                            <DataItemDateValue date={skill.updatedAt} />
-                                        </DataItem>
-                                    </DataList>
-                                </CardContent>
-                            </Card>
+                            </RecordCard>
                         </Saratoga.Column>
                     </Saratoga.Columns>
                 </Saratoga.Root>

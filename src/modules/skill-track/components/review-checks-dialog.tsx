@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { ComponentProps, useEffect, useState } from "react";
+import { ComponentProps, useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
@@ -203,7 +203,9 @@ export function SkillsModule_ReviewChecks_Dialog({
                             />
                         ))}
                     </ul>
-                    {mutation.error && <Alert variant="error">{mutation.error.message}</Alert>}
+                    {mutation.error && (
+                        <Alert variant="destructive">{mutation.error.message}</Alert>
+                    )}
                 </DialogBody>
                 {readOnly ? (
                     <DialogFooter showCloseButton />
@@ -244,7 +246,8 @@ function CheckRow({
 }) {
     const organization = useOrganization();
     const { formatDateTime } = usePreferences();
-    const checkboxId = `check-${check.id}`;
+    const idPrefix = useId();
+    const checkboxId = `${idPrefix}-check-${check.id}`;
 
     return (
         <li className="flex items-start gap-3">

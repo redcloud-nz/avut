@@ -5,7 +5,7 @@
 "use client";
 
 import { ChevronDownIcon } from "lucide-react";
-import { useState, type RefObject } from "react";
+import { useId, useState, type RefObject } from "react";
 import * as R from "remeda";
 import { toast } from "sonner";
 
@@ -74,6 +74,7 @@ function ChangeSessionPersonnel_Body({
     sessionId: SkillCheckSessionId;
     onDone: () => void;
 }) {
+    const idPrefix = useId();
     const organization = useOrganization();
 
     const [{ data: assignedPersonnel }, { data: teams }, { data: teamMemberships }] =
@@ -176,7 +177,7 @@ function ChangeSessionPersonnel_Body({
                                     {members.map((membership) => (
                                         <Field orientation="horizontal" key={membership.id}>
                                             <Checkbox
-                                                id={`membership-${membership.id}`}
+                                                id={`${idPrefix}-membership-${membership.id}`}
                                                 checked={isSelected(membership.person.id)}
                                                 onCheckedChange={(checked) =>
                                                     handleChangeChecked(
@@ -185,7 +186,9 @@ function ChangeSessionPersonnel_Body({
                                                     )
                                                 }
                                             />
-                                            <FieldLabel htmlFor={`membership-${membership.id}`}>
+                                            <FieldLabel
+                                                htmlFor={`${idPrefix}-membership-${membership.id}`}
+                                            >
                                                 {membership.person.name}
                                             </FieldLabel>
                                         </Field>

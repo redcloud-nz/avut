@@ -1,0 +1,98 @@
+---
+title: D4H Attendance Reminders
+description: Emailing members who haven't answered their D4H exercise invitation, on a schedule you set.
+section: d4h-nag
+order: 0
+keyTerms: ["d4h", "team"]
+---
+
+# D4H Attendance Reminders
+
+D4H Attendance Reminders emails the members of a team who haven't answered a
+D4H exercise invitation yet: those whose attendance is still **Requested**. You
+set when it runs, team by team, and it takes the chasing off team leaders.
+
+Only owners and admins see the module.
+
+## Before you start
+
+The module needs:
+
+- the **D4H Integration** and the [D4H](/docs/d4h) module turned on, then
+  **D4H Attendance Reminders** itself, in
+  [Organisation Settings](/docs/admin/organization#modules),
+- an organisation D4H access token that can see the teams you want reminded,
+  added under **Admin** › [D4H Access Tokens](/docs/admin/organization#d4h-access-tokens)
+  and chosen as the module's **D4H Token** in its settings, and
+- each team you want reminded [linked to its D4H team](/docs/admin/teams#linking-a-team-to-d4h).
+
+The reminders run on their own, with no one signed in, so they use the
+organisation's token rather than anyone's personal one. A read-only token is
+enough.
+
+## Rules
+
+**Rules** lists your reminder rules. A rule says which team to remind, and
+when:
+
+- **Team**: one of your teams linked to D4H. Its D4H team's members are the
+  ones reminded.
+- **Day** and **Time**: when the rule runs each week, in your organisation's
+  time zone.
+- **Look ahead**: how many hours ahead to look for exercises, 24 by default.
+  Exercises starting less than an hour away are left out, since a reminder then
+  would be too late to help.
+- **Message**: an optional note added to the email.
+
+For example, a rule for Sundays at 18:00 that looks 72 hours ahead reminds
+members about exercises from Sunday evening to Wednesday evening. A team can
+have several rules.
+
+**New Rule** adds one. Open a rule to edit, disable or delete it. Deleting a
+rule keeps its past runs.
+
+### Paused rules
+
+The **Status** column shows **Enabled** for a rule that will run. One that can't
+says why instead, for example **Team not
+linked to D4H**, **No D4H token** or **Token can't see team**. It's skipped
+until you fix the cause.
+
+## Runs
+
+Each time a rule runs, it records a **run**. A rule's page lists its runs. Open
+one to see the exercises it found, and each member it considered with the
+**Outcome**:
+
+- **Sent**: the reminder went out.
+- **Skipped: already reminded**: they've already been reminded about that
+  exercise, by this rule or another. Each member is reminded once per exercise.
+- **Skipped: opted out**: they've asked not to get reminders.
+- **Skipped: no email**: their D4H record has no email address.
+- **Failed**: the email couldn't be sent. A later run tries again.
+
+Besides its schedule, you can start a rule from its **Run** menu:
+
+- **Run Now** sends reminders straight away, looking ahead from now.
+- **Dry Run** works out who would be reminded, marking them **Would send**,
+  without sending anything.
+
+A run's page updates as it goes. Runs are kept for 90 days.
+
+## The email
+
+The reminder names the exercise and when it starts, includes your rule's
+message, and asks the member to update their attendance in D4H, with a button
+to open the exercise there. It comes from AVUT, with replies going to your
+organisation's [Reply-To address](/docs/admin/organization#general), so set one.
+
+Every reminder ends with a link to stop them. It opens a page where the member
+can **Stop sending me these reminders**, or later **Send me these reminders
+again**. Opting out covers every rule for that D4H team.
+
+## Opt-outs
+
+**Opt-outs** lists the members who've stopped their reminders, and whether
+they did it themselves or an admin did. **Add Opt-out** stops them for a member
+of a team's D4H team, for someone who's asked you directly. Remove an opt-out
+to start their reminders again.

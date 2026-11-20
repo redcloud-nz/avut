@@ -13,6 +13,8 @@ import Link from "next/link";
 import { ComponentProps, Fragment, ReactNode, Suspense } from "react";
 
 import { AVUTLogo } from "@/components/art/avut-logo";
+import { GlyphPage } from "@/components/glyph-page";
+import { PageBackground, pageBackgroundAttributes } from "@/components/page-background";
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -30,8 +32,11 @@ function SidebarInset({ children }: { children: ReactNode }) {
     return (
         <div
             data-component="StdSidebarInset"
-            className="relative flex w-full min-w-0 h-[calc(100svh-var(--impersonation-h))] flex-1 flex-col bg-page"
+            {...pageBackgroundAttributes}
+            // `isolate` makes this the stacking context the page background sits at the bottom of.
+            className="relative isolate flex w-full min-w-0 h-[calc(100svh-var(--impersonation-h))] flex-1 flex-col bg-page"
         >
+            <PageBackground />
             <Suspense fallback={<PageLoadingSpinner />}>{children}</Suspense>
         </div>
     );
@@ -162,8 +167,15 @@ function IndexPage({
     ...props
 }: ComponentProps<"div"> & { title: string }) {
     return (
-        <div className={cn("w-full sm:w-lg sm:mx-auto", className)} {...props}>
-            <div className="flex flex-col items-center my-4 gap-4">
+        <div
+            data-slot="std-index-page"
+            className={cn("w-full sm:w-lg sm:mx-auto", className)}
+            {...props}
+        >
+            {/* Index pages are low-traffic, so they show the glyph background. */}
+            <GlyphPage />
+            {/* Sized to its content so the glyph halo hugs the logo and title. */}
+            <div className="glyph-halo mx-auto my-4 flex w-fit flex-col items-center gap-4">
                 <AVUTLogo />
                 <div className="font-semibold">{title}</div>
             </div>

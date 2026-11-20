@@ -222,7 +222,7 @@ export function D4HModule_UpdateEquipmentItem_Dialog({
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="equipment-item-status">
+                                        <FieldLabel htmlFor={`${formId}-status`}>
                                             D4H Status
                                         </FieldLabel>
                                         <Select
@@ -230,7 +230,7 @@ export function D4HModule_UpdateEquipmentItem_Dialog({
                                             onValueChange={field.onChange}
                                         >
                                             <SelectTrigger
-                                                id="equipment-item-status"
+                                                id={`${formId}-status`}
                                                 aria-invalid={fieldState.invalid}
                                             >
                                                 <SelectValue
@@ -259,11 +259,11 @@ export function D4HModule_UpdateEquipmentItem_Dialog({
                                 render={({ field }) => (
                                     <Field orientation="horizontal">
                                         <Switch
-                                            id="equipment-item-critical"
+                                            id={`${formId}-critical`}
                                             checked={field.value}
                                             onCheckedChange={field.onChange}
                                         />
-                                        <FieldLabel htmlFor="equipment-item-critical">
+                                        <FieldLabel htmlFor={`${formId}-critical`}>
                                             Critical
                                         </FieldLabel>
                                     </Field>
@@ -275,11 +275,11 @@ export function D4HModule_UpdateEquipmentItem_Dialog({
                                 render={({ field }) => (
                                     <Field orientation="horizontal">
                                         <Switch
-                                            id="equipment-item-monitor"
+                                            id={`${formId}-monitor`}
                                             checked={field.value}
                                             onCheckedChange={field.onChange}
                                         />
-                                        <FieldLabel htmlFor="equipment-item-monitor">
+                                        <FieldLabel htmlFor={`${formId}-monitor`}>
                                             Monitor
                                         </FieldLabel>
                                     </Field>
@@ -290,11 +290,11 @@ export function D4HModule_UpdateEquipmentItem_Dialog({
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="equipment-item-barcode">
+                                        <FieldLabel htmlFor={`${formId}-barcode`}>
                                             Barcode
                                         </FieldLabel>
                                         <Input
-                                            id="equipment-item-barcode"
+                                            id={`${formId}-barcode`}
                                             aria-invalid={fieldState.invalid}
                                             {...field}
                                         />
@@ -309,11 +309,9 @@ export function D4HModule_UpdateEquipmentItem_Dialog({
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="equipment-item-notes">
-                                            Notes
-                                        </FieldLabel>
+                                        <FieldLabel htmlFor={`${formId}-notes`}>Notes</FieldLabel>
                                         <Textarea
-                                            id="equipment-item-notes"
+                                            id={`${formId}-notes`}
                                             aria-invalid={fieldState.invalid}
                                             rows={5}
                                             {...field}
@@ -329,11 +327,11 @@ export function D4HModule_UpdateEquipmentItem_Dialog({
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="equipment-item-update-notes">
+                                        <FieldLabel htmlFor={`${formId}-update-notes`}>
                                             Update note (optional)
                                         </FieldLabel>
                                         <Textarea
-                                            id="equipment-item-update-notes"
+                                            id={`${formId}-update-notes`}
                                             aria-invalid={fieldState.invalid}
                                             placeholder="Why the item is being changed"
                                             {...field}

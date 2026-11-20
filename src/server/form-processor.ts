@@ -186,9 +186,11 @@ export class FormProcessingPipeline<
         }
 
         if (this.options.saveStatus != "None") {
+            // Write the submitted data with the status, so an autosave already in flight when the
+            // form was submitted can't leave stale data on the processed record.
             await prisma.formInstance.update({
                 where: { id: formInstanceId },
-                data: { formStatus: "Processed" },
+                data: { formStatus: "Processed", formData: formData as object },
             });
         }
     }

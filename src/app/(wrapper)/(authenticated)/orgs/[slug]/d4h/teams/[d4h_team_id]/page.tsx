@@ -54,6 +54,15 @@ export default async function D4HModule_Team_Page(props: Props) {
     const teamId = parseTeamId(d4h_team_id);
 
     prefetch(trpc.d4hApi.listAccessibleTeams.queryOptions({ organizationId: organization.id }));
+    // The Open in D4H button's URL, so it renders with the page.
+    prefetch(
+        trpc.d4hApi.getD4HWebUrl.queryOptions({
+            organizationId: organization.id,
+            record: "team",
+            id: teamId,
+            teamId,
+        }),
+    );
 
     return (
         <HydrateClient>

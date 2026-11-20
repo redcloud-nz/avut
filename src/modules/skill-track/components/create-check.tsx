@@ -5,7 +5,7 @@
 
 "use client";
 
-import { isToday, parseISO, subMonths } from "date-fns";
+import { isToday, parseISO } from "date-fns";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useId } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -155,17 +155,8 @@ function CreateCheck_Body({ onDone }: { onDone: () => void }) {
                 console.error("Failed to add skill check", error);
                 toast.error(`Failed to add skill check: ${error.message}`);
             },
-            onSuccess(created) {
-                // Recent Skill Checks shows only the last month (`listRecentChecks`), so a check
-                // back-dated past that leaves the list as soon as it's added.
-                if (parseISO(created.checkedAt) < subMonths(new Date(), 1)) {
-                    toast.success("Skill check added", {
-                        description:
-                            "It's dated more than a month ago, so it won't appear under Recent Skill Checks.",
-                    });
-                } else {
-                    toast.success("Skill check added");
-                }
+            onSuccess() {
+                toast.success("Skill check added");
                 onDone();
             },
         }),

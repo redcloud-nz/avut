@@ -135,9 +135,9 @@ export function AdminModule_CreatePerson_Dialog() {
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="person-name">Name</FieldLabel>
+                                        <FieldLabel htmlFor={`${formId}-name`}>Name</FieldLabel>
                                         <Input
-                                            id="person-name"
+                                            id={`${formId}-name`}
                                             autoFocus
                                             ignorePasswordManagers
                                             aria-invalid={fieldState.invalid}
@@ -154,9 +154,9 @@ export function AdminModule_CreatePerson_Dialog() {
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="person-email">Email</FieldLabel>
+                                        <FieldLabel htmlFor={`${formId}-email`}>Email</FieldLabel>
                                         <Input
-                                            id="person-email"
+                                            id={`${formId}-email`}
                                             type="email"
                                             ignorePasswordManagers
                                             aria-invalid={fieldState.invalid}

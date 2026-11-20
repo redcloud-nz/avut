@@ -31,7 +31,7 @@ export function UserSettings_Account() {
     }
 
     if (!sessionQuery.data) {
-        return <Alert variant="error">No user data available</Alert>;
+        return <Alert variant="destructive">No user data available</Alert>;
     }
 
     return (

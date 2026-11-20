@@ -20,6 +20,7 @@ import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { D4HTeamPickerDialog } from "@/components/d4h/team-picker-dialog";
+import { HelpButton } from "@/components/docs/help-button";
 import { D4HMemberLink } from "@/components/entity-links/d4h-member-link";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -114,6 +115,7 @@ export function D4HModule_TeamMembers_List({ teamId }: { teamId: number }) {
                     },
                     { label: "Members" },
                 ]}
+                actions={<HelpButton id="d4h" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

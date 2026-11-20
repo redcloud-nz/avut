@@ -12,13 +12,8 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    DataItem,
-    DataItemDateValue,
-    DataItemTitle,
-    DataItemValue,
-    DataList,
-} from "@/components/ui/data-item";
+import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { route } from "@/lib/routes";
 import {
     OrganizationGroupId,
@@ -62,26 +57,19 @@ export function SystemAdmin_Group_Content({ groupId }: { groupId: OrganizationGr
 
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Group Details</CardTitle>
-                                    <CardAction>
-                                        <SystemAdmin_EditGroup_Dialog group={group} />
-                                    </CardAction>
-                                </CardHeader>
+                            <RecordCard
+                                label="Group"
+                                updatedAt={group.updatedAt}
+                                action={<SystemAdmin_EditGroup_Dialog group={group} />}
+                            >
                                 <CardContent>
                                     <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Group ID</DataItemTitle>
-                                            <DataItemValue className="font-mono">
-                                                {group.id}
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem inline>
+                                        <RecordCardId label="Group ID" id={group.id} />
+                                        <DataItem>
                                             <DataItemTitle>Name</DataItemTitle>
                                             <DataItemValue>{group.name}</DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Slug</DataItemTitle>
                                             <DataItemValue className="font-mono">
                                                 {group.slug}
@@ -89,7 +77,7 @@ export function SystemAdmin_Group_Content({ groupId }: { groupId: OrganizationGr
                                         </DataItem>
                                     </DataList>
                                 </CardContent>
-                            </Card>
+                            </RecordCard>
 
                             <Card>
                                 <CardHeader>
@@ -178,23 +166,6 @@ export function SystemAdmin_Group_Content({ groupId }: { groupId: OrganizationGr
                                             </tbody>
                                         </table>
                                     )}
-                                </CardContent>
-                            </Card>
-                        </Saratoga.Column>
-
-                        <Saratoga.Column slot="secondary">
-                            <Card>
-                                <CardContent>
-                                    <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Created</DataItemTitle>
-                                            <DataItemDateValue date={group.createdAt} />
-                                        </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Updated</DataItemTitle>
-                                            <DataItemDateValue date={group.updatedAt} />
-                                        </DataItem>
-                                    </DataList>
                                 </CardContent>
                             </Card>
                         </Saratoga.Column>

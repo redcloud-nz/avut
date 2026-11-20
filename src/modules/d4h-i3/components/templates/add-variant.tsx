@@ -137,9 +137,9 @@ export function D4HI3Module_Template_AddVariant_Dialog({ template }: { template:
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="variant-name">Name</FieldLabel>
+                                        <FieldLabel htmlFor={`${formId}-name`}>Name</FieldLabel>
                                         <Input
-                                            id="variant-name"
+                                            id={`${formId}-name`}
                                             autoFocus
                                             autoComplete="off"
                                             aria-invalid={fieldState.invalid}
@@ -156,7 +156,7 @@ export function D4HI3Module_Template_AddVariant_Dialog({ template }: { template:
                                 name="d4h.brandId"
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="variant-brand">Brand</FieldLabel>
+                                        <FieldLabel htmlFor={`${formId}-brand`}>Brand</FieldLabel>
 
                                         <D4HEquipmentBrandSelect
                                             organisationOnlyId={organisationOnlyId}
@@ -170,7 +170,7 @@ export function D4HI3Module_Template_AddVariant_Dialog({ template }: { template:
                                                 form.setValue("d4h.modelTitle", "");
                                             }}
                                             slotProps={{
-                                                trigger: { id: "variant-brand" },
+                                                trigger: { id: `${formId}-brand` },
                                             }}
                                         />
                                         {fieldState.error && (
@@ -184,7 +184,7 @@ export function D4HI3Module_Template_AddVariant_Dialog({ template }: { template:
                                 name="d4h.modelId"
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="variant-model">Model</FieldLabel>
+                                        <FieldLabel htmlFor={`${formId}-model`}>Model</FieldLabel>
                                         <D4HEquipmentModelSelect
                                             organisationOnlyId={organisationOnlyId}
                                             value={field.value}
@@ -194,7 +194,7 @@ export function D4HI3Module_Template_AddVariant_Dialog({ template }: { template:
                                             }}
                                             brandId={selectedBrandId}
                                             slotProps={{
-                                                trigger: { id: "variant-model" },
+                                                trigger: { id: `${formId}-model` },
                                             }}
                                         />
 

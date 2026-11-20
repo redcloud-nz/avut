@@ -63,6 +63,15 @@ export default async function D4HModule_Member_Page(props: Props) {
             memberId,
         }),
     );
+    // The Open in D4H button's URL, so it renders with the page.
+    prefetch(
+        trpc.d4hApi.getD4HWebUrl.queryOptions({
+            organizationId: organization.id,
+            record: "member",
+            id: memberId,
+            teamId,
+        }),
+    );
 
     return (
         <HydrateClient>

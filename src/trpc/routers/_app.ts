@@ -9,9 +9,11 @@ import { createTrpcRouter } from "../init";
 
 import { d4hAccessTokensRouter } from "./d4h-access-tokens-router";
 import { d4hApiRouter } from "./d4h-api-router";
+import { d4hNagRouter } from "./d4h-nag-router";
 import { d4hTasksRouter } from "./d4h-tasks-router";
 import { formsRouter } from "./forms-router";
 import { historyRouter } from "./history-router";
+import { i3BundlesRouter } from "./i3-bundles-router";
 import { i3Router } from "./i3-router";
 import { invitationsRouter } from "./invitations-router";
 import { notificationsRouter } from "./notification-router";
@@ -24,6 +26,7 @@ import { skillCheckSessionsRouter } from "./skill-check-sessions-router";
 import { skillChecksRouter } from "./skill-checks-router";
 import { skillPackageBuilderRouter } from "./skill-package-builder-router";
 import { skillPackageSubscriptionsRouter } from "./skill-package-subscriptions-router";
+import { teamUsersRouter } from "./team-users-router";
 import { teamsRouter } from "./teams-router";
 import { trashRouter } from "./trash-router";
 import { userNotesRouter } from "./user-notes-router";
@@ -34,10 +37,12 @@ import { whatsNewRouter } from "./whats-new-router";
 export const appRouter = createTrpcRouter({
     d4hAccessTokens: d4hAccessTokensRouter,
     d4hApi: d4hApiRouter,
+    d4hNag: d4hNagRouter,
     d4hTasks: d4hTasksRouter,
     forms: formsRouter,
     history: historyRouter,
     i3: i3Router,
+    i3Bundles: i3BundlesRouter,
     invitations: invitationsRouter,
     notifications: notificationsRouter,
     organizationGroups: organizationGroupsRouter,
@@ -49,6 +54,7 @@ export const appRouter = createTrpcRouter({
     skillChecks: skillChecksRouter,
     skillPackageBuilder: skillPackageBuilderRouter,
     skillPackageSubscriptions: skillPackageSubscriptionsRouter,
+    teamUsers: teamUsersRouter,
     teams: teamsRouter,
     trash: trashRouter,
     user: userRouter,

@@ -10,6 +10,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 import { D4HEquipmentItemLink } from "@/components/entity-links/d4h-equipment-item-link";
 import { D4HTeamLink } from "@/components/entity-links/d4h-team-link";
 import { Button } from "@/components/ui/button";
@@ -64,6 +65,7 @@ export function D4HModule_D4HTasks_List() {
                     { label: "D4H", href: route("/orgs/[slug]/d4h", { slug }) },
                     { label: "Tasks" },
                 ]}
+                actions={<HelpButton id="d4h" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

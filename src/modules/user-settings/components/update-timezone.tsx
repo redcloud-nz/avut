@@ -96,9 +96,11 @@ export function UserSettings_UpdateTimeZone_Dialog({ settings }: { settings: Use
                             name="timeZone"
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="time-zone-select">Time Zone</FieldLabel>
+                                    <FieldLabel htmlFor={`${formId}-time-zone`}>
+                                        Time Zone
+                                    </FieldLabel>
                                     <SearchableSelect
-                                        id="time-zone-select"
+                                        id={`${formId}-time-zone`}
                                         value={field.value}
                                         onValueChange={field.onChange}
                                         options={options}

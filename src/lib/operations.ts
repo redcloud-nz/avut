@@ -18,6 +18,12 @@
  * implementation detail, and is one entry.
  */
 export const Operations = {
+    // Single-entry batch for provenance (an actorless self-service opt-out/in needs a batch to
+    // carry its `actorLabel`), not to group several events.
+    "d4h-nag-opt-out": { label: "D4H reminder opt-out" },
+    // Single-entry batch for provenance (the cron run has no actor; its batch carries the
+    // `actorLabel`), not to group several events.
+    "d4h-nag-run": { label: "D4H attendance reminder run" },
     "d4h-team-import": { label: "D4H team import" },
     "d4h-team-link": { label: "D4H team link" },
     "d4h-team-sync": { label: "D4H team sync" },

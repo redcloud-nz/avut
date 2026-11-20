@@ -13,8 +13,14 @@ const buttonVariants = cva(
         variants: {
             variant: {
                 default: "bg-primary text-primary-foreground hover:bg-primary/80",
-                outline:
-                    "border-border bg-card shadow-xs hover:bg-accent hover:text-accent-foreground aria-expanded:bg-accent aria-expanded:text-accent-foreground dark:border-input dark:bg-input/30",
+                // Hover keeps the card fill and lays the translucent accent over it, so the page (or glyph
+                // background) doesn't show through. Dark mode has no card fill, so it stays transparent there,
+                // except over the glyph background (globals.css).
+                outline: cn(
+                    "border-border bg-card shadow-xs hover:text-accent-foreground aria-expanded:text-accent-foreground dark:border-input dark:bg-input/30",
+                    "hover:bg-card hover:bg-[image:linear-gradient(var(--accent),var(--accent))] dark:hover:bg-transparent",
+                    "aria-expanded:bg-card aria-expanded:bg-[image:linear-gradient(var(--accent),var(--accent))] dark:aria-expanded:bg-transparent",
+                ),
                 secondary:
                     "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
                 ghost: "hover:bg-accent hover:text-accent-foreground aria-expanded:bg-accent aria-expanded:text-accent-foreground",
@@ -25,14 +31,13 @@ const buttonVariants = cva(
             size: {
                 default:
                     "h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-                xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
-                sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
+                xs: "h-6 gap-1 rounded-md px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
+                sm: "h-7 gap-1 rounded-md px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
                 lg: "h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
                 icon: "size-8",
                 "icon-xs":
-                    "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
-                "icon-sm":
-                    "size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg",
+                    "size-6 rounded-md in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
+                "icon-sm": "size-7 rounded-md in-data-[slot=button-group]:rounded-lg",
                 "icon-lg": "size-9",
             },
         },
@@ -101,7 +106,10 @@ export function MutationButton({
             {...props}
             disabled={disabled || status === "pending" || status === "success"}
             data-status={status}
-            className={cn("data-[status=success]:bg-green-500", className)}
+            className={cn(
+                "data-[status=success]:bg-success data-[status=success]:text-on-success",
+                className,
+            )}
         >
             {match(status)
                 .with("idle", () => text.idle)

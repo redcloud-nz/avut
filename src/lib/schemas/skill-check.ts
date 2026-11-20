@@ -10,10 +10,11 @@ import type { SkillCheck as SkillCheckRecord } from "@/generated/prisma/client";
 import { nanoId16 } from "../id";
 import { zodNanoId16 } from "../validation";
 
+import { DateRange } from "./date-range";
 import { OrganizationId } from "./organization";
 import { OrganizationSettings } from "./organization-settings";
-import { PersonId } from "./person";
-import { SkillId } from "./skill";
+import { PersonId, PersonRef } from "./person";
+import { SkillId, SkillRef } from "./skill";
 import {
     defaultSkillCheckResultLabel,
     SKILL_CHECK_RESULT_VALUES,
@@ -84,6 +85,56 @@ export const SessionCheck = {
 } as const;
 
 export type SessionCheck = z.infer<typeof SessionCheck.schema>;
+
+/**
+ * The filters `skillChecks.searchChecks` takes, each optional: given ones narrow the result, all
+ * together. `sessionId: "none"` matches standalone checks (no session). `from`/`to` are calendar
+ * days, both inclusive, judged in the viewer's display time zone.
+ */
+export const CheckSearchFilters = {
+    schema: z.object({
+        assesseeId: PersonId.schema.optional(),
+        assessorId: PersonId.schema.optional(),
+        skillId: SkillId.schema.optional(),
+        sessionId: z.union([SkillCheckSessionId.schema, z.literal("none")]).optional(),
+        result: SkillCheckResultValue.schema.optional(),
+        ...DateRange.schema.shape,
+    }),
+} as const;
+
+export type CheckSearchFilters = z.infer<typeof CheckSearchFilters.schema>;
+
+/** One page of a check search: `page` is 1-based. */
+export const CheckSearchPage = {
+    schema: z.object({
+        page: z.int().min(1),
+        pageSize: z.int().min(1).max(100),
+    }),
+} as const;
+
+export type CheckSearchPage = z.infer<typeof CheckSearchPage.schema>;
+
+/** A row of a check search: the check with the names of its assessee, assessor, skill and session. */
+export const CheckSearchRow = {
+    schema: SkillCheck.schema.extend({
+        assessee: PersonRef.schema,
+        assessor: PersonRef.schema.nullable(),
+        skill: SkillRef.schema,
+        session: z.object({ id: SkillCheckSessionId.schema, name: z.string() }).nullable(),
+    }),
+} as const;
+
+export type CheckSearchRow = z.infer<typeof CheckSearchRow.schema>;
+
+/** A page of check search rows, and how many checks match the filters across every page. */
+export const CheckSearchResult = {
+    schema: z.object({
+        rows: z.array(CheckSearchRow.schema),
+        total: z.int().min(0),
+    }),
+} as const;
+
+export type CheckSearchResult = z.infer<typeof CheckSearchResult.schema>;
 
 /**
  * How far `listSessionChecks`' cursor lags the server's clock, in milliseconds. A check recorded

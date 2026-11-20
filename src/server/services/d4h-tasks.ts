@@ -8,6 +8,7 @@ import "server-only";
 import { diffObject } from "@/lib/diff";
 import { ConflictError, NotFoundError } from "@/lib/errors";
 import { D4HTask, D4HTaskId, type D4HRetireTaskPayload } from "@/lib/schemas/d4h-task";
+import type { FormInstanceId } from "@/lib/schemas/form-instance";
 import { isPrismaRecordNotFound } from "@/server/prisma-errors";
 
 import type { OrgServiceContext } from "./service-context";
@@ -99,6 +100,25 @@ export async function listForItem(
             d4hTeamId: args.d4hTeamId,
             resourceType: "Equipment",
             resourceId: args.itemId,
+        },
+        orderBy: { requestedAt: "asc" },
+    });
+
+    return records.map(D4HTask.fromRecord);
+}
+
+/**
+ * The tasks a form instance queued (e.g. a Return Items form's retire tasks), oldest first, in
+ * any status. Reads AVUT records only; the caller checks it may see the instance.
+ */
+export async function listForFormInstance(
+    ctx: OrgServiceContext,
+    args: { formInstanceId: FormInstanceId },
+): Promise<D4HTask[]> {
+    const records = await ctx.prisma.d4HTask.findMany({
+        where: {
+            organizationId: ctx.organizationId,
+            formInstanceId: args.formInstanceId,
         },
         orderBy: { requestedAt: "asc" },
     });

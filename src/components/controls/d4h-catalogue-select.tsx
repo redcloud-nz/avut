@@ -149,7 +149,7 @@ export function D4HCatalogueSelect<T extends CatalogueOptionRecord>({
 function OtherOwnerMarker({ label }: { label: string }) {
     return (
         <span title={label} className="inline-flex">
-            <AlertWarningIcon className="size-3.5 text-amber-600 dark:text-amber-500" />
+            <AlertWarningIcon className="size-3.5 text-warning-foreground" />
             <span className="sr-only">{label}</span>
         </span>
     );

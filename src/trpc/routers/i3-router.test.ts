@@ -45,6 +45,7 @@ vi.mock("@/server/d4h-access-token", () => ({
         id: "token-1",
         serverCode: "ap",
         token: "secret",
+        access: "ReadWrite",
     })),
     toD4HCredentialRef: vi.fn(() => ({ credentialId: "token-1" })),
 }));
@@ -107,7 +108,6 @@ describe("i3Router.getTemplate", () => {
         return i3Router.createCaller(
             createAuthenticatedMockContext({
                 user: { id: T.user },
-                // `organizationProcedure` always folds in `organization: ["view"]`.
                 permissions: { i3Template: ["view"], organization: ["view"] },
                 prisma: db,
             }),
@@ -604,7 +604,7 @@ describe("i3Router.returnItem", () => {
                 status: "Open",
                 payload: {
                     reason: "Returned To Cache",
-                    note: "Returned via AVUT, received by Receiver. Strap frayed.",
+                    note: "Returned via AVUT, recorded by Receiver. Strap frayed.",
                 },
                 formInstanceId: null,
             },

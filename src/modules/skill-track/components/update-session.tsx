@@ -33,16 +33,24 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
+import type { TeamRef } from "@/lib/schemas/team";
 import { sessionFormState } from "@/lib/session-timing";
 import { trpc } from "@/trpc/client";
 
+import { SkillTrack_SessionTeamSelect } from "./session-team-select";
 import {
+    NO_SESSION_TEAM,
     parseSessionDialog,
     sessionDialogSchema,
     SkillTrack_SessionWhenPicker,
+    withSessionEndTime,
 } from "./session-when-picker";
 
-export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillCheckSession }) {
+export function SkillsModule_UpdateSession_Dialog({
+    session,
+}: {
+    session: SkillCheckSession & { team: TeamRef | null };
+}) {
     const organization = useOrganization();
     const router = useRouter();
 
@@ -51,15 +59,18 @@ export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillC
 
     const orgZone = organization.settings.general.timeZone;
 
-    // `sessionFormState` snaps a legacy off-quarter start or end, which `inputSchema` refuses, so
-    // the dialog shows the value that will be saved.
+    // `sessionFormState` snaps a legacy off-quarter start or end, which `inputSchema` refuses, and
+    // `withSessionEndTime` gives a timed session stored with no end one, so the dialog shows the
+    // value that will be saved.
     const formValues = () => ({
         name: session.name,
         notes: session.notes,
-        when: sessionFormState(session.startsAt, session.endsAt, orgZone),
+        teamId: session.teamId ?? NO_SESSION_TEAM,
+        when: withSessionEndTime(sessionFormState(session.startsAt, session.endsAt, orgZone)),
     });
 
     const formId = useId();
+    const teamFieldId = useId();
     const form = useForm({
         resolver: zodResolver(sessionDialogSchema),
         defaultValues: formValues(),
@@ -141,6 +152,25 @@ export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillC
                                     <Field data-invalid={fieldState.invalid}>
                                         <FieldLabel>Name</FieldLabel>
                                         <Input {...field} placeholder="Session Name" />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="teamId"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor={teamFieldId}>Team</FieldLabel>
+                                        <SkillTrack_SessionTeamSelect
+                                            id={teamFieldId}
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            currentTeam={session.team}
+                                            invalid={fieldState.invalid}
+                                        />
                                         {fieldState.error && (
                                             <FieldError errors={[fieldState.error]} />
                                         )}

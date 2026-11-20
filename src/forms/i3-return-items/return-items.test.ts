@@ -22,6 +22,7 @@ const accessToken = {
     id: "token-1",
     serverCode: "ap",
     token: "secret",
+    access: "ReadWrite",
 } as unknown as D4HAccessToken_ServerOnly;
 
 /** A single-item GET result (as `fetchD4HEquipmentItem` returns it, already parsed). */
@@ -120,7 +121,7 @@ describe("returnItems", () => {
                 resourceId: 1,
                 payload: {
                     reason: "Returned To Cache",
-                    note: "Returned via AVUT, received by Receiver. Strap frayed.",
+                    note: "Returned via AVUT, recorded by Receiver. Strap frayed.",
                 },
                 formInstanceId: null,
             },
@@ -155,7 +156,7 @@ describe("returnItems", () => {
         const [task] = await db.d4HTask.findMany();
         expect(task.payload).toEqual({
             reason: "Returned To Cache",
-            note: "Returned via AVUT, received by Receiver.",
+            note: "Returned via AVUT, recorded by Receiver.",
         });
     });
 

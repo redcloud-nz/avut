@@ -109,9 +109,9 @@ function EmailPasswordSignIn_Form({ email, redirectTo }: { email?: string; redir
                     control={form.control}
                     render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
-                            <FieldLabel htmlFor="sign-in-email">Email Address</FieldLabel>
+                            <FieldLabel htmlFor={`${formId}-email`}>Email Address</FieldLabel>
                             <Input
-                                id="sign-in-email"
+                                id={`${formId}-email`}
                                 type="email"
                                 placeholder="you@example.com"
                                 aria-invalid={fieldState.invalid}
@@ -127,7 +127,7 @@ function EmailPasswordSignIn_Form({ email, redirectTo }: { email?: string; redir
                     render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
                             <div className="flex items-center">
-                                <FieldLabel htmlFor="sign-in-password">Password</FieldLabel>
+                                <FieldLabel htmlFor={`${formId}-password`}>Password</FieldLabel>
                                 <Link
                                     href="/auth/forgot-password"
                                     className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
@@ -137,7 +137,7 @@ function EmailPasswordSignIn_Form({ email, redirectTo }: { email?: string; redir
                             </div>
 
                             <PasswordInput
-                                id="sign-in-password"
+                                id={`${formId}-password`}
                                 autoComplete="current-password"
                                 placeholder="Your password"
                                 aria-invalid={fieldState.invalid}
@@ -153,12 +153,12 @@ function EmailPasswordSignIn_Form({ email, redirectTo }: { email?: string; redir
                     render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid} orientation="horizontal">
                             <Checkbox
-                                id="sign-in-rememberMe"
+                                id={`${formId}-rememberMe`}
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
                                 aria-invalid={fieldState.invalid}
                             />
-                            <FieldLabel htmlFor="sign-in-rememberMe">Remember me</FieldLabel>
+                            <FieldLabel htmlFor={`${formId}-rememberMe`}>Remember me</FieldLabel>
                             {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                         </Field>
                     )}

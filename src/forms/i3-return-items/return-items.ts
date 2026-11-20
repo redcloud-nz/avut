@@ -16,14 +16,14 @@ import { createLogBatch, formatActorLabel } from "@/server/log-entry";
 import * as D4HTasks from "@/server/services/d4h-tasks";
 import { withBatch, type OrgServiceContext } from "@/server/services/service-context";
 
-import { I3ReturnedItem } from "./schema";
+import { I3ReturnedItem, I3ReturnedItemSummary } from "./schema";
 
 /** The reason recorded on each retire task a Return queues. Free text shown to whoever applies it. */
 const RETIRE_REASON = "Returned To Cache";
 
 /**
  * What `returnItems` needs from its caller: an org service context plus the signed-in user, who
- * is recorded as having received the items. A form pipeline stage passes its own `logger`.
+ * goes on each task as "recorded by". A form pipeline stage passes its own `logger`.
  */
 export type ReturnItemsContext = OrgServiceContext & {
     auth: { user: { name: string; email: string } };
@@ -44,13 +44,13 @@ export interface ReturnItemsResult {
     returned: number;
     /** One line per item that wasn't returned, e.g. `#1234 Helmet: already retired`. */
     failures: string[];
-    /** The returned items, labelled from D4H. */
-    returnedItems: I3ReturnedItem[];
+    /** The returned items, labelled and described from D4H. */
+    returnedItems: I3ReturnedItemSummary[];
 }
 
 /**
  * Return items held by a D4H member: for each item, check it and queue a task to retire it by hand
- * in D4H, noting who received it. Shared by the Return form's processor and the item page's quick
+ * in D4H, noting who recorded it. Shared by the Return form's processor and the item page's quick
  * Return.
  *
  * A Return makes no write to D4H itself. Teams differ in what they do with a returned item (some
@@ -74,9 +74,9 @@ export async function returnItems(
     );
 
     // Carried on each retire task for whoever applies it. A Return makes no D4H write, so the
-    // task is the only place who received the item and the comments are kept.
+    // task is the only place who recorded the Return and the comments are kept.
     const note =
-        `Returned via AVUT, received by ${ctx.auth.user.name}.` +
+        `Returned via AVUT, recorded by ${ctx.auth.user.name}.` +
         (comments.trim() ? ` ${comments.trim()}` : "");
 
     // The batch opens on the first task queued, so a Return where every item fails leaves no
@@ -97,7 +97,7 @@ export async function returnItems(
         return batchCtx;
     }
 
-    const returnedItems: I3ReturnedItem[] = [];
+    const returnedItems: I3ReturnedItemSummary[] = [];
     const failures: string[] = [];
     for (const item of items) {
         // The caller's label stands in only until the item is fetched; from then on the label
@@ -133,7 +133,14 @@ export async function returnItems(
                 formInstanceId,
             });
 
-            returnedItems.push({ ...item, ref: before.ref, kindTitle: before.kind.title });
+            returnedItems.push({
+                ...item,
+                ref: before.ref,
+                kindTitle: before.kind.title,
+                brandTitle: before.brand.title,
+                modelTitle: before.model?.title,
+                serial: before.serial,
+            });
         } catch (err) {
             logger.error(`Failed to return ${label}`, err);
             failures.push(`${label}: ${err instanceof Error ? err.message : String(err)}`);

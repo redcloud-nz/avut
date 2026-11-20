@@ -9,12 +9,13 @@ import { I3IssueItemsForm } from "@/lib/forms";
 import { D4HI3Module_IssueItems_FormInstanceList } from "@/modules/d4h-i3/components/issue-items-form-list";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { isOrganizationModuleUsable } from "@/server/module-flags";
-import { HydrateClient, prefetch, trpc } from "@/trpc/server";
+import { HydrateClient, prefetch, prefetchInfinite, trpc } from "@/trpc/server";
 
 export default async function D4HI3Module_Issue_FormInstanceList_Page(
     props: PageProps<"/orgs/[slug]/d4h-i3/forms/issue-items">,
 ) {
     const { slug } = await props.params;
+    const { tab } = await props.searchParams;
     if (!(await isOrganizationModuleUsable(slug, "d4h-i3"))) return null;
     const organization = await getOrganizationBySlug(slug);
 
@@ -24,6 +25,16 @@ export default async function D4HI3Module_Issue_FormInstanceList_Page(
             formKey: I3IssueItemsForm.formKey,
         }),
     );
+    // Only for the tab that shows it. Same input as the Submitted list's client query (no
+    // `limit`), so the keys match.
+    if (tab === "submitted") {
+        prefetchInfinite(
+            trpc.forms.listSubmittedFormInstances.infiniteQueryOptions(
+                { organizationId: organization.id, formKey: I3IssueItemsForm.formKey },
+                { getNextPageParam: (page) => page.nextCursor ?? undefined },
+            ),
+        );
+    }
 
     return (
         <HydrateClient>

@@ -19,6 +19,14 @@ const booleanOptions = [
     { value: false, label: "Off" },
 ];
 
+export const d4hNagModuleFlag = flag<boolean>({
+    key: "d4h-nag-module",
+    adapter: vercelAdapter(),
+    defaultValue: false,
+    description: "Is the D4H Attendance Reminders module available.",
+    options: booleanOptions,
+});
+
 export const i3ModuleFlag = flag<boolean>({
     key: "i3-module",
     adapter: vercelAdapter(),

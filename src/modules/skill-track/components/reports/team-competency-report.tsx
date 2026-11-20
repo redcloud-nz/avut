@@ -41,6 +41,7 @@ import {
 import { SkillTrack_ScopeDialogMenuItem } from "@/modules/skill-track/components/reports/scope-dialog-menu-item";
 import { useSyntheticCompetencies } from "@/modules/skill-track/components/reports/synthetic-competency-data";
 import { SkillTrack_TeamScopeDialog } from "@/modules/skill-track/components/reports/team-scope-dialog";
+import { skillSectionLabel } from "@/modules/skill-track/lib/skill-sections";
 import { trpc } from "@/trpc/client";
 
 const STATUS_ORDER = ["current", "expired", "not-competent", "not-assessed"] as const;
@@ -174,7 +175,7 @@ function TeamCompetencyReportView({
                     return [
                         {
                             id: skillGroup.id,
-                            label: `${skillPackage.name} · ${skillGroup.name}`,
+                            label: skillSectionLabel(skillPackage, skillGroup),
                             rows: groupRows,
                         },
                     ];

@@ -139,9 +139,9 @@ export function SystemAdmin_CreateOrganization_Dialog() {
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="organization-name">Name</FieldLabel>
+                                        <FieldLabel htmlFor={`${formId}-name`}>Name</FieldLabel>
                                         <Input
-                                            id="organization-name"
+                                            id={`${formId}-name`}
                                             autoFocus
                                             autoComplete="off"
                                             aria-invalid={fieldState.invalid}
@@ -164,9 +164,9 @@ export function SystemAdmin_CreateOrganization_Dialog() {
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="organization-slug">Slug</FieldLabel>
+                                        <FieldLabel htmlFor={`${formId}-slug`}>Slug</FieldLabel>
                                         <Input
-                                            id="organization-slug"
+                                            id={`${formId}-slug`}
                                             autoComplete="off"
                                             aria-invalid={fieldState.invalid}
                                             {...field}
@@ -190,14 +190,14 @@ export function SystemAdmin_CreateOrganization_Dialog() {
                                 render={({ field }) => (
                                     <Field orientation="horizontal">
                                         <Checkbox
-                                            id="organization-add-self-as-owner"
+                                            id={`${formId}-add-self-as-owner`}
                                             checked={field.value}
                                             onCheckedChange={(checked) =>
                                                 field.onChange(checked === true)
                                             }
                                         />
                                         <FieldContent>
-                                            <FieldLabel htmlFor="organization-add-self-as-owner">
+                                            <FieldLabel htmlFor={`${formId}-add-self-as-owner`}>
                                                 Add me as owner
                                             </FieldLabel>
                                             <FieldDescription>

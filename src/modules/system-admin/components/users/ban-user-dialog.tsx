@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
@@ -46,6 +46,7 @@ export function SystemAdmin_BanUser_Dialog({
     action: "ban" | "unban";
 }) {
     const ban = action === "ban";
+    const idPrefix = useId();
     const [reason, setReason] = useState("");
 
     function onError(error: { message: string }) {
@@ -109,9 +110,9 @@ export function SystemAdmin_BanUser_Dialog({
                 <DialogBody>
                     {ban && (
                         <Field>
-                            <FieldLabel htmlFor="ban-user-reason">Reason</FieldLabel>
+                            <FieldLabel htmlFor={`${idPrefix}-reason`}>Reason</FieldLabel>
                             <Textarea
-                                id="ban-user-reason"
+                                id={`${idPrefix}-reason`}
                                 value={reason}
                                 onChange={(e) => setReason(e.target.value)}
                             />

@@ -43,6 +43,7 @@ import {
 } from "@/modules/skill-track/components/reports/report-cell-popovers";
 import { SkillTrack_ScopeDialogMenuItem } from "@/modules/skill-track/components/reports/scope-dialog-menu-item";
 import { useSyntheticCompetencies } from "@/modules/skill-track/components/reports/synthetic-competency-data";
+import { skillSectionLabel } from "@/modules/skill-track/lib/skill-sections";
 import { trpc } from "@/trpc/client";
 
 export function SkillTrack_PersonCompetencyReport({
@@ -158,7 +159,7 @@ function PersonCompetencyReportView({
                     return [
                         {
                             id: skillGroup.id,
-                            label: `${skillPackage.name} · ${skillGroup.name}`,
+                            label: skillSectionLabel(skillPackage, skillGroup),
                             rows: groupRows,
                         },
                     ];

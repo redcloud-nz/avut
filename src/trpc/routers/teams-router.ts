@@ -7,21 +7,25 @@ import * as z from "zod";
 
 import { TRPCError } from "@trpc/server";
 
+import type { PrismaClient } from "@/generated/prisma/client";
 import { diffObject } from "@/lib/diff";
 import { ConflictError } from "@/lib/errors";
 import { BatchUpdatePlanId } from "@/lib/schemas/batch-update-plan";
 import { D4HSyncItemOutcome, D4HSyncPlan } from "@/lib/schemas/d4h-sync-plan";
 import { OrganizationD4HData } from "@/lib/schemas/organization-d4h";
 import { PersonData, PersonId, PersonRef } from "@/lib/schemas/person";
-import { TeamData, TeamId, TeamRef } from "@/lib/schemas/team";
+import { TeamData, TeamId, TeamRef, TeamSlug } from "@/lib/schemas/team";
 import { TeamMembershipData, TeamMembershipId } from "@/lib/schemas/team-membership";
+import { revalidateTeam } from "@/server/cache/team-revalidate";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import { assertD4HLinkAllowed } from "@/server/d4h-link-invariants";
 import { createLogBatch, formatActorLabel } from "@/server/log-entry";
+import { isUniqueViolation } from "@/server/prisma-errors";
 import * as BatchUpdatePlans from "@/server/services/batch-update-plans";
 import * as D4HTeamSync from "@/server/services/d4h-team-sync";
 import * as Teams from "@/server/services/teams";
 
+import { FieldConflictError } from "../errors";
 import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
 
@@ -29,18 +33,61 @@ import { Messages } from "../messages";
  * A team-membership row as returned by `listTeamMemberships`, `getTeamMembership` and
  * `getTeamMembershipById` — the membership plus a thin `team` / `person` ref. The
  * `d4h` sub-object (with `d4hRef` / `d4hRoleId`) rides along from
- * `TeamMembershipData.schema`.
+ * `TeamMembershipData.schema`. The person's `status` is there so a reader can leave out
+ * archived or binned people whose membership is still Active (the team dashboard's roster).
  */
 const teamMembershipRowSchema = TeamMembershipData.schema.extend({
     team: TeamData.schema.pick({ id: true, name: true }),
-    person: PersonData.schema.pick({ id: true, name: true, email: true }),
+    person: PersonData.schema.pick({ id: true, name: true, email: true, status: true }),
 });
 
 const teamMembershipRowInclude = {
     d4h: true,
     team: { select: { id: true, name: true } },
-    person: { select: { id: true, name: true, email: true } },
+    person: { select: { id: true, name: true, email: true, status: true } },
 } as const;
+
+/**
+ * A taken team slug. Slugs are unique across all orgs, so the message deliberately names neither
+ * the team holding it nor that team's org.
+ */
+function slugConflictError(slug: string): FieldConflictError {
+    return new FieldConflictError("slug", `The slug "${slug}" is already taken.`);
+}
+
+/**
+ * Throw a slug conflict if `slug` is held by a team other than `teamId`, in any org. A null slug
+ * never conflicts.
+ */
+async function assertSlugAvailable(
+    prisma: PrismaClient,
+    slug: string | null,
+    teamId: TeamId,
+): Promise<void> {
+    if (slug === null) return;
+    const holder = await Teams.getBySlug(prisma, slug);
+    if (holder && holder.id !== teamId) throw slugConflictError(slug);
+}
+
+/**
+ * Refuse a reserved slug, unless it's the team's stored slug: `modifiableSchema` checks only the
+ * slug's shape, so a team whose slug has since become reserved still takes an edit that resends it.
+ */
+function assertSlugAllowed(slug: string | null, storedSlug: string | null): void {
+    if (slug !== null && slug !== storedSlug && TeamSlug.isReserved(slug)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: TeamSlug.reservedMessage });
+    }
+}
+
+/**
+ * Map a unique violation from a team write to the slug conflict the pre-check would have thrown,
+ * for when a concurrent write took the slug in between. The team's only other unique column is
+ * its freshly generated id, so a P2002 here is the slug.
+ */
+function mapSlugRace(error: unknown, slug: string | null): never {
+    if (slug !== null && isUniqueViolation(error)) throw slugConflictError(slug);
+    throw error;
+}
 
 export const teamsRouter = createTrpcRouter({
     /**
@@ -52,7 +99,9 @@ export const teamsRouter = createTrpcRouter({
         .input(z.object({ teamId: TeamId.schema }))
         .output(z.object({ updated: TeamData.schema }))
         .mutation(async ({ ctx, input: { teamId } }) => {
-            return { updated: await Teams.archive(ctx, teamId) };
+            const updated = await Teams.archive(ctx, teamId);
+            await revalidateTeam(updated.slug);
+            return { updated };
         }),
 
     /**
@@ -116,29 +165,38 @@ export const teamsRouter = createTrpcRouter({
         .mutation(async ({ ctx, input: { organizationId, create } }) => {
             const teamId = TeamId.create();
 
+            assertSlugAllowed(create.slug, null);
+            await assertSlugAvailable(ctx.prisma, create.slug, teamId);
+
             const changes = diffObject({ tags: [], properties: {} }, create);
 
-            const [createdTeam] = await ctx.prisma.$transaction([
-                ctx.prisma.team.create({
-                    data: {
-                        id: teamId,
-                        organizationId,
-                        name: create.name,
-                        description: create.description,
-                        tags: create.tags,
-                        properties: create.properties,
-                    },
-                    include: {
-                        d4h: true,
-                    },
-                }),
-                ctx.logEvent({
-                    action: "Create",
-                    objectType: "Team",
-                    objectId: teamId,
-                    changes,
-                }),
-            ]);
+            const [createdTeam] = await ctx.prisma
+                .$transaction([
+                    ctx.prisma.team.create({
+                        data: {
+                            id: teamId,
+                            organizationId,
+                            name: create.name,
+                            slug: create.slug,
+                            description: create.description,
+                            tags: create.tags,
+                            properties: create.properties,
+                        },
+                        include: {
+                            d4h: true,
+                        },
+                    }),
+                    ctx.logEvent({
+                        action: "Create",
+                        objectType: "Team",
+                        objectId: teamId,
+                        changes,
+                    }),
+                ])
+                .catch((error: unknown) => mapSlugRace(error, create.slug));
+            // A slug can be freed without its cached team being cleared (an auto-purge, say), so
+            // clear the new slug's entry here rather than at every path that frees one.
+            await revalidateTeam(createdTeam.slug);
 
             return { created: TeamData.fromRecord(createdTeam) };
         }),
@@ -225,7 +283,8 @@ export const teamsRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ input: { teamId }, ctx }) => {
-            await Teams.deleteRecord(ctx, teamId);
+            const deleted = await Teams.deleteRecord(ctx, teamId);
+            await revalidateTeam(deleted.slug);
         }),
 
     /**
@@ -270,23 +329,34 @@ export const teamsRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ ctx, input: { planId, skipItemIds } }) => {
-            return D4HTeamSync.executeD4HSyncPlan(ctx, {
-                planId,
-                skipItemIds,
-                // Opened only once the plan is claimed, so a refused execute leaves no batch.
-                openBatch: async (team) => {
-                    const batch = await createLogBatch(
-                        {
-                            operationKey: "d4h-team-sync",
-                            userId: ctx.userId,
-                            actorLabel: formatActorLabel(ctx.auth.user.name, ctx.auth.user.email),
-                            description: `Synchronised team "${team.name}" from its linked D4H team`,
-                        },
-                        ctx.prisma,
-                    );
-                    return batch.id;
-                },
-            });
+            // Set once the plan is claimed (`openBatch`). From then on items may write the team's
+            // `Team_D4H` row (metadata, `lastSyncedAt`), even if a later item fails.
+            let claimedTeamSlug: string | null = null;
+            try {
+                return await D4HTeamSync.executeD4HSyncPlan(ctx, {
+                    planId,
+                    skipItemIds,
+                    // Opened only once the plan is claimed, so a refused execute leaves no batch.
+                    openBatch: async (team) => {
+                        claimedTeamSlug = team.slug;
+                        const batch = await createLogBatch(
+                            {
+                                operationKey: "d4h-team-sync",
+                                userId: ctx.userId,
+                                actorLabel: formatActorLabel(
+                                    ctx.auth.user.name,
+                                    ctx.auth.user.email,
+                                ),
+                                description: `Synchronised team "${team.name}" from its linked D4H team`,
+                            },
+                            ctx.prisma,
+                        );
+                        return batch.id;
+                    },
+                });
+            } finally {
+                await revalidateTeam(claimedTeamSlug);
+            }
         }),
 
     /**
@@ -295,10 +365,7 @@ export const teamsRouter = createTrpcRouter({
      * organisation page's D4H card. See docs/specs/2026-09-10-d4h-linking.md §3.1.
      * `allowSystemAdmin` lets the system-admin settings page read the link too.
      */
-    getOrganizationD4H: organizationProcedure(
-        { organization: ["view"] },
-        { allowSystemAdmin: true },
-    )
+    getOrganizationD4H: organizationProcedure({}, { allowSystemAdmin: true })
         .output(OrganizationD4HData.schema.nullable())
         .query(async ({ ctx, input: { organizationId } }) => {
             const [orgD4H, linkedTeamCount] = await Promise.all([
@@ -484,6 +551,7 @@ export const teamsRouter = createTrpcRouter({
                     batchId: batch.id,
                 }),
             ]);
+            await revalidateTeam(team.slug);
 
             return { updated: await Teams.requireById(ctx, teamId) };
         }),
@@ -556,7 +624,9 @@ export const teamsRouter = createTrpcRouter({
         .input(z.object({ teamId: TeamId.schema }))
         .output(z.object({ updated: TeamData.schema }))
         .mutation(async ({ ctx, input: { teamId } }) => {
-            return { updated: await Teams.recover(ctx, teamId) };
+            const updated = await Teams.recover(ctx, teamId);
+            await revalidateTeam(updated.slug);
+            return { updated };
         }),
 
     /**
@@ -582,7 +652,9 @@ export const teamsRouter = createTrpcRouter({
         .input(z.object({ teamId: TeamId.schema }))
         .output(z.object({ updated: TeamData.schema }))
         .mutation(async ({ ctx, input: { teamId } }) => {
-            return { updated: await Teams.restore(ctx, teamId) };
+            const updated = await Teams.restore(ctx, teamId);
+            await revalidateTeam(updated.slug);
+            return { updated };
         }),
 
     /**
@@ -694,6 +766,7 @@ export const teamsRouter = createTrpcRouter({
                     description: "Unlinked from D4H.",
                 }),
             ]);
+            await revalidateTeam(team.slug);
         }),
 
     /**
@@ -718,27 +791,46 @@ export const teamsRouter = createTrpcRouter({
         .mutation(async ({ ctx, input: { teamId, update } }) => {
             const existingTeam = await Teams.requireById(ctx, teamId);
 
-            const diff = diffObject(TeamData.modifiableSchema.parse(existingTeam), update);
+            // Picked off the stored team rather than re-parsed with `modifiableSchema`, which would
+            // re-validate the stored slug and throw if it has since become a reserved word.
+            const before = {
+                name: existingTeam.name,
+                slug: existingTeam.slug,
+                description: existingTeam.description,
+                tags: existingTeam.tags,
+                properties: existingTeam.properties,
+            };
+            const diff = diffObject(before, update);
 
             if (diff.length == 0) return { updated: existingTeam }; // No changes
 
-            const [updated] = await ctx.prisma.$transaction([
-                // Apply the changes
-                ctx.prisma.team.update({
-                    where: { organizationId: ctx.organizationId, id: teamId },
-                    data: { ...update },
-                    include: {
-                        d4h: true,
-                    },
-                }),
-                // Record an event for the update
-                ctx.logEvent({
-                    action: "Update",
-                    objectType: "Team",
-                    objectId: teamId,
-                    changes: diff,
-                }),
-            ]);
+            assertSlugAllowed(update.slug, existingTeam.slug);
+            await assertSlugAvailable(ctx.prisma, update.slug, teamId);
+
+            const [updated] = await ctx.prisma
+                .$transaction([
+                    // Apply the changes
+                    ctx.prisma.team.update({
+                        where: { organizationId: ctx.organizationId, id: teamId },
+                        data: { ...update },
+                        include: {
+                            d4h: true,
+                        },
+                    }),
+                    // Record an event for the update
+                    ctx.logEvent({
+                        action: "Update",
+                        objectType: "Team",
+                        objectId: teamId,
+                        changes: diff,
+                    }),
+                ])
+                .catch((error: unknown) => mapSlugRace(error, update.slug));
+
+            // Both slugs: the old one's cached team is stale, and the new one may have cached a
+            // team that held it before.
+            await revalidateTeam(existingTeam.slug);
+            if (updated.slug !== existingTeam.slug) await revalidateTeam(updated.slug);
 
             return { updated: TeamData.fromRecord(updated) };
         }),

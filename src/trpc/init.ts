@@ -295,7 +295,11 @@ export type AuthenticatedOrganizationContext = AuthenticatedContext & {
 
 /**
  * An organization scoped procedure that checks for required permissions.
- * @param requiredPermissions The permissions required to access this procedure.
+ * @param requiredPermissions The permissions required to access this procedure, on top of
+ *   membership of the organization, which is always required. Nothing is added to them:
+ *   `organizationProcedure()` means "any member". `organization: ["view"]` means "can enter
+ *   the org scope", so ask for it only where that's the point, not as a membership check
+ *   (#523).
  * @param options.allowSystemAdmin When `true`, a site-wide administrator (`ctx.auth.user.role
  *   === "admin"`) is let through without an org-membership or permission check — the same
  *   access `systemAdminProcedure` grants, just from an org-scoped procedure. Membership is
@@ -308,14 +312,6 @@ export function organizationProcedure(
     options: { allowSystemAdmin?: boolean } = {},
 ) {
     const { allowSystemAdmin = false } = options;
-
-    // Ensure that the required organization permissions include at least 'organization:view'
-    requiredPermissions = {
-        ...requiredPermissions,
-        organization: requiredPermissions.organization?.includes("view")
-            ? requiredPermissions.organization
-            : [...(requiredPermissions.organization ?? []), "view"],
-    };
 
     return authenticatedProcedure
         .meta({ requiresOrganization: true, requiredPermissions, allowSystemAdmin })
@@ -335,33 +331,33 @@ export function organizationProcedure(
                 await opts.ctx.hasPermission(opts.input.organizationId, requiredPermissions);
             }
 
-            function logEvent(
-                options: LogEventOptions,
-                tx: Prisma.TransactionClient = opts.ctx.prisma,
-            ) {
-                const { actor, actorLabel } = resolveActor(opts.ctx.auth);
-
-                return recordLogEntry(
-                    {
-                        scope: "organization",
-                        organizationId: opts.input.organizationId,
-                        actor,
-                        actorLabel,
-                        ...options,
-                    },
-                    tx,
-                );
-            }
-
             return opts.next({
                 ctx: {
                     ...opts.ctx,
                     organizationId: opts.input.organizationId,
                     isSystemAdmin,
-                    logEvent,
+                    logEvent: organizationLogEvent(opts.ctx, opts.input.organizationId),
                 } satisfies AuthenticatedOrganizationContext,
             });
         });
+}
+
+/**
+ * The `logEvent` an org-scoped context carries: every entry lands in `organizationId`'s log,
+ * attributed to the calling user.
+ */
+function organizationLogEvent(
+    ctx: Pick<AuthenticatedContext, "auth" | "prisma">,
+    organizationId: OrganizationId,
+): AuthenticatedOrganizationContext["logEvent"] {
+    return function logEvent(options: LogEventOptions, tx: Prisma.TransactionClient = ctx.prisma) {
+        const { actor, actorLabel } = resolveActor(ctx.auth);
+
+        return recordLogEntry(
+            { scope: "organization", organizationId, actor, actorLabel, ...options },
+            tx,
+        );
+    };
 }
 
 /**

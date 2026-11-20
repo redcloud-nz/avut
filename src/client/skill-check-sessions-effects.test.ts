@@ -17,6 +17,7 @@ import {
     SkillCheckResultValue,
 } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId, type SkillCheckSession } from "@/lib/schemas/skill-check-session";
+import { TeamId } from "@/lib/schemas/team";
 import type { SessionChecksData } from "@/lib/session-checks-sync";
 import { trpc } from "@/trpc/client";
 import type { MutationEffect } from "@/trpc/mutation-effector";
@@ -337,11 +338,16 @@ describe("skillCheckSessionsEffects (session check writes)", () => {
             sessionId: T.session,
         });
         const orgKey = trpc.skillChecks.listSkillChecks.queryKey({ organizationId: T.org });
-        const recentKey = trpc.skillChecks.listRecentChecks.queryKey({ organizationId: T.org });
+        const searchKey = trpc.skillChecks.searchChecks.queryKey({
+            organizationId: T.org,
+            filters: {},
+            page: 1,
+            pageSize: 20,
+        });
         const otherOrgKey = trpc.skillChecks.listSkillChecks.queryKey({
             organizationId: OrganizationId.create(),
         });
-        for (const key of [ownKey, sessionKey, orgKey, recentKey, otherOrgKey]) {
+        for (const key of [ownKey, sessionKey, orgKey, searchKey, otherOrgKey]) {
             queryClient.setQueryData(key, []);
         }
 
@@ -355,7 +361,7 @@ describe("skillCheckSessionsEffects (session check writes)", () => {
             .map((query) => query.queryKey);
 
         expect(matched).toHaveLength(3);
-        expect(matched).toEqual(expect.arrayContaining([sessionKey, orgKey, recentKey]));
+        expect(matched).toEqual(expect.arrayContaining([sessionKey, orgKey, searchKey]));
     });
 });
 
@@ -375,6 +381,7 @@ describe("skillCheckSessionsEffects (session status changes)", () => {
         startsAt: new Date(0).toISOString(),
         endsAt: null,
         notes: "",
+        teamId: null,
         status: "Draft",
         createdAt: new Date(0).toISOString(),
         updatedAt: new Date(0).toISOString(),
@@ -399,7 +406,12 @@ describe("skillCheckSessionsEffects (session status changes)", () => {
             }),
             sessions: trpc.skillCheckSessions.listSessions.queryKey({ organizationId: T.org }),
             matrix: trpc.skillChecks.getCompetencyMatrix.queryKey({ organizationId: T.org }),
-            recentChecks: trpc.skillChecks.listRecentChecks.queryKey({ organizationId: T.org }),
+            searchChecks: trpc.skillChecks.searchChecks.queryKey({
+                organizationId: T.org,
+                filters: {},
+                page: 1,
+                pageSize: 20,
+            }),
             otherOrgSessions: trpc.skillCheckSessions.listSessions.queryKey({
                 organizationId: T.otherOrg,
             }),
@@ -506,12 +518,34 @@ describe("skillCheckSessionsEffects (session status changes)", () => {
                 startsAt: updated.startsAt,
                 endsAt: updated.endsAt,
                 notes: updated.notes,
+                teamId: updated.teamId,
             },
         };
 
+        it("replaces the cached session's team when the team changes", () => {
+            const rescue = { id: TeamId.create(), name: "Rescue" };
+            const swift = { id: TeamId.create(), name: "Swiftwater" };
+            const effects = skillCheckSessionsEffects.updateSession(
+                { ...vars, update: { ...vars.update, teamId: swift.id } },
+                { updated: { ...updated, teamId: swift.id, team: swift }, startChanged: false },
+            );
+            const old = { ...updated, teamId: rescue.id, team: rescue, assessors: [] };
+
+            expect(
+                applyWriteTo(
+                    effects,
+                    trpc.skillCheckSessions.getSession.queryKey({
+                        organizationId: T.org,
+                        skillCheckSessionId: T.session,
+                    }),
+                    old,
+                ),
+            ).toEqual({ ...old, teamId: swift.id, team: swift });
+        });
+
         it("invalidates only the sessions list when the start is unchanged", () => {
             const effects = skillCheckSessionsEffects.updateSession(vars, {
-                updated,
+                updated: { ...updated, team: null },
                 startChanged: false,
             });
 
@@ -520,14 +554,14 @@ describe("skillCheckSessionsEffects (session status changes)", () => {
 
         it("also invalidates the checkedAt readers when the start changed", () => {
             const effects = skillCheckSessionsEffects.updateSession(vars, {
-                updated,
+                updated: { ...updated, team: null },
                 startChanged: true,
             });
 
             expect(invalidatedKeys(effects)).toEqual([
                 "matrix",
                 "ownSessionChecks",
-                "recentChecks",
+                "searchChecks",
                 "sessionChecks",
                 "sessions",
             ]);
@@ -536,7 +570,7 @@ describe("skillCheckSessionsEffects (session status changes)", () => {
         it("re-stamps checkedAt on the session cache's rows only when the start changed", () => {
             // A time-only move: the server re-stamps on any `startsAt` change.
             const newStart = new Date(15 * 60_000).toISOString();
-            const moved = { ...updated, startsAt: newStart };
+            const moved = { ...updated, startsAt: newStart, team: null };
             const row: SessionCheck = {
                 id: SkillCheckId.create(),
                 organizationId: T.org,
@@ -567,7 +601,7 @@ describe("skillCheckSessionsEffects (session status changes)", () => {
             expect(applySessionChecksWrite(effects, undefined)).toBeUndefined();
 
             const unchanged = skillCheckSessionsEffects.updateSession(vars, {
-                updated,
+                updated: { ...updated, team: null },
                 startChanged: false,
             });
             expect(

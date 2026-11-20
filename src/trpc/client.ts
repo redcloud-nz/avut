@@ -6,10 +6,9 @@
 
 import superjson from "superjson";
 
-import { createTRPCClient, httpBatchLink } from "@trpc/client";
+import { createTRPCClient, httpBatchLink, TRPCClientError, type TRPCLink } from "@trpc/client";
+import { observable } from "@trpc/server/observable";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
-
-import { env } from "@/lib/env";
 
 import { getQueryClient } from "./query-client";
 import type { AppRouter, RouterInput, RouterOutput } from "./routers/_app";
@@ -17,22 +16,35 @@ import type { AppRouter, RouterInput, RouterOutput } from "./routers/_app";
 // Re-exported for the many client components that import it from here.
 export { getQueryClient };
 
-function getUrl() {
-    const base = (() => {
-        if (typeof window !== "undefined") return "";
-        else if (env.VERCEL_URL) return `https://${env.VERCEL_URL}`;
-        else return `http://localhost:${env.PORT ?? 3000}`;
-    })();
-
-    return `${base}/trpc`;
-}
+/**
+ * The link used while a client component renders on the server: it fails every call at once.
+ *
+ * A call made here would go out over HTTP without the request's cookies, so an authenticated
+ * procedure could only answer `UNAUTHORIZED`. It happens when a `useSuspenseQuery` finds nothing
+ * hydrated under its key: the page didn't `prefetch` it, or the prefetch failed before
+ * `HydrateClient` dehydrated (React Query dehydrates pending and settled queries, not errored
+ * ones). Failing here ends in the same place as the 401 did — React abandons the server render
+ * of that boundary and the browser fetches with its session — without the round trip or the
+ * misleading auth error in the server log.
+ */
+const serverRenderLink: TRPCLink<AppRouter> =
+    () =>
+    ({ op }) =>
+        observable((observer) => {
+            observer.error(
+                TRPCClientError.from(
+                    new Error(
+                        `${op.path} was called during the server render, where nothing was hydrated for it: either no server prefetch, or one that failed. The browser fetches it instead.`,
+                    ),
+                ),
+            );
+        });
 
 export const trpcClient = createTRPCClient<AppRouter>({
     links: [
-        httpBatchLink({
-            transformer: superjson,
-            url: getUrl(),
-        }),
+        typeof window === "undefined"
+            ? serverRenderLink
+            : httpBatchLink({ transformer: superjson, url: "/trpc" }),
     ],
 });
 

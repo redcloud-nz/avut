@@ -20,8 +20,10 @@ export const userEffects = createEffects<"user">()({
         invalidate(trpc.invitations.getLanding.queryFilter({ invitationId: vars.invitationId })),
     ],
 
+    // Leaving also drops the caller's team grants in that org, which the switcher's Teams group lists.
     leaveOrganization: () => [
         invalidate(trpc.user.listMemberships.queryFilter()),
+        invalidate(trpc.user.listTeamGrants.queryFilter()),
         invalidate(trpc.user.listSoleOwnedOrganizations.queryFilter()),
     ],
 

@@ -5,6 +5,8 @@
 
 "use client";
 
+import type { ReactNode } from "react";
+
 import { useDebouncer } from "@tanstack/react-pacer";
 import { useMutation } from "@tanstack/react-query";
 
@@ -13,15 +15,29 @@ import {
     deleteDraftFormInstanceMutation,
     saveDraftFormInstanceMutation,
 } from "@/client/form-queries";
+import { Saratoga } from "@/components/blocks/saratoga";
 import { Alert, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Field, FieldTitle } from "@/components/ui/field";
 import { Skeleton } from "@/components/ui/skeleton";
+import { usePreferences } from "@/hooks/use-preferences";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { OrganizationId } from "@/lib/schemas/organization";
 
 /**
- * Shows the signed-in user's name (the "Issuer" / "Received by" field of an I3 form).
+ * An item count for a form list: "No items", "1 item" or "n items".
  */
-export function UserNameFieldValue() {
+export function formatItemCount(count: number): string {
+    if (count === 0) return "No items";
+    return count === 1 ? "1 item" : `${count} items`;
+}
+
+/**
+ * Shows the signed-in user's name (the "Recorded by" field of an I3 form).
+ *
+ * @param className - Classes for the name, e.g. to line it up with the field beside it.
+ */
+export function UserNameFieldValue({ className }: { className?: string }) {
     const { data, error, isPending } = useSession();
 
     if (isPending) {
@@ -33,8 +49,44 @@ export function UserNameFieldValue() {
             </Alert>
         );
     } else if (data) {
-        return <div>{data.user.name}</div>;
+        return <div className={className}>{data.user.name}</div>;
     }
+}
+
+/**
+ * The header of a submitted (read-only) I3 form: the form's title and a "Submitted" badge.
+ */
+export function SubmittedFormHeader({ title }: { title: string }) {
+    return (
+        <Saratoga.Header>
+            <Saratoga.Title badges={<Badge variant="outline">Submitted</Badge>}>
+                {title}
+            </Saratoga.Title>
+        </Saratoga.Header>
+    );
+}
+
+/**
+ * One read-only field of a submitted I3 form: its label with the value beneath, laid out like
+ * the editable form's fields.
+ */
+export function SubmittedFormField({ label, children }: { label: string; children: ReactNode }) {
+    return (
+        <Field>
+            <FieldTitle>{label}</FieldTitle>
+            <div className="text-sm">{children}</div>
+        </Field>
+    );
+}
+
+/**
+ * When a form was submitted (its `updatedAt`), as an absolute date and time in the viewer's
+ * display format.
+ */
+export function SubmittedAtFieldValue({ date }: { date: string }) {
+    const { formatDateTime } = usePreferences();
+
+    return <time dateTime={date}>{formatDateTime(date)}</time>;
 }
 
 /**
@@ -42,6 +94,9 @@ export function UserNameFieldValue() {
  *
  * Call `handleChange(getValues())` from the form's change handler and wire `saveStatus` to a
  * `SaveStatusIndicator`. `handleDelete` runs `onDeleting` (to navigate away) and then deletes the draft.
+ * Call `cancel()` before submitting, to drop a pending (debounced, not yet sent) save. A save
+ * already in flight can still land; the processor writes the submitted data again with the
+ * Processed status, so it can't leave stale data behind.
  */
 export function useDraftFormAutosave({
     formKey,
@@ -84,5 +139,9 @@ export function useDraftFormAutosave({
         debouncer.maybeExecute(formData);
     }
 
-    return { saveStatus: saveMutation.status, handleChange, handleDelete };
+    function cancel() {
+        debouncer.cancel();
+    }
+
+    return { saveStatus: saveMutation.status, handleChange, handleDelete, cancel };
 }

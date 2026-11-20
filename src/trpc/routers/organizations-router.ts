@@ -23,7 +23,7 @@ import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { OrganizationUserId } from "@/lib/schemas/organization-user";
 import { UserId } from "@/lib/schemas/user";
 import { auth, type AuthOrganizationMember } from "@/server/auth";
-import { revalidateOrganization } from "@/server/cache/organization";
+import { revalidateOrganization, revalidateOrganizationTeams } from "@/server/cache/organization";
 import { getOrganizationUserRoles } from "@/server/cache/organization-user";
 import { revalidateOrganizationUser } from "@/server/cache/organization-user-revalidate";
 import { isUniqueViolation } from "@/server/prisma-errors";
@@ -226,7 +226,7 @@ export const organizationsRouter = createTrpcRouter({
      * Retrieves the calling user's role(s) within the organization, for client-side
      * permission checks (see `Protect`, `useOrganization`).
      */
-    getMyRoles: organizationProcedure({ organization: ["view"] })
+    getMyRoles: organizationProcedure()
         .output(z.array(roleSchema))
         .query(async ({ ctx }) => {
             return getOrganizationUserRoles(ctx.organizationId, ctx.userId);
@@ -238,7 +238,7 @@ export const organizationsRouter = createTrpcRouter({
      * @returns The organization object.
      * @throws TRPCError(NOT_FOUND) if the organization does not exist.
      */
-    getOrganization: organizationProcedure({ organization: ["view"] })
+    getOrganization: organizationProcedure()
         .output(OrganizationData.schema)
         .query(async ({ ctx }) => {
             const organization = await ctx.prisma.organization.findUnique({
@@ -287,7 +287,6 @@ export const organizationsRouter = createTrpcRouter({
                             skillCheckSessions: true,
                             notes: true,
                             skillPackages: true,
-                            i3IssuedItems: true,
                             formInstances: true,
                         },
                     },
@@ -330,7 +329,6 @@ export const organizationsRouter = createTrpcRouter({
                     skillCheckSessions: org._count.skillCheckSessions,
                     notes: org._count.notes,
                     skillPackages: org._count.skillPackages,
-                    i3IssuedItems: org._count.i3IssuedItems,
                     formInstances: org._count.formInstances,
                 } as Record<string, number>,
             };
@@ -552,6 +550,12 @@ export const organizationsRouter = createTrpcRouter({
             }
 
             await ctx.prisma.$transaction([
+                // Team access grants go with the membership (the composite FK cascades too).
+                // Deliberately unlogged: the membership delete is the event, and the grants
+                // can't outlive it (docs/plans/2026-11-18-team-slugs-grants.md, Decisions).
+                ctx.prisma.teamUser.deleteMany({
+                    where: { organizationId: ctx.organizationId, userId: input.userId },
+                }),
                 ctx.prisma.organizationUser.delete({ where: { id: membership.id } }),
                 ctx.logEvent({
                     action: "Delete",
@@ -786,7 +790,12 @@ export const organizationsRouter = createTrpcRouter({
                 changes,
             });
 
+            // Clear the old slug's entry too: after a rename it would otherwise keep serving the
+            // organization under a slug it no longer owns.
             await revalidateOrganization(update.slug);
+            if (existing.slug !== update.slug) await revalidateOrganization(existing.slug);
+            // Each cached team embeds its organization's name and slug.
+            await revalidateOrganizationTeams(ctx.organizationId);
 
             return {
                 updated: OrganizationData.fromRecord({

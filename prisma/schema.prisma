@@ -58,6 +58,10 @@ model User {
   impersonatedLogEntries    LogEntry[]         @relation("log_entry_to_impersonator")
   logBatches                LogBatch[]         @relation("log_batch_to_user")
   batchUpdatePlans          BatchUpdatePlan[]  @relation("batch_update_plan_to_user")
+  createdD4HNagRules        D4HNagRule[]       @relation("d4h_nag_rule_to_created_by")
+  startedD4HNagRuns         D4HNagRun[]        @relation("d4h_nag_run_to_started_by")
+  createdD4HNagOptOuts      D4HNagOptOut[]     @relation("d4h_nag_opt_out_to_created_by")
+  teamUsers                 TeamUser[]         @relation("team_user_to_user")
 
   @@unique([email])
   @@map("users")
@@ -139,10 +143,15 @@ model Organization {
   providerCredentials       ProviderCredential[]       @relation("provider_credential_to_organization")
   teamMemberships           TeamMembership[]           @relation("team_membership_to_organization")
 
-  i3IssuedItems I3IssuedItem[] @relation("i3_issued_item_to_organization")
+  i3Bundles     I3Bundle[]     @relation("i3_bundle_to_organization")
   i3Templates   I3Template[]   @relation("i3_template_to_organization")
   formInstances FormInstance[] @relation("form_instance_to_organization")
   d4hTasks      D4HTask[]      @relation("d4h_task_to_organization")
+
+  d4hNagRules      D4HNagRule[]      @relation("d4h_nag_rule_to_organization")
+  d4hNagRuns       D4HNagRun[]       @relation("d4h_nag_run_to_organization")
+  d4hNagRecipients D4HNagRecipient[] @relation("d4h_nag_recipient_to_organization")
+  d4hNagOptOuts    D4HNagOptOut[]    @relation("d4h_nag_opt_out_to_organization")
 
   groupMemberships OrganizationGroupMembership[] @relation("organization_group_membership_to_organization")
 
@@ -222,6 +231,7 @@ model UserConfig {
 model Team {
   id          String       @id
   name        String
+  slug        String?      @unique
   description String       @default("")
   tags        String[]     @default([])
   properties  Json         @default("{}")
@@ -234,6 +244,13 @@ model Team {
   updatedAt       DateTime?        @updatedAt
   configs         TeamConfig[]     @relation("team_config_to_team")
   teamMemberships TeamMembership[] @relation("team_membership_to_team")
+  teamUsers       TeamUser[]       @relation("team_user_to_team")
+
+  d4hNagRules   D4HNagRule[]   @relation("d4h_nag_rule_to_team")
+  d4hNagRuns    D4HNagRun[]    @relation("d4h_nag_run_to_team")
+  d4hNagOptOuts D4HNagOptOut[] @relation("d4h_nag_opt_out_to_team")
+
+  skillCheckSessions SkillCheckSession[] @relation("skill_check_session_to_team")
 
   @@index([organizationId])
   @@map("teams")
@@ -313,9 +330,32 @@ model OrganizationUser {
   personId String? @unique
   person   Person? @relation("person_to_organization_user", fields: [personId], references: [id], onDelete: SetNull)
 
+  teamUsers TeamUser[] @relation("team_user_to_organization_user")
+
   @@unique([organizationId, userId])
   @@index([organizationId])
   @@map("organization_users")
+}
+
+/// A user's access grant to a team (#522). Separate from the roster (`TeamMembership`):
+/// a grant is what lets a user into the team's scope. Granting creates a row and revoking
+/// hard-deletes it. The composite relation onto `OrganizationUser` makes the database
+/// enforce that the user is a member of the team's organization, and removes the grant
+/// when they leave it. Don't traverse it in code (prisma-mock resolves relations by the
+/// first FK field only); use the direct `user` relation instead.
+model TeamUser {
+  id               String           @id
+  organizationId   String
+  teamId           String
+  team             Team             @relation("team_user_to_team", fields: [teamId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User             @relation("team_user_to_user", fields: [userId], references: [id], onDelete: Cascade)
+  organizationUser OrganizationUser @relation("team_user_to_organization_user", fields: [organizationId, userId], references: [organizationId, userId], onDelete: Cascade)
+  createdAt        DateTime         @default(now())
+
+  @@unique([teamId, userId])
+  @@index([organizationId, userId])
+  @@map("team_users")
 }
 
 model OrganizationInvitation {
@@ -490,26 +530,34 @@ enum Provider {
   D4H
 }
 
+enum ProviderCredentialAccess {
+  ReadOnly
+  ReadWrite
+}
+
 /// Generalizes D4HAccessToken's former encrypted-credential storage across every
 /// external-service integration (see #286). D4H itself now runs on this table.
 model ProviderCredential {
-  id             String             @id
+  id             String                   @id
   provider       Provider
   organizationId String?
-  organization   Organization?      @relation("provider_credential_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization?            @relation("provider_credential_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
   userId         String?
-  user           User?              @relation("provider_credential_to_user", fields: [userId], references: [id], onDelete: Cascade)
+  user           User?                    @relation("provider_credential_to_user", fields: [userId], references: [id], onDelete: Cascade)
   /// Owning OrganizationGroup (avut#382). Nothing writes it yet: group-owned credentials arrive
   /// with redcloud-nz/avut-ideas#18.
   groupId        String?
-  group          OrganizationGroup? @relation("provider_credential_to_organization_group", fields: [groupId], references: [id], onDelete: Cascade)
+  group          OrganizationGroup?       @relation("provider_credential_to_organization_group", fields: [groupId], references: [id], onDelete: Cascade)
   label          String
   token          String
   status         String
   expiresAt      DateTime
-  metadata       Json               @default("{}")
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  metadata       Json                     @default("{}")
+  /// What AVUT may do with the credential. Enforced by `getD4HFetchClient`
+  /// (`src/server/d4h-api/client.ts`): anything but ReadWrite can only GET/HEAD.
+  access         ProviderCredentialAccess @default(ReadOnly)
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
 
   linkedTeams          Team_D4H[]         @relation("team_d4h_link_token")
   syncingOrganizations Organization_D4H[] @relation("organization_d4h_sync_token")
@@ -532,7 +580,6 @@ model Person {
   updatedAt  DateTime     @updatedAt
   status     RecordStatus @default(Active)
 
-  issuedItems                  I3IssuedItem[]           @relation("i3_issued_item_to_person")
   organizationInvitations      OrganizationInvitation[] @relation("organization_invitation_to_person")
   organizationUser             OrganizationUser?        @relation("person_to_organization_user")
   skillChecksAsAssessee        SkillCheck[]             @relation("skill_check_assessee")
@@ -717,6 +764,11 @@ model SkillCheckSession {
   assessees      Person[]         @relation("skill_check_session_assessees")
   assessors      Person[]         @relation("skill_check_session_assessors")
   skills         Skill[]          @relation("skill_check_session_skills")
+  /// The team the session is for, or null for an org-wide session (a combined training weekend).
+  /// Creating a session with a team seeds its assessees from the team's active members; changing
+  /// it later doesn't touch them. A team purged from the Rubbish bin leaves its sessions org-wide.
+  teamId         String?
+  team           Team?            @relation("skill_check_session_to_team", fields: [teamId], references: [id], onDelete: SetNull)
   name           String
   sessionNumber  Int
   /// When the session starts, read in the org's time zone (`OrganizationSettings.general.timeZone`):
@@ -737,6 +789,7 @@ model SkillCheckSession {
 
   @@unique([organizationId, sessionNumber])
   @@index([organizationId])
+  @@index([teamId])
   @@map("skill_check_sessions")
 }
 
@@ -827,24 +880,6 @@ model SkillOverride {
   @@map("skill_overrides")
 }
 
-model I3IssuedItem {
-  id             String       @id
-  organizationId String
-  organization   Organization @relation("i3_issued_item_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
-  personId       String
-  person         Person       @relation("i3_issued_item_to_person", fields: [personId], references: [id], onDelete: Cascade)
-  name           String
-  description    String
-  properties     Json         @default("{}")
-  status         RecordStatus @default(Active)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-
-  @@index([organizationId])
-  @@index([personId])
-  @@map("i3_issued_items")
-}
-
 model I3Template {
   id             String       @id
   organizationId String
@@ -858,6 +893,8 @@ model I3Template {
 
   d4h      I3Template_D4H?     @relation("i3_template_d4h_to_i3_template")
   variants I3TemplateVariant[] @relation("i3_template_variant_to_i3_template")
+
+  bundleItems I3BundleItem[] @relation("i3_bundle_item_to_i3_template")
 
   @@index([organizationId])
   @@map("i3_templates")
@@ -874,9 +911,16 @@ model I3Template_D4H {
 
   outputRefFormat String
   requireSN       Boolean
+  brandModelRule  I3BrandModelRule @default(Optional)
 
   @@unique([templateId])
   @@map("i3_template_d4h")
+}
+
+enum I3BrandModelRule {
+  Required
+  Optional
+  None
 }
 
 model I3TemplateVariant {
@@ -905,6 +949,36 @@ model I3TemplateVariant_D4H {
 
   @@unique([variantId])
   @@map("i3_template_variant_d4h")
+}
+
+model I3Bundle {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation("i3_bundle_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  description    String
+
+  status    RecordStatus @default(Active)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  items I3BundleItem[] @relation("i3_bundle_item_to_i3_bundle")
+
+  @@index([organizationId])
+  @@map("i3_bundles")
+}
+
+model I3BundleItem {
+  bundleId   String
+  bundle     I3Bundle   @relation("i3_bundle_item_to_i3_bundle", fields: [bundleId], references: [id], onDelete: Cascade)
+  templateId String
+  template   I3Template @relation("i3_bundle_item_to_i3_template", fields: [templateId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([bundleId, templateId])
+  @@index([templateId])
+  @@map("i3_bundle_items")
 }
 
 model FormInstance {
@@ -987,4 +1061,158 @@ model D4HTask {
   @@index([organizationId, status])
   @@index([organizationId, d4hTeamId, resourceId])
   @@map("d4h_tasks")
+}
+
+// D4H attendance reminders (d4h-nag)
+
+/// A weekly reminder rule: at `weekday`/`hour` (org timezone), email the members of the team's
+/// linked D4H team whose attendance is still `REQUESTED` for exercises starting in the next
+/// `lookAheadHours`. No `@updatedAt`: the slot claim writes `lastScheduledFor` every week, so the
+/// last-edited time comes from the audit log. Hard-deleted; its runs keep their history.
+model D4HNagRule {
+  id               String       @id
+  organizationId   String
+  organization     Organization @relation("d4h_nag_rule_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  teamId           String
+  team             Team         @relation("d4h_nag_rule_to_team", fields: [teamId], references: [id], onDelete: Cascade)
+  /// 0–6, Sunday = 0 (as `Date.getDay()`), in the org's timezone.
+  weekday          Int
+  /// 0–23, in the org's timezone.
+  hour             Int
+  lookAheadHours   Int          @default(24)
+  /// Optional plain-text message included in the email; empty for none.
+  message          String       @default("")
+  enabled          Boolean      @default(true)
+  /// The latest scheduled slot claimed for this rule. The cron claims a slot by moving this
+  /// forward atomically; edits to the schedule set it to the latest slot so a past slot never fires.
+  lastScheduledFor DateTime?
+
+  createdById String?
+  createdBy   User?    @relation("d4h_nag_rule_to_created_by", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+
+  runs D4HNagRun[] @relation("d4h_nag_run_to_rule")
+
+  @@index([organizationId])
+  @@index([teamId])
+  @@map("d4h_nag_rules")
+}
+
+/// One execution of a rule, scheduled or manual, real or dry. Carries its own team so its history
+/// survives the rule being deleted. Pruned after 90 days by the d4h-nag dispatcher.
+model D4HNagRun {
+  id             String           @id
+  organizationId String
+  organization   Organization     @relation("d4h_nag_run_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  /// Null once the rule is deleted ("Deleted rule").
+  ruleId         String?
+  rule           D4HNagRule?      @relation("d4h_nag_run_to_rule", fields: [ruleId], references: [id], onDelete: SetNull)
+  teamId         String
+  team           Team             @relation("d4h_nag_run_to_team", fields: [teamId], references: [id], onDelete: Cascade)
+  /// The team's name when the run started.
+  teamName       String
+  trigger        D4HNagRunTrigger
+  dryRun         Boolean
+
+  /// Null for a cron run, or once the user's account is purged.
+  startedById String?
+  startedBy   User?     @relation("d4h_nag_run_to_started_by", fields: [startedById], references: [id], onDelete: SetNull)
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  /// The exercise start window searched.
+  windowStart DateTime
+  windowEnd   DateTime
+
+  exercisesFound Int             @default(0)
+  sentCount      Int             @default(0)
+  skippedCount   Int             @default(0)
+  failedCount    Int             @default(0)
+  status         D4HNagRunStatus
+  error          String?
+  /// The `LogBatch` a real run logs under. Null for a dry run.
+  logBatchId     String?
+
+  recipients D4HNagRecipient[] @relation("d4h_nag_recipient_to_run")
+
+  @@index([organizationId, startedAt])
+  @@index([ruleId, startedAt])
+  @@index([status, startedAt])
+  @@map("d4h_nag_runs")
+}
+
+/// One member considered by a run for one exercise, and what happened.
+model D4HNagRecipient {
+  id               String        @id
+  organizationId   String
+  organization     Organization  @relation("d4h_nag_recipient_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  runId            String
+  run              D4HNagRun     @relation("d4h_nag_recipient_to_run", fields: [runId], references: [id], onDelete: Cascade)
+  d4hTeamId        Int
+  d4hExerciseId    Int
+  exerciseTitle    String
+  exerciseStartsAt DateTime
+  d4hMemberId      Int
+  memberName       String
+  email            String?
+  outcome          D4HNagOutcome
+  /// sha256 hex of the link token in the email. Written just before the send, so `Sent` rows have
+  /// one, and a `Pending` row with one had its send attempted (sent, unconfirmed); a `Pending` row
+  /// without one was never sent. Cleared on failure.
+  tokenHash        String?       @unique
+  /// `<organizationId>:<d4hTeamId>:<exerciseId>:<memberId>` while the row holds the once-only
+  /// claim (`Pending` or `Sent`). Cleared on failure so a later run can retry; never set by a dry run.
+  dedupeKey        String?       @unique
+  createdAt        DateTime      @default(now())
+
+  @@index([runId])
+  @@map("d4h_nag_recipients")
+}
+
+/// A D4H member who has opted out of reminders for an AVUT team. The row existing means opted
+/// out; opting back in deletes it. Never pruned.
+model D4HNagOptOut {
+  id             String             @id
+  organizationId String
+  organization   Organization       @relation("d4h_nag_opt_out_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  teamId         String
+  team           Team               @relation("d4h_nag_opt_out_to_team", fields: [teamId], references: [id], onDelete: Cascade)
+  d4hMemberId    Int
+  /// The member's name when the opt-out was made, for display.
+  memberName     String
+  source         D4HNagOptOutSource
+  /// The admin who made it; null for a self-service opt-out (or once the account is purged).
+  createdById    String?
+  createdBy      User?              @relation("d4h_nag_opt_out_to_created_by", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt      DateTime           @default(now())
+
+  @@unique([teamId, d4hMemberId])
+  @@index([organizationId, d4hMemberId])
+  @@map("d4h_nag_opt_outs")
+}
+
+enum D4HNagRunTrigger {
+  Cron
+  Manual
+}
+
+enum D4HNagRunStatus {
+  Running
+  Completed
+  Failed
+}
+
+enum D4HNagOutcome {
+  Pending
+  Sent
+  Failed
+  SkippedNoEmail
+  SkippedOptedOut
+  SkippedAlreadyReminded
+  DryRun
+}
+
+enum D4HNagOptOutSource {
+  Self
+  Admin
 }

@@ -42,10 +42,7 @@ export const settingsRouter = createTrpcRouter({
      * @param ctx The authenticated context.
      * @returns The organization settings object.
      */
-    getOrganizationSettings: organizationProcedure(
-        { organization: ["view"] },
-        { allowSystemAdmin: true },
-    )
+    getOrganizationSettings: organizationProcedure({}, { allowSystemAdmin: true })
         .output(OrganizationSettings.schema)
         .query(async ({ ctx }) => {
             return await OrgSettings.read(ctx.prisma, ctx.organizationId);

@@ -18,6 +18,12 @@ export function Admin_Sidebar_Menu() {
 
     return (
         <>
+            <Protect permissions={{ organization: ["update"] }}>
+                <NavSubItem
+                    label="D4H Access Tokens"
+                    href={route("/orgs/[slug]/admin/d4h-access-tokens", { slug })}
+                />
+            </Protect>
             <Protect permissions={{ invitation: ["view"] }}>
                 <NavSubItem
                     label="Invitations"
@@ -28,12 +34,10 @@ export function Admin_Sidebar_Menu() {
                 label="Organisation"
                 href={route("/orgs/[slug]/admin/organization", { slug })}
             />
-            <Protect permissions={{ organization: ["view"] }}>
-                <NavSubItem
-                    label="Organisation Settings"
-                    href={route("/orgs/[slug]/admin/organization-settings", { slug })}
-                />
-            </Protect>
+            <NavSubItem
+                label="Organisation Settings"
+                href={route("/orgs/[slug]/admin/organization-settings", { slug })}
+            />
             <Protect permissions={{ person: ["view"] }}>
                 <NavSubItem
                     label="Personnel"

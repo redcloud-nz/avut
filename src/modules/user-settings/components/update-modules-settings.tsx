@@ -85,7 +85,7 @@ export function UserSettings_UpdateUserModules_Dialog({ settings }: { settings: 
                             {configurableUserModules.map((module) => (
                                 <Field key={module.id} orientation="horizontal">
                                     <FieldContent>
-                                        <FieldLabel htmlFor={`${module.id}-module-enabled`}>
+                                        <FieldLabel htmlFor={`${formId}-${module.id}`}>
                                             {module.label}
                                         </FieldLabel>
                                     </FieldContent>
@@ -94,7 +94,7 @@ export function UserSettings_UpdateUserModules_Dialog({ settings }: { settings: 
                                         name={`${module.id}.enabled`}
                                         render={({ field }) => (
                                             <Switch
-                                                id={`${module.id}-module-enabled`}
+                                                id={`${formId}-${module.id}`}
                                                 checked={field.value}
                                                 onCheckedChange={field.onChange}
                                             />

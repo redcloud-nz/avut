@@ -122,7 +122,7 @@ const config = [
         { category: "trpc-context", pattern: "src/trpc/init.ts", partialMatch: false },
         {
           category: "module-registry",
-          pattern: "src/components/nav/{org,scope}-sidebar-modules.tsx",
+          pattern: "src/components/nav/{org,scope,team}-sidebar-modules.tsx",
           partialMatch: false,
         },
         { category: "docs-demo", pattern: "src/components/docs/demo-*.tsx", partialMatch: false },
@@ -347,6 +347,7 @@ const config = [
   {
     // A submit button outside its form points at it by a per-instance useId() id, never a literal:
     // a hidden copy of the form on a page Next keeps mounted would otherwise be the one submitted.
+    // Labels (`htmlFor`) and `aria-*` id references point at fields the same way.
     files: ["src/**/*.tsx"],
     plugins: { avut },
     rules: {

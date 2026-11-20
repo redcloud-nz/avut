@@ -44,6 +44,7 @@ import {
 import { SkillTrack_ScopeDialogMenuItem } from "@/modules/skill-track/components/reports/scope-dialog-menu-item";
 import { useSyntheticCompetencies } from "@/modules/skill-track/components/reports/synthetic-competency-data";
 import { SkillTrack_TeamScopeDialog } from "@/modules/skill-track/components/reports/team-scope-dialog";
+import { skillSectionLabel } from "@/modules/skill-track/lib/skill-sections";
 import { trpc } from "@/trpc/client";
 
 // Opaque so cells scrolled beneath it stay hidden; the row hover is layered over the card
@@ -188,7 +189,7 @@ function SkillMatrixReportView({
                     return [
                         {
                             id: skillGroup.id,
-                            label: `${skillPackage.name} · ${skillGroup.name}`,
+                            label: skillSectionLabel(skillPackage, skillGroup),
                             skills: groupSkills,
                         },
                     ];

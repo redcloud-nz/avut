@@ -11,8 +11,13 @@ const statement = {
     ...defaultStatements,
     // `update` edits an equipment item in D4H.
     d4hEquipment: ["view", "update"],
+    // D4H Attendance Reminders. `view` covers rules, runs and opt-outs; `update` covers rule and
+    // opt-out changes; `run` covers Run now and Dry run.
+    d4hNag: ["view", "update", "run"],
     // `apply` checks or dismisses a queued D4H task.
     d4hTask: ["view", "apply"],
+    // Adding or removing a bundle's templates is `update`.
+    i3Bundle: ["view", "create", "update", "delete"],
     i3Item: ["view", "issue", "inspect", "return"],
     i3Template: ["view", "create", "update", "delete"],
     invitation: ["view", "create", "update", "cancel"],
@@ -43,6 +48,7 @@ export const Roles = {
     owner: ac.newRole({
         ...memberAc.statements,
         d4hEquipment: ["view", "update"],
+        d4hNag: ["view", "update", "run"],
         d4hTask: ["view", "apply"],
         member: ["view", "create", "update", "delete", "owner"],
         invitation: ["view", "create", "update", "cancel"],
@@ -58,6 +64,7 @@ export const Roles = {
     admin: ac.newRole({
         ...memberAc.statements,
         d4hEquipment: ["view", "update"],
+        d4hNag: ["view", "update", "run"],
         d4hTask: ["view", "apply"],
         member: ["view", "create", "update", "delete"],
         invitation: ["view", "create", "update", "cancel"],
@@ -80,6 +87,7 @@ export const Roles = {
     "i3-editor": ac.newRole({
         d4hEquipment: ["view", "update"],
         d4hTask: ["view", "apply"],
+        i3Bundle: ["view"],
         i3Item: ["view", "issue", "inspect", "return"],
         i3Template: ["view"],
         // Paired with `person: ["view"]` — the user↔person link procedures require both.
@@ -88,11 +96,12 @@ export const Roles = {
         organizationNote: ["view", "create"],
         person: ["view"],
     }),
-    // The I3 module's admin role: everything `i3-editor` can do, plus managing I3 templates —
-    // creation, editing and deletion (incl. trash/restore/purge).
+    // The I3 module's admin role: everything `i3-editor` can do, plus managing I3 templates and
+    // bundles — creation, editing and deletion (incl. trash/restore/purge).
     "i3-admin": ac.newRole({
         d4hEquipment: ["view", "update"],
         d4hTask: ["view", "apply"],
+        i3Bundle: ["view", "create", "update", "delete"],
         i3Item: ["view", "issue", "inspect", "return"],
         i3Template: ["view", "create", "update", "delete"],
         member: ["view"],
@@ -127,8 +136,7 @@ export const Roles = {
     // Creates and publishes skill packages (assessment templates) for the org to subscribe
     // to — not to be confused with performing assessments.
     "skills-author": ac.newRole({
-        // `organizationProcedure` forces `organization: ["view"]` into every requirement, and
-        // the org layout gates on it too — without this the role cannot reach anything.
+        // `organization: ["view"]` is what lets a role into the org scope (#523, #528).
         organization: ["view"],
         organizationNote: ["view", "create"],
         skillPackage: ["view", "create", "update", "delete", "publish"],
@@ -205,10 +213,19 @@ export function roleCovers(role: Role, other: Role): boolean {
  * agreement is what makes evaluating locally, against a role lookup already in hand, a safe
  * substitute for a second `auth.api.hasPermission` round trip. Used by `createTrpcContext` and
  * `requireOrganizationWith`.
+ *
+ * Asking for nothing (`{}`, or only empty action lists) is granted: the caller has already
+ * checked membership, and `organizationProcedure()` means "any member" (#523). Better Auth's
+ * `authorize` refuses an empty request, so it never sees one.
  */
 export function hasAnyRoleWithPermissions(
     roles: Role[],
     requiredPermissions: Permissions,
 ): boolean {
-    return roles.some((role) => Roles[role].authorize(requiredPermissions).success);
+    const requested = Object.fromEntries(
+        Object.entries(requiredPermissions).filter(([, actions]) => actions && actions.length > 0),
+    ) as Permissions;
+    if (Object.keys(requested).length === 0) return true;
+
+    return roles.some((role) => Roles[role].authorize(requested).success);
 }

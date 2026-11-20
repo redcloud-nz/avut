@@ -53,8 +53,9 @@ name comes from. Research it; don't work from the one-line note in
 `version-names.md`. Cover each naval ship of that name with a New Zealand
 connection, not only the one the list is about: every HMNZS ship, and every HMS
 ship that served on the New Zealand station or with the New Zealand Division.
-Only HMS and HMNZS ships count; leave out merchant ships and other navies'
-ships. One paragraph each, oldest first.
+Only HMS and HMNZS ships count, plus Royal Fleet Auxiliary ships that served
+with the New Zealand Division (such as RFA Nucula). Leave out merchant ships and
+other navies' ships. One paragraph each, oldest first.
 
 For each ship:
 

@@ -30,7 +30,7 @@ export default async function D4H_Index_Page(props: PageProps<`/orgs/[slug]/d4h`
             <Std.ScrollContainer>
                 <Std.IndexPage title="D4H">
                     <ItemGroup>
-                        <Item asChild>
+                        <Item variant="outline" asChild>
                             <Link href={route("/orgs/[slug]/d4h/teams", { slug })}>
                                 <ItemContent>
                                     <ItemTitle>Teams</ItemTitle>
@@ -44,7 +44,7 @@ export default async function D4H_Index_Page(props: PageProps<`/orgs/[slug]/d4h`
                             </Link>
                         </Item>
                         <Protect permissions={{ d4hEquipment: ["view"] }}>
-                            <Item asChild>
+                            <Item variant="outline" asChild>
                                 <Link href={route("/orgs/[slug]/d4h/members", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Members</ItemTitle>
@@ -57,7 +57,7 @@ export default async function D4H_Index_Page(props: PageProps<`/orgs/[slug]/d4h`
                                     </ItemActions>
                                 </Link>
                             </Item>
-                            <Item asChild>
+                            <Item variant="outline" asChild>
                                 <Link href={route("/orgs/[slug]/d4h/categories", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Equipment Categories</ItemTitle>
@@ -71,7 +71,7 @@ export default async function D4H_Index_Page(props: PageProps<`/orgs/[slug]/d4h`
                                     </ItemActions>
                                 </Link>
                             </Item>
-                            <Item asChild>
+                            <Item variant="outline" asChild>
                                 <Link href={route("/orgs/[slug]/d4h/brands", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Equipment Brands</ItemTitle>
@@ -86,7 +86,7 @@ export default async function D4H_Index_Page(props: PageProps<`/orgs/[slug]/d4h`
                             </Item>
                         </Protect>
                         <Protect permissions={{ d4hTask: ["view"] }}>
-                            <Item asChild>
+                            <Item variant="outline" asChild>
                                 <Link href={route("/orgs/[slug]/d4h/tasks", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Tasks</ItemTitle>

@@ -31,6 +31,7 @@ import {
     Table as TanstackTable,
 } from "@tanstack/react-table";
 
+import { KAGA_DEFAULT_PAGE_SIZE } from "@/components/blocks/kaga-constants";
 import { KagaSearchHotkey } from "@/components/blocks/kaga-search-hotkey";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
@@ -340,7 +341,11 @@ function KagaTablePagination<TData extends RowData>({
     const endRowIndex = Math.min(startRowIndex + pagination.pageSize, rowCount);
 
     return (
-        <div className={cn("grid grid-cols-2 items-center text-sm p-2", className)} {...props}>
+        <div
+            data-slot="kaga-table-pagination"
+            className={cn("grid grid-cols-2 items-center text-sm p-2", className)}
+            {...props}
+        >
             <div
                 className={cn(
                     "flex gap-1 lg:gap-1.5 text-muted-foreground",
@@ -428,7 +433,7 @@ const numericColumnMeta = {
 } as const;
 
 export const Kaga = {
-    DEFAULT_PAGE_SIZE: 50,
+    DEFAULT_PAGE_SIZE: KAGA_DEFAULT_PAGE_SIZE,
     Table: KagaTable,
     TableToolbar: KagaTableToolbar,
     TablePagination: KagaTablePagination,

@@ -8,14 +8,13 @@ import { useRouter } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { ObjectIcons } from "@/components/icons";
+import { Teams_RemoveTeamMember_Dialog } from "@/components/teams/remove-team-member";
 import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonRef } from "@/lib/schemas/person";
 import { TeamData } from "@/lib/schemas/team";
-
-import { AdminModule_RemoveTeamMember_Dialog } from "./remove-team-member";
 
 export function AdminModule_TeamMembership_Menu({
     team,
@@ -45,7 +44,7 @@ export function AdminModule_TeamMembership_Menu({
         <>
             <EntityActionMenu actions={actions} category="Team membership" />
 
-            <AdminModule_RemoveTeamMember_Dialog
+            <Teams_RemoveTeamMember_Dialog
                 organizationId={organization.id}
                 team={team}
                 person={person}

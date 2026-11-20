@@ -10,8 +10,14 @@ import Link from "next/link";
 import { useSuspenseQueries } from "@tanstack/react-query";
 
 import { Protect } from "@/components/protect";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
+import {
+    Item,
+    ItemActions,
+    ItemContent,
+    ItemDescription,
+    ItemGroup,
+    ItemTitle,
+} from "@/components/ui/item";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
@@ -63,12 +69,8 @@ export function SkillsModule_Session_Contents_Card({
         : findConflicts(skillChecks).filter((conflict) => !isConflictResolved(conflict)).length;
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Contents</CardTitle>
-            </CardHeader>
-
-            <CardContent className="px-2 -my-2">
+        <section aria-label="Contents">
+            <ItemGroup className="gap-2">
                 <ConfigRow
                     action="change-personnel"
                     locked={isApproved}
@@ -84,7 +86,7 @@ export function SkillsModule_Session_Contents_Card({
                     locked={isApproved}
                     title={`${session.assessors.length} Assessors`}
                 />
-                <Item size="sm" asChild>
+                <Item variant="outline" role="listitem" asChild>
                     <Link
                         href={route("/orgs/[slug]/skill-track/sessions/[session_id]/checks", {
                             slug: organization.slug,
@@ -96,12 +98,12 @@ export function SkillsModule_Session_Contents_Card({
                             <ItemDescription>recorded in the session</ItemDescription>
                         </ItemContent>
                         <ItemActions>
-                            <ChevronRightIcon className="size-4" />
+                            <ChevronRightIcon className="text-muted-foreground size-4" />
                         </ItemActions>
                     </Link>
                 </Item>
                 {conflictCount > 0 && (
-                    <Item size="sm" asChild>
+                    <Item variant="outline" role="listitem" asChild>
                         <Link
                             href={`${route(
                                 "/orgs/[slug]/skill-track/sessions/[session_id]/review",
@@ -120,13 +122,13 @@ export function SkillsModule_Session_Contents_Card({
                                 </ItemDescription>
                             </ItemContent>
                             <ItemActions>
-                                <ChevronRightIcon className="size-4" />
+                                <ChevronRightIcon className="text-muted-foreground size-4" />
                             </ItemActions>
                         </Link>
                     </Item>
                 )}
-            </CardContent>
-        </Card>
+            </ItemGroup>
+        </section>
     );
 }
 
@@ -158,16 +160,23 @@ function ConfigRow({
             permissions={{ skillCheckSession: ["update"] }}
             render={(hasPermission) =>
                 hasPermission && !locked ? (
-                    <Item size="sm" asChild className="cursor-pointer text-left">
+                    <Item
+                        variant="outline"
+                        role="listitem"
+                        asChild
+                        className="cursor-pointer text-left"
+                    >
                         <button type="button" aria-haspopup="dialog" onClick={() => open(action)}>
                             {content}
                             <ItemActions>
-                                <ChevronRightIcon className="size-4" />
+                                <ChevronRightIcon className="text-muted-foreground size-4" />
                             </ItemActions>
                         </button>
                     </Item>
                 ) : (
-                    <Item size="sm">{content}</Item>
+                    <Item variant="outline" role="listitem">
+                        {content}
+                    </Item>
                 )
             }
         />

@@ -28,7 +28,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
@@ -38,8 +38,10 @@ import { route } from "@/lib/routes";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
 
+import { SkillTrack_SessionTeamSelect } from "./session-team-select";
 import {
     defaultSessionWhen,
+    NO_SESSION_TEAM,
     parseSessionDialog,
     sessionDialogSchema,
     SkillTrack_SessionWhenPicker,
@@ -76,9 +78,15 @@ export function SkillTrack_CreateSession_Dialog() {
     const orgZone = organization.settings.general.timeZone;
 
     // A function, so each open starts on today rather than the day the page loaded.
-    const formValues = () => ({ name: "", notes: "", when: defaultSessionWhen(orgZone) });
+    const formValues = () => ({
+        name: "",
+        notes: "",
+        teamId: NO_SESSION_TEAM,
+        when: defaultSessionWhen(orgZone),
+    });
 
     const formId = useId();
+    const teamFieldId = useId();
     const form = useForm({
         resolver: zodResolver(sessionDialogSchema),
         defaultValues: formValues(),
@@ -163,6 +171,28 @@ export function SkillTrack_CreateSession_Dialog() {
                                     <Field data-invalid={fieldState.invalid}>
                                         <FieldLabel>Name</FieldLabel>
                                         <Input {...field} placeholder={namePlaceholder} />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="teamId"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor={teamFieldId}>Team</FieldLabel>
+                                        <SkillTrack_SessionTeamSelect
+                                            id={teamFieldId}
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            invalid={fieldState.invalid}
+                                        />
+                                        <FieldDescription>
+                                            Everyone in the team is added to the session&apos;s
+                                            personnel.
+                                        </FieldDescription>
                                         {fieldState.error && (
                                             <FieldError errors={[fieldState.error]} />
                                         )}

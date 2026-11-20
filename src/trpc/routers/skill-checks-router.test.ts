@@ -35,6 +35,7 @@ describe("skillChecks.getCompetencyMatrix", () => {
     //                                                               → skill5 Deprecated (Archived)
     //                                        → grp2 "Advanced Skills" → skill3 Airway freq=12 (Active)
     //                                        → grp4 "Retired" (Deleted) → skill6 Splinting (Active, hidden)
+    //                                        → grp5 "Legacy" (Archived) → skill7 Slings (Active, hidden)
     //            pkg2 "Advanced" (not published) → grp3 → skill4 (Active but unreachable)
     //   Checks (fake now = 2026-01-01 for isCurrent tests):
     //     person1+skill1+assessor1: Include 2025-01-01 "Fail" (old, expired → de-duped away)
@@ -61,6 +62,8 @@ describe("skillChecks.getCompetencyMatrix", () => {
         grp2: SkillGroupId.create(),
         grp4: SkillGroupId.create(),
         skill6: SkillId.create(),
+        grp5: SkillGroupId.create(),
+        skill7: SkillId.create(),
         grp3: SkillGroupId.create(),
         skill1: SkillId.create(),
         skill2: SkillId.create(),
@@ -204,6 +207,26 @@ describe("skillChecks.getCompetencyMatrix", () => {
                 description: "",
                 properties: {},
                 status: "Deleted",
+            },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: T.grp5,
+                skillPackageId: T.pkg1,
+                name: "Legacy",
+                description: "",
+                properties: {},
+                status: "Archived",
+            },
+        });
+        await db.skill.create({
+            data: {
+                id: T.skill7,
+                skillPackageId: T.pkg1,
+                skillGroupId: T.grp5,
+                name: "Slings",
+                description: "",
+                properties: {},
             },
         });
         await db.skillGroup.create({
@@ -445,6 +468,7 @@ describe("skillChecks.getCompetencyMatrix", () => {
             expect(ids).not.toContain(T.skill4); // pkg2 not published
             expect(ids).not.toContain(T.skill5); // Archived
             expect(ids).not.toContain(T.skill6); // Active, but its group is Deleted
+            expect(ids).not.toContain(T.skill7); // Active, but its group is Archived
         });
 
         it("filters to a single skill when skillId is provided", async () => {
@@ -473,7 +497,7 @@ describe("skillChecks.getCompetencyMatrix", () => {
 
         it("filters skills by skillPackageId", async () => {
             // pkg1 has skill1, skill2, skill3 (Active), skill5 (Archived — excluded) and skill6
-            // (in Deleted grp4 — excluded)
+            // (in Deleted grp4 — excluded), skill7 (in Archived grp5 — excluded)
             const result = await makeCaller().getCompetencyMatrix({
                 organizationId: T.org,
                 skillPackageId: T.pkg1,
@@ -513,8 +537,8 @@ describe("skillChecks.getCompetencyMatrix", () => {
         });
 
         it("returns every group of a subscribed package that has active skills", async () => {
-            // pkg1 has grp1 (skill1, skill2), grp2 (skill3) and Deleted grp4; pkg2 is not
-            // published.
+            // pkg1 has grp1 (skill1, skill2), grp2 (skill3), Deleted grp4 and Archived grp5;
+            // pkg2 is not published.
             const result = await makeCaller().getCompetencyMatrix({ organizationId: T.org });
 
             expect(result.skillGroups.map((g) => g.id).sort()).toEqual([T.grp1, T.grp2].sort());
@@ -833,6 +857,137 @@ describe("skillChecks.getSkillCheck", () => {
                 skillCheckId: T.check,
             }),
         ).rejects.toThrow(TRPCError);
+    });
+});
+
+describe("skillChecks.searchChecks", () => {
+    // Dataset: one standalone check in org (lateCheck, 2026-03-15 11:30 UTC: the 15th in UTC, the
+    // 16th in NZ) and one in otherOrg. The user's display time zone is UTC. The service's filter
+    // logic is tested in services/skill-checks.test.ts; this covers the procedure around it.
+    const T = {
+        org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
+        user: UserId.create(),
+        assessor: PersonId.create(),
+        assessee: PersonId.create(),
+        pkg: SkillPackageId.create(),
+        grp: SkillGroupId.create(),
+        skill: SkillId.create(),
+        lateCheck: SkillCheckId.create(),
+        otherOrgCheck: SkillCheckId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const id of [T.org, T.otherOrg]) {
+            await db.organization.create({
+                data: { id, name: id, slug: id, createdAt: new Date() },
+            });
+        }
+        await db.user.create({
+            data: { id: T.user, name: "User", email: `${T.user}@example.com` },
+        });
+        await db.userConfig.create({
+            data: { userId: T.user, key: "display.timeZone", value: "UTC" },
+        });
+        for (const [id, name] of [
+            [T.assessor, "Dana Assessor"],
+            [T.assessee, "Pat Assessee"],
+        ] as const) {
+            await db.person.create({
+                data: { id, organizationId: T.org, name, email: `${id}@example.com` },
+            });
+        }
+        await db.skillPackage.create({
+            data: {
+                id: T.pkg,
+                organizationId: T.org,
+                name: "Pkg",
+                description: "",
+                properties: {},
+                published: true,
+            },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: T.grp,
+                skillPackageId: T.pkg,
+                name: "Group",
+                description: "",
+                properties: {},
+            },
+        });
+        await db.skill.create({
+            data: {
+                id: T.skill,
+                skillPackageId: T.pkg,
+                skillGroupId: T.grp,
+                name: "Skill",
+                description: "",
+                properties: {},
+            },
+        });
+        for (const [id, organizationId] of [
+            [T.lateCheck, T.org],
+            [T.otherOrgCheck, T.otherOrg],
+        ] as const) {
+            await db.skillCheck.create({
+                data: {
+                    id,
+                    organizationId,
+                    assesseeId: T.assessee,
+                    assessorId: T.assessor,
+                    skillId: T.skill,
+                    result: "Pass",
+                    notes: "",
+                    status: "Include",
+                    checkedAt: new Date("2026-03-15T11:30:00Z"),
+                },
+            });
+        }
+    });
+
+    function makeCaller(permissions: Record<string, string[]> = { skillCheck: ["view"] }) {
+        return skillChecksRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { ...permissions, organization: ["view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    const page = { filters: {}, page: 1, pageSize: 20 };
+
+    it("is FORBIDDEN without skillCheck view", async () => {
+        await expect(
+            makeCaller({}).searchChecks({ organizationId: T.org, ...page }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+
+    it("returns only the organization's own checks", async () => {
+        const result = await makeCaller().searchChecks({ organizationId: T.org, ...page });
+
+        expect(result.rows.map((row) => row.id)).toEqual([T.lateCheck]);
+        expect(result.total).toBe(1);
+        expect(result.rows[0]).toMatchObject({
+            assessee: { id: T.assessee, name: "Pat Assessee" },
+            assessor: { id: T.assessor, name: "Dana Assessor" },
+            skill: { id: T.skill, name: "Skill" },
+            session: null,
+        });
+    });
+
+    it("judges the date filter in the caller's display time zone", async () => {
+        // In the default zone (NZ) the check falls on the 16th; the caller's UTC puts it on the 15th.
+        const result = await makeCaller().searchChecks({
+            organizationId: T.org,
+            ...page,
+            filters: { from: "2026-03-15", to: "2026-03-15" },
+        });
+
+        expect(result.rows.map((row) => row.id)).toEqual([T.lateCheck]);
     });
 });
 
@@ -1522,8 +1677,7 @@ describe("skillChecks — the session approval lock", () => {
 
 describe("skillChecks reads ignore Deleted checks", () => {
     // Dataset: one session holding liveCheck (Draft) and deletedCheck (Deleted) for the same
-    // assessee and assessor, on different skills. Both were recorded just now, so both fall
-    // inside listRecentChecks' one-month window.
+    // assessee and assessor, on different skills.
     const T = {
         org: OrganizationId.create(),
         user: UserId.create(),
@@ -1637,10 +1791,16 @@ describe("skillChecks reads ignore Deleted checks", () => {
         expect(checks.map((c) => c.id)).toEqual([T.liveCheck]);
     });
 
-    it("listRecentChecks leaves out the Deleted check", async () => {
-        const checks = await makeCaller().listRecentChecks({ organizationId: T.org });
+    it("searchChecks leaves out the Deleted check", async () => {
+        const { rows, total } = await makeCaller().searchChecks({
+            organizationId: T.org,
+            filters: {},
+            page: 1,
+            pageSize: 20,
+        });
 
-        expect(checks.map((c) => c.id)).toEqual([T.liveCheck]);
+        expect(rows.map((c) => c.id)).toEqual([T.liveCheck]);
+        expect(total).toBe(1);
     });
 
     it("getSkillCheck throws NOT_FOUND for the Deleted check", async () => {

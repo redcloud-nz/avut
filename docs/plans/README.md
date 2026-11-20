@@ -32,3 +32,14 @@ already exists. A plan is the how, once the what is settled.
   ship. The skill describes each section. End-user docs are never a task: the
   Docs impact line feeds the milestone's docs issue, which `/avut-docs` works
   through.
+
+## Milestone work plans live outside the repo
+
+A plan that orders a whole milestone (which issues, in which tracks, in what
+order) is not kept here. It isn't tied to any one branch, so in git it ended
+up on its own unmerged `plan/*` branch, with each checkout and worktree seeing
+a different copy and status ticks that had no PR to ride on. Where they live
+instead is up to whoever plans the milestone; the repo's skills don't depend
+on it. To build a run of a plan's quick items as one PR, pass the issues to
+`/avut-develop-feature` (see its Tracks section).
+`2026-10-08-v0.12-work-plan.md` is the last one kept here, as history.

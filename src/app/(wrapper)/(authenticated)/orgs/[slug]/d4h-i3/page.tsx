@@ -34,7 +34,7 @@ export default async function D4HI3_Index_Page(props: PageProps<`/orgs/[slug]/d4
                 <Std.IndexPage title="D4H I3">
                     <ItemGroup>
                         <Protect permissions={{ i3Item: ["issue"] }}>
-                            <Item asChild>
+                            <Item variant="outline" asChild>
                                 <Link
                                     href={route("/orgs/[slug]/d4h-i3/forms/issue-items", { slug })}
                                 >
@@ -51,7 +51,7 @@ export default async function D4HI3_Index_Page(props: PageProps<`/orgs/[slug]/d4
                             </Item>
                         </Protect>
                         <Protect permissions={{ i3Item: ["return"] }}>
-                            <Item asChild>
+                            <Item variant="outline" asChild>
                                 <Link
                                     href={route("/orgs/[slug]/d4h-i3/forms/return-items", { slug })}
                                 >
@@ -68,7 +68,7 @@ export default async function D4HI3_Index_Page(props: PageProps<`/orgs/[slug]/d4
                             </Item>
                         </Protect>
                         <Protect permissions={{ i3Item: ["view"] }}>
-                            <Item asChild>
+                            <Item variant="outline" asChild>
                                 <Link href={route("/orgs/[slug]/d4h-i3/issued-types", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Issued Types</ItemTitle>
@@ -83,8 +83,24 @@ export default async function D4HI3_Index_Page(props: PageProps<`/orgs/[slug]/d4
                                 </Link>
                             </Item>
                         </Protect>
+                        <Protect permissions={{ i3Bundle: ["view"] }}>
+                            <Item variant="outline" asChild>
+                                <Link href={route("/orgs/[slug]/d4h-i3/bundles", { slug })}>
+                                    <ItemContent>
+                                        <ItemTitle>Bundles</ItemTitle>
+                                        <ItemDescription>
+                                            Standard-issue kit lists, and who holds or is missing
+                                            each item
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect>
                         <Protect permissions={{ i3Template: ["view"] }}>
-                            <Item asChild>
+                            <Item variant="outline" asChild>
                                 <Link href={route("/orgs/[slug]/d4h-i3/templates", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Templates</ItemTitle>

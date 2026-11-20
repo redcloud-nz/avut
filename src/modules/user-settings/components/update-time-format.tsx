@@ -99,11 +99,11 @@ export function UserSettings_UpdateTimeFormat_Dialog({ settings }: { settings: U
                                             TIME_FORMAT_PATTERNS,
                                         ) as (keyof typeof TIME_FORMAT_PATTERNS)[]
                                     ).map((preset) => (
-                                        <FieldLabel htmlFor={`time-format-${preset}`} key={preset}>
+                                        <FieldLabel htmlFor={`${formId}-${preset}`} key={preset}>
                                             <Field key={preset} orientation="horizontal">
                                                 <RadioGroupItem
                                                     value={preset}
-                                                    id={`time-format-${preset}`}
+                                                    id={`${formId}-${preset}`}
                                                 />
 
                                                 <FieldTitle>

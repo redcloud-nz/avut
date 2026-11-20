@@ -60,7 +60,7 @@ export async function fetchD4HEquipmentItem(
 async function fetchD4HTeamEquipmentList(
     token: D4HAccessToken_ServerOnly,
     d4hTeamId: number,
-    query: { parent_id?: number; kind_id?: number[] },
+    query: { parent_id?: number; kind_id?: number[]; model_id?: number[] },
     what: string,
 ): Promise<D4HEquipmentListItem[]> {
     const { data, error, response } = await getD4HFetchClient(token).GET(
@@ -108,6 +108,20 @@ export function fetchD4HEquipmentItemsByKind(
         d4hTeamId,
         { kind_id: [kindId] },
         `D4H equipment items of kind ${kindId}`,
+    );
+}
+
+/** One team's current items of one equipment model: see {@link fetchD4HTeamEquipmentList}. */
+export function fetchD4HEquipmentItemsByModel(
+    token: D4HAccessToken_ServerOnly,
+    d4hTeamId: number,
+    modelId: number,
+): Promise<D4HEquipmentListItem[]> {
+    return fetchD4HTeamEquipmentList(
+        token,
+        d4hTeamId,
+        { model_id: [modelId] },
+        `D4H equipment items of model ${modelId}`,
     );
 }
 

@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import { Label } from "@/components/ui/label";
 import { SearchableSelect, type SearchableSelectOption } from "@/components/ui/searchable-select";
@@ -29,6 +29,7 @@ const FRUIT_OPTIONS: SearchableSelectOption[] = [
 ];
 
 export function Select_Sandbox() {
+    const idPrefix = useId();
     const [nativeValue, setNativeValue] = useState<string | undefined>(undefined);
     const [searchableValue, setSearchableValue] = useState<string | null>(null);
     const [disabled, setDisabled] = useState(false);
@@ -69,19 +70,19 @@ export function Select_Sandbox() {
                 <div className="space-y-3">
                     <div className="flex items-center gap-2">
                         <Switch
-                            id="select-disabled"
+                            id={`${idPrefix}-disabled`}
                             checked={disabled}
                             onCheckedChange={setDisabled}
                         />
-                        <Label htmlFor="select-disabled">Disabled</Label>
+                        <Label htmlFor={`${idPrefix}-disabled`}>Disabled</Label>
                     </div>
                     <div className="flex items-center gap-2">
                         <Switch
-                            id="select-aria-invalid"
+                            id={`${idPrefix}-aria-invalid`}
                             checked={ariaInvalid}
                             onCheckedChange={setAriaInvalid}
                         />
-                        <Label htmlFor="select-aria-invalid">Aria invalid</Label>
+                        <Label htmlFor={`${idPrefix}-aria-invalid`}>Aria invalid</Label>
                     </div>
                     <p className="text-sm text-muted-foreground">
                         Native: <code>{nativeValue ?? "undefined"}</code> · Searchable:{" "}

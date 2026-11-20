@@ -32,7 +32,10 @@ account's permissions.
   D4H. See [Issuing items](/docs/d4h-i3/issuing).
 - **Return** is where you take equipment back, queuing a D4H task to retire
   each item. See [Returning items](/docs/d4h-i3/returning).
-- **Issued Types** shows what one D4H team has out.
+- **Issued Types** shows what one D4H team has out, and flags items recorded
+  with missing or wrong detail.
+- **Bundles** are standard-issue kit lists, which you can compare against a D4H
+  team. See [Bundles](/docs/d4h-i3/bundles).
 - **Templates** are the items you can issue.
 
 Inspections aren't built yet.
@@ -52,7 +55,23 @@ each team linked to D4H.
 ## Issued Types
 
 **Issued Types** asks you to pick a D4H team, then shows how many of each type
-of equipment the team has out. Open a type to see who holds which items.
+of equipment the team has out. Open a type to see who holds which items, with
+each item's ref, brand, model and serial number.
+
+### Checking issued items
+
+On a type's page, I3 Editors and I3 Admins also see a **Check** column, which
+judges each item against the type's [templates](#brand-and-model):
+
+- **Incomplete**: a part the template requires is blank, such as the serial
+  number, or the brand or model.
+- **Doesn't match**: the brand and model aren't one of the template's variants,
+  or they're set on a template whose type has no brand or model.
+
+An item is judged against every active template for its type and gets the best
+result. Lost items aren't judged. A line above the table counts the flagged
+items, such as "3 incomplete · 2 don't match". To list only those, choose
+**Only show flagged items** from the page's menu.
 
 ## Templates
 
@@ -66,6 +85,21 @@ pick a category, type, brand or model for a template, the choices are grouped by
 who owns them, and on a template's page you can hover over each one to see its
 owner. A template using a team's records can only be issued to that team.
 
+### Brand and model
+
+A template's **Brand & Model** setting says what its items' brand and model
+should be in D4H:
+
+- **Required**: items need a model, and so a brand.
+- **Optional**, the default: brand and model may be blank, but if they're set,
+  they must be one of the template's variants.
+- **None**: the type has no meaningful brand or model, so leave them blank.
+
+**Require Serial Number** says whether items need a serial number. Together,
+these and the template's variants are the checks that
+[Issued Types](#checking-issued-items) and [bundle comparisons](/docs/d4h-i3/bundles)
+use to flag items.
+
 ### Organisation-owned records only
 
 To keep every template usable by every team, owners and admins can turn on
@@ -77,8 +111,8 @@ change them.
 
 ## Roles
 
-- An **I3 Editor** can issue and return items.
-- An **I3 Admin** can also create, change and delete templates.
+- An **I3 Editor** can issue and return items, and view and compare bundles.
+- An **I3 Admin** can also create, change and delete templates and bundles.
 
 Owners, Admins and both I3 roles can also edit items and work tasks in the
 [D4H](/docs/d4h#roles) module.

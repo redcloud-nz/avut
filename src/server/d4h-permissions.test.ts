@@ -18,7 +18,12 @@ vi.mock("@/server/d4h-api/client", () => ({
 const TEAM_ID = 7;
 
 /** The resolved token `getConfiguredD4HAccessToken` hands back. */
-const accessToken = { id: "token-1", serverCode: "us", token: "secret" } as never;
+const accessToken = {
+    id: "token-1",
+    serverCode: "us",
+    token: "secret",
+    access: "ReadWrite",
+} as never;
 
 /** A whoami holding one membership, in team `teamId`, with the given permissions. */
 function whoami(teamId: number, permissions: Record<string, Record<string, boolean>>) {

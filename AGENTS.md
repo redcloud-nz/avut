@@ -11,8 +11,9 @@ All org-scoped pages, module or not, live under `/orgs/[slug]/…`.
 UI code private to one module lives in `src/modules/<module-id>/`: components in `components/`, other module-private code (hooks, helpers) in `lib/`. Create a subfolder only when something goes in it. Folders use `modules.ts` ids, not route segments (`org-admin` and `system-admin` both have segment `admin`). The one folder that isn't a registry id is `user-settings`, for the `/user/settings/*` pages.
 
 - UI that more than one module uses lives in `src/components/` (the shared layer), never in either module. So do areas that aren't modules (`auth`, `invitations`, `docs`, `marketing`, the org dashboard).
+- `src/components/teams/` holds the team record cards and dialogs that `org-admin` and `team-admin` share. It is distinct from `src/components/team/`, the team scope root's own UI.
 - Schemas stay in `src/lib/schemas/`: they're per domain, not per module.
-- A module never imports another module (lint). Outside `src/app`, which may import any module, only the sidebar-menu registry (`nav/{org,scope}-sidebar-modules.tsx`) and the docs demos (`docs/demo-*.tsx`) may import from `src/modules/`.
+- A module never imports another module (lint). Outside `src/app`, which may import any module, only the sidebar-menu registry (`nav/{org,team,scope}-sidebar-modules.tsx`) and the docs demos (`docs/demo-*.tsx`) may import from `src/modules/`.
 - No barrel `index.ts` files: import each file directly.
 
 `src/generated/` (the Prisma client and `dmmf.ts`) is generated and gitignored — never edit it manually. `npm install` regenerates it; after switching to a branch that changes `prisma/schema.prisma`, run `npx prisma generate` yourself or the client and mock metadata will be stale.
@@ -51,6 +52,7 @@ There is **one** shared PostgreSQL dev database (`avut`), reached through `.env.
 - **Never run a command that mutates the shared database without explicit permission each time.** That covers, at least: `npm run prisma migrate dev` / `migrate deploy` / `migrate reset` / `db push`, `npm run prisma db execute`, `npm run seed:demo`, and `npm run build` (its first step is `prisma migrate deploy`). When one of these is the right next step, stop and ask.
 - Read-only Prisma commands are fine unprompted: `npm run prisma studio`, `prisma generate`, `prisma migrate status`, `prisma validate`.
 - Editing `prisma/schema.prisma` and running `npx prisma generate` (regenerates the client only, no DB contact) is fine; turning that into a migration is not — ask first.
+- A migration comes only from `npm run prisma migrate dev` against a `db:branch` copy, with permission. Never hand-write migration SQL or substitute `prisma migrate diff`. If local Postgres is down or unreachable, that's a fault: stop and tell the user, don't work around it.
 
 ### Branching the database for a migration
 
@@ -79,6 +81,8 @@ The dev database holds records for **real people with their real email addresses
 - When you judge it's a good point to commit, stage the relevant changes and commit them without asking, then show the commit message you used.
 - Never `git push`, open a PR, or otherwise publish commits without explicit approval — committing locally is fine, sharing is not.
 - Issues in redcloud-nz/avut are the build backlog. Ideas and brainstorms not ready to build live in redcloud-nz/avut-ideas (`/avut-brainstorm` files there; `/avut-develop-feature` promotes one into an avut issue).
+- `/avut-brainstorm`, `/avut-issue` and `/avut-status` are user-level skills (`~/.claude/skills/`), not in this repo, because they serve every repo in `avut-project`. The other `avut-*` skills live in `.claude/skills/`.
+- Repo skills (`.claude/skills/`) depend on nothing outside the repo except those user-level `avut-*` skills. Personal setup (a notes vault, personal skills like `/pickup`, `/wrapup` or `/track`) may call into a repo skill and pass it what it needs, but a repo skill never reads paths or calls skills that only exist on one machine.
 - Feature PRs merge to `integration` (the default branch). `production` is the release target — see [`docs/releasing.md`](docs/releasing.md) for how a version gets there, and [`docs/branch-protection.md`](docs/branch-protection.md) for the branch rules.
 
 ## Worktrees
@@ -128,7 +132,7 @@ Router conventions and the audit-logging guide (which `ctx.logEvent` you hold, `
 
 ## Data Fetching
 
-AVUT has two distinct tRPC entry points — `trpc` from `@/trpc/server` (Server Components: calls the router in-process, preserving the request's session) and `trpc` from `@/trpc/client` (Client Components: goes out over HTTP, so its `queryFn` arrives unauthenticated on the server). Lint catches the wrong one in Next entry files (`page`, `layout`, `route`, …); any other Server Component is on you.
+AVUT has two distinct tRPC entry points — `trpc` from `@/trpc/server` (Server Components: calls the router in-process, preserving the request's session) and `trpc` from `@/trpc/client` (Client Components: goes out over HTTP from the browser, and fails every call during a server render rather than fetch without the session, so what a client component reads there must be prefetched). Lint catches the wrong one in Next entry files (`page`, `layout`, `route`, …); any other Server Component is on you.
 
 Mutations declare their cache side-effects once via `meta: { effects: ... }` (`src/trpc/mutation-effector.tsx`), not with manual `queryClient.setQueryData`/`invalidateQueries` calls at each call site.
 
@@ -265,11 +269,13 @@ Render an entity's name as a link to its detail page with the wrappers in `src/c
 
 ## Scope roots and modules
 
-The app has three real scope roots, each with its own sidebar and module set: **organization** (`/orgs/[slug]/…`), **user** (`/user/…`, always available), and **system** (`/system/…`, gated on the Better Auth `admin` role). `ScopeSwitcher` (`src/components/nav/scope-switcher.tsx`) is the persistent control for jumping between them.
+The app has four real scope roots, each with its own sidebar and module set: **organization** (`/orgs/[slug]/…`), **team** (`/teams/[slug]/…`, entered through `requireTeam`, an entry gate that needs a `TeamUser` grant on a slugged, Active team; its pages then read through the org procedures, checked by org roles — see [`route-access-control.md`](docs/patterns/route-access-control.md)), **user** (`/user/…`, always available), and **system** (`/system/…`, gated on the Better Auth `admin` role). `ScopeSwitcher` (`src/components/nav/scope-switcher.tsx`) is the persistent control for jumping between them.
 
-`src/lib/modules.ts` is the single source of truth for all three — module ids, labels, icons, route segments, and hrefs all come from the `Modules` registry there. Update it when adding a module; don't hardcode module paths elsewhere. A module's UI code lives in `src/modules/<module-id>/` (see [Modules](#modules)).
+`src/lib/modules.ts` is the single source of truth for all four — module ids, labels, icons, route segments, and hrefs all come from the `Modules` registry there. Update it when adding a module; don't hardcode module paths elsewhere. A module's UI code lives in `src/modules/<module-id>/` (see [Modules](#modules)).
 
 - A module's route segment can differ from its id — `skill-track` is the id _and_ segment, but don't assume they always match; read `segment` from the registry. The org-scoped `org-admin` and system-scoped `system-admin` modules both use segment `"admin"` — they don't collide because each scope's module lookup is scoped to its own `ModuleScope`
+- An org module can also live in team scope: it keeps its `OrganizationModuleId` and declares a `team` entry (`TeamScopeEntry`: an optional `segment` and `href(teamSlug)`), and is still enabled by its one org settings key. Team-only modules are `TeamModuleDef`s (`scope: "team"`, always on); `team-admin` (`/teams/[slug]/admin`) is the first. Like every team page it writes through the org procedures with the team's ids, not team-scope procedures. `teamModules` is derived from both
+- A component used in both the org and team scopes builds its links with `scopedRoute(ref, { organization, team }, params)` (`src/lib/scoped-routes.ts`), or `useScopedRoute()` (`src/hooks/use-scoped-route.ts`) to bind it to `useCurrentScope()`. Both roots name their param `[slug]`, so both patterns stay typed routes
 - Only org-scoped modules are gated by org settings (`OrganizationSettings.modules`, keyed by `OrganizationModuleId`); `org-admin` is `alwaysOn`, as are all user and system modules
 - Only org modules with an `href` appear in the org nav switcher and dashboard (`orgModules`), which is why `forms` is absent from those
 - The `forms` id is inert: the public `/pub` form experiment was deleted, and the live form flows (`forms-router`, `src/forms/i3-issue-items/`, `form-processor`) are reached through `d4h-i3`. It's retained only because it's a settings-gated key

@@ -292,6 +292,7 @@ const actionPastTense: Partial<Record<string, string>> = {
     Reopen: "Reopened",
     Restore: "Restored",
     Revoke: "Revoked",
+    Run: "Ran",
     Subscribe: "Subscribed",
     Unban: "Unbanned",
     Unpublish: "Unpublished",

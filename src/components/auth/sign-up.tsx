@@ -131,9 +131,9 @@ function Auth_EmailPasswordSignUp_Form({
                     control={form.control}
                     render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
-                            <FieldLabel htmlFor="sign-up-name">Name</FieldLabel>
+                            <FieldLabel htmlFor={`${formId}-name`}>Name</FieldLabel>
                             <Input
-                                id="sign-up-name"
+                                id={`${formId}-name`}
                                 placeholder="Your full name"
                                 aria-invalid={fieldState.invalid}
                                 disabled={mutation.isPending}
@@ -148,9 +148,9 @@ function Auth_EmailPasswordSignUp_Form({
                     control={form.control}
                     render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
-                            <FieldLabel htmlFor="email">Email Address</FieldLabel>
+                            <FieldLabel htmlFor={`${formId}-email`}>Email Address</FieldLabel>
                             <Input
-                                id="email"
+                                id={`${formId}-email`}
                                 type="email"
                                 placeholder="Your email address"
                                 aria-invalid={fieldState.invalid}
@@ -166,9 +166,9 @@ function Auth_EmailPasswordSignUp_Form({
                     control={form.control}
                     render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
-                            <FieldLabel htmlFor="sign-up-password">Password</FieldLabel>
+                            <FieldLabel htmlFor={`${formId}-password`}>Password</FieldLabel>
                             <PasswordInput
-                                id="sign-up-password"
+                                id={`${formId}-password`}
                                 autoComplete="new-password"
                                 placeholder="Your password"
                                 aria-invalid={fieldState.invalid}

@@ -57,6 +57,17 @@ export const FormInstance = {
 
 export type FormInstance = z.infer<typeof FormInstance.schema>;
 
+/** One page of a user's submitted form instances, newest first. */
+export const FormInstancePage = {
+    schema: z.object({
+        items: z.array(FormInstance.schema),
+        /** Pass as `cursor` to fetch the next (older) page; `null` on the last page. */
+        nextCursor: FormInstanceId.schema.nullable(),
+    }),
+} as const;
+
+export type FormInstancePage = z.infer<typeof FormInstancePage.schema>;
+
 export const FormInstanceItemId = {
     schema: zodNanoId16("FormInstanceItemId expected").brand<"FormInstanceItemId">(),
 

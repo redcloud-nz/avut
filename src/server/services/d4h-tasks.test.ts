@@ -71,12 +71,12 @@ describe("d4h-tasks", () => {
                 itemId: 2,
                 itemLabel: "#2 Helmet",
                 reason: "Returned To Cache",
-                note: "Returned via AVUT, received by Receiver.",
+                note: "Returned via AVUT, recorded by Receiver.",
             });
 
             expect(task.payload).toEqual({
                 reason: "Returned To Cache",
-                note: "Returned via AVUT, received by Receiver.",
+                note: "Returned via AVUT, recorded by Receiver.",
             });
         });
 
@@ -210,12 +210,12 @@ describe("d4h-tasks", () => {
          */
         function fakeLostRace() {
             const findUnique = db.d4HTask.findUnique.bind(db.d4HTask);
-            const findSpy = vi
-                .spyOn(db.d4HTask, "findUnique")
-                .mockImplementationOnce((async (args: Parameters<typeof findUnique>[0]) => ({
-                    ...(await findUnique(args)),
-                    status: "Open",
-                })) as unknown as typeof findUnique);
+            const findSpy = vi.spyOn(db.d4HTask, "findUnique").mockImplementationOnce((async (
+                args: Parameters<typeof findUnique>[0],
+            ) => ({
+                ...(await findUnique(args)),
+                status: "Open",
+            })) as unknown as typeof findUnique);
             const updateSpy = vi
                 .spyOn(db.d4HTask, "update")
                 .mockRejectedValueOnce(

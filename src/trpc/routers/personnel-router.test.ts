@@ -677,7 +677,12 @@ describe("personnel.getLinkedUser", () => {
             userId: T.user,
             personId: T.linked,
             roles: ["member", "i3-editor"],
-            user: { id: T.user, name: "Lucy", email: "lucy@example.com" },
+            user: {
+                id: T.user,
+                name: "Lucy",
+                email: "lucy@example.com",
+                updatedAt: expect.any(String),
+            },
         });
         expect(result).not.toHaveProperty("name");
         expect(result).not.toHaveProperty("email");

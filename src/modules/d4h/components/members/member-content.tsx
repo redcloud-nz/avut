@@ -20,17 +20,20 @@ import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { D4HItemRef } from "@/components/d4h/d4h-item-ref";
+import { HelpButton } from "@/components/docs/help-button";
 import { D4HEquipmentBrandLink } from "@/components/entity-links/d4h-equipment-brand-link";
 import { D4HEquipmentItemLink } from "@/components/entity-links/d4h-equipment-item-link";
 import { D4HEquipmentModelLink } from "@/components/entity-links/d4h-equipment-model-link";
 import { D4HEquipmentTypeLink } from "@/components/entity-links/d4h-equipment-type-link";
 import { D4HTeamLink } from "@/components/entity-links/d4h-team-link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { D4HEquipmentItem, D4HEquipmentStatus } from "@/lib/schemas/d4h/equipment-item";
 import { formatD4HMemberStatus } from "@/lib/schemas/d4h/member";
+import { D4HModule_OpenRecordInD4H_Button } from "@/modules/d4h/components/open-in-d4h-button";
 import { trpc } from "@/trpc/client";
 
 /** A D4H member of one team: their details and the equipment they hold. */
@@ -80,11 +83,13 @@ export function D4HModule_Member_Content({
             columnHelper.accessor("ref", {
                 header: "Ref",
                 // An item held by this member can belong to another team. Its page lives under
-                // that team, so link there, and not at all when that team is out of reach.
+                // that team, so link there, and not at all when that team is out of reach. An item
+                // of this team links to the member-scoped page, which keeps the member in the
+                // breadcrumbs.
                 cell: (ctx) => {
                     const item = ctx.row.original;
                     if (!isReachable(item)) return <D4HItemRef value={item.ref} />;
-                    return <D4HEquipmentItemLink item={item} />;
+                    return <D4HEquipmentItemLink item={item} member={member} />;
                 },
                 enableGlobalFilter: true,
                 enableSorting: true,
@@ -121,24 +126,11 @@ export function D4HModule_Member_Content({
                 header: "Model",
                 cell: (ctx) => {
                     const item = ctx.row.original;
-                    const { brand, model } = item;
-                    if (
-                        model?.id == null ||
-                        !model.title ||
-                        brand.id == null ||
-                        !isReachable(item)
-                    ) {
+                    const { model } = item;
+                    if (model?.id == null || !model.title || !isReachable(item)) {
                         return ctx.getValue() || "—";
                     }
-                    return (
-                        <D4HEquipmentModelLink
-                            model={{
-                                id: model.id,
-                                title: model.title,
-                                brand: { id: brand.id },
-                            }}
-                        />
-                    );
+                    return <D4HEquipmentModelLink model={{ id: model.id, title: model.title }} />;
                 },
                 enableGlobalFilter: true,
                 enableSorting: true,
@@ -159,7 +151,7 @@ export function D4HModule_Member_Content({
                 },
             }),
         ]);
-    }, [teams]);
+    }, [teams, member]);
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
     const table = useReactTable({
@@ -197,24 +189,26 @@ export function D4HModule_Member_Content({
                     },
                     { label: member.name },
                 ]}
+                actions={<HelpButton id="d4h" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
                         <Saratoga.Title>{member.name}</Saratoga.Title>
+                        <Saratoga.Actions>
+                            <D4HModule_OpenRecordInD4H_Button
+                                record="member"
+                                id={member.id}
+                                teamId={teamId}
+                            />
+                        </Saratoga.Actions>
                     </Saratoga.Header>
                     <div className="flex flex-col gap-4">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Member Details</CardTitle>
-                            </CardHeader>
+                        <RecordCard label="D4H Member">
                             <CardContent>
                                 <DataList>
-                                    <DataItem inline>
-                                        <DataItemTitle>D4H ID</DataItemTitle>
-                                        <DataItemValue>{member.id}</DataItemValue>
-                                    </DataItem>
-                                    <DataItem inline>
+                                    <RecordCardId label="D4H ID" id={String(member.id)} />
+                                    <DataItem>
                                         <DataItemTitle>Name</DataItemTitle>
                                         <DataItemValue>{member.name}</DataItemValue>
                                     </DataItem>
@@ -223,24 +217,24 @@ export function D4HModule_Member_Content({
                                         <DataItemValue>{member.email.value}</DataItemValue>
                                     </DataItem>
                                     {member.ref && (
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Ref</DataItemTitle>
                                             <DataItemValue>{member.ref}</DataItemValue>
                                         </DataItem>
                                     )}
                                     {member.position && (
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Position</DataItemTitle>
                                             <DataItemValue>{member.position}</DataItemValue>
                                         </DataItem>
                                     )}
-                                    <DataItem inline>
+                                    <DataItem>
                                         <DataItemTitle>Team</DataItemTitle>
                                         <DataItemValue>
                                             <D4HTeamLink team={team} />
                                         </DataItemValue>
                                     </DataItem>
-                                    <DataItem inline>
+                                    <DataItem>
                                         <DataItemTitle>D4H Status</DataItemTitle>
                                         <DataItemValue>
                                             {formatD4HMemberStatus(member.status)}
@@ -248,7 +242,7 @@ export function D4HModule_Member_Content({
                                     </DataItem>
                                 </DataList>
                             </CardContent>
-                        </Card>
+                        </RecordCard>
                         <div>
                             <div className="mb-2 text-lg font-semibold">Issued Equipment</div>
                             <Kaga.TableToolbar table={table} />

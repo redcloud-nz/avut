@@ -520,6 +520,8 @@ describe("skillPackageSubscriptions.getSkill", () => {
         deletedSkill: SkillId.create(),
         deletedGroup: SkillGroupId.create(),
         skillInDeletedGroup: SkillId.create(),
+        archivedGroup: SkillGroupId.create(),
+        skillInArchivedGroup: SkillId.create(),
         // Published and Active, not subscribed.
         openPkg: SkillPackageId.create(),
         openSkill: SkillId.create(),
@@ -630,31 +632,37 @@ describe("skillPackageSubscriptions.getSkill", () => {
             });
         }
 
-        // deleteGroup doesn't cascade, so an Active skill can sit in a Deleted group.
-        await db.skillGroup.create({
-            data: {
-                id: T.deletedGroup,
-                skillPackageId: T.livePkg,
-                name: "Deleted Group",
-                description: "",
-                properties: {},
-                tags: [],
-                sequence: 1,
-                status: "Deleted",
-            },
-        });
-        await db.skill.create({
-            data: {
-                id: T.skillInDeletedGroup,
-                skillPackageId: T.livePkg,
-                skillGroupId: T.deletedGroup,
-                name: "Skill in a Deleted group",
-                description: "",
-                properties: {},
-                tags: [],
-                sequence: 0,
-            },
-        });
+        // deleteGroup and archiveGroup don't cascade, so an Active skill can sit in a Deleted or
+        // an Archived group.
+        for (const [groupId, skillId, status, sequence] of [
+            [T.deletedGroup, T.skillInDeletedGroup, "Deleted", 1],
+            [T.archivedGroup, T.skillInArchivedGroup, "Archived", 2],
+        ] as const) {
+            await db.skillGroup.create({
+                data: {
+                    id: groupId,
+                    skillPackageId: T.livePkg,
+                    name: `${status} Group`,
+                    description: "",
+                    properties: {},
+                    tags: [],
+                    sequence,
+                    status,
+                },
+            });
+            await db.skill.create({
+                data: {
+                    id: skillId,
+                    skillPackageId: T.livePkg,
+                    skillGroupId: groupId,
+                    name: `Skill in a ${status} group`,
+                    description: "",
+                    properties: {},
+                    tags: [],
+                    sequence: 0,
+                },
+            });
+        }
     });
 
     function makeCaller(permissions: Permissions = { skillPackageSubscription: ["view"] }) {
@@ -749,6 +757,25 @@ describe("skillPackageSubscriptions.getSkill", () => {
         expect(skills.map((s) => s.id)).toContain(T.liveSkill);
         expect(skills.map((s) => s.id)).not.toContain(T.skillInDeletedGroup);
         expect(skillGroups.map((g) => g.id)).not.toContain(T.deletedGroup);
+    });
+
+    it("listAssessableSkills leaves out an Archived skill, and an Archived group with its skills", async () => {
+        const { skillGroups, skills } = await makeCaller().listAssessableSkills({
+            organizationId: T.org,
+        });
+
+        expect(skills.map((s) => s.id)).not.toContain(T.archivedSkill);
+        expect(skills.map((s) => s.id)).not.toContain(T.skillInArchivedGroup);
+        expect(skillGroups.map((g) => g.id)).not.toContain(T.archivedGroup);
+    });
+
+    it("returns an Active skill in an Archived group, for its history", async () => {
+        const result = await makeCaller().getSkill({
+            organizationId: T.org,
+            skillId: T.skillInArchivedGroup,
+        });
+
+        expect(result.group.status).toBe("Archived");
     });
 
     it("throws NOT_FOUND for a Deleted skill", async () => {

@@ -4,6 +4,7 @@
  */
 "use client";
 
+import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -13,18 +14,20 @@ import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { SkillGroupLink } from "@/components/entity-links/skill-group-link";
 import { SkillPackageLink } from "@/components/entity-links/skill-package-link";
-import { ItemLinkActionIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
+import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import {
-    DataItem,
-    DataItemDateValue,
-    DataItemTitle,
-    DataItemValue,
-    DataList,
-} from "@/components/ui/data-item";
-import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
+    Item,
+    ItemActions,
+    ItemContent,
+    ItemDescription,
+    ItemGroup,
+    ItemTitle,
+} from "@/components/ui/item";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillId } from "@/lib/schemas/skill";
@@ -45,12 +48,13 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
     // Only a subscriber can see a skill in a withdrawn (unpublished, archived or deleted) package.
     const withdrawn = !SkillPackage.isAvailable(skill.skillPackage);
 
-    // As in the Skills list: a skill counts as archived when it, or its group, is.
+    // A skill counts as archived when it, or its group, is. Either way it's out of the Skills
+    // list, sessions and reports.
     const archived = skill.status !== "Active" || skill.group.status !== "Active";
 
-    // The coverage report covers only Active skills in available packages the organization
-    // subscribes to; for anything else it would show "Unknown Skill".
-    const coverageAvailable = skill.subscribed && !withdrawn && skill.status === "Active";
+    // The coverage report covers only Active skills in Active groups of available packages the
+    // organization subscribes to; for anything else it would show "Unknown Skill".
+    const coverageAvailable = skill.subscribed && !withdrawn && !archived;
 
     return (
         <>
@@ -73,31 +77,33 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
-                        <Saratoga.Title className="flex items-center gap-2">
+                        <Saratoga.Title
+                            badges={archived && <Badge variant="outline">Archived</Badge>}
+                        >
                             {skill.name}
-                            {archived && <Badge variant="outline">Archived</Badge>}
                         </Saratoga.Title>
                     </Saratoga.Header>
                     {withdrawn && (
-                        <p className="text-muted-foreground text-sm">
-                            {skill.skillPackage.status === "Deleted"
-                                ? "Its author has deleted this skill's package. Its skills are out of your sessions and reports. Checks already recorded are kept."
-                                : "Its author has withdrawn this skill's package. Its skills are out of your sessions and reports until it's published again. Checks already recorded are kept."}
-                        </p>
+                        <Alert variant="warning">
+                            <AlertTitle>
+                                {skill.skillPackage.status === "Deleted"
+                                    ? "Its author has deleted this skill's package"
+                                    : "Its author has withdrawn this skill's package"}
+                            </AlertTitle>
+                            <AlertDescription>
+                                {skill.skillPackage.status === "Deleted"
+                                    ? "Its skills are out of your sessions and reports. Checks already recorded are kept."
+                                    : "Its skills are out of your sessions and reports until it's published again. Checks already recorded are kept."}
+                            </AlertDescription>
+                        </Alert>
                     )}
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Skill Information</CardTitle>
-                                </CardHeader>
+                            <RecordCard label="Skill" updatedAt={skill.updatedAt}>
                                 <CardContent>
                                     <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Skill ID</DataItemTitle>
-                                            <DataItemValue>{skill.id}</DataItemValue>
-                                        </DataItem>
-                                        <DataItem inline>
+                                        <RecordCardId label="Skill ID" id={skill.id} />
+                                        <DataItem>
                                             <DataItemTitle>Name</DataItemTitle>
                                             <DataItemValue>{skill.name}</DataItemValue>
                                         </DataItem>
@@ -105,7 +111,7 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
                                             <DataItemTitle>Description</DataItemTitle>
                                             <DataItemValue>{skill.description}</DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Package</DataItemTitle>
                                             <DataItemValue>
                                                 <SkillPackageLink
@@ -113,19 +119,19 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
                                                 />
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Group</DataItemTitle>
                                             <DataItemValue>
                                                 <SkillGroupLink group={skill.group} />
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Frequency</DataItemTitle>
                                             <DataItemValue>
                                                 {formatFrequency(skill.frequency)}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Tags</DataItemTitle>
                                             <DataItemValue>
                                                 {skill.tags.length > 0 ? (
@@ -141,13 +147,13 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
                                                 )}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Required</DataItemTitle>
                                             <DataItemValue>
                                                 {skill.defaultRequired ? "Yes" : "No"}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Included</DataItemTitle>
                                             <DataItemValue>
                                                 {skill.defaultInclude ? "Yes" : "No"}
@@ -155,19 +161,17 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
                                         </DataItem>
                                     </DataList>
                                 </CardContent>
-                            </Card>
+                            </RecordCard>
                         </Saratoga.Column>
                         <Saratoga.Column slot="secondary">
-                            {/* Coverage is the only related view so far, so the card shows only
-                                when it does. */}
-                            {coverageAvailable && (
-                                <Protect permissions={{ skillCheck: ["view"] }}>
-                                    <Card>
-                                        <CardHeader>
-                                            <CardTitle>Related</CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="px-2 -my-2">
-                                            <Item className="px-2" size="sm" asChild>
+                            {/* Recent checks shows for every skill, archived and withdrawn ones
+                                included, since their history is what it's for. Skill Coverage
+                                shows only for a skill that can still be assessed. */}
+                            <Protect permissions={{ skillCheck: ["view"] }}>
+                                <section aria-label="Related">
+                                    <ItemGroup className="gap-2">
+                                        {coverageAvailable && (
+                                            <Item variant="outline" role="listitem" asChild>
                                                 <Link
                                                     href={`${route("/orgs/[slug]/skill-track/reports/skill", { slug: organization.slug })}?skill=${skill.id}`}
                                                 >
@@ -178,28 +182,35 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
                                                         </ItemDescription>
                                                     </ItemContent>
                                                     <ItemActions>
-                                                        <ItemLinkActionIcon className="size-4" />
+                                                        <ChevronRightIcon
+                                                            aria-hidden
+                                                            className="text-muted-foreground size-4"
+                                                        />
                                                     </ItemActions>
                                                 </Link>
                                             </Item>
-                                        </CardContent>
-                                    </Card>
-                                </Protect>
-                            )}
-                            <Card>
-                                <CardContent>
-                                    <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Created</DataItemTitle>
-                                            <DataItemDateValue date={skill.createdAt} />
-                                        </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Updated</DataItemTitle>
-                                            <DataItemDateValue date={skill.updatedAt} />
-                                        </DataItem>
-                                    </DataList>
-                                </CardContent>
-                            </Card>
+                                        )}
+                                        <Item variant="outline" role="listitem" asChild>
+                                            <Link
+                                                href={`${route("/orgs/[slug]/skill-track/checks", { slug: organization.slug })}?skill=${skill.id}`}
+                                            >
+                                                <ItemContent>
+                                                    <ItemTitle>Recent checks</ItemTitle>
+                                                    <ItemDescription>
+                                                        checks of this skill
+                                                    </ItemDescription>
+                                                </ItemContent>
+                                                <ItemActions>
+                                                    <ChevronRightIcon
+                                                        aria-hidden
+                                                        className="text-muted-foreground size-4"
+                                                    />
+                                                </ItemActions>
+                                            </Link>
+                                        </Item>
+                                    </ItemGroup>
+                                </section>
+                            </Protect>
                         </Saratoga.Column>
                     </Saratoga.Columns>
                 </Saratoga.Root>

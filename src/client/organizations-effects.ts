@@ -87,6 +87,8 @@ export const organizationsEffects = createEffects<"organizations">()({
             }),
         ),
         invalidate(trpc.organizations.listOrganizations.queryFilter()),
+        // Removal drops the member's team grants; covers an admin removing themselves.
+        invalidate(trpc.user.listTeamGrants.queryFilter()),
         invalidate(trpc.users.getUser.queryFilter({ userId: vars.userId })),
         invalidate(
             trpc.organizations.listMembers.queryFilter({ organizationId: vars.organizationId }),
@@ -94,6 +96,19 @@ export const organizationsEffects = createEffects<"organizations">()({
         invalidate(
             trpc.organizations.listMembersForRoleGrant.queryFilter({
                 organizationId: vars.organizationId,
+            }),
+        ),
+        // `removeOrganizationMember` deletes the member's team access grants.
+        invalidate(
+            trpc.teamUsers.listGrantableUsers.queryFilter({ organizationId: vars.organizationId }),
+        ),
+        invalidate(
+            trpc.teamUsers.listTeamUsers.queryFilter({ organizationId: vars.organizationId }),
+        ),
+        invalidate(
+            trpc.teamUsers.listUserTeams.queryFilter({
+                organizationId: vars.organizationId,
+                userId: vars.userId,
             }),
         ),
     ],

@@ -97,9 +97,9 @@ export function AdminModule_UpdateOrganization_Form({
                     control={form.control}
                     render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid} orientation="responsive">
-                            <FieldLabel htmlFor="organization-name">Name</FieldLabel>
+                            <FieldLabel htmlFor={`${formId}-name`}>Name</FieldLabel>
                             <Input
-                                id="organization-name"
+                                id={`${formId}-name`}
                                 aria-invalid={fieldState.invalid}
                                 {...field}
                             />
@@ -112,9 +112,9 @@ export function AdminModule_UpdateOrganization_Form({
                     control={form.control}
                     render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid} orientation="responsive">
-                            <FieldLabel htmlFor="organization-slug">Slug</FieldLabel>
+                            <FieldLabel htmlFor={`${formId}-slug`}>Slug</FieldLabel>
                             <Input
-                                id="organization-slug"
+                                id={`${formId}-slug`}
                                 aria-invalid={fieldState.invalid}
                                 {...field}
                             />

@@ -30,7 +30,7 @@ export function D4HEquipmentTypeLink({ type }: D4HEquipmentTypeLinkProps) {
                 type_id: String(type.id),
             })}
             title={type.title}
-            type="Equipment Type"
+            type="D4H Equipment Type"
         >
             {owner && <span className="text-muted-foreground">Owned by {owner.title}</span>}
         </EntityLink>

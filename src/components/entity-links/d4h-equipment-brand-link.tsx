@@ -27,7 +27,7 @@ export function D4HEquipmentBrandLink({ brand }: D4HEquipmentBrandLinkProps) {
                 brand_id: String(brand.id),
             })}
             title={brand.title}
-            type="Equipment Brand"
+            type="D4H Equipment Brand"
         >
             {owner && <span className="text-muted-foreground">Owned by {owner.title}</span>}
         </EntityLink>

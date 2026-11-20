@@ -73,7 +73,7 @@ function writeSessionChecksStatus(
 /**
  * Invalidates every skill-check list for the org except the own-checks lists, which the caller
  * has just written: the session's Contents counts, Checks and Review, the org dashboard's stats,
- * the skill-checks collection and the recent-checks list.
+ * the skill-checks collection and every check search (the Checks page).
  *
  * The effector awaits these refetches before the mutation leaves `pending`, and the recording
  * rows stay dimmed while it's pending, so a predicate that also matched the own-checks list would
@@ -91,14 +91,14 @@ function invalidateOtherSkillCheckLists(organizationId: string): MutationEffect[
                 },
             ),
         ),
-        invalidate(trpc.skillChecks.listRecentChecks.queryFilter({ organizationId })),
+        invalidate(trpc.skillChecks.searchChecks.queryFilter({ organizationId })),
     ];
 }
 
 /**
  * Invalidates the org-wide reads that change with a session's status: the sessions list (its rows
  * carry `status`) and the competency matrix, which counts only approved sessions' `Include` checks.
- * Shared by `approveSession` and `reopenSession`. `listRecentChecks` and the org-wide
+ * Shared by `approveSession` and `reopenSession`. `searchChecks` and the org-wide
  * `listSkillChecks` aren't invalidated: nothing renders a check's status there.
  */
 function invalidateSessionStatusReaders(organizationId: string): MutationEffect[] {
@@ -112,11 +112,13 @@ function invalidateSessionStatusReaders(organizationId: string): MutationEffect[
  * Cache effects for `skillCheckSessions` router mutations, keyed by procedure name.
  *
  * Passed as `meta.effects` on the corresponding `useMutation` call — see `useMutationEffector`.
- * `createSession`'s response matches `getSession` exactly, so it writes wholesale.
+ * `createSession`'s `created` has `getSession`'s shape (assessors and team), so it writes wholesale.
  * `approveSession`, `reopenSession`, `updateSession` and the session halves of
- * `updateSessionAssessees`/`updateSessionSkills` return a bare `SkillCheckSession` without the
+ * `updateSessionAssessees`/`updateSessionSkills` return a `SkillCheckSession` without the
  * `assessors` extension `getSession` carries, so they merge into whatever's already cached instead
- * of replacing it. `updateSessionAssessors` merges its
+ * of replacing it. `updateSession`'s `updated` carries `team`, the one of them that can change it,
+ * so the merge replaces the cached `team` too; the others leave it as cached.
+ * `updateSessionAssessors` merges its
  * `updatedAssessors` in as that `assessors` extension too. `setSessionSkillCheck` and
  * `deleteSessionSkillCheck` edit the caller's own-checks list in place, matching on the
  * (assessee, skill) pair, merge the returned row into the session cache (`listSessionChecks`), and
@@ -252,7 +254,7 @@ export const skillCheckSessionsEffects = createEffects<"skillCheckSessions">()({
             }),
         ),
         // A start change re-stamps every check's `checkedAt` server-side, so the reads that show or
-        // order by it refetch: the session's check lists, the competency matrix and recent checks.
+        // order by it refetch: the session's check lists, the competency matrix and check searches.
         ...(startChanged
             ? [
                   invalidate(
@@ -267,7 +269,7 @@ export const skillCheckSessionsEffects = createEffects<"skillCheckSessions">()({
                       }),
                   ),
                   invalidate(
-                      trpc.skillChecks.listRecentChecks.queryFilter({
+                      trpc.skillChecks.searchChecks.queryFilter({
                           organizationId: vars.organizationId,
                       }),
                   ),

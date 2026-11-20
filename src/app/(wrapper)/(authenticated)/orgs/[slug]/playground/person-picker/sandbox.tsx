@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import { PersonPicker } from "@/components/controls/person-picker";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,7 @@ import { PersonId } from "@/lib/schemas/person";
 import { Harness } from "../_components/harness";
 
 export function PersonPicker_Sandbox() {
+    const idPrefix = useId();
     const organization = useOrganization();
 
     const [value, setValue] = useState<PersonId | null>(null);
@@ -49,21 +50,25 @@ export function PersonPicker_Sandbox() {
             controls={
                 <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                        <Switch id="pp-disabled" checked={disabled} onCheckedChange={setDisabled} />
-                        <Label htmlFor="pp-disabled">Disabled</Label>
+                        <Switch
+                            id={`${idPrefix}-disabled`}
+                            checked={disabled}
+                            onCheckedChange={setDisabled}
+                        />
+                        <Label htmlFor={`${idPrefix}-disabled`}>Disabled</Label>
                     </div>
                     <div className="flex items-center gap-2">
                         <Switch
-                            id="pp-aria-invalid"
+                            id={`${idPrefix}-aria-invalid`}
                             checked={ariaInvalid}
                             onCheckedChange={setAriaInvalid}
                         />
-                        <Label htmlFor="pp-aria-invalid">Aria invalid</Label>
+                        <Label htmlFor={`${idPrefix}-aria-invalid`}>Aria invalid</Label>
                     </div>
                     <div className="space-y-1">
-                        <Label htmlFor="pp-placeholder">Placeholder</Label>
+                        <Label htmlFor={`${idPrefix}-placeholder`}>Placeholder</Label>
                         <input
-                            id="pp-placeholder"
+                            id={`${idPrefix}-placeholder`}
                             className="w-full rounded-md border px-2 py-1 text-sm"
                             value={placeholder}
                             onChange={(e) => setPlaceholder(e.target.value)}

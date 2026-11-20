@@ -75,7 +75,7 @@ export const historyRouter = createTrpcRouter({
      * One page of an object's history, newest first: entries about the object, plus related
      * entries (ones that mention it through a ref) of the types the caller may view.
      *
-     * Declared with only `organization: ["view"]`; the object type's own permission comes from
+     * Declared with membership alone; the object type's own permission comes from
      * the `HistoryObjects` registry and is checked here, so one procedure serves every type.
      * @throws TRPCError(FORBIDDEN) if the caller can't view that type of object.
      */

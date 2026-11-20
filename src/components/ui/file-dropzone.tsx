@@ -22,6 +22,11 @@ export interface FileDropzoneProps {
     accept?: string;
     disabled?: boolean;
     "aria-invalid"?: boolean;
+    /**
+     * Id of the field's error message. Set on the focusable wrapper, since the invalid state on
+     * the hidden input can't be reached by keyboard.
+     */
+    "aria-describedby"?: string;
     /** Short helper line under the prompt, e.g. "Up to 1 MB · .json". */
     hint?: ReactNode;
     className?: string;
@@ -61,6 +66,7 @@ export function FileDropzone({
             role="button"
             tabIndex={disabled ? -1 : 0}
             aria-disabled={disabled}
+            aria-describedby={props["aria-describedby"]}
             data-invalid={invalid}
             data-slot="file-dropzone"
             onClick={openPicker}

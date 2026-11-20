@@ -173,7 +173,7 @@ export function OrganizationSettings_UpdateSkillTrackResults_Dialog({
                                                                 data-invalid={fieldState.invalid}
                                                             >
                                                                 <FieldLabel
-                                                                    htmlFor={`skill-check-result-${value}-label`}
+                                                                    htmlFor={`${formId}-result-${value}-label`}
                                                                 >
                                                                     {name}
                                                                 </FieldLabel>
@@ -185,7 +185,7 @@ export function OrganizationSettings_UpdateSkillTrackResults_Dialog({
                                                                             field: enabledField,
                                                                         }) => (
                                                                             <Switch
-                                                                                id={`skill-check-result-${value}-enabled`}
+                                                                                id={`${formId}-result-${value}-enabled`}
                                                                                 aria-label={`Offer ${name}`}
                                                                                 checked={
                                                                                     enabledField.value
@@ -197,7 +197,7 @@ export function OrganizationSettings_UpdateSkillTrackResults_Dialog({
                                                                         )}
                                                                     />
                                                                     <Input
-                                                                        id={`skill-check-result-${value}-label`}
+                                                                        id={`${formId}-result-${value}-label`}
                                                                         className="min-w-0 flex-1"
                                                                         aria-invalid={
                                                                             fieldState.invalid

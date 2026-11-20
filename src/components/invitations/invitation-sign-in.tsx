@@ -95,9 +95,9 @@ export function InvitationSignIn_Form({
             >
                 <FieldGroup>
                     <Field>
-                        <FieldLabel htmlFor="invitation-sign-in-email">Email Address</FieldLabel>
+                        <FieldLabel htmlFor={`${formId}-email`}>Email Address</FieldLabel>
                         <Input
-                            id="invitation-sign-in-email"
+                            id={`${formId}-email`}
                             type="email"
                             autoComplete="username"
                             value={email}
@@ -110,9 +110,7 @@ export function InvitationSignIn_Form({
                         render={({ field, fieldState }) => (
                             <Field data-invalid={fieldState.invalid}>
                                 <div className="flex items-center">
-                                    <FieldLabel htmlFor="invitation-sign-in-password">
-                                        Password
-                                    </FieldLabel>
+                                    <FieldLabel htmlFor={`${formId}-password`}>Password</FieldLabel>
                                     <Link
                                         href={authUrl("/auth/forgot-password", { email, returnTo })}
                                         className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
@@ -121,7 +119,7 @@ export function InvitationSignIn_Form({
                                     </Link>
                                 </div>
                                 <PasswordInput
-                                    id="invitation-sign-in-password"
+                                    id={`${formId}-password`}
                                     autoComplete="current-password"
                                     placeholder="Your password"
                                     aria-invalid={fieldState.invalid}

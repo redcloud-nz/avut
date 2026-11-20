@@ -4,7 +4,6 @@
  */
 "use client";
 
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Fragment } from "react";
 import * as R from "remeda";
@@ -15,6 +14,7 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { D4HTeamPickerDialog } from "@/components/d4h/team-picker-dialog";
 import { D4HEquipmentCategoryLink } from "@/components/entity-links/d4h-equipment-category-link";
+import { D4HIssuedTypeLink } from "@/components/entity-links/d4h-issued-type-link";
 import { Empty, EmptyDescription } from "@/components/ui/empty";
 import {
     Table,
@@ -145,18 +145,10 @@ export function D4HI3Module_TeamIssuedTypes({ teamId }: { teamId: number }) {
                                             {group.types.map((type) => (
                                                 <TableRow key={type.id}>
                                                     <TableCell className="pl-6">
-                                                        <Link
-                                                            href={route(
-                                                                "/orgs/[slug]/d4h-i3/teams/[d4h_team_id]/issued-types/[type_id]",
-                                                                {
-                                                                    slug,
-                                                                    d4h_team_id: String(teamId),
-                                                                    type_id: String(type.id),
-                                                                },
-                                                            )}
-                                                        >
-                                                            {type.title}
-                                                        </Link>
+                                                        <D4HIssuedTypeLink
+                                                            teamId={teamId}
+                                                            type={type}
+                                                        />
                                                     </TableCell>
                                                     <TableCell className="text-center">
                                                         {type.count}

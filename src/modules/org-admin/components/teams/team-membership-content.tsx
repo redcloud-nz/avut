@@ -11,7 +11,9 @@ import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { PersonLink } from "@/components/entity-links/person-link";
 import { TeamLink } from "@/components/entity-links/team-link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { D4HMemberStatusBadge } from "@/components/teams/d4h-member-status-badge";
+import { Badge } from "@/components/ui/badge";
+import { CardContent } from "@/components/ui/card";
 import {
     DataItem,
     DataItemDateValue,
@@ -19,13 +21,13 @@ import {
     DataItemValue,
     DataList,
 } from "@/components/ui/data-item";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonId } from "@/lib/schemas/person";
 import { TeamId } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
-import { D4HMemberStatusBadge } from "./d4h-member-status-badge";
 import { AdminModule_TeamMembership_Menu } from "./team-membership-menu";
 
 export function AdminModule_TeamMembership_Content({
@@ -81,7 +83,15 @@ export function AdminModule_TeamMembership_Content({
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
-                        <Saratoga.Title>Team Membership</Saratoga.Title>
+                        <Saratoga.Title
+                            badges={
+                                membership.status !== "Active" && (
+                                    <Badge variant="outline">{membership.status}</Badge>
+                                )
+                            }
+                        >
+                            Team Membership
+                        </Saratoga.Title>
                         <Saratoga.Actions>
                             <AdminModule_TeamMembership_Menu
                                 team={team}
@@ -92,50 +102,41 @@ export function AdminModule_TeamMembership_Content({
 
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Details</CardTitle>
-                                </CardHeader>
+                            <RecordCard label="Membership" updatedAt={membership.updatedAt}>
                                 <CardContent>
                                     <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Membership ID</DataItemTitle>
-                                            <DataItemValue>{membership.id}</DataItemValue>
-                                        </DataItem>
-                                        <DataItem inline>
+                                        <RecordCardId label="Membership ID" id={membership.id} />
+                                        <DataItem>
                                             <DataItemTitle>Person</DataItemTitle>
                                             <DataItemValue>
                                                 <PersonLink person={membership.person} />
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Team</DataItemTitle>
                                             <DataItemValue>
                                                 <TeamLink team={team} />
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Status</DataItemTitle>
-                                            <DataItemValue>{membership.status}</DataItemValue>
-                                        </DataItem>
                                     </DataList>
                                 </CardContent>
-                            </Card>
+                            </RecordCard>
 
                             {membership.d4h && (
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>D4H</CardTitle>
-                                    </CardHeader>
+                                <RecordCard label="D4H Member">
                                     <CardContent>
                                         <DataList>
-                                            <DataItem inline>
-                                                <DataItemTitle>Member ID</DataItemTitle>
+                                            <RecordCardId
+                                                label="Member ID"
+                                                id={String(membership.d4h.d4hMemberId)}
+                                            />
+                                            <DataItem>
+                                                <DataItemTitle>Role ID</DataItemTitle>
                                                 <DataItemValue>
-                                                    {membership.d4h.d4hMemberId}
+                                                    {membership.d4h.d4hRoleId ?? "—"}
                                                 </DataItemValue>
                                             </DataItem>
-                                            <DataItem inline>
+                                            <DataItem>
                                                 <DataItemTitle>D4H Status</DataItemTitle>
                                                 <DataItemValue>
                                                     <D4HMemberStatusBadge
@@ -143,25 +144,19 @@ export function AdminModule_TeamMembership_Content({
                                                     />
                                                 </DataItemValue>
                                             </DataItem>
-                                            <DataItem inline>
-                                                <DataItemTitle>D4H Position</DataItemTitle>
+                                            <DataItem>
+                                                <DataItemTitle>Position</DataItemTitle>
                                                 <DataItemValue>
                                                     {membership.d4h.d4hPosition || "—"}
                                                 </DataItemValue>
                                             </DataItem>
-                                            <DataItem inline>
+                                            <DataItem>
                                                 <DataItemTitle>Ref</DataItemTitle>
                                                 <DataItemValue>
                                                     {membership.d4h.d4hRef || "—"}
                                                 </DataItemValue>
                                             </DataItem>
-                                            <DataItem inline>
-                                                <DataItemTitle>Role ID</DataItemTitle>
-                                                <DataItemValue>
-                                                    {membership.d4h.d4hRoleId ?? "—"}
-                                                </DataItemValue>
-                                            </DataItem>
-                                            <DataItem inline>
+                                            <DataItem>
                                                 <DataItemTitle>Team last synced</DataItemTitle>
                                                 {team.d4h?.lastSyncedAt ? (
                                                     <DataItemDateValue
@@ -173,25 +168,8 @@ export function AdminModule_TeamMembership_Content({
                                             </DataItem>
                                         </DataList>
                                     </CardContent>
-                                </Card>
+                                </RecordCard>
                             )}
-                        </Saratoga.Column>
-
-                        <Saratoga.Column slot="secondary">
-                            <Card>
-                                <CardContent>
-                                    <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Created</DataItemTitle>
-                                            <DataItemDateValue date={membership.createdAt} />
-                                        </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Updated</DataItemTitle>
-                                            <DataItemDateValue date={membership.updatedAt} />
-                                        </DataItem>
-                                    </DataList>
-                                </CardContent>
-                            </Card>
                         </Saratoga.Column>
                     </Saratoga.Columns>
                 </Saratoga.Root>

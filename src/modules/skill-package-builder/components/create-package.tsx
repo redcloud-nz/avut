@@ -136,9 +136,9 @@ export function SkillPackageBuilder_CreatePackage_Dialog() {
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="package-name">Name</FieldLabel>
+                                        <FieldLabel htmlFor={`${formId}-name`}>Name</FieldLabel>
                                         <Input
-                                            id="package-name"
+                                            id={`${formId}-name`}
                                             autoFocus
                                             aria-invalid={fieldState.invalid}
                                             {...field}
@@ -154,11 +154,11 @@ export function SkillPackageBuilder_CreatePackage_Dialog() {
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="package-description">
+                                        <FieldLabel htmlFor={`${formId}-description`}>
                                             Description
                                         </FieldLabel>
                                         <Textarea
-                                            id="package-description"
+                                            id={`${formId}-description`}
                                             aria-invalid={fieldState.invalid}
                                             {...field}
                                         />

@@ -33,6 +33,8 @@ export const Messages = {
     }) =>
         `"${variantName ? `${templateName} (${variantName})` : templateName}" can't be issued to ${teamTitle}: its D4H records aren't owned by ${teamTitle} or its D4H organisation.`,
 
+    i3BundleNotFound: (bundleId: string) => `I3Bundle(id=${bundleId}) not found.`,
+
     i3TemplateNotFound: (templateId: string) => `I3Template(id=${templateId}) not found.`,
 
     i3TemplateVariantNotFound: (variantId: string) =>

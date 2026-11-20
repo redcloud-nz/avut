@@ -20,10 +20,9 @@ function can(role: keyof typeof Roles, permissions: Permissions): boolean {
 }
 
 describe("Roles", () => {
-    // `organizationProcedure` forces `organization: ["view"]` into every requirement, and
-    // the organization layout gates on it too. A role without it cannot reach anything —
-    // which is exactly how `skill-package-author` (now `skills-author`) once ended up
-    // non-functional.
+    // `organization: ["view"]` lets a role into the org scope. Every role keeps it until the
+    // scope narrows (#528), which takes it from `member` and `skills-assessor` and updates
+    // this test.
     it.each(roles)("%s can view the organization", (role) => {
         expect(can(role, { organization: ["view"] })).toBe(true);
     });
@@ -54,6 +53,13 @@ describe("Roles", () => {
         expect(can("member", { d4hEquipment: ["view"] })).toBe(true);
     });
 
+    it("gives D4H attendance reminders only to owner and admin", () => {
+        expect(roles.filter((role) => can(role, { d4hNag: ["view"] }))).toEqual(["owner", "admin"]);
+        expect(can("admin", { d4hNag: ["view", "update", "run"] })).toBe(true);
+        expect(can("owner", { d4hNag: ["view", "update", "run"] })).toBe(true);
+        expect(can("member", { d4hNag: ["view"] })).toBe(false);
+    });
+
     describe("i3-editor", () => {
         // getLinkedPerson / listPersonLinks / getLinkedUser all require both halves.
         it("can read the user↔person link", () => {
@@ -65,11 +71,24 @@ describe("Roles", () => {
             expect(can("i3-editor", { i3Template: ["view"] })).toBe(true);
             expect(can("i3-editor", { i3Template: ["create"] })).toBe(false);
         });
+
+        it("can view bundles but not change them", () => {
+            expect(can("i3-editor", { i3Bundle: ["view"] })).toBe(true);
+            expect(can("i3-editor", { i3Bundle: ["create"] })).toBe(false);
+            expect(can("i3-editor", { i3Bundle: ["update"] })).toBe(false);
+            expect(can("i3-editor", { i3Bundle: ["delete"] })).toBe(false);
+        });
     });
 
     describe("i3-admin", () => {
         it("can author and delete templates, including through trash", () => {
             expect(can("i3-admin", { i3Template: ["view", "create", "update", "delete"] })).toBe(
+                true,
+            );
+        });
+
+        it("can manage bundles", () => {
+            expect(can("i3-admin", { i3Bundle: ["view", "create", "update", "delete"] })).toBe(
                 true,
             );
         });
@@ -203,6 +222,7 @@ describe("Roles", () => {
             for (const role of ["owner", "admin"] as const) {
                 expect(can(role, { i3Item: ["view"] })).toBe(false);
                 expect(can(role, { i3Template: ["view"] })).toBe(false);
+                expect(can(role, { i3Bundle: ["view"] })).toBe(false);
                 expect(can(role, { skillCheck: ["view"] })).toBe(false);
                 expect(can(role, { skillCheckSession: ["view"] })).toBe(false);
                 expect(can(role, { skillPackage: ["view"] })).toBe(false);
@@ -223,6 +243,18 @@ describe("hasAnyRoleWithPermissions", () => {
         expect(hasAnyRoleWithPermissions(["member", "owner"], { organization: ["delete"] })).toBe(
             true,
         );
+    });
+
+    // `organizationProcedure()` asks for nothing beyond membership (#523). Better Auth's
+    // `authorize` refuses an empty request, so this must not hand it one.
+    it("grants a request for nothing", () => {
+        expect(hasAnyRoleWithPermissions(["member"], {})).toBe(true);
+        expect(hasAnyRoleWithPermissions(["skills-assessor"], { person: [] })).toBe(true);
+    });
+
+    it("ignores empty action lists alongside real ones", () => {
+        expect(hasAnyRoleWithPermissions(["member"], { person: ["view"], team: [] })).toBe(true);
+        expect(hasAnyRoleWithPermissions(["member"], { person: ["delete"], team: [] })).toBe(false);
     });
 
     it("denies when no single role covers the full request", () => {

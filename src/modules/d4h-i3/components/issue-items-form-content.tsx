@@ -6,7 +6,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Controller, useFieldArray, useForm, UseFormReturn, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -17,6 +17,7 @@ import { i3Effects } from "@/client/i3-effects";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { D4HTeamMemberSelect } from "@/components/controls/d4h-team-member-select";
+import { HelpButton } from "@/components/docs/help-button";
 import { AlertWarningIcon, ObjectIcons } from "@/components/icons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button, MutationButton } from "@/components/ui/button";
@@ -78,6 +79,7 @@ export function D4HI3Module_IssueItems_FormInstance_Content({
     instanceId: FormInstanceId;
 }) {
     const logger = useLogger("I3Module", "IssueItems_FormInstance_Content");
+    const idPrefix = useId();
     const organization = useOrganization();
     const router = useRouter();
     const slug = organization.slug;
@@ -134,6 +136,7 @@ export function D4HI3Module_IssueItems_FormInstance_Content({
         saveStatus,
         handleChange: saveDraft,
         handleDelete,
+        cancel: cancelAutosave,
     } = useDraftFormAutosave({
         formKey: I3IssueItemsForm.formKey,
         instanceId,
@@ -161,6 +164,7 @@ export function D4HI3Module_IssueItems_FormInstance_Content({
 
     const handleSubmit = form.handleSubmit(
         (formData) => {
+            cancelAutosave();
             submitMutation.mutate({
                 formInstanceId: instanceId,
                 organizationId: organization.id,
@@ -182,8 +186,9 @@ export function D4HI3Module_IssueItems_FormInstance_Content({
                         label: "Issue Items",
                         href: route("/orgs/[slug]/d4h-i3/forms/issue-items", { slug }),
                     },
-                    { label: form.getValues().recipient.name || "No Recipient" },
+                    { label: form.getValues().recipient.name || "No one selected" },
                 ]}
+                actions={<HelpButton id="d4h-i3/issue" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>
@@ -206,37 +211,37 @@ export function D4HI3Module_IssueItems_FormInstance_Content({
                                 onChange={handleChange}
                             >
                                 <FieldGroup>
-                                    <Field>
-                                        <FieldLabel>Issuer</FieldLabel>
-                                        <UserNameFieldValue />
-                                    </Field>
-                                    <Controller
-                                        control={form.control}
-                                        name="recipient"
-                                        render={({ field, fieldState }) => (
-                                            <Field data-invalid={fieldState.invalid}>
-                                                <FieldLabel htmlFor="recipient">
-                                                    Recipient
-                                                </FieldLabel>
-                                                <D4HTeamMemberSelect
-                                                    {...field}
-                                                    organizationId={organization.id}
-                                                    slotProps={{
-                                                        trigger: {
-                                                            id: "recipient",
-                                                            "aria-invalid": fieldState.invalid,
-                                                        },
-                                                        value: {
-                                                            placeholder: "Select a recipient",
-                                                        },
-                                                    }}
-                                                />
-                                                {fieldState.error && (
-                                                    <FieldError errors={[fieldState.error]} />
-                                                )}
-                                            </Field>
-                                        )}
-                                    />
+                                    <div className="grid gap-5 sm:grid-cols-2">
+                                        <Controller
+                                            control={form.control}
+                                            name="recipient"
+                                            render={({ field, fieldState }) => (
+                                                <Field data-invalid={fieldState.invalid}>
+                                                    <FieldLabel htmlFor={`${idPrefix}-recipient`}>
+                                                        Issued to
+                                                    </FieldLabel>
+                                                    <D4HTeamMemberSelect
+                                                        value={field.value}
+                                                        onChange={(value) => {
+                                                            field.onChange(value);
+                                                            handleChange();
+                                                        }}
+                                                        organizationId={organization.id}
+                                                        id={`${idPrefix}-recipient`}
+                                                        aria-invalid={fieldState.invalid}
+                                                    />
+                                                    {fieldState.error && (
+                                                        <FieldError errors={[fieldState.error]} />
+                                                    )}
+                                                </Field>
+                                            )}
+                                        />
+                                        <Field>
+                                            <FieldLabel>Recorded by</FieldLabel>
+                                            {/* Matches the height of the person select it sits beside. */}
+                                            <UserNameFieldValue className="flex h-8 items-center text-sm" />
+                                        </Field>
+                                    </div>
 
                                     {lacksCreatePermission && (
                                         <Alert variant="warning">
@@ -289,9 +294,11 @@ export function D4HI3Module_IssueItems_FormInstance_Content({
                                         name="comments"
                                         render={({ field, fieldState }) => (
                                             <Field data-invalid={fieldState.invalid}>
-                                                <FieldLabel htmlFor="comments">Comments</FieldLabel>
+                                                <FieldLabel htmlFor={`${idPrefix}-comments`}>
+                                                    Comments
+                                                </FieldLabel>
                                                 <Textarea
-                                                    id="comments"
+                                                    id={`${idPrefix}-comments`}
                                                     {...field}
                                                     aria-invalid={fieldState.invalid}
                                                 />
@@ -386,7 +393,7 @@ function D4HI3_Issue_ItemsSection({
                 <div className="flex items-center gap-2">
                     {!hasRecipient && (
                         <span className="text-sm text-muted-foreground">
-                            Choose a recipient first
+                            Choose who they&apos;re issued to first
                         </span>
                     )}
                     <Button
@@ -421,7 +428,7 @@ function D4HI3_Issue_ItemsSection({
                                         .join(" - ")}
                                 </ItemDescription>
                                 {misfitIndexes.includes(index) && (
-                                    <ItemDescription className="flex items-center gap-1 text-amber-600 dark:text-amber-500">
+                                    <ItemDescription className="flex items-center gap-1 text-warning-foreground">
                                         <AlertWarningIcon className="size-3.5" />
                                         Can&apos;t be issued to {teamTitle}
                                     </ItemDescription>
@@ -544,7 +551,7 @@ function MisfitMarker({ teamTitle }: { teamTitle: string }) {
     const label = `Can't be issued to ${teamTitle}`;
     return (
         <span title={label} className="inline-flex">
-            <AlertWarningIcon className="size-3.5 text-amber-600 dark:text-amber-500" />
+            <AlertWarningIcon className="size-3.5 text-warning-foreground" />
             <span className="sr-only">{label}</span>
         </span>
     );
@@ -589,6 +596,7 @@ function AddItemDialog({
     teamTitle,
     ...props
 }: AddItemDialogProps) {
+    const idPrefix = useId();
     const { templateOptions, variantOptions } = offeredOptions(templates, variants, fits);
 
     const form = useForm({
@@ -635,7 +643,9 @@ function AddItemDialog({
                             name="template"
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="template">Template</FieldLabel>
+                                    <FieldLabel htmlFor={`${idPrefix}-template`}>
+                                        Template
+                                    </FieldLabel>
                                     {templateOptions.length === 0 ? (
                                         <p className="text-sm text-muted-foreground">
                                             No templates can be issued to {teamTitle}.
@@ -658,7 +668,7 @@ function AddItemDialog({
                                             }}
                                         >
                                             <SelectTrigger
-                                                id="template"
+                                                id={`${idPrefix}-template`}
                                                 aria-invalid={fieldState.invalid}
                                             >
                                                 <SelectValue placeholder="Select a template" />
@@ -691,7 +701,9 @@ function AddItemDialog({
 
                                 return (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="variant">Variant</FieldLabel>
+                                        <FieldLabel htmlFor={`${idPrefix}-variant`}>
+                                            Variant
+                                        </FieldLabel>
 
                                         {noVariantsFit(
                                             currentTemplate,
@@ -720,7 +732,7 @@ function AddItemDialog({
                                                 disabled={!currentTemplate}
                                             >
                                                 <SelectTrigger
-                                                    id="variant"
+                                                    id={`${idPrefix}-variant`}
                                                     aria-invalid={fieldState.invalid}
                                                 >
                                                     <SelectValue placeholder="Select a variant" />
@@ -750,10 +762,12 @@ function AddItemDialog({
                             name="serialNumber"
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="serialNumber">Serial Number</FieldLabel>
+                                    <FieldLabel htmlFor={`${idPrefix}-serialNumber`}>
+                                        Serial Number
+                                    </FieldLabel>
 
                                     <Input
-                                        id="serialNumber"
+                                        id={`${idPrefix}-serialNumber`}
                                         value={field.value ?? ""}
                                         onChange={field.onChange}
                                         aria-invalid={fieldState.invalid}
@@ -792,6 +806,7 @@ function EditItemDialog({
     teamTitle,
     ...props
 }: EditItemDialogProps) {
+    const idPrefix = useId();
     const { templateOptions, variantOptions, templateMisfit, variantMisfit } = offeredOptions(
         templates,
         variants,
@@ -842,7 +857,9 @@ function EditItemDialog({
                             name="template"
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="template">Template</FieldLabel>
+                                    <FieldLabel htmlFor={`${idPrefix}-template`}>
+                                        Template
+                                    </FieldLabel>
                                     {templateOptions.length === 0 ? (
                                         <p className="text-sm text-muted-foreground">
                                             No templates can be issued to {teamTitle}.
@@ -865,7 +882,7 @@ function EditItemDialog({
                                             }}
                                         >
                                             <SelectTrigger
-                                                id="template"
+                                                id={`${idPrefix}-template`}
                                                 aria-invalid={fieldState.invalid}
                                             >
                                                 <SelectValue placeholder="Select a template" />
@@ -901,7 +918,9 @@ function EditItemDialog({
 
                                 return (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="variant">Variant</FieldLabel>
+                                        <FieldLabel htmlFor={`${idPrefix}-variant`}>
+                                            Variant
+                                        </FieldLabel>
 
                                         {noVariantsFit(
                                             currentTemplate,
@@ -930,7 +949,7 @@ function EditItemDialog({
                                                 disabled={!currentTemplate}
                                             >
                                                 <SelectTrigger
-                                                    id="variant"
+                                                    id={`${idPrefix}-variant`}
                                                     aria-invalid={fieldState.invalid}
                                                 >
                                                     <SelectValue placeholder="Select a variant" />
@@ -965,10 +984,12 @@ function EditItemDialog({
                             name="serialNumber"
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="serialNumber">Serial Number</FieldLabel>
+                                    <FieldLabel htmlFor={`${idPrefix}-serialNumber`}>
+                                        Serial Number
+                                    </FieldLabel>
 
                                     <Input
-                                        id="serialNumber"
+                                        id={`${idPrefix}-serialNumber`}
                                         value={field.value ?? ""}
                                         onChange={field.onChange}
                                         aria-invalid={fieldState.invalid}

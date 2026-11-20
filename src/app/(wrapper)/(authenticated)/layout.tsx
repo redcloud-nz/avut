@@ -76,9 +76,10 @@ export default async function AuthenticatedLayout(props: {
         resolveUserModuleFlags(),
     ]);
 
-    // `ScopeSwitcher` reads this via `useSuspenseQuery` on every authenticated page —
+    // `ScopeSwitcher` reads these via `useSuspenseQueries` on every authenticated page —
     // prefetching here removes the round trip that would otherwise show as its skeleton.
     prefetch(trpc.user.listMemberships.queryOptions());
+    prefetch(trpc.user.listTeamGrants.queryOptions());
 
     // `WhatsNewDialog` and the version button's unseen dot both read this via `useSuspenseQuery`,
     // each inside its own `WhatsNewBoundary` (renders nothing while loading or on failure). Neither

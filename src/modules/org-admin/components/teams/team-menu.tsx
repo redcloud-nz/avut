@@ -7,11 +7,12 @@
 import Link from "next/link";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
-import { D4HIcons, ObjectIcons } from "@/components/icons";
+import { ObjectIcons } from "@/components/icons";
+import { Teams_AddTeamMembership_Dialog } from "@/components/teams/add-team-membership";
+import { Teams_D4HMenuGroup } from "@/components/teams/d4h-link-card";
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
-    DropdownMenuLabel,
     DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
@@ -19,7 +20,6 @@ import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { TeamData } from "@/lib/schemas/team";
-import { AdminModule_AddTeamMembership_Dialog } from "@/modules/org-admin/components/teams/add-team-membership";
 
 import { AdminModule_ArchiveTeam_Dialog } from "./archive-team";
 import { AdminModule_DeleteTeam_Dialog } from "./delete-team";
@@ -46,10 +46,8 @@ export function AdminModule_Team_Menu({ team }: AdminModule_TeamMenuProps) {
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(ACTIONS));
 
     const organization = useOrganization();
-    const d4hEnabled = organization.settings.integrations.d4h.enabled;
     const canUpdate = useHasPermission({ team: ["update"] });
     const canDelete = useHasPermission({ team: ["delete"] });
-    const linked = team.d4h !== null;
     const isActive = team.status === "Active";
 
     const actions: MenuActionProps[] = [
@@ -128,49 +126,7 @@ export function AdminModule_Team_Menu({ team }: AdminModule_TeamMenuProps) {
                         <DropdownMenuSeparator />
                     </>
                 }
-                after={
-                    // An unlinked archived team has no D4H action left to offer.
-                    d4hEnabled &&
-                    (linked || isActive) && (
-                        <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuLabel>D4H</DropdownMenuLabel>
-                            <DropdownMenuGroup>
-                                {!linked && isActive && (
-                                    <DropdownMenuItem
-                                        disabled={!canUpdate}
-                                        onClick={() =>
-                                            void setAction("d4h-link", { history: "push" })
-                                        }
-                                    >
-                                        <D4HIcons.Link /> Link to D4H
-                                    </DropdownMenuItem>
-                                )}
-                                {linked && isActive && (
-                                    <DropdownMenuItem
-                                        disabled={!canUpdate}
-                                        onClick={() =>
-                                            void setAction("d4h-sync", { history: "push" })
-                                        }
-                                    >
-                                        <D4HIcons.Sync /> Sync with D4H
-                                    </DropdownMenuItem>
-                                )}
-                                {linked && (
-                                    <DropdownMenuItem
-                                        disabled={!canUpdate}
-                                        className="text-destructive focus:text-destructive"
-                                        onClick={() =>
-                                            void setAction("d4h-unlink", { history: "push" })
-                                        }
-                                    >
-                                        <D4HIcons.Unlink /> Unlink from D4H
-                                    </DropdownMenuItem>
-                                )}
-                            </DropdownMenuGroup>
-                        </>
-                    )
-                }
+                after={<Teams_D4HMenuGroup team={team} setAction={setAction} />}
             />
 
             <AdminModule_DeleteTeam_Dialog
@@ -183,7 +139,7 @@ export function AdminModule_Team_Menu({ team }: AdminModule_TeamMenuProps) {
                 }
             />
 
-            <AdminModule_AddTeamMembership_Dialog
+            <Teams_AddTeamMembership_Dialog
                 team={team}
                 open={action === "add-membership"}
                 onOpenChange={(open) =>

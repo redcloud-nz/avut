@@ -9,7 +9,7 @@ import type { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import type { PersonId } from "@/lib/schemas/person";
 import type { TeamId } from "@/lib/schemas/team";
 import { fetchD4HMember } from "@/server/d4h-api/client";
-import { sendEmail } from "@/server/email";
+import { orgReplyTo, sendEmail } from "@/server/email";
 
 import * as OrgSettings from "./organization-settings";
 import type { OrgServiceContext } from "./service-context";
@@ -31,14 +31,18 @@ export interface NotifyRecipient {
  * Only Active people in this org with a non-empty email are kept, so ids that no longer resolve
  * are dropped silently. Deduped by `PersonId`. An empty result means nobody is notified.
  *
+ * Also returns the org's Reply-To (`general.replyTo`, `undefined` when unset) from the same
+ * settings read, for the I3 notification and receipt emails.
+ *
  * Reads settings uncached, so a just-saved list applies to the next submission.
  */
 export async function resolveNotifyRecipients(
     ctx: OrgServiceContext,
     { d4hTeamId }: { d4hTeamId: number },
-): Promise<NotifyRecipient[]> {
+): Promise<{ recipients: NotifyRecipient[]; replyTo: string | undefined }> {
     const settings = await OrgSettings.read(ctx.prisma, ctx.organizationId);
     const { notify } = settings.modules["d4h-i3"];
+    const replyTo = orgReplyTo(settings);
 
     const teams = await ctx.prisma.team.findMany({
         where: {
@@ -55,7 +59,7 @@ export async function resolveNotifyRecipients(
             personIds.add(personId);
         }
     }
-    if (personIds.size === 0) return [];
+    if (personIds.size === 0) return { recipients: [], replyTo };
 
     const people = await ctx.prisma.person.findMany({
         where: {
@@ -67,13 +71,14 @@ export async function resolveNotifyRecipients(
         orderBy: { name: "asc" },
     });
 
-    return people
+    const recipients = people
         .filter((person) => person.email.trim() !== "")
         .map((person) => ({
             personId: person.id as PersonId,
             name: person.name,
             email: person.email.trim(),
         }));
+    return { recipients, replyTo };
 }
 
 /**
@@ -92,7 +97,7 @@ export async function fetchReceiptAddress(
 /**
  * Send one email per recipient, in sequence, so each gets their own copy (and their own
  * "sent to" footer) and no recipient sees the others' addresses. `sendEmail` logs its own
- * failures and never rejects.
+ * failures and never rejects, and a failed send doesn't stop the rest; its result is ignored.
  */
 export async function sendEach<R>(
     recipients: readonly R[],

@@ -158,12 +158,12 @@ function AddD4HAccessToken_Body() {
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="access-token-organization">
+                                    <FieldLabel htmlFor={`${formId}-organization`}>
                                         Organisation
                                     </FieldLabel>
                                     <Select {...field} onValueChange={field.onChange}>
                                         <SelectTrigger
-                                            id="access-token-organization"
+                                            id={`${formId}-organization`}
                                             aria-invalid={fieldState.invalid}
                                         >
                                             <SelectValue placeholder="Select organisation" />
@@ -188,12 +188,12 @@ function AddD4HAccessToken_Body() {
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="access-token-server-code">
+                                    <FieldLabel htmlFor={`${formId}-server-code`}>
                                         D4H Server
                                     </FieldLabel>
                                     <Select {...field} onValueChange={field.onChange}>
                                         <SelectTrigger
-                                            id="access-token-server-code"
+                                            id={`${formId}-server-code`}
                                             aria-invalid={fieldState.invalid}
                                         >
                                             <SelectValue placeholder="Select D4H server" />
@@ -235,9 +235,9 @@ function AddD4HAccessToken_Body() {
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="access-token">Token</FieldLabel>
+                                    <FieldLabel htmlFor={`${formId}-token`}>Token</FieldLabel>
                                     <Textarea
-                                        id="access-token"
+                                        id={`${formId}-token`}
                                         aria-invalid={fieldState.invalid}
                                         placeholder="Paste token here"
                                         {...field}

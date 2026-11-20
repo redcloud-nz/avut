@@ -1,0 +1,455 @@
+/*
+ *  Copyright (c) 2026 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ */
+
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+
+import { ConflictError, NotFoundError } from "@/lib/errors";
+import { nanoId16 } from "@/lib/id";
+import { OrganizationId } from "@/lib/schemas/organization";
+import { PersonId } from "@/lib/schemas/person";
+import { TeamId } from "@/lib/schemas/team";
+import { TeamUserId } from "@/lib/schemas/team-user";
+import { UserId } from "@/lib/schemas/user";
+import { createMockPrisma } from "@/test/create-prisma-mock";
+import { createOrganizationMockContext } from "@/test/trpc-helpers";
+
+import * as TeamUsers from "./team-users";
+
+describe("team-users", () => {
+    const T = {
+        org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
+        team: TeamId.create(),
+        archivedTeam: TeamId.create(),
+        emptyTeam: TeamId.create(),
+        binnedTeam: TeamId.create(),
+        outsiderTeam: TeamId.create(),
+        admin: UserId.create(),
+        alice: UserId.create(),
+        bob: UserId.create(),
+        carol: UserId.create(),
+        deleted: UserId.create(),
+        outsider: UserId.create(),
+        newcomer: UserId.create(),
+        alicePerson: PersonId.create(),
+        bobPerson: PersonId.create(),
+        aliceGrant: TeamUserId.create(),
+        bobGrant: TeamUserId.create(),
+        carolGrant: TeamUserId.create(),
+        deletedGrant: TeamUserId.create(),
+        aliceArchivedGrant: TeamUserId.create(),
+        aliceBinnedGrant: TeamUserId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    function ctx() {
+        return createOrganizationMockContext({
+            organizationId: T.org,
+            user: { id: T.admin },
+            permissions: {},
+            prisma: db,
+        });
+    }
+
+    async function entriesFor(objectId: string) {
+        return db.logEntry.findMany({ where: { objectType: "TeamUser", objectId } });
+    }
+
+    async function contextRefsOf(logEntryId: string) {
+        return db.logEntryObject.findMany({ where: { logEntryId, role: "context" } });
+    }
+
+    beforeAll(async () => {
+        for (const id of [T.org, T.otherOrg]) {
+            await db.organization.create({
+                data: { id, name: id, slug: id, createdAt: new Date() },
+            });
+        }
+
+        for (const [id, name, status] of [
+            [T.admin, "Admin", "Active"],
+            [T.alice, "Alice", "Active"],
+            [T.bob, "Bob", "Active"],
+            [T.carol, "Carol", "Active"],
+            [T.deleted, "Dave", "Deleted"],
+            [T.outsider, "Olive", "Active"],
+            [T.newcomer, "Nina", "Active"],
+        ] as const) {
+            await db.user.create({
+                data: { id, name, email: `${name.toLowerCase()}@example.com`, status },
+            });
+        }
+
+        for (const [id, name] of [
+            [T.alicePerson, "Alice"],
+            [T.bobPerson, "Bob"],
+        ] as const) {
+            await db.person.create({
+                data: {
+                    id,
+                    organizationId: T.org,
+                    name,
+                    email: `${name.toLowerCase()}@example.com`,
+                    tags: [],
+                    properties: {},
+                },
+            });
+        }
+
+        for (const [userId, organizationId, personId] of [
+            [T.admin, T.org, null],
+            [T.alice, T.org, T.alicePerson],
+            [T.bob, T.org, T.bobPerson],
+            [T.carol, T.org, null],
+            [T.deleted, T.org, null],
+            [T.newcomer, T.org, null],
+            [T.outsider, T.otherOrg, null],
+        ] as const) {
+            await db.organizationUser.create({
+                data: { id: nanoId16(), organizationId, userId, personId },
+            });
+        }
+
+        for (const [id, organizationId, name, status] of [
+            [T.team, T.org, "Rescue", "Active"],
+            [T.archivedTeam, T.org, "Alpine", "Archived"],
+            [T.emptyTeam, T.org, "Empty", "Active"],
+            [T.binnedTeam, T.org, "Binned", "Deleted"],
+            [T.outsiderTeam, T.otherOrg, "Outsider", "Active"],
+        ] as const) {
+            await db.team.create({
+                data: { id, organizationId, name, status, tags: [], properties: {} },
+            });
+        }
+
+        // Alice is on the roster; Bob's membership is archived, so he isn't.
+        for (const [personId, status] of [
+            [T.alicePerson, "Active"],
+            [T.bobPerson, "Archived"],
+        ] as const) {
+            await db.teamMembership.create({
+                data: {
+                    id: nanoId16(),
+                    organizationId: T.org,
+                    teamId: T.team,
+                    personId,
+                    status,
+                    tags: [],
+                    properties: {},
+                },
+            });
+        }
+
+        for (const [id, teamId, userId] of [
+            [T.carolGrant, T.team, T.carol],
+            [T.bobGrant, T.team, T.bob],
+            [T.aliceGrant, T.team, T.alice],
+            [T.deletedGrant, T.team, T.deleted],
+            [T.aliceArchivedGrant, T.archivedTeam, T.alice],
+            [T.aliceBinnedGrant, T.binnedTeam, T.alice],
+        ] as const) {
+            await db.teamUser.create({
+                data: { id, organizationId: T.org, teamId, userId },
+            });
+        }
+    });
+
+    describe("listForCaller", () => {
+        // Gina belongs to two orgs (named so "Beta" sorts after "Alpha"). Her grants: two slugged
+        // Active teams in Beta, one in Alpha, an unslugged team and an Archived one. Hank holds a
+        // grant on a slugged team Gina has none on.
+        const G = {
+            alpha: OrganizationId.create(),
+            beta: OrganizationId.create(),
+            gina: UserId.create(),
+            hank: UserId.create(),
+            alphaTeam: TeamId.create(),
+            betaRescue: TeamId.create(),
+            betaAlpine: TeamId.create(),
+            unslugged: TeamId.create(),
+            archived: TeamId.create(),
+            hankTeam: TeamId.create(),
+        };
+
+        function callerCtx(userId: UserId) {
+            const { prisma, logEvent } = createOrganizationMockContext({
+                organizationId: G.alpha,
+                user: { id: userId },
+                prisma: db,
+            });
+            return { prisma, userId, logEvent };
+        }
+
+        beforeAll(async () => {
+            for (const [id, name] of [
+                [G.beta, "Beta Org"],
+                [G.alpha, "Alpha Org"],
+            ] as const) {
+                await db.organization.create({
+                    data: { id, name, slug: `org-${id}`, createdAt: new Date() },
+                });
+            }
+            for (const [id, name] of [
+                [G.gina, "Gina"],
+                [G.hank, "Hank"],
+            ] as const) {
+                await db.user.create({
+                    data: { id, name, email: `${name.toLowerCase()}@example.com` },
+                });
+            }
+            for (const [userId, organizationId] of [
+                [G.gina, G.alpha],
+                [G.gina, G.beta],
+                [G.hank, G.beta],
+            ] as const) {
+                await db.organizationUser.create({
+                    data: { id: nanoId16(), organizationId, userId },
+                });
+            }
+            for (const [id, organizationId, name, slug, status] of [
+                [G.betaRescue, G.beta, "Rescue", "beta-rescue", "Active"],
+                [G.betaAlpine, G.beta, "Alpine", "beta-alpine", "Active"],
+                [G.alphaTeam, G.alpha, "Zulu", "alpha-zulu", "Active"],
+                [G.unslugged, G.alpha, "Unslugged", null, "Active"],
+                [G.archived, G.beta, "Archived", "beta-archived", "Archived"],
+                [G.hankTeam, G.beta, "Hank's", "beta-hank", "Active"],
+            ] as const) {
+                await db.team.create({
+                    data: { id, organizationId, name, slug, status, tags: [], properties: {} },
+                });
+            }
+            for (const [teamId, organizationId, userId] of [
+                [G.betaRescue, G.beta, G.gina],
+                [G.alphaTeam, G.alpha, G.gina],
+                [G.betaAlpine, G.beta, G.gina],
+                [G.unslugged, G.alpha, G.gina],
+                [G.archived, G.beta, G.gina],
+                [G.hankTeam, G.beta, G.hank],
+            ] as const) {
+                await db.teamUser.create({
+                    data: { id: TeamUserId.create(), organizationId, teamId, userId },
+                });
+            }
+        });
+
+        it("lists the caller's slugged, Active teams across orgs, by org name then team name", async () => {
+            expect(await TeamUsers.listForCaller(callerCtx(G.gina))).toEqual([
+                {
+                    team: { id: G.alphaTeam, name: "Zulu", slug: "alpha-zulu" },
+                    organization: { id: G.alpha, name: "Alpha Org", slug: `org-${G.alpha}` },
+                },
+                {
+                    team: { id: G.betaAlpine, name: "Alpine", slug: "beta-alpine" },
+                    organization: { id: G.beta, name: "Beta Org", slug: `org-${G.beta}` },
+                },
+                {
+                    team: { id: G.betaRescue, name: "Rescue", slug: "beta-rescue" },
+                    organization: { id: G.beta, name: "Beta Org", slug: `org-${G.beta}` },
+                },
+            ]);
+        });
+
+        it("returns only the caller's own grants", async () => {
+            const rows = await TeamUsers.listForCaller(callerCtx(G.hank));
+
+            expect(rows.map((row) => row.team.id)).toEqual([G.hankTeam]);
+        });
+
+        it("returns an empty list for a user with no grants", async () => {
+            expect(await TeamUsers.listForCaller(callerCtx(T.newcomer))).toEqual([]);
+        });
+    });
+
+    describe("listForTeam", () => {
+        it("lists the team's grants by user name, leaving out soft-deleted users", async () => {
+            const rows = await TeamUsers.listForTeam(ctx(), T.team);
+
+            expect(rows.map((row) => row.user.name)).toEqual(["Alice", "Bob", "Carol"]);
+            expect(rows[0]).toMatchObject({
+                id: T.aliceGrant,
+                teamId: T.team,
+                userId: T.alice,
+                user: { id: T.alice, email: "alice@example.com", image: null },
+            });
+        });
+
+        it("marks only users whose person has an Active membership as on the roster", async () => {
+            const rows = await TeamUsers.listForTeam(ctx(), T.team);
+            const onRoster = Object.fromEntries(rows.map((row) => [row.user.name, row.onRoster]));
+
+            expect(onRoster).toEqual({ Alice: true, Bob: false, Carol: false });
+        });
+
+        it("returns an empty list for a team with no grants", async () => {
+            expect(await TeamUsers.listForTeam(ctx(), T.emptyTeam)).toEqual([]);
+        });
+
+        it("throws NotFoundError for a team in another organization", async () => {
+            await expect(TeamUsers.listForTeam(ctx(), T.outsiderTeam)).rejects.toThrow(
+                NotFoundError,
+            );
+        });
+    });
+
+    describe("listForUser", () => {
+        it("lists the user's grants in the organization by team name, with slug and status, leaving out teams in the Rubbish bin", async () => {
+            const rows = await TeamUsers.listForUser(ctx(), T.alice);
+
+            expect(rows).toEqual([
+                expect.objectContaining({
+                    id: T.aliceArchivedGrant,
+                    team: { id: T.archivedTeam, name: "Alpine", slug: null, status: "Archived" },
+                }),
+                expect.objectContaining({
+                    id: T.aliceGrant,
+                    team: { id: T.team, name: "Rescue", slug: null, status: "Active" },
+                }),
+            ]);
+        });
+
+        it("returns an empty list for a user with no grants", async () => {
+            expect(await TeamUsers.listForUser(ctx(), T.newcomer)).toEqual([]);
+        });
+    });
+
+    describe("listGrantableUsers", () => {
+        it("lists members with no grant on the team by name, leaving out soft-deleted users and other orgs", async () => {
+            const rows = await TeamUsers.listGrantableUsers(ctx(), T.team);
+
+            expect(rows).toEqual([
+                { id: T.admin, name: "Admin", email: "admin@example.com" },
+                { id: T.newcomer, name: "Nina", email: "nina@example.com" },
+            ]);
+        });
+
+        it("lists every active member for a team with no grants", async () => {
+            const rows = await TeamUsers.listGrantableUsers(ctx(), T.emptyTeam);
+
+            expect(rows.map((row) => row.name)).toEqual(["Admin", "Alice", "Bob", "Carol", "Nina"]);
+        });
+
+        it("throws NotFoundError for a team in another organization", async () => {
+            await expect(TeamUsers.listGrantableUsers(ctx(), T.outsiderTeam)).rejects.toThrow(
+                NotFoundError,
+            );
+        });
+    });
+
+    describe("grant", () => {
+        it("creates the grant and a Create entry that refs the team and the user", async () => {
+            const created = await TeamUsers.grant(ctx(), T.emptyTeam, T.newcomer);
+
+            expect(created).toMatchObject({
+                organizationId: T.org,
+                teamId: T.emptyTeam,
+                userId: T.newcomer,
+            });
+            const entries = await entriesFor(created.id);
+            expect(entries).toHaveLength(1);
+            expect(entries[0]).toMatchObject({ action: "Create", organizationId: T.org });
+            expect(entries[0].description).toContain("Nina");
+            expect(entries[0].description).toContain("Empty");
+            expect(await contextRefsOf(entries[0].id)).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({ objectType: "Team", objectId: T.emptyTeam }),
+                    expect.objectContaining({ objectType: "User", objectId: T.newcomer }),
+                ]),
+            );
+        });
+
+        it("throws NotFoundError for a team in another organization", async () => {
+            await expect(TeamUsers.grant(ctx(), T.outsiderTeam, T.carol)).rejects.toThrow(
+                NotFoundError,
+            );
+        });
+
+        it("throws ConflictError for a team that isn't Active", async () => {
+            await expect(TeamUsers.grant(ctx(), T.archivedTeam, T.carol)).rejects.toThrow(
+                new ConflictError("Only active teams can be granted access."),
+            );
+        });
+
+        it("throws NotFoundError for a user who isn't a member of the organization", async () => {
+            await expect(TeamUsers.grant(ctx(), T.team, T.outsider)).rejects.toThrow(NotFoundError);
+            expect(
+                await db.teamUser.findMany({ where: { teamId: T.team, userId: T.outsider } }),
+            ).toHaveLength(0);
+        });
+
+        it("throws NotFoundError for a soft-deleted user", async () => {
+            await expect(TeamUsers.grant(ctx(), T.emptyTeam, T.deleted)).rejects.toThrow(
+                NotFoundError,
+            );
+        });
+
+        it("throws ConflictError when the user already has access", async () => {
+            await expect(TeamUsers.grant(ctx(), T.team, T.carol)).rejects.toThrow(ConflictError);
+            expect(await entriesFor(T.carolGrant)).toHaveLength(0);
+        });
+
+        describe("when a concurrent grant wins the race", () => {
+            afterEach(() => {
+                vi.restoreAllMocks();
+            });
+
+            it("maps the unique violation to the same ConflictError", async () => {
+                vi.spyOn(db, "$transaction").mockRejectedValueOnce(
+                    Object.assign(new Error("Unique constraint failed"), { code: "P2002" }),
+                );
+
+                await expect(TeamUsers.grant(ctx(), T.emptyTeam, T.carol)).rejects.toThrow(
+                    new ConflictError("Carol already has access to Empty."),
+                );
+            });
+
+            it("rethrows any other failure unchanged", async () => {
+                const failure = new Error("connection lost");
+                vi.spyOn(db, "$transaction").mockRejectedValueOnce(failure);
+
+                await expect(TeamUsers.grant(ctx(), T.emptyTeam, T.carol)).rejects.toBe(failure);
+            });
+        });
+    });
+
+    describe("revoke", () => {
+        it("deletes the grant and logs a Delete entry that refs the team and the user", async () => {
+            await TeamUsers.revoke(ctx(), T.team, T.bob);
+
+            expect(await db.teamUser.findUnique({ where: { id: T.bobGrant } })).toBeNull();
+            const entries = await entriesFor(T.bobGrant);
+            expect(entries).toHaveLength(1);
+            expect(entries[0]).toMatchObject({ action: "Delete", organizationId: T.org });
+            expect(entries[0].description).toContain("Bob");
+            expect(entries[0].description).toContain("Rescue");
+            expect(await contextRefsOf(entries[0].id)).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({ objectType: "Team", objectId: T.team }),
+                    expect.objectContaining({ objectType: "User", objectId: T.bob }),
+                ]),
+            );
+        });
+
+        it("throws NotFoundError when there is no grant", async () => {
+            await expect(TeamUsers.revoke(ctx(), T.emptyTeam, T.carol)).rejects.toThrow(
+                NotFoundError,
+            );
+        });
+
+        it("throws NotFoundError for a grant in another organization", async () => {
+            const otherCtx = createOrganizationMockContext({
+                organizationId: T.otherOrg,
+                user: { id: T.admin },
+                permissions: {},
+                prisma: db,
+            });
+
+            await expect(TeamUsers.revoke(otherCtx, T.team, T.alice)).rejects.toThrow(
+                NotFoundError,
+            );
+            expect(await db.teamUser.findUnique({ where: { id: T.aliceGrant } })).not.toBeNull();
+        });
+    });
+});

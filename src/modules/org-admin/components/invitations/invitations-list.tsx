@@ -90,21 +90,9 @@ export function AdminModule_Invitations_List() {
                     header: "Status",
                     cell: (ctx) =>
                         match(ctx.getValue())
-                            .with("pending", () => (
-                                <Badge className="bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300">
-                                    Pending
-                                </Badge>
-                            ))
-                            .with("accepted", () => (
-                                <Badge className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300">
-                                    Accepted
-                                </Badge>
-                            ))
-                            .with("rejected", () => (
-                                <Badge className="bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300">
-                                    Rejected
-                                </Badge>
-                            ))
+                            .with("pending", () => <Badge variant="info">Pending</Badge>)
+                            .with("accepted", () => <Badge variant="success">Accepted</Badge>)
+                            .with("rejected", () => <Badge variant="destructive">Rejected</Badge>)
                             .with("canceled", () => <Badge variant="secondary">Cancelled</Badge>)
                             .exhaustive(),
                     enableSorting: false,

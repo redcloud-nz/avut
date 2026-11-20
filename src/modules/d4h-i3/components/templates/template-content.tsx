@@ -11,18 +11,14 @@ import { Std } from "@/components/blocks/std";
 import { D4HEquipmentCategoryLink } from "@/components/entity-links/d4h-equipment-category-link";
 import { D4HEquipmentTypeLink } from "@/components/entity-links/d4h-equipment-type-link";
 import { Protect } from "@/components/protect";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    DataItem,
-    DataItemDateValue,
-    DataItemTitle,
-    DataItemValue,
-    DataList,
-} from "@/components/ui/data-item";
+import { Badge } from "@/components/ui/badge";
+import { CardContent } from "@/components/ui/card";
+import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { useOrganization } from "@/hooks/use-organization";
 import { usesOtherRecords } from "@/lib/i3-template-fit";
 import { route } from "@/lib/routes";
-import { I3TemplateId } from "@/lib/schemas/i3-template";
+import { I3BrandModelRule, I3TemplateId } from "@/lib/schemas/i3-template";
 import { useOrganisationOnlyId } from "@/modules/d4h-i3/lib/use-organisation-only-id";
 import { trpc } from "@/trpc/client";
 
@@ -69,7 +65,20 @@ export function D4HI3Module_Template_Content({ templateId }: { templateId: I3Tem
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
-                        <Saratoga.Title>{template.name}</Saratoga.Title>
+                        <Saratoga.Title
+                            badges={
+                                (template.status !== "Active" || flagged) && (
+                                    <>
+                                        {template.status !== "Active" && (
+                                            <Badge variant="outline">{template.status}</Badge>
+                                        )}
+                                        {flagged && <D4HI3Module_OtherRecords_Badge />}
+                                    </>
+                                )
+                            }
+                        >
+                            {template.name}
+                        </Saratoga.Title>
                         <Saratoga.Actions>
                             <D4HI3Module_Template_Menu template={template} />
                         </Saratoga.Actions>
@@ -77,23 +86,19 @@ export function D4HI3Module_Template_Content({ templateId }: { templateId: I3Tem
 
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="flex flex-wrap items-center gap-2">
-                                        Template Details
-                                        {flagged && <D4HI3Module_OtherRecords_Badge />}
-                                    </CardTitle>
-                                    <CardAction>
-                                        <Protect permissions={{ i3Template: ["update"] }}>
-                                            <D4HI3Module_UpdateTemplate_Dialog
-                                                template={template}
-                                            />
-                                        </Protect>
-                                    </CardAction>
-                                </CardHeader>
+                            <RecordCard
+                                label="I3 Template"
+                                updatedAt={template.updatedAt}
+                                action={
+                                    <Protect permissions={{ i3Template: ["update"] }}>
+                                        <D4HI3Module_UpdateTemplate_Dialog template={template} />
+                                    </Protect>
+                                }
+                            >
                                 <CardContent>
                                     <DataList>
-                                        <DataItem inline>
+                                        <RecordCardId label="Template ID" id={template.id} />
+                                        <DataItem>
                                             <DataItemTitle>Name</DataItemTitle>
                                             <DataItemValue>{template.name}</DataItemValue>
                                         </DataItem>
@@ -105,7 +110,7 @@ export function D4HI3Module_Template_Content({ templateId }: { templateId: I3Tem
                                                 </DataItemValue>
                                             </DataItem>
                                         )}
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>D4H Category</DataItemTitle>
                                             <DataItemValue>
                                                 {template.d4h ? (
@@ -121,7 +126,7 @@ export function D4HI3Module_Template_Content({ templateId }: { templateId: I3Tem
                                                 )}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>D4H Type</DataItemTitle>
                                             <DataItemValue>
                                                 {template.d4h ? (
@@ -137,36 +142,26 @@ export function D4HI3Module_Template_Content({ templateId }: { templateId: I3Tem
                                                 )}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Require Serial Number</DataItemTitle>
                                             <DataItemValue>
                                                 {template.d4h?.requireSN ? "Yes" : "No"}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Status</DataItemTitle>
-                                            <DataItemValue>{template.status}</DataItemValue>
+                                        <DataItem>
+                                            <DataItemTitle>Brand &amp; Model</DataItemTitle>
+                                            <DataItemValue>
+                                                {template.d4h
+                                                    ? I3BrandModelRule.label[
+                                                          template.d4h.brandModelRule
+                                                      ]
+                                                    : "—"}
+                                            </DataItemValue>
                                         </DataItem>
                                     </DataList>
                                 </CardContent>
-                            </Card>
+                            </RecordCard>
                             <D4HI3Module_Template_Variants_List template={template} />
-                        </Saratoga.Column>
-                        <Saratoga.Column slot="secondary">
-                            <Card>
-                                <CardContent>
-                                    <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Created</DataItemTitle>
-                                            <DataItemDateValue date={template.createdAt} />
-                                        </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Updated</DataItemTitle>
-                                            <DataItemDateValue date={template.updatedAt} />
-                                        </DataItem>
-                                    </DataList>
-                                </CardContent>
-                            </Card>
                         </Saratoga.Column>
                     </Saratoga.Columns>
                 </Saratoga.Root>

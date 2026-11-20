@@ -28,7 +28,7 @@ export default async function SystemAdmin_Index_Page() {
             <Std.ScrollContainer>
                 <Std.IndexPage title="System Administration">
                     <ItemGroup>
-                        <Item asChild>
+                        <Item variant="outline" asChild>
                             <Link href="/system/admin/organizations">
                                 <ItemContent>
                                     <ItemTitle>Organisations</ItemTitle>
@@ -42,7 +42,7 @@ export default async function SystemAdmin_Index_Page() {
                                 </ItemActions>
                             </Link>
                         </Item>
-                        <Item asChild>
+                        <Item variant="outline" asChild>
                             <Link href="/system/admin/groups">
                                 <ItemContent>
                                     <ItemTitle>Groups</ItemTitle>
@@ -55,7 +55,7 @@ export default async function SystemAdmin_Index_Page() {
                                 </ItemActions>
                             </Link>
                         </Item>
-                        <Item asChild>
+                        <Item variant="outline" asChild>
                             <Link href="/system/admin/users">
                                 <ItemContent>
                                     <ItemTitle>Users</ItemTitle>

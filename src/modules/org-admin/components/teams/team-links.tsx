@@ -4,16 +4,24 @@
  */
 "use client";
 
+import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useId } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 
-import { ItemLinkActionIcon, ObjectIcons } from "@/components/icons";
+import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
+import {
+    Item,
+    ItemActions,
+    ItemContent,
+    ItemDescription,
+    ItemGroup,
+    ItemTitle,
+} from "@/components/ui/item";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -22,6 +30,7 @@ import { trpc } from "@/trpc/client";
 
 export function AdminModule_TeamLinks_Card({ team }: { team: TeamData }) {
     const organization = useOrganization();
+    const headingId = useId();
 
     const [, setAction] = useQueryState(
         "action",
@@ -36,28 +45,28 @@ export function AdminModule_TeamLinks_Card({ team }: { team: TeamData }) {
     );
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Related</CardTitle>
+        <section aria-labelledby={headingId} className="space-y-2">
+            <div className="flex min-h-8 items-center justify-between gap-2 pl-1">
+                <h2 id={headingId} className="text-base font-medium">
+                    Related
+                </h2>
                 {team.status === "Active" && (
                     <Protect permissions={{ team: ["update"] }}>
-                        <CardAction>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                aria-label="Add person"
-                                onClick={() => setAction("add-membership", { history: "push" })}
-                            >
-                                <ObjectIcons.Create />
-                            </Button>
-                        </CardAction>
+                        <Button
+                            variant="outline"
+                            aria-label="Add person"
+                            onClick={() => setAction("add-membership", { history: "push" })}
+                        >
+                            <ObjectIcons.Create />{" "}
+                            <span className="sr-only md:not-sr-only">Add</span>
+                        </Button>
                     </Protect>
                 )}
-            </CardHeader>
-            <CardContent className="px-2 -my-2">
-                {teamMembersQuery.isLoading && <Skeleton className="h-16 w-full" />}
+            </div>
+            {teamMembersQuery.isLoading && <Skeleton className="h-16 w-full" />}
+            <ItemGroup className="gap-2">
                 {teamMembersQuery.data && (
-                    <Item className="px-2" size="sm" asChild>
+                    <Item variant="outline" role="listitem" asChild>
                         <Link
                             href={route("/orgs/[slug]/admin/teams/[team_id]/members", {
                                 slug: organization.slug,
@@ -69,12 +78,15 @@ export function AdminModule_TeamLinks_Card({ team }: { team: TeamData }) {
                                 <ItemDescription>assigned to this team</ItemDescription>
                             </ItemContent>
                             <ItemActions>
-                                <ItemLinkActionIcon className="size-4" />
+                                <ChevronRightIcon
+                                    aria-hidden
+                                    className="text-muted-foreground size-4"
+                                />
                             </ItemActions>
                         </Link>
                     </Item>
                 )}
-            </CardContent>
-        </Card>
+            </ItemGroup>
+        </section>
     );
 }

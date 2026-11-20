@@ -21,17 +21,23 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { D4HItemRef } from "@/components/d4h/d4h-item-ref";
 import { D4HOwner } from "@/components/d4h/d4h-owner";
+import { HelpButton } from "@/components/docs/help-button";
 import { D4HEquipmentBrandLink } from "@/components/entity-links/d4h-equipment-brand-link";
 import { D4HEquipmentCategoryLink } from "@/components/entity-links/d4h-equipment-category-link";
 import { D4HEquipmentItemLink } from "@/components/entity-links/d4h-equipment-item-link";
 import { D4HEquipmentModelLink } from "@/components/entity-links/d4h-equipment-model-link";
 import { D4HMemberLink } from "@/components/entity-links/d4h-member-link";
 import { D4HTeamLink } from "@/components/entity-links/d4h-team-link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { D4HEquipmentStatus } from "@/lib/schemas/d4h/equipment-item";
+import {
+    D4HModule_OpenRecordInD4H_Button,
+    ownerTeamId,
+} from "@/modules/d4h/components/open-in-d4h-button";
 import { useReachableTeamIds } from "@/modules/d4h/lib/use-reachable-team-ids";
 import { trpc } from "@/trpc/client";
 
@@ -126,23 +132,12 @@ export function D4HModule_Type_Content({ typeId }: { typeId: number }) {
                     id: "model",
                     header: "Model",
                     cell: (ctx) => {
-                        const { brand, model, team, owner } = ctx.row.original;
-                        if (
-                            team.id !== owner.id ||
-                            model?.id == null ||
-                            !model.title ||
-                            brand.id == null
-                        ) {
+                        const { model, team, owner } = ctx.row.original;
+                        if (team.id !== owner.id || model?.id == null || !model.title) {
                             return ctx.getValue() || "—";
                         }
                         return (
-                            <D4HEquipmentModelLink
-                                model={{
-                                    id: model.id,
-                                    title: model.title,
-                                    brand: { id: brand.id },
-                                }}
-                            />
+                            <D4HEquipmentModelLink model={{ id: model.id, title: model.title }} />
                         );
                     },
                     enableGlobalFilter: true,
@@ -199,30 +194,36 @@ export function D4HModule_Type_Content({ typeId }: { typeId: number }) {
                     },
                     { label: kind.title },
                 ]}
+                actions={<HelpButton id="d4h" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
                         <Saratoga.Title>{kind.title}</Saratoga.Title>
+                        <Saratoga.Actions>
+                            <D4HModule_OpenRecordInD4H_Button
+                                record="type"
+                                id={kind.id}
+                                teamId={ownerTeamId(kind.owner)}
+                            />
+                        </Saratoga.Actions>
                     </Saratoga.Header>
                     <div className="flex flex-col gap-4">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Type Details</CardTitle>
-                            </CardHeader>
+                        <RecordCard label="D4H Equipment Type">
                             <CardContent>
                                 <DataList>
-                                    <DataItem inline>
+                                    <RecordCardId label="D4H ID" id={String(kind.id)} />
+                                    <DataItem>
                                         <DataItemTitle>Title</DataItemTitle>
                                         <DataItemValue>{kind.title}</DataItemValue>
                                     </DataItem>
-                                    <DataItem inline>
+                                    <DataItem>
                                         <DataItemTitle>Category</DataItemTitle>
                                         <DataItemValue>
                                             <D4HEquipmentCategoryLink category={kind.category} />
                                         </DataItemValue>
                                     </DataItem>
-                                    <DataItem inline>
+                                    <DataItem>
                                         <DataItemTitle>Owner</DataItemTitle>
                                         <DataItemValue>
                                             <D4HOwner
@@ -233,7 +234,7 @@ export function D4HModule_Type_Content({ typeId }: { typeId: number }) {
                                     </DataItem>
                                 </DataList>
                             </CardContent>
-                        </Card>
+                        </RecordCard>
                         <div>
                             <div className="mb-2 text-lg font-semibold">Items</div>
                             <Kaga.TableToolbar table={table} />

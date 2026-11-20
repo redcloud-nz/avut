@@ -5,7 +5,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -46,6 +46,7 @@ export function SystemAdmin_DeleteUser_Dialog({
     user: { id: string; name: string; email: string };
 }) {
     const router = useRouter();
+    const idPrefix = useId();
     const [confirmText, setConfirmText] = useState("");
 
     const soleOwned = useQuery({
@@ -105,11 +106,11 @@ export function SystemAdmin_DeleteUser_Dialog({
                     </Alert>
                 )}
                 <Field>
-                    <FieldLabel htmlFor="delete-user-confirm">
+                    <FieldLabel htmlFor={`${idPrefix}-confirm`}>
                         Type <span className="font-mono">{user.email}</span> to confirm
                     </FieldLabel>
                     <Input
-                        id="delete-user-confirm"
+                        id={`${idPrefix}-confirm`}
                         autoComplete="off"
                         value={confirmText}
                         onChange={(e) => setConfirmText(e.target.value)}

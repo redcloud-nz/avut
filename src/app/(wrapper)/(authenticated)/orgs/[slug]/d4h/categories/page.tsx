@@ -24,6 +24,8 @@ export default async function D4HModule_Categories_Page(
 
     prefetch(trpc.d4hApi.listEquipmentCategories.queryOptions({ organizationId: organization.id }));
     prefetch(trpc.d4hApi.listEquipmentKinds.queryOptions({ organizationId: organization.id }));
+    // `useReachableTeamIds` reads the teams.
+    prefetch(trpc.d4hApi.listTeams.queryOptions({ organizationId: organization.id }));
 
     return (
         <HydrateClient>

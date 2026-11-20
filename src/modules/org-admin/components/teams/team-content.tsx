@@ -10,23 +10,17 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    DataItem,
-    DataItemDateValue,
-    DataItemTitle,
-    DataItemValue,
-    DataList,
-} from "@/components/ui/data-item";
+import { Teams_D4HCard } from "@/components/teams/d4h-link-card";
+import { Teams_TeamAccess_Card } from "@/components/teams/team-access-card";
+import { Teams_Details_Card } from "@/components/teams/team-details-card";
+import { Badge } from "@/components/ui/badge";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { TeamId } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
-import { AdminModule_Team_D4HCard } from "./d4h-link-card";
 import { AdminModule_TeamLinks_Card } from "./team-links";
 import { AdminModule_Team_Menu } from "./team-menu";
-import { AdminModule_UpdateTeam_Dialog } from "./update-team";
 
 export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
     const organization = useOrganization();
@@ -54,7 +48,15 @@ export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
-                        <Saratoga.Title>{team.name}</Saratoga.Title>
+                        <Saratoga.Title
+                            badges={
+                                team.status !== "Active" && (
+                                    <Badge variant="outline">{team.status}</Badge>
+                                )
+                            }
+                        >
+                            {team.name}
+                        </Saratoga.Title>
                         <Saratoga.Actions>
                             <AdminModule_Team_Menu team={team} />
                         </Saratoga.Actions>
@@ -62,60 +64,23 @@ export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
 
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Team Details</CardTitle>
-                                    <CardAction>
-                                        <Protect permissions={{ team: ["update"] }}>
-                                            <AdminModule_UpdateTeam_Dialog team={team} />
-                                        </Protect>
-                                    </CardAction>
-                                </CardHeader>
-                                <CardContent>
-                                    <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Team ID</DataItemTitle>
-                                            <DataItemValue className="font-mono">
-                                                {team.id}
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Name</DataItemTitle>
-                                            <DataItemValue>{team.name}</DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Description</DataItemTitle>
-                                            <DataItemValue>{team.description}</DataItemValue>
-                                        </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Status</DataItemTitle>
-                                            <DataItemValue>{team.status}</DataItemValue>
-                                        </DataItem>
-                                    </DataList>
-                                </CardContent>
-                            </Card>
+                            <Teams_Details_Card
+                                team={team}
+                                historyHref={route("/orgs/[slug]/admin/teams/[team_id]/history", {
+                                    slug: organization.slug,
+                                    team_id: team.id,
+                                })}
+                            />
 
-                            <AdminModule_Team_D4HCard team={team} />
+                            <Protect permissions={{ member: ["view"] }}>
+                                <Teams_TeamAccess_Card team={team} />
+                            </Protect>
+
+                            <Teams_D4HCard team={team} />
                         </Saratoga.Column>
 
                         <Saratoga.Column slot="secondary">
                             <AdminModule_TeamLinks_Card team={team} />
-                            <Card>
-                                <CardContent>
-                                    <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Created</DataItemTitle>
-                                            <DataItemDateValue date={team.createdAt} />
-                                        </DataItem>
-                                        {team.updatedAt && (
-                                            <DataItem inline>
-                                                <DataItemTitle>Updated</DataItemTitle>
-                                                <DataItemDateValue date={team.updatedAt} />
-                                            </DataItem>
-                                        )}
-                                    </DataList>
-                                </CardContent>
-                            </Card>
                         </Saratoga.Column>
                     </Saratoga.Columns>
                 </Saratoga.Root>

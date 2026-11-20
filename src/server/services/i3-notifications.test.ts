@@ -23,8 +23,9 @@ vi.mock("@/server/d4h-api/client", () => ({
     fetchD4HMember: vi.fn(),
 }));
 
-vi.mock("@/server/email", () => ({
-    sendEmail: vi.fn(async () => {}),
+vi.mock("@/server/email", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/server/email")>()),
+    sendEmail: vi.fn(async () => ({ ok: true as const })),
 }));
 
 describe("I3Notifications.resolveNotifyRecipients", () => {
@@ -123,7 +124,9 @@ describe("I3Notifications.resolveNotifyRecipients", () => {
     }
 
     async function resolve(d4hTeamId = D4H_TEAM) {
-        const recipients = await I3Notifications.resolveNotifyRecipients(ctx(), { d4hTeamId });
+        const { recipients } = await I3Notifications.resolveNotifyRecipients(ctx(), {
+            d4hTeamId,
+        });
         return recipients.map((r) => r.personId);
     }
 
@@ -138,10 +141,29 @@ describe("I3Notifications.resolveNotifyRecipients", () => {
 
         expect(
             await I3Notifications.resolveNotifyRecipients(ctx(), { d4hTeamId: D4H_TEAM }),
-        ).toEqual([
-            { personId: T.alice, name: "Alice", email: "alice@example.com" },
-            { personId: T.bob, name: "Bob", email: "bob@example.com" },
-        ]);
+        ).toEqual({
+            recipients: [
+                { personId: T.alice, name: "Alice", email: "alice@example.com" },
+                { personId: T.bob, name: "Bob", email: "bob@example.com" },
+            ],
+            replyTo: undefined,
+        });
+    });
+
+    it("returns the org's Reply-To when set, even with nobody to notify", async () => {
+        await setNotify({ org: [], teams: {} });
+        const current = await OrgSettings.read(db, T.org);
+        await OrgSettings.write(db, T.org, {
+            ...current,
+            general: { ...current.general, replyTo: "training@example.org" },
+        });
+
+        const { replyTo } = await I3Notifications.resolveNotifyRecipients(ctx(), {
+            d4hTeamId: D4H_TEAM,
+        });
+
+        await OrgSettings.write(db, T.org, current);
+        expect(replyTo).toBe("training@example.org");
     });
 
     it("returns the team list only", async () => {

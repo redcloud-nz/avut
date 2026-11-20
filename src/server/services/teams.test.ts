@@ -19,6 +19,7 @@ import {
     deleteMembership,
     deleteRecord,
     getById,
+    getBySlug,
     getDeleteImpact,
     recover,
     recoverMembership,
@@ -127,6 +128,21 @@ describe("teams", () => {
 
         it("does not reach across organizations", async () => {
             expect(await getById(ctx(), T.outsider)).toBeNull();
+        });
+    });
+
+    describe("getBySlug", () => {
+        it("finds the team holding the slug, in any organization", async () => {
+            await db.team.update({ where: { id: T.outsider }, data: { slug: "outsider" } });
+
+            expect(await getBySlug(db, "outsider")).toEqual({
+                id: T.outsider,
+                organizationId: T.otherOrg,
+            });
+        });
+
+        it("returns null when no team holds the slug", async () => {
+            expect(await getBySlug(db, "nobody")).toBeNull();
         });
     });
 

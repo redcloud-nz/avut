@@ -54,7 +54,7 @@ export function D4HEquipmentBrandSelect({
             </Skeleton>
         ))
         .with({ status: "error" }, () => (
-            <Alert variant="error" className="mb-4">
+            <Alert variant="destructive" className="mb-4">
                 <AlertTitle>Failed to load equipment brands from D4H.</AlertTitle>
             </Alert>
         ))

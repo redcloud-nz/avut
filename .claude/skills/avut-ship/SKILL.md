@@ -11,6 +11,8 @@ Takes a finished feature branch to a merged PR with one human checkpoint. The re
 
 `$ARGUMENTS` is optional free text: extra context for the PR description, or `--no-merge` to open the PR without auto-merge (e.g. something you want to look at in the Vercel preview first).
 
+**A track** (`/avut-develop-feature`'s several issues on one branch, one commit each) ships as one PR like any other branch. The steps below say where a track differs: the review intent, the PR title and body, and the docs item.
+
 For a PR that deserves a second, independent pass after it's open — auth, credentials, migrations, someone else's code — use `/avut-review-pr` instead of, or as well as, this. When you plan to run it as well, pass `--no-merge`. `integration` needs no approval, so auto-merge would merge on green CI before that review runs, or despite a "request changes".
 
 ## Step 1 — Preflight
@@ -41,6 +43,8 @@ If the branch adds a Prisma migration, confirm the checkout is on a branch datab
 Run the `avut-code-reviewer` subagent (`run_in_background: false`, because the next step depends on it). Its brief, two-pass checklist and output format live in `.claude/agents/avut-code-reviewer.md`. Give it only the diff range and the intent, not the authoring session's reasoning:
 
 > Diff range: `origin/<base>...HEAD`. The change is meant to: <one or two sentences, plus the issue number if there is one>.
+
+For a track, give the intent per issue, one line each with its commit subject, so the reviewer can check each commit against its own goal.
 
 ## Step 4 — Act on the findings
 
@@ -90,6 +94,8 @@ Fresh-context review (correctness + AVUT conventions) before push.
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 ```
 
+**For a track:** the title names the set, with the type of its main change and the track's area as scope (`feat(skill-track): combined package labels and multi-day sessions`). In _Summary_, put one `Closes #n` line per issue (GitHub needs the keyword on each). Group _Changes_ by issue, with a `- **#n <short title>:**` bullet each, and the files and details nested under it.
+
 Leave out any section with nothing in it. _Decisions_ comes from a `Decisions` list in a commit body (`/avut-explore` writes one) or the plan doc's Decisions.
 
 _Follow-ups_ also lists any `follow-up` issues `/avut-develop-feature` filed from its parked list (`- #n <title>`).
@@ -99,7 +105,7 @@ _Follow-ups_ also lists any `follow-up` issues `/avut-develop-feature` filed fro
 End-user guides (`content/docs/**` and its screenshots) aren't written per feature. Each PR with a user-facing change adds one item to its milestone's docs issue, and `/avut-docs` works through that issue once per milestone. Help cards (`content/help/**`) are different: they're updated in the feature branch itself. If the diff changes a screen that has a `<HelpButton>` and its card isn't in the diff, check whether the card still matches, and fix it before Step 6.
 
 1. **Decide the impact.** Use the plan's `Docs impact` line, or what `/avut-develop-feature` handed over. Failing both, judge from the diff whether user-visible behaviour, wording or layout changed. Internal refactors, tests and developer docs have no impact. If there's none, skip the rest of this step.
-2. **Find the milestone:** the source issue's (`gh issue view <n> --repo redcloud-nz/avut --json milestone`). If there's no source issue, or it has no milestone, propose the lowest open version milestone, which `node .claude/skills/avut-docs/milestone.ts show` prints. The user confirms it in Step 6, alongside everything else.
+2. **Find the milestone:** the source issue's (`gh issue view <n> --repo redcloud-nz/avut --json milestone`). If there's no source issue, or it has no milestone, propose the lowest open version milestone, which `node .claude/skills/avut-docs/milestone.ts show` prints. For a track, use the milestone its issues share. If they differ, propose the lowest of them and flag it. The user confirms it in Step 6, alongside everything else.
 3. **Draft the item text,** one line. The script adds the checkbox and the PR number in front:
 
    ```
@@ -107,6 +113,8 @@ End-user guides (`content/docs/**` and its screenshots) aren't written per featu
    ```
 
    Screenshot ids are in `src/lib/screenshots.generated.json`. `git grep -n '<Screenshot id=' content/docs` shows which pages use which.
+
+   For a track, write one item for the PR that covers every user-facing issue (`#475: <change>; #442: <change>. Pages: … Screenshots: …`), not one item per issue, since `/avut-docs` ticks items by PR number.
 
 The item is posted in Step 7, once the PR number exists.
 
@@ -142,7 +150,7 @@ It finds the milestone's `Docs: <milestone>` issue, creating it if needed, and a
 
 Report the PR URL. Then watch CI (`gh pr checks <n> --repo redcloud-nz/avut --watch`, in the background) and report the result. If it fails, show why (`gh run view <run-id> --log-failed`), fix, commit and push. Auto-merge picks the new run up. The Step 6 yes covers a push that only fixes the CI failure. Anything more than that goes back to the user first.
 
-**If the branch carries a migration,** the shared `avut` database won't have it once the PR merges. The branch applied it to its `db:branch` copy, and every other checkout will fail on the missing column. With auto-merge, Step 8 deploys it, with the user's yes. Without auto-merge, give the user the commands as "once it merges", since deploying before then would land an unmerged migration on shared `avut`:
+**If the branch carries a migration,** the shared `avut` database won't have it once the PR merges. The branch applied it to its `db:branch` copy, and every other checkout will fail on the missing column. Step 8 deploys it once the merge lands, with the user's yes. Without auto-merge, also give the user the commands as "once it merges", in case the session ends before then. Deploying earlier would land an unmerged migration on shared `avut`:
 
 ```bash
 npm run db:unbranch                  # in this checkout: back to avut, drop the copy
@@ -151,21 +159,28 @@ npm run prisma migrate deploy        # apply the merged migration to avut
 
 ## Step 8 — Clean up after the merge
 
-Step 8 runs only when auto-merge was set in Step 7. Without auto-merge (`--no-merge`, a stacked PR, or a migration or UI change held back for a preview look), stop after reporting the PR. If it carries a migration, give the `db:unbranch` / `migrate deploy` commands from Step 7 as "once it merges".
+Step 8 runs whether or not auto-merge was set. Without auto-merge (`--no-merge`, a stacked PR, a migration or UI change held back for a preview look, or an auto-merge the harness refused), the user merges on GitHub. Say so when you report the PR ("merge it when you're ready; I'll pick it up from here"), and start the merge wait below anyway. A merge on GitHub sends this session nothing, so without the wait it never learns the PR merged. If it carries a migration, also give the `db:unbranch` / `migrate deploy` commands from Step 7 as "once it merges", in case the session ends first.
 
 **Before the merge lands, while the branch still exists,** note two things for the prompt:
 
 - whether the branch adds migrations: `git diff --name-only origin/<base>...HEAD -- prisma/migrations`
 - any dev server you started for this branch (a worktree's `.dev-port`, or 3100)
 
-**Wait for the merge itself.** Auto-merge can lag CI by a minute or two, or stall: a `BEHIND` state under the strict up-to-date rule, after `integration` moved. Poll in the background while the PR is open:
+**Wait for the merge itself.** Auto-merge can lag CI by a minute or two, or stall: a `BEHIND` state under the strict up-to-date rule, after `integration` moved. A hand merge can come hours later. Start the poll as soon as the PR is open, with `run_in_background: true`, alongside the CI watch rather than after it, so its exit is what tells you something needs doing. The loop ends when the PR merges or closes, or when it falls `BEHIND`: a stalled PR stays open, so without that last case nothing would ever report the stall. A failed `gh` call counts as no change, so a network blip doesn't end the wait early:
 
 ```bash
-while [ "$(gh pr view <n> --repo redcloud-nz/avut --json state -q .state)" = OPEN ]; do sleep 30; done
-gh pr view <n> --repo redcloud-nz/avut --json state,mergeStateStatus
+until o=$(gh pr view <n> --repo redcloud-nz/avut --json state,mergeStateStatus -q '.state + " " + .mergeStateStatus' 2>/dev/null) \
+  && case "$o" in MERGED*|CLOSED*|"OPEN BEHIND") true ;; *) false ;; esac; do sleep 30; done
+echo "$o"
 ```
 
-`CLOSED` means it closed without merging: report that and stop. If it's still open well after CI went green, check `mergeStateStatus`. `BEHIND` means sync with the base and push again. The Step 6 yes covers that only when the merge of `origin/<base>` is conflict-free and `npm run check -- --all` passes. Otherwise take it to the user, as in Step 1. Report anything else to the user. Don't start the cleanup on green CI alone.
+When it ends:
+
+- `MERGED`: go on to the cleanup prompt below.
+- `CLOSED`: it closed without merging. Report that and stop.
+- `OPEN BEHIND`: `integration` moved on, and GitHub won't merge until the branch is up to date. Merge `origin/<base>` into the branch and push. Then wait until `gh pr view <n> --json headRefOid` shows the pushed commit before starting the wait again, since GitHub can report `BEHIND` for a moment after the push. The Step 6 yes covers that push only when the merge is conflict-free and `npm run check -- --all` passes. Otherwise take it to the user, as in Step 1. With auto-merge set, the new CI run merges it. Without auto-merge, tell the user it's ready again.
+
+If the user says they merged it and the poll hasn't reported, check the PR's state yourself and go on; don't wait for the poll. If it stays open well after CI went green and isn't `BEHIND`, check `mergeStateStatus` and report it to the user. Don't start the cleanup on green CI alone.
 
 Then **ask once**, listing exactly what will run. A yes is the explicit permission `migrate deploy` needs (AGENTS.md → Database). The user can drop any item.
 
@@ -209,5 +224,6 @@ Then **ask once**, listing exactly what will run. A yes is the explicit permissi
 - Ticking a browser-verification box that wasn't done.
 - Adding a docs item by hand, or by editing the docs issue's body. `milestone.ts docs-add` posts it as a marked comment; only `/avut-docs` edits the body.
 - Writing end-user guides into the feature PR instead of adding a docs item (help cards, by contrast, do belong in the PR).
+- Stopping after the PR is reported because auto-merge isn't set. Start the merge wait anyway: a merge on GitHub sends the session nothing.
 - Reporting a migration-bearing PR without auto-merge, and without the `db:unbranch` / `migrate deploy` commands for once it merges.
 - Starting the cleanup on green CI rather than on the merge. Running `git worktree remove` while the session is still inside the worktree (`ExitWorktree` first). Forcing an `integration` update that isn't a clean fast-forward. Running `migrate deploy` from a tree that isn't `integration` on `avut`.

@@ -157,6 +157,44 @@ describe("OrgSettings.write", () => {
 // `notify` holds the first array leaves in any settings tree, which `writeWith` has to compare
 // by value rather than by reference, and the first record keys, which it has to delete when they
 // drop out of the next settings.
+describe("OrgSettings.writeSlice modules.d4h-nag requires d4h", () => {
+    async function freshOrg() {
+        const db = createMockPrisma();
+        const orgId = OrganizationId.create();
+
+        await db.organization.create({
+            data: { id: orgId, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+
+        return { db, orgId };
+    }
+
+    it("refuses to turn d4h-nag on while d4h is off", async () => {
+        const { db, orgId } = await freshOrg();
+
+        await expect(
+            OrgSettings.writeSlice(db, orgId, ["modules", "d4h-nag"], { enabled: true }),
+        ).rejects.toThrow("Turn on D4H first");
+        expect((await OrgSettings.read(db, orgId)).modules["d4h-nag"].enabled).toBe(false);
+    });
+
+    it("turns d4h-nag off with d4h, keeping its token", async () => {
+        const { db, orgId } = await freshOrg();
+
+        await OrgSettings.writeSlice(db, orgId, ["modules", "d4h"], { enabled: true });
+        await OrgSettings.writeSlice(db, orgId, ["modules", "d4h-nag"], {
+            enabled: true,
+            d4hTokenId: "token-1",
+        });
+
+        const settings = await OrgSettings.writeSlice(db, orgId, ["modules", "d4h"], {
+            enabled: false,
+        });
+
+        expect(settings.modules["d4h-nag"]).toEqual({ enabled: false, d4hTokenId: "token-1" });
+    });
+});
+
 describe("OrgSettings.writeSlice modules.d4h-i3.notify", () => {
     const person1 = PersonId.create();
     const person2 = PersonId.create();

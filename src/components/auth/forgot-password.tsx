@@ -105,9 +105,9 @@ function RequestCode_Form({ email, onSent }: { email?: string; onSent: (email: s
                     control={form.control}
                     render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
-                            <FieldLabel htmlFor="forgot-password-email">Email</FieldLabel>
+                            <FieldLabel htmlFor={`${formId}-email`}>Email</FieldLabel>
                             <Input
-                                id="forgot-password-email"
+                                id={`${formId}-email`}
                                 type="email"
                                 placeholder="you@example.com"
                                 aria-invalid={fieldState.invalid}
@@ -190,9 +190,11 @@ function ResetPassword_Form({
                     control={form.control}
                     render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
-                            <FieldLabel htmlFor="verification-code">Verification Code</FieldLabel>
+                            <FieldLabel htmlFor={`${formId}-verification-code`}>
+                                Verification Code
+                            </FieldLabel>
                             <InputOTP
-                                id="verification-code"
+                                id={`${formId}-verification-code`}
                                 maxLength={6}
                                 value={field.value}
                                 onChange={field.onChange}
@@ -218,9 +220,9 @@ function ResetPassword_Form({
                     control={form.control}
                     render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
-                            <FieldLabel htmlFor="new-password">New Password</FieldLabel>
+                            <FieldLabel htmlFor={`${formId}-new-password`}>New Password</FieldLabel>
                             <PasswordInput
-                                id="new-password"
+                                id={`${formId}-new-password`}
                                 autoComplete="new-password"
                                 placeholder="Enter your new password"
                                 aria-invalid={fieldState.invalid}
@@ -235,11 +237,11 @@ function ResetPassword_Form({
                     control={form.control}
                     render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
-                            <FieldLabel htmlFor="confirm-new-password">
+                            <FieldLabel htmlFor={`${formId}-confirm-new-password`}>
                                 Confirm New Password
                             </FieldLabel>
                             <PasswordInput
-                                id="confirm-new-password"
+                                id={`${formId}-confirm-new-password`}
                                 autoComplete="new-password"
                                 placeholder="Enter your new password again"
                                 aria-invalid={fieldState.invalid}

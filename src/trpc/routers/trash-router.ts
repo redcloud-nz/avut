@@ -15,6 +15,7 @@ import {
     trashableEntityList,
     type TrashableEntityId,
 } from "@/lib/trash-registry";
+import { revalidateTeam } from "@/server/cache/team-revalidate";
 import * as Trash from "@/server/services/trash";
 
 import {
@@ -50,6 +51,23 @@ async function requireDeletePermission(
             message: `You need ${permission}:delete to do that.`,
         });
     }
+}
+
+/**
+ * A team's slug, read before a recover or purge so its cached team (`getTeamBySlug`) can be cleared
+ * afterwards (a purge removes the row). `null` for any other type, or a team without a slug.
+ */
+async function teamSlugFor(
+    ctx: AuthenticatedOrganizationContext,
+    type: TrashableEntityId,
+    id: string,
+): Promise<string | null> {
+    if (type !== "team") return null;
+    const team = await ctx.prisma.team.findUnique({
+        where: { id, organizationId: ctx.organizationId },
+        select: { slug: true },
+    });
+    return team?.slug ?? null;
 }
 
 const trashRecordInput = z.object({ type: TrashableEntityIdSchema, id: z.string() });
@@ -106,7 +124,9 @@ export const trashRouter = createTrpcRouter({
         .input(trashRecordInput)
         .mutation(async ({ ctx, input: { type, id } }) => {
             await requireDeletePermission(ctx, type);
+            const teamSlug = await teamSlugFor(ctx, type, id);
             await Trash.purge(ctx, type, id);
+            await revalidateTeam(teamSlug);
         }),
 
     /** Recovers a record from the Rubbish bin back to `Active`, via the entity's own service. */
@@ -114,6 +134,8 @@ export const trashRouter = createTrpcRouter({
         .input(trashRecordInput)
         .mutation(async ({ ctx, input: { type, id } }) => {
             await requireDeletePermission(ctx, type);
+            const teamSlug = await teamSlugFor(ctx, type, id);
             await Trash.recover(ctx, type, id);
+            await revalidateTeam(teamSlug);
         }),
 });

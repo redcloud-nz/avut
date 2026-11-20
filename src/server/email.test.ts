@@ -3,9 +3,19 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { emailDelivery, redirectEmail, redirectRecipient } from "./email";
+import { OrganizationSettings } from "@/lib/schemas/organization-settings";
+
+import { emailDelivery, orgReplyTo, redirectEmail, redirectRecipient, sendEmail } from "./email";
+
+const resendSend = vi.hoisted(() => vi.fn());
+
+vi.mock("resend", () => ({
+    Resend: class {
+        emails = { send: resendSend };
+    },
+}));
 
 describe("emailDelivery", () => {
     const original = { ...process.env };
@@ -173,5 +183,61 @@ describe("redirectEmail", () => {
         const redirected = redirectEmail({ ...payload, headers: { "X-Entity-Ref-ID": "abc" } });
 
         expect(redirected.headers?.["X-Entity-Ref-ID"]).toBe("abc");
+    });
+});
+
+describe("sendEmail", () => {
+    const payload = {
+        from: "no-reply@mx.avut.nz",
+        to: "alex@example.com",
+        subject: "Hello",
+        text: "Hi",
+    } as const;
+
+    beforeEach(() => {
+        // Read when the client is first built; the client itself is the mock above.
+        vi.stubEnv("RESEND_API_KEY", "re_test");
+        resendSend.mockReset();
+        vi.spyOn(console, "error").mockImplementation(() => {});
+        vi.spyOn(console, "log").mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        vi.unstubAllEnvs();
+        vi.restoreAllMocks();
+    });
+
+    it("reports ok when Resend accepts the message", async () => {
+        resendSend.mockResolvedValue({ data: { id: "email-1" }, error: null });
+
+        expect(await sendEmail({ ...payload })).toEqual({ ok: true });
+        expect(resendSend).toHaveBeenCalledOnce();
+    });
+
+    it("reports the error Resend returns, without throwing", async () => {
+        const error = { name: "rate_limit_exceeded", message: "Too many requests" };
+        resendSend.mockResolvedValue({ data: null, error });
+
+        expect(await sendEmail({ ...payload })).toEqual({ ok: false, error });
+    });
+
+    it("reports a thrown error, without throwing", async () => {
+        const error = new Error("network down");
+        resendSend.mockRejectedValue(error);
+
+        expect(await sendEmail({ ...payload })).toEqual({ ok: false, error });
+    });
+});
+
+describe("orgReplyTo", () => {
+    it("is undefined when the org hasn't set one", () => {
+        expect(orgReplyTo(OrganizationSettings.default())).toBeUndefined();
+    });
+
+    it("is the org's general.replyTo when set", () => {
+        const settings = OrganizationSettings.default();
+        settings.general.replyTo = "training@example.org";
+
+        expect(orgReplyTo(settings)).toBe("training@example.org");
     });
 });

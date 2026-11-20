@@ -4,12 +4,12 @@
  */
 "use client";
 
-import { CornerDownRightIcon, ExternalLinkIcon } from "lucide-react";
+import { CornerDownRightIcon } from "lucide-react";
 import { notFound } from "next/navigation";
 import { Suspense, useMemo, type ReactNode } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 
-import { useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
 import {
     getCoreRowModel,
     getFilteredRowModel,
@@ -22,6 +22,7 @@ import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { D4HItemRef } from "@/components/d4h/d4h-item-ref";
+import { HelpButton } from "@/components/docs/help-button";
 import { D4HEquipmentBrandLink } from "@/components/entity-links/d4h-equipment-brand-link";
 import { D4HEquipmentCategoryLink } from "@/components/entity-links/d4h-equipment-category-link";
 import { D4HEquipmentItemLink } from "@/components/entity-links/d4h-equipment-item-link";
@@ -30,16 +31,9 @@ import { D4HEquipmentTypeLink } from "@/components/entity-links/d4h-equipment-ty
 import { D4HMemberLink } from "@/components/entity-links/d4h-member-link";
 import { D4HTeamLink } from "@/components/entity-links/d4h-team-link";
 import { Protect } from "@/components/protect";
-import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardAction,
-    CardContent,
-    CardHeader,
-    CardLoadingFallback,
-    CardTitle,
-} from "@/components/ui/card";
+import { CardContent, CardLoadingFallback } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
 import { hasD4HTeamPermission } from "@/lib/d4h-permissions";
@@ -47,6 +41,7 @@ import { route } from "@/lib/routes";
 import { D4HEquipmentListItem, D4HEquipmentStatus } from "@/lib/schemas/d4h/equipment-item";
 import { trpc } from "@/trpc/client";
 
+import { D4HModule_OpenInD4H_Button } from "../open-in-d4h-button";
 import { D4HModule_ItemTasks_Card } from "../tasks/item-tasks-card";
 
 import { D4HModule_EquipmentItem_Menu } from "./equipment-item-menu";
@@ -61,16 +56,20 @@ import {
  * Other modules add to the page through slots that `page.tsx` fills: `menuActions` and
  * `menuDialogs` go to the Actions menu (see `EntityActionMenu`), and `statusBadge` sits beside the
  * D4H Status value.
+ *
+ * `memberId` is set on the member-scoped route, and only changes the breadcrumbs.
  */
 export function D4HModule_EquipmentItem_Content({
     teamId,
     itemId,
+    memberId,
     menuActions,
     menuDialogs,
     statusBadge,
 }: {
     teamId: number;
     itemId: number;
+    memberId?: number;
     menuActions?: ReactNode;
     menuDialogs?: ReactNode;
     statusBadge?: ReactNode;
@@ -99,8 +98,41 @@ export function D4HModule_EquipmentItem_Content({
         ],
     });
 
+    // Prefetched by the member-scoped page; not asked for on the team-level one.
+    const { data: members } = useQuery({
+        ...trpc.d4hApi.listTeamMembers.queryOptions({ organizationId: organization.id, teamId }),
+        enabled: memberId !== undefined,
+    });
+
     const team = teams.find((t) => t.id === teamId);
     if (!team) notFound();
+
+    const teamHref = route("/orgs/[slug]/d4h/teams/[d4h_team_id]", {
+        slug,
+        d4h_team_id: String(teamId),
+    });
+    // The member from the URL, even if the item has since moved to another holder or the member
+    // is no longer in the list.
+    const memberBreadcrumbs =
+        memberId === undefined
+            ? []
+            : [
+                  {
+                      label: "Members",
+                      href: route("/orgs/[slug]/d4h/teams/[d4h_team_id]/members", {
+                          slug,
+                          d4h_team_id: String(teamId),
+                      }),
+                  },
+                  {
+                      label: members?.find((m) => m.id === memberId)?.name ?? `Member #${memberId}`,
+                      href: route("/orgs/[slug]/d4h/teams/[d4h_team_id]/members/[member_id]", {
+                          slug,
+                          d4h_team_id: String(teamId),
+                          member_id: String(memberId),
+                      }),
+                  },
+              ];
 
     const category = categories.find((c) => c.id === item.category.id);
 
@@ -122,15 +154,11 @@ export function D4HModule_EquipmentItem_Content({
                 breadcrumbs={[
                     { label: "D4H", href: route("/orgs/[slug]/d4h", { slug }) },
                     { label: "Teams", href: route("/orgs/[slug]/d4h/teams", { slug }) },
-                    {
-                        label: team.title,
-                        href: route("/orgs/[slug]/d4h/teams/[d4h_team_id]", {
-                            slug,
-                            d4h_team_id: String(teamId),
-                        }),
-                    },
+                    { label: team.title, href: teamHref },
+                    ...memberBreadcrumbs,
                     { label: `Item ${item.ref}` },
                 ]}
+                actions={<HelpButton id="d4h" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>
@@ -139,13 +167,7 @@ export function D4HModule_EquipmentItem_Content({
                             <D4HItemRef value={item.ref} /> {item.kind.title}
                         </Saratoga.Title>
                         <Saratoga.Actions>
-                            {/* Icon-only below `sm`, with the label kept for screen readers. */}
-                            <Button asChild variant="outline" className="max-sm:w-8 max-sm:px-0">
-                                <a href={d4hUrl} target="_blank" rel="noreferrer">
-                                    <ExternalLinkIcon />
-                                    <span className="sr-only sm:not-sr-only">Open in D4H</span>
-                                </a>
-                            </Button>
+                            <D4HModule_OpenInD4H_Button href={d4hUrl} />
                             <D4HModule_EquipmentItem_Menu
                                 canUpdateInD4H={canUpdateInD4H}
                                 extraActions={menuActions}
@@ -156,49 +178,47 @@ export function D4HModule_EquipmentItem_Content({
 
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Item Information</CardTitle>
-                                    <CardAction>
-                                        <Protect
-                                            permissions={{ d4hEquipment: ["update"] }}
-                                            render={(hasPermission) => (
-                                                <D4HModule_UpdateEquipmentItem_Dialog
-                                                    teamId={teamId}
-                                                    item={item}
-                                                    disabledReason={updateEquipmentItemDisabledReason(
-                                                        {
-                                                            hasPermission,
-                                                            canUpdateInD4H,
-                                                            teamTitle: team.title,
-                                                        },
-                                                    )}
-                                                />
-                                            )}
-                                        />
-                                    </CardAction>
-                                </CardHeader>
+                            <RecordCard
+                                label="D4H Item"
+                                action={
+                                    <Protect
+                                        permissions={{ d4hEquipment: ["update"] }}
+                                        render={(hasPermission) => (
+                                            <D4HModule_UpdateEquipmentItem_Dialog
+                                                teamId={teamId}
+                                                item={item}
+                                                disabledReason={updateEquipmentItemDisabledReason({
+                                                    hasPermission,
+                                                    canUpdateInD4H,
+                                                    teamTitle: team.title,
+                                                })}
+                                            />
+                                        )}
+                                    />
+                                }
+                            >
                                 <CardContent>
                                     <DataList>
-                                        <DataItem inline>
+                                        <RecordCardId label="D4H ID" id={String(item.id)} />
+                                        <DataItem>
                                             <DataItemTitle>Ref</DataItemTitle>
                                             <DataItemValue>
                                                 <D4HItemRef value={item.ref} />
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Team</DataItemTitle>
                                             <DataItemValue>
                                                 <D4HTeamLink team={team} />
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Type</DataItemTitle>
                                             <DataItemValue>
                                                 <D4HEquipmentTypeLink type={item.kind} />
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Category</DataItemTitle>
                                             <DataItemValue>
                                                 {category ? (
@@ -208,7 +228,7 @@ export function D4HModule_EquipmentItem_Content({
                                                 )}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Brand</DataItemTitle>
                                             <DataItemValue>
                                                 {item.brand.id != null && item.brand.title ? (
@@ -223,17 +243,14 @@ export function D4HModule_EquipmentItem_Content({
                                                 )}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Model</DataItemTitle>
                                             <DataItemValue>
-                                                {item.model?.id != null &&
-                                                item.model.title &&
-                                                item.brand.id != null ? (
+                                                {item.model?.id != null && item.model.title ? (
                                                     <D4HEquipmentModelLink
                                                         model={{
                                                             id: item.model.id,
                                                             title: item.model.title,
-                                                            brand: { id: item.brand.id },
                                                         }}
                                                     />
                                                 ) : (
@@ -252,18 +269,18 @@ export function D4HModule_EquipmentItem_Content({
                                                 </DataItemValue>
                                             </DataItem>
                                         )}
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Serial Number</DataItemTitle>
                                             <DataItemValue>{item.serial}</DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>D4H Status</DataItemTitle>
                                             <DataItemValue className="flex flex-wrap items-center gap-2">
                                                 {D4HEquipmentStatus.label(item.status)}
                                                 {statusBadge}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Issued To</DataItemTitle>
                                             <DataItemValue>
                                                 {holder ? (
@@ -282,24 +299,24 @@ export function D4HModule_EquipmentItem_Content({
                                                 )}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Critical</DataItemTitle>
                                             <DataItemValue>
                                                 {item.isCritical ? "Yes" : "No"}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Monitor</DataItemTitle>
                                             <DataItemValue>
                                                 {item.isMonitor ? "Yes" : "No"}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Barcode</DataItemTitle>
                                             <DataItemValue>{item.barcode}</DataItemValue>
                                         </DataItem>
                                         {dates.map(({ label, value }) => (
-                                            <DataItem key={label} inline>
+                                            <DataItem key={label}>
                                                 <DataItemTitle>{label}</DataItemTitle>
                                                 <DataItemValue>{formatDate(value)}</DataItemValue>
                                             </DataItem>
@@ -312,7 +329,7 @@ export function D4HModule_EquipmentItem_Content({
                                         </DataItem>
                                     </DataList>
                                 </CardContent>
-                            </Card>
+                            </RecordCard>
                             <ItemContentsBoundary>
                                 <ItemContents teamId={teamId} itemId={itemId} />
                             </ItemContentsBoundary>
@@ -450,24 +467,11 @@ function ItemContents({ teamId, itemId }: { teamId: number; itemId: number }) {
                 header: "Model",
                 cell: (ctx) => {
                     const item = ctx.row.original;
-                    const { brand, model } = item;
-                    if (
-                        model?.id == null ||
-                        !model.title ||
-                        brand.id == null ||
-                        !isReachable(item)
-                    ) {
+                    const { model } = item;
+                    if (model?.id == null || !model.title || !isReachable(item)) {
                         return ctx.getValue() || "—";
                     }
-                    return (
-                        <D4HEquipmentModelLink
-                            model={{
-                                id: model.id,
-                                title: model.title,
-                                brand: { id: brand.id },
-                            }}
-                        />
-                    );
+                    return <D4HEquipmentModelLink model={{ id: model.id, title: model.title }} />;
                 },
                 enableGlobalFilter: true,
                 enableSorting: true,

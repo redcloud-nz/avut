@@ -46,10 +46,11 @@ export type LogBatchId = z.infer<typeof LogBatchId.schema>;
  * owner invariant can be guarded on write and the per-scope feeds can be
  * indexed.
  *
- * `modules.ts`'s `ModuleScope` now uses the same three values, but the two
- * types remain intentionally separate — a log entry's scope is a fact about
- * where the entry lives (which FK is set, which feed it appears in), not a
- * derived property of the module that produced it. Don't collapse them into
+ * `modules.ts`'s `ModuleScope` shares these three values and adds `"team"`,
+ * which has no log of its own: a team-scope write logs to its organization.
+ * The two types remain intentionally separate — a log entry's scope is a fact
+ * about where the entry lives (which FK is set, which feed it appears in), not
+ * a derived property of the module that produced it. Don't collapse them into
  * one shared type without checking that invariant still holds.
  */
 const logScopeValues = ["organization", "user", "system"] as const;
@@ -93,6 +94,7 @@ const logActionValues = [
     "Reopen",
     "Restore",
     "Revoke",
+    "Run", // a real (non-dry) d4h-nag reminder run, on its D4HNagRule
     "Subscribe",
     "Unban",
     "Unpublish",
@@ -118,7 +120,10 @@ const logObjectTypeValues = [
     "Account", // DORMANT — reverted databaseHooks wire
     "D4HAccessToken",
     "D4HEquipmentItem",
+    "D4HNagOptOut",
+    "D4HNagRule",
     "D4HTask",
+    "I3Bundle",
     "I3Template",
     "I3TemplateVariant",
     "Organization",
@@ -136,6 +141,7 @@ const logObjectTypeValues = [
     "SkillPackage",
     "Team",
     "TeamMembership",
+    "TeamUser",
     "User",
     "UserNote",
     "UserSettings",
@@ -211,7 +217,10 @@ const moduleByObjectType: Record<LogObjectType, ModuleId | null> = {
     Account: null,
     D4HAccessToken: "org-admin",
     D4HEquipmentItem: "d4h-i3",
+    D4HNagOptOut: "d4h-nag",
+    D4HNagRule: "d4h-nag",
     D4HTask: "d4h-i3",
+    I3Bundle: "d4h-i3",
     I3Template: "d4h-i3",
     I3TemplateVariant: "d4h-i3",
     Organization: "org-admin",
@@ -229,6 +238,7 @@ const moduleByObjectType: Record<LogObjectType, ModuleId | null> = {
     SkillPackage: "skill-package-builder",
     Team: "org-admin",
     TeamMembership: "org-admin",
+    TeamUser: "org-admin",
     User: null,
     UserNote: "user-notes",
     UserSettings: null,

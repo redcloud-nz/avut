@@ -14,6 +14,7 @@ import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { TeamId } from "@/lib/schemas/team";
 import { UserId } from "@/lib/schemas/user";
+import { revalidateTeam } from "@/server/cache/team-revalidate";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
@@ -22,6 +23,10 @@ import { trashRouter } from "./trash-router";
 // The router reaches server-only modules at import time. The procedures exercised here use
 // ctx.prisma (the injected mock), so an empty stub is enough to let them import in jsdom.
 vi.mock("server-only", () => ({}));
+
+// The routers clear a team's cached lookup after writes. `revalidateTag` throws outside a Next.js
+// request/render store, so stub it.
+vi.mock("@/server/cache/team-revalidate", () => ({ revalidateTeam: vi.fn(async () => {}) }));
 
 describe("trash.listTrash", () => {
     const T = {
@@ -218,14 +223,14 @@ describe("trash.listTrash", () => {
 
     function makeCaller(
         userId: string,
-        permissions: Record<string, string[]> = { organization: ["view"] },
+        permissions: Record<string, string[]> | null = { organization: ["view"] },
     ) {
         return trashRouter.createCaller(
             createAuthenticatedMockContext({
                 user: { id: userId },
                 // `listTrash` filters per entity by reading `organizationUser.role` itself, not
-                // via `ctx.hasPermission` — the mock's `organization:view` here only satisfies
-                // `organizationProcedure`'s own base check.
+                // via `ctx.hasPermission`, which here only checks membership (`null` for a
+                // non-member).
                 permissions,
                 prisma: db,
             }),
@@ -285,9 +290,9 @@ describe("trash.listTrash", () => {
         expect(rows).toHaveLength(0);
     });
 
-    it("is forbidden without organization:view permission", async () => {
+    it("is forbidden to a non-member", async () => {
         await expect(
-            makeCaller(T.outsiderUser, {}).listTrash({ organizationId: T.org }),
+            makeCaller(T.outsiderUser, null).listTrash({ organizationId: T.org }),
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 });
@@ -307,12 +312,16 @@ describe("trash.recoverRecord / trash.purgeRecord", () => {
         await db.organization.create({
             data: { id: T.org, name: "Acme", slug: "acme-2", createdAt: new Date() },
         });
-        for (const id of [T.recoverTeam, T.purgeTeam]) {
+        for (const [id, slug] of [
+            [T.recoverTeam, "recover-me"],
+            [T.purgeTeam, "purge-me"],
+        ] as const) {
             await db.team.create({
                 data: {
                     id,
                     organizationId: T.org,
                     name: id,
+                    slug,
                     tags: [],
                     properties: {},
                     status: "Deleted",
@@ -351,21 +360,26 @@ describe("trash.recoverRecord / trash.purgeRecord", () => {
     });
 
     it("recoverRecord brings a Deleted team back to Active", async () => {
+        vi.mocked(revalidateTeam).mockClear();
         await makeCaller(T.adminUser).recoverRecord({
             organizationId: T.org,
             type: "team",
             id: T.recoverTeam,
         });
         expect((await db.team.findUnique({ where: { id: T.recoverTeam } }))?.status).toBe("Active");
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["recover-me"]]);
     });
 
     it("purgeRecord permanently deletes a Deleted team, and rejects an Active one", async () => {
+        vi.mocked(revalidateTeam).mockClear();
         await makeCaller(T.adminUser).purgeRecord({
             organizationId: T.org,
             type: "team",
             id: T.purgeTeam,
         });
         expect(await db.team.findUnique({ where: { id: T.purgeTeam } })).toBeNull();
+        // The slug was read before the row went.
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["purge-me"]]);
 
         await expect(
             makeCaller(T.adminUser).purgeRecord({

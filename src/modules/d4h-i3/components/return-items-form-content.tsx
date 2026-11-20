@@ -6,7 +6,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useId } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -17,6 +17,8 @@ import { i3Effects } from "@/client/i3-effects";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { D4HTeamMemberSelect } from "@/components/controls/d4h-team-member-select";
+import { D4HItemRef } from "@/components/d4h/d4h-item-ref";
+import { HelpButton } from "@/components/docs/help-button";
 import { ObjectIcons } from "@/components/icons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button, MutationButton } from "@/components/ui/button";
@@ -51,6 +53,7 @@ export function D4HI3Module_ReturnItems_FormInstance_Content({
     instanceId: FormInstanceId;
 }) {
     const logger = useLogger("I3Module", "ReturnItems_FormInstance_Content");
+    const idPrefix = useId();
     const organization = useOrganization();
     const router = useRouter();
 
@@ -85,6 +88,7 @@ export function D4HI3Module_ReturnItems_FormInstance_Content({
         saveStatus,
         handleChange: saveDraft,
         handleDelete,
+        cancel: cancelAutosave,
     } = useDraftFormAutosave({
         formKey: I3ReturnItemsForm.formKey,
         instanceId,
@@ -118,6 +122,7 @@ export function D4HI3Module_ReturnItems_FormInstance_Content({
 
     const handleSubmit = form.handleSubmit(
         (formData) => {
+            cancelAutosave();
             submitMutation.mutate({
                 formInstanceId: instanceId,
                 organizationId: organization.id,
@@ -141,6 +146,7 @@ export function D4HI3Module_ReturnItems_FormInstance_Content({
                     { label: "Return Items", href: listHref },
                     { label: recipient.name || "No one selected" },
                 ]}
+                actions={<HelpButton id="d4h-i3/return" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>
@@ -163,39 +169,39 @@ export function D4HI3Module_ReturnItems_FormInstance_Content({
                                 onChange={handleChange}
                             >
                                 <FieldGroup>
-                                    <Controller
-                                        control={form.control}
-                                        name="recipient"
-                                        render={({ field, fieldState }) => (
-                                            <Field data-invalid={fieldState.invalid}>
-                                                <FieldLabel htmlFor="recipient">
-                                                    Returned by
-                                                </FieldLabel>
-                                                <D4HTeamMemberSelect
-                                                    value={field.value}
-                                                    onChange={(value) => {
-                                                        field.onChange(value);
-                                                        // The checklist is the chosen person's items.
-                                                        form.setValue("items", []);
-                                                        handleChange();
-                                                    }}
-                                                    organizationId={organization.id}
-                                                    slotProps={{
-                                                        trigger: {
-                                                            id: "recipient",
-                                                            "aria-invalid": fieldState.invalid,
-                                                        },
-                                                        value: {
-                                                            placeholder: "Select a person",
-                                                        },
-                                                    }}
-                                                />
-                                                {fieldState.error && (
-                                                    <FieldError errors={[fieldState.error]} />
-                                                )}
-                                            </Field>
-                                        )}
-                                    />
+                                    <div className="grid gap-5 sm:grid-cols-2">
+                                        <Controller
+                                            control={form.control}
+                                            name="recipient"
+                                            render={({ field, fieldState }) => (
+                                                <Field data-invalid={fieldState.invalid}>
+                                                    <FieldLabel htmlFor={`${idPrefix}-recipient`}>
+                                                        Returned by
+                                                    </FieldLabel>
+                                                    <D4HTeamMemberSelect
+                                                        value={field.value}
+                                                        onChange={(value) => {
+                                                            field.onChange(value);
+                                                            // The checklist is the chosen person's items.
+                                                            form.setValue("items", []);
+                                                            handleChange();
+                                                        }}
+                                                        organizationId={organization.id}
+                                                        id={`${idPrefix}-recipient`}
+                                                        aria-invalid={fieldState.invalid}
+                                                    />
+                                                    {fieldState.error && (
+                                                        <FieldError errors={[fieldState.error]} />
+                                                    )}
+                                                </Field>
+                                            )}
+                                        />
+                                        <Field>
+                                            <FieldLabel>Recorded by</FieldLabel>
+                                            {/* Matches the height of the person select it sits beside. */}
+                                            <UserNameFieldValue className="flex h-8 items-center text-sm" />
+                                        </Field>
+                                    </div>
 
                                     {lacksUpdatePermission && (
                                         <Alert variant="warning">
@@ -252,9 +258,11 @@ export function D4HI3Module_ReturnItems_FormInstance_Content({
                                         name="comments"
                                         render={({ field, fieldState }) => (
                                             <Field data-invalid={fieldState.invalid}>
-                                                <FieldLabel htmlFor="comments">Comments</FieldLabel>
+                                                <FieldLabel htmlFor={`${idPrefix}-comments`}>
+                                                    Comments
+                                                </FieldLabel>
                                                 <Textarea
-                                                    id="comments"
+                                                    id={`${idPrefix}-comments`}
                                                     {...field}
                                                     aria-invalid={fieldState.invalid}
                                                 />
@@ -264,11 +272,6 @@ export function D4HI3Module_ReturnItems_FormInstance_Content({
                                             </Field>
                                         )}
                                     />
-
-                                    <Field>
-                                        <FieldLabel>Received by</FieldLabel>
-                                        <UserNameFieldValue />
-                                    </Field>
 
                                     <Field orientation="horizontal" className="justify-between">
                                         <MutationButton
@@ -318,6 +321,7 @@ function D4HI3_Return_ItemChecklist({
     value: I3ReturnedItem[];
     onChange: (items: I3ReturnedItem[]) => void;
 }) {
+    const idPrefix = useId();
     const [{ data: memberEquipment }, { data: returnedItemIds }] = useSuspenseQueries({
         queries: [
             trpc.d4hApi.listMemberEquipment.queryOptions({ organizationId, teamId, memberId }),
@@ -348,11 +352,25 @@ function D4HI3_Return_ItemChecklist({
     }
 
     return (
-        <ItemGroup>
+        <ItemGroup className="gap-0!">
             {items.map((item) => {
-                const checkboxId = `return-item-${item.id}`;
+                const checkboxId = `${idPrefix}-item-${item.id}`;
+                // The ref alone can be ambiguous (free text, often reused across types), so say
+                // what the item is.
+                const details = [
+                    item.brand.title,
+                    item.model?.title,
+                    item.serial && `S/N: ${item.serial}`,
+                ]
+                    .filter(Boolean)
+                    .join(" · ");
                 return (
-                    <Item size="sm" key={item.id} asChild>
+                    <Item
+                        size="xs"
+                        key={item.id}
+                        className="cursor-pointer hover:bg-accent"
+                        asChild
+                    >
                         <label htmlFor={checkboxId}>
                             <Checkbox
                                 id={checkboxId}
@@ -374,11 +392,9 @@ function D4HI3_Return_ItemChecklist({
                             />
                             <ItemContent>
                                 <ItemTitle>
-                                    #{item.ref} {item.kind.title}
+                                    <D4HItemRef value={item.ref} /> {item.kind.title}
                                 </ItemTitle>
-                                {item.serial && (
-                                    <ItemDescription>S/N: {item.serial}</ItemDescription>
-                                )}
+                                {details && <ItemDescription>{details}</ItemDescription>}
                             </ItemContent>
                         </label>
                     </Item>

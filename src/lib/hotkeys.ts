@@ -19,6 +19,7 @@ export type ActionVerb =
     | "move"
     | "export"
     | "import"
+    | "replace"
     | "invite"
     | "link"
     | "unlink"

@@ -85,6 +85,11 @@ export const HistoryObjects: Record<HistoryObjectType, { permissions: Permission
  * entries show up, unfiltered, on every page they mention.
  */
 export const RelatedEntryPermissions: Partial<Record<LogObjectType, Permissions>> = {
+    // d4h-nag rule and opt-out entries carry a context ref to their team.
+    D4HNagOptOut: { d4hNag: ["view"] },
+    D4HNagRule: { d4hNag: ["view"] },
+    // Bundle line changes carry a context ref to each template added or removed.
+    I3Bundle: { i3Bundle: ["view"] },
     // Person ↔ user link entries carry a user id in their description.
     OrganizationMembership: { member: ["view"] },
     TeamMembership: { team: ["view"] },
@@ -95,7 +100,7 @@ export const RelatedEntryPermissions: Partial<Record<LogObjectType, Permissions>
 };
 
 /** The record types an id-valued change field can name. */
-export type IdFieldTarget = "Person" | "Skill" | "SkillGroup" | "SkillPackage";
+export type IdFieldTarget = "Person" | "Skill" | "SkillGroup" | "SkillPackage" | "Team";
 
 /**
  * Change fields whose values are record ids, keyed by the **entry's own** `objectType`, then the
@@ -106,7 +111,12 @@ export type IdFieldTarget = "Person" | "Skill" | "SkillGroup" | "SkillPackage";
 export const IdFields: Partial<Record<LogObjectType, Record<string, IdFieldTarget>>> = {
     // `moveSkill` (#342): "Group: Medical → Rescue".
     Skill: { skillGroupId: "SkillGroup", skillPackageId: "SkillPackage" },
-    SkillCheckSession: { skills: "Skill", assessees: "Person", assessors: "Person" },
+    SkillCheckSession: {
+        skills: "Skill",
+        assessees: "Person",
+        assessors: "Person",
+        teamId: "Team",
+    },
 };
 
 /**
@@ -241,6 +251,7 @@ export const ObjectHistoryPage = {
             Skill: z.record(z.string(), z.string()),
             SkillGroup: z.record(z.string(), z.string()),
             SkillPackage: z.record(z.string(), z.string()),
+            Team: z.record(z.string(), z.string()),
         }),
     }),
 } as const;

@@ -21,6 +21,8 @@ export const i3Effects = createEffects<"i3">()({
         invalidate(trpc.i3.listTemplates.queryFilter({ organizationId: vars.organizationId })),
         invalidate(trpc.i3.listTemplateFits.queryFilter({ organizationId: vars.organizationId })),
         invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
+        // A bundle page flags its deleted templates.
+        invalidate(trpc.i3Bundles.pathFilter()),
     ],
     recoverTemplate: (vars, { updated }) => [
         write(
@@ -33,12 +35,16 @@ export const i3Effects = createEffects<"i3">()({
         invalidate(trpc.i3.listTemplates.queryFilter({ organizationId: vars.organizationId })),
         invalidate(trpc.i3.listTemplateFits.queryFilter({ organizationId: vars.organizationId })),
         invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
+        invalidate(trpc.i3Bundles.pathFilter()),
     ],
     updateTemplate: ({ organizationId, templateId }) => [
         invalidate(trpc.i3.listTemplates.queryFilter({ organizationId })),
         invalidate(trpc.i3.getTemplate.queryFilter({ organizationId, templateId })),
         // A changed D4H category/type changes which teams the template fits.
         invalidate(trpc.i3.listTemplateFits.queryFilter({ organizationId })),
+        // A bundle page shows its templates' names and D4H types, and checks items against their
+        // serial number and brand & model rules.
+        invalidate(trpc.i3Bundles.pathFilter()),
     ],
     createTemplateVariant: ({ organizationId, templateId }, { created }) => [
         write(trpc.i3.listTemplates.queryKey({ organizationId }), (old) =>
@@ -49,6 +55,8 @@ export const i3Effects = createEffects<"i3">()({
         // Org-wide, so the Issue form's unfiltered variant list is refreshed too.
         invalidate(trpc.i3.listTemplateVariants.queryFilter({ organizationId })),
         invalidate(trpc.i3.listTemplateFits.queryFilter({ organizationId })),
+        // A bundle page checks items' brands and models against their templates' variants.
+        invalidate(trpc.i3Bundles.pathFilter()),
     ],
     updateTemplateVariant: ({ organizationId }) => [
         // listTemplates embeds each template's variants.
@@ -56,11 +64,15 @@ export const i3Effects = createEffects<"i3">()({
         invalidate(trpc.i3.listTemplateVariants.queryFilter({ organizationId })),
         // A changed D4H brand/model changes which teams the variant fits.
         invalidate(trpc.i3.listTemplateFits.queryFilter({ organizationId })),
+        // A bundle page checks items' brands and models against their templates' variants.
+        invalidate(trpc.i3Bundles.pathFilter()),
     ],
     deleteTemplateVariant: ({ organizationId }) => [
         invalidate(trpc.i3.listTemplates.queryFilter({ organizationId })),
         invalidate(trpc.i3.listTemplateVariants.queryFilter({ organizationId })),
         invalidate(trpc.i3.listTemplateFits.queryFilter({ organizationId })),
+        // A bundle page checks items' brands and models against their templates' variants.
+        invalidate(trpc.i3Bundles.pathFilter()),
     ],
     returnItem: ({ organizationId }) => [
         invalidate(trpc.d4hTasks.listItemTasks.queryFilter({ organizationId })),
@@ -85,6 +97,19 @@ export const i3Effects = createEffects<"i3">()({
                 formKey: I3IssueItemsForm.formKey,
             }),
         ),
+        // The submitted form joins the top of the Submitted tab, and its own page turns read-only.
+        invalidate(
+            trpc.forms.listSubmittedFormInstances.infiniteQueryFilter({
+                organizationId,
+                formKey: I3IssueItemsForm.formKey,
+            }),
+        ),
+        invalidate(
+            trpc.forms.getFormInstance.queryFilter({
+                organizationId,
+                formKey: I3IssueItemsForm.formKey,
+            }),
+        ),
     ],
     // The Return page navigates back to its list on success, so its call site sets `meta.navigates`.
     submitReturnItemsForm: ({ organizationId }) => [
@@ -97,6 +122,19 @@ export const i3Effects = createEffects<"i3">()({
         invalidate(trpc.d4hTasks.listReturnedItemIds.queryFilter({ organizationId })),
         invalidate(
             trpc.forms.listDraftFormInstances.queryFilter({
+                organizationId,
+                formKey: I3ReturnItemsForm.formKey,
+            }),
+        ),
+        // The submitted form joins the top of the Submitted tab, and its own page turns read-only.
+        invalidate(
+            trpc.forms.listSubmittedFormInstances.infiniteQueryFilter({
+                organizationId,
+                formKey: I3ReturnItemsForm.formKey,
+            }),
+        ),
+        invalidate(
+            trpc.forms.getFormInstance.queryFilter({
                 organizationId,
                 formKey: I3ReturnItemsForm.formKey,
             }),

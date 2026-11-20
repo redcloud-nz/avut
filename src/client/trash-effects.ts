@@ -8,23 +8,31 @@ import { trpc } from "@/trpc/client";
 import { createEffects, invalidate } from "@/trpc/mutation-effector";
 
 /**
- * The router whose queries a recovered or purged record of each type can appear in. A trash
+ * The routers whose queries a recovered or purged record of each type can appear in. A trash
  * mutation serves every entity type, so it can't `write()` one typed detail query the way the
- * per-entity `recoverX` effects do — it invalidates the owning router's queries wholesale.
+ * per-entity `recoverX` effects do — it invalidates the owning routers' queries wholesale.
  */
 const owningRouter = {
-    person: () => trpc.personnel.pathFilter(),
-    team: () => trpc.teams.pathFilter(),
-    teamMembership: () => trpc.teams.pathFilter(),
-    i3Template: () => trpc.i3.pathFilter(),
-    skillPackage: () => trpc.skillPackageBuilder.pathFilter(),
-    skillGroup: () => trpc.skillPackageBuilder.pathFilter(),
-    skill: () => trpc.skillPackageBuilder.pathFilter(),
-} satisfies Record<TrashableEntityId, () => unknown>;
+    person: () => [trpc.personnel.pathFilter()],
+    // Skill check sessions show their team; purging it leaves them org-wide (`SetNull`). The
+    // scope switcher's Teams group lists the caller's granted teams.
+    team: () => [
+        trpc.teams.pathFilter(),
+        trpc.skillCheckSessions.pathFilter(),
+        trpc.user.listTeamGrants.pathFilter(),
+    ],
+    teamMembership: () => [trpc.teams.pathFilter()],
+    // A bundle page shows its templates' names, status and D4H type.
+    i3Template: () => [trpc.i3.pathFilter(), trpc.i3Bundles.pathFilter()],
+    i3Bundle: () => [trpc.i3Bundles.pathFilter()],
+    skillPackage: () => [trpc.skillPackageBuilder.pathFilter()],
+    skillGroup: () => [trpc.skillPackageBuilder.pathFilter()],
+    skill: () => [trpc.skillPackageBuilder.pathFilter()],
+} satisfies Record<TrashableEntityId, () => unknown[]>;
 
 const trashCaches = (vars: { organizationId: string; type: TrashableEntityId }) => [
     invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
-    invalidate(owningRouter[vars.type]()),
+    ...owningRouter[vars.type]().map((filter) => invalidate(filter)),
 ];
 
 /**

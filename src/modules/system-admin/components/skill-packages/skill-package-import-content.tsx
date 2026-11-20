@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { toast } from "sonner";
 
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
@@ -31,6 +31,7 @@ type ImportResult = RouterOutput["skillPackageBuilder"]["importPackageAsAdmin"];
 type ImportPlan = ImportResult["plan"];
 
 export function SystemAdmin_SkillPackageImport_Content() {
+    const idPrefix = useId();
     const { data: orgData } = useSuspenseQuery(trpc.organizations.listOrganizations.queryOptions());
 
     const file = useSkillPackageImportFile();
@@ -84,18 +85,24 @@ export function SystemAdmin_SkillPackageImport_Content() {
                     </CardHeader>
                     <CardContent className="flex flex-col gap-4">
                         <Field data-invalid={!!file.error}>
-                            <FieldLabel htmlFor="import-file">Export file</FieldLabel>
+                            <FieldLabel htmlFor={`${idPrefix}-file`}>Export file</FieldLabel>
                             <FileDropzone
-                                id="import-file"
+                                id={`${idPrefix}-file`}
                                 accept="application/json"
                                 aria-invalid={!!file.error}
+                                aria-describedby={file.error ? `${idPrefix}-file-error` : undefined}
                                 hint="Up to 1 MB · .json"
                                 onFileSelected={(selected) => {
                                     file.handleFile(selected);
                                     resetPlan();
                                 }}
                             />
-                            {file.error && <FieldError errors={[{ message: file.error }]} />}
+                            {file.error && (
+                                <FieldError
+                                    id={`${idPrefix}-file-error`}
+                                    errors={[{ message: file.error }]}
+                                />
+                            )}
                             {file.envelope && !file.error && (
                                 <p className="text-muted-foreground text-xs">
                                     {file.envelope.package.name} —{" "}
@@ -110,7 +117,9 @@ export function SystemAdmin_SkillPackageImport_Content() {
                         </Field>
 
                         <Field>
-                            <FieldLabel htmlFor="target-org">Target organisation</FieldLabel>
+                            <FieldLabel htmlFor={`${idPrefix}-target-org`}>
+                                Target organisation
+                            </FieldLabel>
                             <Select
                                 value={targetOrganizationId}
                                 onValueChange={(value) => {
@@ -118,7 +127,7 @@ export function SystemAdmin_SkillPackageImport_Content() {
                                     resetPlan();
                                 }}
                             >
-                                <SelectTrigger id="target-org">
+                                <SelectTrigger id={`${idPrefix}-target-org`}>
                                     <SelectValue placeholder="Select an organisation…" />
                                 </SelectTrigger>
                                 <SelectContent>

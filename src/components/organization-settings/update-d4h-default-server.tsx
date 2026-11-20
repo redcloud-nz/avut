@@ -123,12 +123,12 @@ export function OrganizationSettings_UpdateD4HDefaultServer_Dialog({
                                 name="defaultServer"
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="d4h-default-server">
+                                        <FieldLabel htmlFor={`${formId}-server`}>
                                             Default Server
                                         </FieldLabel>
                                         <Select value={field.value} onValueChange={field.onChange}>
                                             <SelectTrigger
-                                                id="d4h-default-server"
+                                                id={`${formId}-server`}
                                                 aria-invalid={fieldState.invalid}
                                             >
                                                 <SelectValue placeholder="Select a server" />

@@ -35,10 +35,6 @@ import { trpc } from "@/trpc/client";
 
 type SkillRow = Skill & { group: SkillGroup; skillPackage: SkillPackage };
 
-function isArchived(row: SkillRow) {
-    return row.status !== "Active" || row.group.status !== "Active";
-}
-
 /**
  * Every skill in the organization's subscribed packages, flat. Reads the same query as the
  * dashboard's Skills stat card, so the two always agree on the count.
@@ -88,19 +84,7 @@ export function SkillTrack_SkillsList() {
             Kaga.defineColumns<SkillRow>((col) => [
                 col.accessor("name", {
                     header: "Skill",
-                    // The reports and the package's page leave archived skills out, so
-                    // say why a row here is missing from them.
-                    cell: (ctx) => {
-                        const link = <SkillLink skill={ctx.row.original} />;
-                        return isArchived(ctx.row.original) ? (
-                            <span className="flex items-center gap-2">
-                                {link}
-                                <Badge variant="outline">Archived</Badge>
-                            </span>
-                        ) : (
-                            link
-                        );
-                    },
+                    cell: (ctx) => <SkillLink skill={ctx.row.original} />,
                     enableSorting: true,
                     enableGlobalFilter: true,
                     enableColumnFilter: false,

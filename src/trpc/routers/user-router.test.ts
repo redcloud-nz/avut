@@ -9,6 +9,8 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import { InvitationId } from "@/lib/schemas/organization-invitation";
 import { OrganizationUserId } from "@/lib/schemas/organization-user";
 import { PersonId } from "@/lib/schemas/person";
+import { TeamId } from "@/lib/schemas/team";
+import { TeamUserId } from "@/lib/schemas/team-user";
 import { UserId } from "@/lib/schemas/user";
 import { UserSessionId } from "@/lib/schemas/user-session";
 import { createMockPrisma } from "@/test/create-prisma-mock";
@@ -227,6 +229,60 @@ describe("userRouter.listMemberships", () => {
         expect(membership).not.toHaveProperty("name");
         expect(membership).not.toHaveProperty("email");
         expect(membership).not.toHaveProperty("user");
+    });
+});
+
+describe("userRouter.listTeamGrants", () => {
+    // Dataset: the caller is granted a slugged Active team and an unslugged one; the filtering
+    // and ordering rules are covered by `TeamUsers.listForCaller`'s tests.
+    const T = {
+        org: OrganizationId.create(),
+        caller: UserId.create(),
+        team: TeamId.create(),
+        unslugged: TeamId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "First Org", slug: "first-org", createdAt: new Date() },
+        });
+        await db.user.create({
+            data: { id: T.caller, name: "Caller", email: "caller@example.com" },
+        });
+        await db.organizationUser.create({
+            data: { id: OrganizationUserId.create(), organizationId: T.org, userId: T.caller },
+        });
+        for (const [id, name, slug] of [
+            [T.team, "Rescue", "rescue"],
+            [T.unslugged, "Unslugged", null],
+        ] as const) {
+            await db.team.create({
+                data: { id, organizationId: T.org, name, slug, tags: [], properties: {} },
+            });
+            await db.teamUser.create({
+                data: {
+                    id: TeamUserId.create(),
+                    organizationId: T.org,
+                    teamId: id,
+                    userId: T.caller,
+                },
+            });
+        }
+    });
+
+    it("lists the caller's slugged, Active teams with their org", async () => {
+        const rows = await userRouter
+            .createCaller(createAuthenticatedMockContext({ user: { id: T.caller }, prisma: db }))
+            .listTeamGrants();
+
+        expect(rows).toEqual([
+            {
+                team: { id: T.team, name: "Rescue", slug: "rescue" },
+                organization: { id: T.org, name: "First Org", slug: "first-org" },
+            },
+        ]);
     });
 });
 
@@ -535,6 +591,138 @@ describe("userRouter invitations", () => {
     });
 });
 
+describe("userRouter.acceptInvitation team access", () => {
+    // Dataset: the caller is already a member (`acceptInvitationMock` doesn't create the
+    // membership the grant needs) and holds one pending invitation per case, each naming a
+    // different team, or none.
+    const T = {
+        org: OrganizationId.create(),
+        inviter: UserId.create(),
+        caller: UserId.create(),
+        membership: OrganizationUserId.create(),
+        activeTeam: TeamId.create(),
+        archivedTeam: TeamId.create(),
+        throwingTeam: TeamId.create(),
+        noTeam: InvitationId.create(),
+        toActive: InvitationId.create(),
+        toArchived: InvitationId.create(),
+        toThrowing: InvitationId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Team Org", slug: "team-org", createdAt: new Date() },
+        });
+        for (const [id, email] of [
+            [T.inviter, "team-inviter@example.com"],
+            [T.caller, "team-caller@example.com"],
+        ] as const) {
+            await db.user.create({ data: { id, name: email, email, emailVerified: true } });
+        }
+        await db.organizationUser.create({
+            data: { id: T.membership, organizationId: T.org, userId: T.caller, role: "member" },
+        });
+        for (const [id, name, status] of [
+            [T.activeTeam, "Active Team", "Active"],
+            [T.archivedTeam, "Archived Team", "Archived"],
+            [T.throwingTeam, "Throwing Team", "Active"],
+        ] as const) {
+            await db.team.create({
+                data: { id, organizationId: T.org, name, status, tags: [], properties: {} },
+            });
+        }
+
+        const future = new Date("2099-01-01T00:00:00Z");
+        for (const [id, teamId] of [
+            [T.noTeam, null],
+            [T.toActive, T.activeTeam],
+            [T.toArchived, T.archivedTeam],
+            [T.toThrowing, T.throwingTeam],
+        ] as const) {
+            await db.organizationInvitation.create({
+                data: {
+                    id,
+                    organizationId: T.org,
+                    inviterId: T.inviter,
+                    role: "member",
+                    email: "team-caller@example.com",
+                    teamId,
+                    status: "pending",
+                    expiresAt: future,
+                },
+            });
+        }
+    });
+
+    function user() {
+        return userRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.caller, email: "team-caller@example.com" },
+                prisma: db,
+            }),
+        );
+    }
+
+    async function accept(invitationId: InvitationId) {
+        acceptInvitationMock.mockResolvedValueOnce({ member: { id: T.membership } });
+        return user().acceptInvitation({ invitationId });
+    }
+
+    it("creates no grant for an invitation without a team", async () => {
+        await expect(accept(T.noTeam)).resolves.toEqual({ organizationSlug: "team-org" });
+
+        expect(await db.teamUser.findMany({ where: { userId: T.caller } })).toHaveLength(0);
+    });
+
+    it("grants access to the invitation's Active team and logs it", async () => {
+        await expect(accept(T.toActive)).resolves.toEqual({ organizationSlug: "team-org" });
+
+        const grant = await db.teamUser.findUnique({
+            where: { teamId_userId: { teamId: T.activeTeam, userId: T.caller } },
+        });
+        expect(grant).toMatchObject({ organizationId: T.org });
+
+        const entries = await db.logEntry.findMany({ where: { objectId: grant!.id } });
+        expect(entries).toHaveLength(1);
+        expect(entries[0]).toMatchObject({
+            scope: "organization",
+            organizationId: T.org,
+            userId: T.caller,
+            action: "Create",
+            objectType: "TeamUser",
+        });
+    });
+
+    it("skips the grant for an archived team and still accepts", async () => {
+        await expect(accept(T.toArchived)).resolves.toEqual({ organizationSlug: "team-org" });
+
+        expect(
+            await db.teamUser.findUnique({
+                where: { teamId_userId: { teamId: T.archivedTeam, userId: T.caller } },
+            }),
+        ).toBeNull();
+    });
+
+    it("still accepts when the grant throws unexpectedly", async () => {
+        vi.spyOn(db.teamUser, "findUnique").mockRejectedValueOnce(new Error("boom"));
+        const errorSpy = vi.spyOn(console, "error").mockImplementationOnce(() => {});
+
+        await expect(accept(T.toThrowing)).resolves.toEqual({ organizationSlug: "team-org" });
+
+        expect(errorSpy).toHaveBeenCalledWith(
+            expect.stringContaining(`Team(${T.throwingTeam})`),
+            expect.any(Error),
+        );
+        expect(
+            await db.teamUser.findUnique({
+                where: { teamId_userId: { teamId: T.throwingTeam, userId: T.caller } },
+            }),
+        ).toBeNull();
+    });
+});
+
 describe("userRouter.leaveOrganization", () => {
     const T = {
         org: OrganizationId.create(),
@@ -543,6 +731,10 @@ describe("userRouter.leaveOrganization", () => {
         outsider: UserId.create(),
         membership: OrganizationUserId.create(),
         ownership: OrganizationUserId.create(),
+        team: TeamId.create(),
+        ownedTeam: TeamId.create(),
+        grant: TeamUserId.create(),
+        ownedGrant: TeamUserId.create(),
     };
     const db = createMockPrisma();
 
@@ -564,6 +756,21 @@ describe("userRouter.leaveOrganization", () => {
         });
         await db.organizationUser.create({
             data: { id: T.ownership, organizationId: T.ownedOrg, userId: T.caller, role: "owner" },
+        });
+        await db.team.create({ data: { id: T.team, organizationId: T.org, name: "Leave Team" } });
+        await db.team.create({
+            data: { id: T.ownedTeam, organizationId: T.ownedOrg, name: "Owned Team" },
+        });
+        await db.teamUser.create({
+            data: { id: T.grant, organizationId: T.org, teamId: T.team, userId: T.caller },
+        });
+        await db.teamUser.create({
+            data: {
+                id: T.ownedGrant,
+                organizationId: T.ownedOrg,
+                teamId: T.ownedTeam,
+                userId: T.caller,
+            },
         });
     });
 
@@ -599,6 +806,10 @@ describe("userRouter.leaveOrganization", () => {
         expect(orgEntry?.batchId).toBe(userEntry?.batchId);
         const batch = await db.logBatch.findUnique({ where: { id: userEntry!.batchId! } });
         expect(batch).toMatchObject({ operationKey: "organization-leave", userId: T.caller });
+
+        // The caller's team access grants go too, in that organization only.
+        expect(await db.teamUser.findUnique({ where: { id: T.grant } })).toBeNull();
+        expect(await db.teamUser.findUnique({ where: { id: T.ownedGrant } })).not.toBeNull();
     });
 
     it("lets the only owner leave, leaving the organization with no owner", async () => {
