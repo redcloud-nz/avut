@@ -4,6 +4,7 @@
  */
 "use client";
 
+import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -13,13 +14,19 @@ import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { SkillGroupLink } from "@/components/entity-links/skill-group-link";
 import { SkillPackageLink } from "@/components/entity-links/skill-package-link";
-import { ItemLinkActionIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
-import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
+import {
+    Item,
+    ItemActions,
+    ItemContent,
+    ItemDescription,
+    ItemGroup,
+    ItemTitle,
+} from "@/components/ui/item";
 import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -161,13 +168,10 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
                                 included, since their history is what it's for. Skill Coverage
                                 shows only for a skill that can still be assessed. */}
                             <Protect permissions={{ skillCheck: ["view"] }}>
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>Related</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="px-2 -my-2">
+                                <section aria-label="Related">
+                                    <ItemGroup className="gap-2">
                                         {coverageAvailable && (
-                                            <Item className="px-2" size="sm" asChild>
+                                            <Item variant="outline" role="listitem" asChild>
                                                 <Link
                                                     href={`${route("/orgs/[slug]/skill-track/reports/skill", { slug: organization.slug })}?skill=${skill.id}`}
                                                 >
@@ -178,12 +182,15 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
                                                         </ItemDescription>
                                                     </ItemContent>
                                                     <ItemActions>
-                                                        <ItemLinkActionIcon className="size-4" />
+                                                        <ChevronRightIcon
+                                                            aria-hidden
+                                                            className="text-muted-foreground size-4"
+                                                        />
                                                     </ItemActions>
                                                 </Link>
                                             </Item>
                                         )}
-                                        <Item className="px-2" size="sm" asChild>
+                                        <Item variant="outline" role="listitem" asChild>
                                             <Link
                                                 href={`${route("/orgs/[slug]/skill-track/checks", { slug: organization.slug })}?skill=${skill.id}`}
                                             >
@@ -194,12 +201,15 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
                                                     </ItemDescription>
                                                 </ItemContent>
                                                 <ItemActions>
-                                                    <ItemLinkActionIcon className="size-4" />
+                                                    <ChevronRightIcon
+                                                        aria-hidden
+                                                        className="text-muted-foreground size-4"
+                                                    />
                                                 </ItemActions>
                                             </Link>
                                         </Item>
-                                    </CardContent>
-                                </Card>
+                                    </ItemGroup>
+                                </section>
                             </Protect>
                         </Saratoga.Column>
                     </Saratoga.Columns>
