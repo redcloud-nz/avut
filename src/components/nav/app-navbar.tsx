@@ -10,6 +10,7 @@ import { PageHelpButton } from "@/components/docs/help-button";
 import { ModeToggle } from "@/components/nav/mode-toggle";
 import { NotificationsMenu } from "@/components/nav/notifications-menu";
 import { UserMenu, UserMenu_Skeleton } from "@/components/nav/user-menu";
+import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
 /**
@@ -17,45 +18,54 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
  * `<Suspense>`, so it stays up while a page loads. It carries no page data: its three
  * request-dependent parts (user menu, notifications, Help) each sit in their own `<Suspense>`.
  *
- * Layout: the sidebar toggle is pinned to the header's left edge; everything else sits in a
- * centred `max-w-5xl` column (with `ScrollContainer`'s `px-4`) that lines up with
- * `Saratoga.Root` below. The side columns share the spare width equally, so the middle stays
- * centred, except when the window is too narrow to fit the toggle, which then pushes the middle
- * right rather than running underneath it. No scrollbar gutter is reserved here: the scroll
- * container reserves its gutter on both edges, so it doesn't shift the centre.
+ * Layout: everything sits in the page column, the same centred `max-w-5xl` that
+ * `Std.ScrollContainer` gives `Saratoga.Root` below. The wrapper reserves the same scrollbar
+ * gutter and padding as the scroll container, so the columns match whatever the scrollbar style.
+ * The first and last icons (the glyphs, not their buttons) line up with the cards' edges: the
+ * buttons overhang the column by the space around their icons.
  */
 export function AppNavbar() {
     return (
         <header
             data-component="AppNavbar"
-            className="bg-navbar sticky top-0 grid h-(--header-height) shrink-0 grid-cols-[minmax(auto,1fr)_minmax(0,var(--container-5xl))_1fr] items-center border-b px-4 z-5 backdrop-blur-md"
+            className="bg-navbar sticky top-0 flex h-(--header-height) shrink-0 items-center border-b z-5 backdrop-blur-md"
         >
-            {/* Keeps room for the toggle, which is positioned against the header's edge. */}
-            <div aria-hidden className="w-8" />
-            <div className="absolute inset-y-0 left-2 flex items-center">
-                <SidebarTrigger />
-            </div>
-            <div className="flex min-w-0 items-center gap-1">
-                <Image
-                    src="/avut-logo.svg"
-                    alt="A.V.U.T. Logo"
-                    width={99}
-                    height={33}
-                    loading="eager"
-                    className="mr-2 shrink-0 dark:invert"
-                />
-                <div className="ml-auto flex items-center gap-1">
-                    <Suspense fallback={<div className="size-8" />}>
-                        <NotificationsMenu />
-                    </Suspense>
-                    <ModeToggle />
-                    <Suspense fallback={<UserMenu_Skeleton />}>
-                        <UserMenu />
-                    </Suspense>
-                    {/* `usePathname()` suspends during prerender on routes with unknown params. */}
-                    <Suspense fallback={null}>
-                        <PageHelpButton />
-                    </Suspense>
+            {/* It never scrolls, but `overflow-hidden` lets it reserve a gutter. */}
+            <div className="flex h-full w-full min-w-0 items-center overflow-hidden px-2 md:px-4 [scrollbar-gutter:stable]">
+                <div className="mx-auto flex w-full max-w-5xl min-w-0 items-center gap-1">
+                    {/* `icon-sm` (28px) around a 16px icon: 6px each side. */}
+                    <SidebarTrigger className="-ml-1.5" />
+                    <Separator
+                        orientation="vertical"
+                        className="mx-1.5 data-vertical:h-5 data-vertical:self-center"
+                    />
+                    <Image
+                        src="/avut-logo.svg"
+                        alt="A.V.U.T. Logo"
+                        width={84}
+                        height={28}
+                        loading="eager"
+                        className="shrink-0 dark:invert"
+                    />
+                    {/* `icon` (32px) buttons around 16px icons: 8px each side. */}
+                    <div className="-mr-2 ml-auto flex items-center gap-1">
+                        <Suspense fallback={<div className="size-8" />}>
+                            <NotificationsMenu />
+                        </Suspense>
+                        <ModeToggle />
+                        <Suspense fallback={<UserMenu_Skeleton />}>
+                            <UserMenu />
+                        </Suspense>
+                        {/* Hidden while it's the last child, i.e. on pages with no help card. */}
+                        <Separator
+                            orientation="vertical"
+                            className="mx-1 last:hidden data-vertical:h-5 data-vertical:self-center"
+                        />
+                        {/* `usePathname()` suspends during prerender on routes with unknown params. */}
+                        <Suspense fallback={null}>
+                            <PageHelpButton />
+                        </Suspense>
+                    </div>
                 </div>
             </div>
         </header>

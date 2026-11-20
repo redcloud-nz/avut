@@ -25,9 +25,6 @@ export default async function D4HI3_Index_Page(props: PageProps<`/orgs/[slug]/d4
 
     return (
         <>
-            <Std.Navbar
-                breadcrumbs={[{ href: route("/orgs/[slug]/d4h-i3", { slug }), label: "D4H I3" }]}
-            />
             <Std.ScrollContainer>
                 <Std.IndexPage title="D4H I3">
                     <ItemGroup>

@@ -12,8 +12,6 @@ import type { Route } from "next";
 import Link from "next/link";
 import { ComponentProps, Fragment, ReactNode, Suspense } from "react";
 
-import { AVUTLogo } from "@/components/art/avut-logo";
-import { Saratoga, type SaratogaBreadcrumb } from "@/components/blocks/saratoga";
 import { GlyphPage } from "@/components/glyph-page";
 import { PageBackground, pageBackgroundAttributes } from "@/components/page-background";
 import {
@@ -132,7 +130,10 @@ function ScrollContainer({ children, className, ...props }: ComponentProps<"main
         <Suspense
             fallback={
                 <main
-                    className={cn("flex items-center justify-center flex-1 p-4", className)}
+                    className={cn(
+                        "flex items-center justify-center flex-1 px-2 py-4 md:px-4",
+                        className,
+                    )}
                     data-slot="scroll-container"
                     {...props}
                 >
@@ -142,7 +143,7 @@ function ScrollContainer({ children, className, ...props }: ComponentProps<"main
         >
             <main
                 className={cn(
-                    "relative flex-1 p-4 overflow-y-auto [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)] [scrollbar-gutter:stable_both-edges]",
+                    "relative flex-1 px-2 py-4 md:px-4 overflow-y-auto [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)] [scrollbar-gutter:stable]",
                     className,
                 )}
                 data-slot="scroll-container"
@@ -155,16 +156,15 @@ function ScrollContainer({ children, className, ...props }: ComponentProps<"main
 }
 
 /**
- * A nav-list page: the logo and `title` above a list of links. `breadcrumbs` (ancestors only)
- * render top-left above the logo, for the index pages that sit below another page.
+ * A nav-list page: `title` above a list of links. No trail and no logo: the navbar carries the
+ * logo, and the sidebar is the way back up.
  */
 function IndexPage({
     children,
     className,
     title,
-    breadcrumbs,
     ...props
-}: ComponentProps<"div"> & { title: string; breadcrumbs?: SaratogaBreadcrumb[] }) {
+}: ComponentProps<"div"> & { title: string }) {
     return (
         <div
             data-slot="std-index-page"
@@ -173,12 +173,8 @@ function IndexPage({
         >
             {/* Index pages are low-traffic, so they show the glyph background. */}
             <GlyphPage />
-            {breadcrumbs && <Saratoga.Breadcrumbs items={breadcrumbs} />}
-            {/* Sized to its content so the glyph halo hugs the logo and title. */}
-            <div className="glyph-halo mx-auto my-4 flex w-fit flex-col items-center gap-4">
-                <AVUTLogo />
-                <div className="font-semibold">{title}</div>
-            </div>
+            {/* Sized to its content so the glyph halo hugs the title. */}
+            <div className="glyph-halo mx-auto my-4 w-fit font-semibold">{title}</div>
             {children}
         </div>
     );

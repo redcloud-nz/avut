@@ -24,7 +24,6 @@ export default async function SystemAdmin_Index_Page() {
 
     return (
         <>
-            <Std.Navbar breadcrumbs={["System Admin"]} />
             <Std.ScrollContainer>
                 <Std.IndexPage title="System Administration">
                     <ItemGroup>

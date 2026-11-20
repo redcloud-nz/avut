@@ -26,12 +26,7 @@ export default async function SkillsTrack_Reports_Page(
     const { slug } = await props.params;
     return (
         <Std.ScrollContainer>
-            <Std.IndexPage
-                title="Skills Reports"
-                breadcrumbs={[
-                    { label: "Skill Track", href: route("/orgs/[slug]/skill-track", { slug }) },
-                ]}
-            >
+            <Std.IndexPage title="Skills Reports">
                 <ItemGroup>
                     <Protect permissions={{ skillCheck: ["view"] }}>
                         <Item variant="outline" asChild>

@@ -24,11 +24,6 @@ export default async function SkillTrack_Index_Page(props: PageProps<`/orgs/[slu
     const { slug } = await props.params;
     return (
         <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "Skill Track", href: route("/orgs/[slug]/skill-track", { slug }) },
-                ]}
-            />
             <Std.ScrollContainer>
                 <Std.IndexPage title="Skill Track">
                     <ItemGroup>
