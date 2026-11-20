@@ -179,7 +179,7 @@ export function D4HModule_EquipmentItem_Content({
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
                             <RecordCard
-                                label="Item"
+                                label="D4H Item"
                                 action={
                                     <Protect
                                         permissions={{ d4hEquipment: ["update"] }}

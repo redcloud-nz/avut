@@ -115,7 +115,7 @@ export function D4HI3Module_Bundle_Content({ bundleId }: { bundleId: I3BundleId 
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
                             <RecordCard
-                                label="Bundle"
+                                label="I3 Bundle"
                                 updatedAt={bundle.updatedAt}
                                 action={
                                     !deleted && (

@@ -204,7 +204,7 @@ export function D4HModule_Member_Content({
                         </Saratoga.Actions>
                     </Saratoga.Header>
                     <div className="flex flex-col gap-4">
-                        <RecordCard label="Member">
+                        <RecordCard label="D4H Member">
                             <CardContent>
                                 <DataList>
                                     <RecordCardId label="D4H ID" id={String(member.id)} />

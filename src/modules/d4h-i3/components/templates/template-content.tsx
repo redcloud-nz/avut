@@ -87,7 +87,7 @@ export function D4HI3Module_Template_Content({ templateId }: { templateId: I3Tem
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
                             <RecordCard
-                                label="Template"
+                                label="I3 Template"
                                 updatedAt={template.updatedAt}
                                 action={
                                     <Protect permissions={{ i3Template: ["update"] }}>

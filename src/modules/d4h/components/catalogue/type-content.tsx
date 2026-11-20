@@ -209,7 +209,7 @@ export function D4HModule_Type_Content({ typeId }: { typeId: number }) {
                         </Saratoga.Actions>
                     </Saratoga.Header>
                     <div className="flex flex-col gap-4">
-                        <RecordCard label="Type">
+                        <RecordCard label="D4H Equipment Type">
                             <CardContent>
                                 <DataList>
                                     <RecordCardId label="D4H ID" id={String(kind.id)} />

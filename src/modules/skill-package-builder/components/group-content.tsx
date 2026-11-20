@@ -74,7 +74,7 @@ export function SkillPackageBuilder_Group_Content({ groupId }: { groupId: SkillG
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
                             <RecordCard
-                                label="Group"
+                                label="Skill Group"
                                 updatedAt={skillGroup.updatedAt}
                                 historyHref={route(
                                     "/orgs/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]/history",

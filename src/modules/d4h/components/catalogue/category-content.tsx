@@ -122,7 +122,7 @@ export function D4HModule_Category_Content({ categoryId }: { categoryId: number 
                         </Saratoga.Actions>
                     </Saratoga.Header>
                     <div className="flex flex-col gap-4">
-                        <RecordCard label="Category">
+                        <RecordCard label="D4H Equipment Category">
                             <CardContent>
                                 <DataList>
                                     <RecordCardId label="D4H ID" id={String(category.id)} />

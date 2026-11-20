@@ -183,7 +183,7 @@ export function D4HModule_Model_Content({ modelId }: { modelId: number }) {
                         </Saratoga.Actions>
                     </Saratoga.Header>
                     <div className="flex flex-col gap-4">
-                        <RecordCard label="Model">
+                        <RecordCard label="D4H Equipment Model">
                             <CardContent>
                                 <DataList>
                                     <RecordCardId label="D4H ID" id={String(model.id)} />

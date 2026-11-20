@@ -125,7 +125,7 @@ export function D4HModule_Brand_Content({ brandId }: { brandId: number }) {
                         </Saratoga.Actions>
                     </Saratoga.Header>
                     <div className="flex flex-col gap-4">
-                        <RecordCard label="Brand">
+                        <RecordCard label="D4H Equipment Brand">
                             <CardContent>
                                 <DataList>
                                     <RecordCardId label="D4H ID" id={String(brand.id)} />

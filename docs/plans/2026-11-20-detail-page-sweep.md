@@ -103,6 +103,7 @@ Every detail page's cards change (record cards with a small type label, collapsi
 
 - Person page logs "personnel.getLinkedUser was called during the server render, where nothing was hydrated for it" and falls back to client rendering (linked-user card spins on desktop). Pre-existing; the page needs a prefetch for it. Area: org-admin personnel. **Dropped** (user, 2026-11-20).
 - **Filed as #553.** The detail page's ⋮ Actions menu (`EntityActionMenu` in `Saratoga.Actions`): the user is unsure about the button and what it holds now that each record card carries its own edit pencil (and the package's Unsubscribe could sit on the Subscription card). Separate design question, raised at the #434 design pass (2026-11-20). Area: shared detail-page actions.
+- **Filed as #555.** 13 detail pages keep an empty secondary column now that the Created/Updated card is gone (user, 2026-11-20: park it). Area: detail pages.
 - **Filed as #554.** The system-admin organisation and user pages "aren't quite right" after the sweep (user, group 2 checkpoint); the user will rework them later. Open calls there: share the `Metric` tile (now copied on the system org page and the skill-track package page) in `src/components/ui/`; the system user's Organisations tiles dropped the org slug. Area: system-admin.
 
 ## Review notes

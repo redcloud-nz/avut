@@ -143,7 +143,7 @@ export function SkillTrack_Package_Content({ skillPackageId }: { skillPackageId:
                     )}
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
-                            <RecordCard label="Package" updatedAt={skillPackage.updatedAt}>
+                            <RecordCard label="Skill Package" updatedAt={skillPackage.updatedAt}>
                                 <CardContent>
                                     <DataList>
                                         <RecordCardId label="Package ID" id={skillPackage.id} />

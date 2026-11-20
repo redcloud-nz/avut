@@ -95,7 +95,7 @@ export function SkillTrack_SkillGroup_Content({
                     )}
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
-                            <RecordCard label="Group" updatedAt={group.updatedAt}>
+                            <RecordCard label="Skill Group" updatedAt={group.updatedAt}>
                                 <CardContent>
                                     <DataList>
                                         <RecordCardId label="Group ID" id={group.id} />

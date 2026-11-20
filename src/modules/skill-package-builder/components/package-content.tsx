@@ -75,7 +75,7 @@ export function SkillPackageBuilder_Package_Content({
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
                             <RecordCard
-                                label="Package"
+                                label="Skill Package"
                                 updatedAt={skillPackage.updatedAt}
                                 historyHref={route(
                                     "/orgs/[slug]/skill-package-builder/packages/[package_id]/history",
