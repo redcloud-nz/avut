@@ -22,6 +22,9 @@ signed-in session — full `useOrganization()`/trpc context, same as any other
 is on. Keep it on in development and preview, and off in production, so a scratch page that
 reaches `integration` or `production` is never served there.
 
+Locally the flag is read with the `VERCEL_OIDC_TOKEN` in `.env.local`. If that's missing or
+expired, the flag falls back to off and every scratch page 404s: re-run `vercel env pull`.
+
 ## Why this location
 
 - Under `orgs/[slug]/`, so it inherits the real authenticated + org-scoped layout tree
