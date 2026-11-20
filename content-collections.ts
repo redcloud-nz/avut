@@ -116,6 +116,13 @@ const helpCards = defineCollection({
         title: z.string(),
         /** The full guide: a doc slug with an optional `#anchor` (`skill-track/sessions#4-record-results`). */
         guide: z.string().min(1),
+        /**
+         * The pages this card is the Help for, as typed-route patterns (the path under
+         * `src/app/` minus route groups: `/orgs/[slug]/admin/teams/[team_id]`). Exact patterns
+         * only, no subtree wildcard: each page is listed. The coverage test
+         * (`help-cards.test.ts`) checks every page is listed by one card or opted out.
+         */
+        routes: z.array(z.string().startsWith("/")).min(1),
         /** Glossary slugs for the `<KeyTerms>` callout after the card body. */
         keyTerms: z.array(z.string()).default([]),
     }),
