@@ -15,15 +15,11 @@ import { HelpButton } from "@/components/docs/help-button";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    DataItem,
-    DataItemDateValue,
-    DataItemTitle,
-    DataItemValue,
-    DataList,
-} from "@/components/ui/data-item";
+import { CardContent } from "@/components/ui/card";
+import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { I3BundleId } from "@/lib/schemas/i3-bundle";
@@ -62,7 +58,15 @@ export function D4HI3Module_Bundle_Content({ bundleId }: { bundleId: I3BundleId 
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
-                        <Saratoga.Title>{bundle.name}</Saratoga.Title>
+                        <Saratoga.Title
+                            badges={
+                                bundle.status !== "Active" && (
+                                    <Badge variant="outline">{bundle.status}</Badge>
+                                )
+                            }
+                        >
+                            {bundle.name}
+                        </Saratoga.Title>
                         <Saratoga.Actions>
                             {!deleted && (
                                 // Always the picker, never a one-team shortcut: knowing the teams
@@ -110,20 +114,21 @@ export function D4HI3Module_Bundle_Content({ bundleId }: { bundleId: I3BundleId 
 
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Bundle Details</CardTitle>
-                                    {!deleted && (
-                                        <CardAction>
-                                            <Protect permissions={{ i3Bundle: ["update"] }}>
-                                                <D4HI3Module_UpdateBundle_Dialog bundle={bundle} />
-                                            </Protect>
-                                        </CardAction>
-                                    )}
-                                </CardHeader>
+                            <RecordCard
+                                label="I3 Bundle"
+                                updatedAt={bundle.updatedAt}
+                                action={
+                                    !deleted && (
+                                        <Protect permissions={{ i3Bundle: ["update"] }}>
+                                            <D4HI3Module_UpdateBundle_Dialog bundle={bundle} />
+                                        </Protect>
+                                    )
+                                }
+                            >
                                 <CardContent>
                                     <DataList>
-                                        <DataItem inline>
+                                        <RecordCardId label="Bundle ID" id={bundle.id} />
+                                        <DataItem>
                                             <DataItemTitle>Name</DataItemTitle>
                                             <DataItemValue>{bundle.name}</DataItemValue>
                                         </DataItem>
@@ -133,30 +138,10 @@ export function D4HI3Module_Bundle_Content({ bundleId }: { bundleId: I3BundleId 
                                                 <DataItemValue>{bundle.description}</DataItemValue>
                                             </DataItem>
                                         )}
-                                        <DataItem inline>
-                                            <DataItemTitle>Status</DataItemTitle>
-                                            <DataItemValue>{bundle.status}</DataItemValue>
-                                        </DataItem>
                                     </DataList>
                                 </CardContent>
-                            </Card>
+                            </RecordCard>
                             <D4HI3Module_Bundle_Lines bundle={bundle} lines={lines} />
-                        </Saratoga.Column>
-                        <Saratoga.Column slot="secondary">
-                            <Card>
-                                <CardContent>
-                                    <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Created</DataItemTitle>
-                                            <DataItemDateValue date={bundle.createdAt} />
-                                        </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Updated</DataItemTitle>
-                                            <DataItemDateValue date={bundle.updatedAt} />
-                                        </DataItem>
-                                    </DataList>
-                                </CardContent>
-                            </Card>
                         </Saratoga.Column>
                     </Saratoga.Columns>
                 </Saratoga.Root>

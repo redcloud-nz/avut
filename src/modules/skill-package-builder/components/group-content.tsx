@@ -11,14 +11,10 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    DataItem,
-    DataItemDateValue,
-    DataItemTitle,
-    DataItemValue,
-    DataList,
-} from "@/components/ui/data-item";
+import { Badge } from "@/components/ui/badge";
+import { CardContent } from "@/components/ui/card";
+import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
@@ -62,31 +58,48 @@ export function SkillPackageBuilder_Group_Content({ groupId }: { groupId: SkillG
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
-                        <Saratoga.Title>{skillGroup.name}</Saratoga.Title>
+                        <Saratoga.Title
+                            badges={
+                                skillGroup.status !== "Active" && (
+                                    <Badge variant="outline">{skillGroup.status}</Badge>
+                                )
+                            }
+                        >
+                            {skillGroup.name}
+                        </Saratoga.Title>
                         <Saratoga.Actions>
                             <SkillPackageBuilder_Group_Menu skillGroup={skillGroup} />
                         </Saratoga.Actions>
                     </Saratoga.Header>
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Skill Group Details</CardTitle>
-                                    <CardAction>
-                                        <Protect permissions={{ skillPackage: ["update"] }}>
-                                            <SkillPackageBuilder_UpdateGroup_Dialog
-                                                skillGroup={skillGroup}
-                                            />
-                                        </Protect>
-                                    </CardAction>
-                                </CardHeader>
+                            <RecordCard
+                                label="Skill Group"
+                                updatedAt={skillGroup.updatedAt}
+                                historyHref={route(
+                                    "/orgs/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]/history",
+                                    {
+                                        slug: organization.slug,
+                                        package_id: skillGroup.skillPackageId,
+                                        group_id: skillGroup.id,
+                                    },
+                                )}
+                                action={
+                                    <Protect permissions={{ skillPackage: ["update"] }}>
+                                        <SkillPackageBuilder_UpdateGroup_Dialog
+                                            skillGroup={skillGroup}
+                                        />
+                                    </Protect>
+                                }
+                            >
                                 <CardContent>
                                     <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Group ID</DataItemTitle>
-                                            <DataItemValue>{skillGroup.id}</DataItemValue>
+                                        <RecordCardId label="Group ID" id={skillGroup.id} />
+                                        <DataItem>
+                                            <DataItemTitle>Name</DataItemTitle>
+                                            <DataItemValue>{skillGroup.name}</DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Package</DataItemTitle>
                                             <DataItemValue>
                                                 <Link
@@ -102,43 +115,19 @@ export function SkillPackageBuilder_Group_Content({ groupId }: { groupId: SkillG
                                                 </Link>
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Name</DataItemTitle>
-                                            <DataItemValue>{skillGroup.name}</DataItemValue>
-                                        </DataItem>
                                         <DataItem>
                                             <DataItemTitle>Description</DataItemTitle>
                                             <DataItemValue>
                                                 {skillGroup.description ?? "-"}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Status</DataItemTitle>
-                                            <DataItemValue>{skillGroup.status}</DataItemValue>
-                                        </DataItem>
                                     </DataList>
                                 </CardContent>
-                            </Card>
+                            </RecordCard>
                             <SkillPackageBuilder_Group_Contents_List
                                 skillGroup={skillGroup}
                                 skillPackage={skillGroup.skillPackage}
                             />
-                        </Saratoga.Column>
-                        <Saratoga.Column slot="secondary">
-                            <Card>
-                                <CardContent>
-                                    <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Created</DataItemTitle>
-                                            <DataItemDateValue date={skillGroup.createdAt} />
-                                        </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Updated</DataItemTitle>
-                                            <DataItemDateValue date={skillGroup.updatedAt} />
-                                        </DataItem>
-                                    </DataList>
-                                </CardContent>
-                            </Card>
                         </Saratoga.Column>
                     </Saratoga.Columns>
                 </Saratoga.Root>

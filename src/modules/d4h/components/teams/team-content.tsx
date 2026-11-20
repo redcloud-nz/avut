@@ -15,7 +15,7 @@ import { Std } from "@/components/blocks/std";
 import { D4HTeamPickerDialog } from "@/components/d4h/team-picker-dialog";
 import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import {
     Item,
@@ -25,6 +25,7 @@ import {
     ItemGroup,
     ItemTitle,
 } from "@/components/ui/item";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { D4HModule_OpenRecordInD4H_Button } from "@/modules/d4h/components/open-in-d4h-button";
@@ -75,23 +76,17 @@ export function D4HModule_Team_Content({ teamId }: { teamId: number }) {
                         </Saratoga.Actions>
                     </Saratoga.Header>
                     <div className="flex flex-col gap-4">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Team Details</CardTitle>
-                            </CardHeader>
+                        <RecordCard label="D4H Team">
                             <CardContent>
                                 <DataList>
-                                    <DataItem inline>
+                                    <RecordCardId label="D4H ID" id={String(team.id)} />
+                                    <DataItem>
                                         <DataItemTitle>Name</DataItemTitle>
                                         <DataItemValue>{team.title}</DataItemValue>
                                     </DataItem>
-                                    <DataItem inline>
-                                        <DataItemTitle>D4H ID</DataItemTitle>
-                                        <DataItemValue>{team.id}</DataItemValue>
-                                    </DataItem>
                                 </DataList>
                             </CardContent>
-                        </Card>
+                        </RecordCard>
                         <Protect permissions={{ d4hEquipment: ["view"] }}>
                             <ItemGroup>
                                 <Item asChild>

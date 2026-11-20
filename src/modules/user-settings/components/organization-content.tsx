@@ -11,7 +11,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import {
     DataItem,
     DataItemDateValue,
@@ -19,6 +19,7 @@ import {
     DataItemValue,
     DataList,
 } from "@/components/ui/data-item";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { trpc } from "@/trpc/client";
@@ -56,21 +57,24 @@ export function UserSettings_OrganizationContent({
                     </Saratoga.Header>
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Organisation</CardTitle>
-                                </CardHeader>
+                            <RecordCard label="Organisation">
                                 <CardContent>
                                     <DataList>
-                                        <DataItem inline>
+                                        <RecordCardId
+                                            label="Organisation ID"
+                                            id={organization.id}
+                                        />
+                                        <DataItem>
                                             <DataItemTitle>Name</DataItemTitle>
                                             <DataItemValue>{organization.name}</DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Slug</DataItemTitle>
-                                            <DataItemValue>{organization.slug}</DataItemValue>
+                                            <DataItemValue className="font-mono">
+                                                {organization.slug}
+                                            </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Your Roles</DataItemTitle>
                                             <DataItemValue>
                                                 <div className="flex flex-wrap gap-1">
@@ -82,21 +86,13 @@ export function UserSettings_OrganizationContent({
                                                 </div>
                                             </DataItemValue>
                                         </DataItem>
-                                    </DataList>
-                                </CardContent>
-                            </Card>
-                        </Saratoga.Column>
-                        <Saratoga.Column slot="secondary">
-                            <Card>
-                                <CardContent>
-                                    <DataList>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Joined</DataItemTitle>
                                             <DataItemDateValue date={membership.createdAt} />
                                         </DataItem>
                                     </DataList>
                                 </CardContent>
-                            </Card>
+                            </RecordCard>
                         </Saratoga.Column>
                     </Saratoga.Columns>
                 </Saratoga.Root>

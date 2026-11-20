@@ -22,8 +22,9 @@ import { Std } from "@/components/blocks/std";
 import { D4HOwner } from "@/components/d4h/d4h-owner";
 import { HelpButton } from "@/components/docs/help-button";
 import { D4HEquipmentTypeLink } from "@/components/entity-links/d4h-equipment-type-link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { D4HEquipmentKind } from "@/lib/schemas/d4h/equipment-kind";
@@ -121,17 +122,15 @@ export function D4HModule_Category_Content({ categoryId }: { categoryId: number 
                         </Saratoga.Actions>
                     </Saratoga.Header>
                     <div className="flex flex-col gap-4">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Category Details</CardTitle>
-                            </CardHeader>
+                        <RecordCard label="D4H Equipment Category">
                             <CardContent>
                                 <DataList>
-                                    <DataItem inline>
+                                    <RecordCardId label="D4H ID" id={String(category.id)} />
+                                    <DataItem>
                                         <DataItemTitle>Title</DataItemTitle>
                                         <DataItemValue>{category.title}</DataItemValue>
                                     </DataItem>
-                                    <DataItem inline>
+                                    <DataItem>
                                         <DataItemTitle>Owner</DataItemTitle>
                                         <DataItemValue>
                                             <D4HOwner
@@ -142,7 +141,7 @@ export function D4HModule_Category_Content({ categoryId }: { categoryId: number 
                                     </DataItem>
                                 </DataList>
                             </CardContent>
-                        </Card>
+                        </RecordCard>
                         <div>
                             <div className="mb-2 text-lg font-semibold">Types</div>
                             <Kaga.TableToolbar table={table} />

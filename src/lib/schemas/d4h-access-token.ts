@@ -50,6 +50,13 @@ export const D4HAccessToken = {
             metadata: { d4HTeams, d4HOrganisations },
         });
     },
+
+    /**
+     * Whether a stored `status` means the token validated. It's D4H's HTTP status text ("OK"),
+     * or `HTTP <code>` when the response had none (HTTP/2 has no reason phrase), so any 2xx code
+     * counts too.
+     */
+    isStatusOk: (status: string) => status === "OK" || /^HTTP 2\d\d$/.test(status),
 } as const;
 
 export type D4HAccessToken = z.infer<typeof D4HAccessToken.schema>;

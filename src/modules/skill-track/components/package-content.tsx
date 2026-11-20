@@ -14,9 +14,10 @@ import { HelpButton } from "@/components/docs/help-button";
 import { SkillGroupLink } from "@/components/entity-links/skill-group-link";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import {
     DataItem,
     DataItemDateValue,
@@ -25,6 +26,7 @@ import {
     DataList,
 } from "@/components/ui/data-item";
 import { EntityActionMenu } from "@/components/ui/menu-action";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -81,11 +83,20 @@ export function SkillTrack_Package_Content({ skillPackageId }: { skillPackageId:
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
-                        <Saratoga.Title>{skillPackage.name}</Saratoga.Title>
+                        <Saratoga.Title
+                            badges={
+                                withdrawn && (
+                                    <Badge variant="outline">
+                                        {skillPackage.status === "Deleted"
+                                            ? "Deleted"
+                                            : "Withdrawn"}
+                                    </Badge>
+                                )
+                            }
+                        >
+                            {skillPackage.name}
+                        </Saratoga.Title>
                         <Saratoga.Actions>
-                            {withdrawn && skillPackage.subscription && (
-                                <Badge variant="outline">Subscribed · Withdrawn</Badge>
-                            )}
                             {!skillPackage.subscription && !withdrawn && (
                                 <Protect permissions={{ skillPackageSubscription: ["subscribe"] }}>
                                     <Button
@@ -117,25 +128,26 @@ export function SkillTrack_Package_Content({ skillPackageId }: { skillPackageId:
                         </Saratoga.Actions>
                     </Saratoga.Header>
                     {withdrawn && (
-                        <p className="text-muted-foreground text-sm">
-                            {skillPackage.status === "Deleted"
-                                ? "Its author has deleted this package. Its skills are out of your sessions and reports. Checks already recorded are kept."
-                                : "Its author has withdrawn this package. Its skills are out of your sessions and reports until it's published again. Checks already recorded are kept."}
-                        </p>
+                        <Alert variant="warning">
+                            <AlertTitle>
+                                {skillPackage.status === "Deleted"
+                                    ? "Its author has deleted this package"
+                                    : "Its author has withdrawn this package"}
+                            </AlertTitle>
+                            <AlertDescription>
+                                {skillPackage.status === "Deleted"
+                                    ? "Its skills are out of your sessions and reports. Checks already recorded are kept."
+                                    : "Its skills are out of your sessions and reports until it's published again. Checks already recorded are kept."}
+                            </AlertDescription>
+                        </Alert>
                     )}
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Package Information</CardTitle>
-                                </CardHeader>
+                            <RecordCard label="Skill Package" updatedAt={skillPackage.updatedAt}>
                                 <CardContent>
                                     <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Package ID</DataItemTitle>
-                                            <DataItemValue>{skillPackage.id}</DataItemValue>
-                                        </DataItem>
-                                        <DataItem inline>
+                                        <RecordCardId label="Package ID" id={skillPackage.id} />
+                                        <DataItem>
                                             <DataItemTitle>Name</DataItemTitle>
                                             <DataItemValue>{skillPackage.name}</DataItemValue>
                                         </DataItem>
@@ -145,25 +157,36 @@ export function SkillTrack_Package_Content({ skillPackageId }: { skillPackageId:
                                                 {skillPackage.description}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Publisher</DataItemTitle>
                                             <DataItemValue>
                                                 {skillPackage.organization.name}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Skills</DataItemTitle>
-                                            <DataItemValue>{skillPackage.skillCount}</DataItemValue>
-                                        </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Subscribers</DataItemTitle>
-                                            <DataItemValue>
-                                                {skillPackage.subscriptionCount}
-                                            </DataItemValue>
-                                        </DataItem>
                                     </DataList>
                                 </CardContent>
-                            </Card>
+                            </RecordCard>
+                            {skillPackage.subscription && (
+                                <RecordCard
+                                    label="Subscription"
+                                    updatedAt={skillPackage.subscription.updatedAt}
+                                >
+                                    <CardContent>
+                                        <DataList>
+                                            <RecordCardId
+                                                label="Subscription ID"
+                                                id={skillPackage.subscription.id}
+                                            />
+                                            <DataItem>
+                                                <DataItemTitle>Subscribed</DataItemTitle>
+                                                <DataItemDateValue
+                                                    date={skillPackage.subscription.createdAt}
+                                                />
+                                            </DataItem>
+                                        </DataList>
+                                    </CardContent>
+                                </RecordCard>
+                            )}
                             <section className="space-y-4 pt-4">
                                 <h2 className="text-lg font-semibold tracking-tight">Contents</h2>
                                 {skillPackage.groups.length === 0 ? (
@@ -184,28 +207,13 @@ export function SkillTrack_Package_Content({ skillPackageId }: { skillPackageId:
                             </section>
                         </Saratoga.Column>
                         <Saratoga.Column slot="secondary">
-                            <Card>
-                                <CardContent>
-                                    <DataList>
-                                        {skillPackage.subscription && (
-                                            <DataItem inline>
-                                                <DataItemTitle>Subscription ID</DataItemTitle>
-                                                <DataItemValue>
-                                                    {skillPackage.subscription.id}
-                                                </DataItemValue>
-                                            </DataItem>
-                                        )}
-                                        <DataItem inline>
-                                            <DataItemTitle>Created</DataItemTitle>
-                                            <DataItemDateValue date={skillPackage.createdAt} />
-                                        </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Updated</DataItemTitle>
-                                            <DataItemDateValue date={skillPackage.updatedAt} />
-                                        </DataItem>
-                                    </DataList>
-                                </CardContent>
-                            </Card>
+                            <div className="grid grid-cols-2 gap-2">
+                                <Metric label="Skills" value={skillPackage.skillCount} />
+                                <Metric
+                                    label="Subscribers"
+                                    value={skillPackage.subscriptionCount}
+                                />
+                            </div>
                         </Saratoga.Column>
                     </Saratoga.Columns>
                 </Saratoga.Root>
@@ -230,6 +238,16 @@ export function SkillTrack_Package_Content({ skillPackageId }: { skillPackageId:
                 }
             />
         </>
+    );
+}
+
+/** A compact count tile for the secondary column: the number, then its label. */
+function Metric({ label, value }: { label: string; value: number }) {
+    return (
+        <div className="rounded-lg border bg-card px-3 py-2">
+            <div className="text-2xl font-semibold leading-tight tabular-nums">{value}</div>
+            <div className="text-xs text-muted-foreground">{label}</div>
+        </div>
     );
 }
 

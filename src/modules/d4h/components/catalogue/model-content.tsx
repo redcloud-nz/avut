@@ -26,7 +26,7 @@ import { D4HEquipmentItemLink } from "@/components/entity-links/d4h-equipment-it
 import { D4HEquipmentTypeLink } from "@/components/entity-links/d4h-equipment-type-link";
 import { D4HMemberLink } from "@/components/entity-links/d4h-member-link";
 import { D4HTeamLink } from "@/components/entity-links/d4h-team-link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import {
     DataItem,
     DataItemDateValue,
@@ -34,6 +34,7 @@ import {
     DataItemValue,
     DataList,
 } from "@/components/ui/data-item";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { D4HEquipmentStatus } from "@/lib/schemas/d4h/equipment-item";
@@ -182,17 +183,15 @@ export function D4HModule_Model_Content({ modelId }: { modelId: number }) {
                         </Saratoga.Actions>
                     </Saratoga.Header>
                     <div className="flex flex-col gap-4">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Model Details</CardTitle>
-                            </CardHeader>
+                        <RecordCard label="D4H Equipment Model">
                             <CardContent>
                                 <DataList>
-                                    <DataItem inline>
+                                    <RecordCardId label="D4H ID" id={String(model.id)} />
+                                    <DataItem>
                                         <DataItemTitle>Title</DataItemTitle>
                                         <DataItemValue>{model.title}</DataItemValue>
                                     </DataItem>
-                                    <DataItem inline>
+                                    <DataItem>
                                         <DataItemTitle>Brand</DataItemTitle>
                                         <DataItemValue>
                                             {brand.title ? (
@@ -204,7 +203,7 @@ export function D4HModule_Model_Content({ modelId }: { modelId: number }) {
                                             )}
                                         </DataItemValue>
                                     </DataItem>
-                                    <DataItem inline>
+                                    <DataItem>
                                         <DataItemTitle>Owner</DataItemTitle>
                                         <DataItemValue>
                                             <D4HOwner
@@ -213,13 +212,13 @@ export function D4HModule_Model_Content({ modelId }: { modelId: number }) {
                                             />
                                         </DataItemValue>
                                     </DataItem>
-                                    <DataItem inline>
+                                    <DataItem>
                                         <DataItemTitle>Updated</DataItemTitle>
                                         <DataItemDateValue date={model.updatedAt} />
                                     </DataItem>
                                 </DataList>
                             </CardContent>
-                        </Card>
+                        </RecordCard>
                         <div>
                             <div className="mb-2 text-lg font-semibold">Items</div>
                             <Kaga.TableToolbar table={table} />

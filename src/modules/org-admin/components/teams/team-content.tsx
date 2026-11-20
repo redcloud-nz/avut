@@ -13,8 +13,7 @@ import { Protect } from "@/components/protect";
 import { Teams_D4HCard } from "@/components/teams/d4h-link-card";
 import { Teams_TeamAccess_Card } from "@/components/teams/team-access-card";
 import { Teams_Details_Card } from "@/components/teams/team-details-card";
-import { Card, CardContent } from "@/components/ui/card";
-import { DataItem, DataItemDateValue, DataItemTitle, DataList } from "@/components/ui/data-item";
+import { Badge } from "@/components/ui/badge";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { TeamId } from "@/lib/schemas/team";
@@ -49,7 +48,15 @@ export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
-                        <Saratoga.Title>{team.name}</Saratoga.Title>
+                        <Saratoga.Title
+                            badges={
+                                team.status !== "Active" && (
+                                    <Badge variant="outline">{team.status}</Badge>
+                                )
+                            }
+                        >
+                            {team.name}
+                        </Saratoga.Title>
                         <Saratoga.Actions>
                             <AdminModule_Team_Menu team={team} />
                         </Saratoga.Actions>
@@ -57,7 +64,13 @@ export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
 
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
-                            <Teams_Details_Card team={team} />
+                            <Teams_Details_Card
+                                team={team}
+                                historyHref={route("/orgs/[slug]/admin/teams/[team_id]/history", {
+                                    slug: organization.slug,
+                                    team_id: team.id,
+                                })}
+                            />
 
                             <Protect permissions={{ member: ["view"] }}>
                                 <Teams_TeamAccess_Card team={team} />
@@ -68,22 +81,6 @@ export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
 
                         <Saratoga.Column slot="secondary">
                             <AdminModule_TeamLinks_Card team={team} />
-                            <Card>
-                                <CardContent>
-                                    <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Created</DataItemTitle>
-                                            <DataItemDateValue date={team.createdAt} />
-                                        </DataItem>
-                                        {team.updatedAt && (
-                                            <DataItem inline>
-                                                <DataItemTitle>Updated</DataItemTitle>
-                                                <DataItemDateValue date={team.updatedAt} />
-                                            </DataItem>
-                                        )}
-                                    </DataList>
-                                </CardContent>
-                            </Card>
                         </Saratoga.Column>
                     </Saratoga.Columns>
                 </Saratoga.Root>

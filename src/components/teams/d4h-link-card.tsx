@@ -14,7 +14,7 @@ import { teamsEffects } from "@/client/teams-effects";
 import { D4HIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button, MutationButton } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
     DataItem,
@@ -41,6 +41,7 @@ import {
     DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Field, FieldGroup, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import {
     Select,
     SelectContent,
@@ -142,42 +143,37 @@ export function Teams_D4HCard({
 
     return (
         <Protect permissions={{ team: ["update"] }}>
-            <Card>
-                <CardHeader>
-                    <CardTitle>D4H Integration</CardTitle>
-                    {team.d4h && (
-                        <CardAction>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                aria-label="Sync with D4H"
-                                title="Sync with D4H"
-                                onClick={() => void setAction("d4h-sync", { history: "push" })}
-                            >
-                                <D4HIcons.Sync />
-                            </Button>
-                        </CardAction>
-                    )}
-                </CardHeader>
-                <CardContent>
-                    {team.d4h ? (
+            {/* A related record's card, like the person page's Linked User: shown only when
+                there is a link. Linking is in the team's action menu. */}
+            {team.d4h && (
+                <RecordCard
+                    label="Linked D4H Team"
+                    action={
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Sync with D4H"
+                            title="Sync with D4H"
+                            onClick={() => void setAction("d4h-sync", { history: "push" })}
+                        >
+                            <D4HIcons.Sync />
+                        </Button>
+                    }
+                >
+                    <CardContent>
                         <DataList>
-                            <DataItem inline>
-                                <DataItemTitle>D4H Team</DataItemTitle>
-                                <DataItemValue>
-                                    {team.d4h.d4hTeamName}{" "}
-                                    <span className="text-muted-foreground">
-                                        (ID: {team.d4h.d4hTeamId})
-                                    </span>
-                                </DataItemValue>
+                            <RecordCardId label="D4H Team ID" id={String(team.d4h.d4hTeamId)} />
+                            <DataItem>
+                                <DataItemTitle>Name</DataItemTitle>
+                                <DataItemValue>{team.d4h.d4hTeamName}</DataItemValue>
                             </DataItem>
-                            <DataItem inline>
+                            <DataItem>
                                 <DataItemTitle>Server</DataItemTitle>
                                 <DataItemValue>
                                     {getD4HServer(team.d4h.d4hServerCode).name}
                                 </DataItemValue>
                             </DataItem>
-                            <DataItem inline>
+                            <DataItem>
                                 <DataItemTitle>D4H Organisation</DataItemTitle>
                                 <DataItemValue>
                                     {team.d4h.d4hOrganisationId ? (
@@ -193,7 +189,7 @@ export function Teams_D4HCard({
                                     )}
                                 </DataItemValue>
                             </DataItem>
-                            <DataItem inline>
+                            <DataItem>
                                 <DataItemTitle>Last synced</DataItemTitle>
                                 {team.d4h.lastSyncedAt ? (
                                     <DataItemDateValue date={team.d4h.lastSyncedAt} />
@@ -202,13 +198,9 @@ export function Teams_D4HCard({
                                 )}
                             </DataItem>
                         </DataList>
-                    ) : (
-                        <p className="text-muted-foreground text-sm">
-                            This team is not linked to D4H.
-                        </p>
-                    )}
-                </CardContent>
-            </Card>
+                    </CardContent>
+                </RecordCard>
+            )}
 
             <LinkDialog
                 team={team}

@@ -22,7 +22,7 @@ import { Std } from "@/components/blocks/std";
 import { EntityLink } from "@/components/entity-links/entity-link";
 import { TeamLink } from "@/components/entity-links/team-link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
     DataItem,
     DataItemDateValue,
@@ -30,6 +30,7 @@ import {
     DataItemValue,
     DataList,
 } from "@/components/ui/data-item";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { Spinner } from "@/components/ui/spinner";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
@@ -171,13 +172,11 @@ function RunDetails_Card({ run }: { run: D4HNagRunDetail }) {
     const { formatDateTime } = usePreferences();
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Run Details</CardTitle>
-            </CardHeader>
+        <RecordCard label="Run">
             <CardContent>
                 <DataList>
-                    <DataItem inline>
+                    <RecordCardId label="Run ID" id={run.id} />
+                    <DataItem>
                         <DataItemTitle>Rule</DataItemTitle>
                         <DataItemValue>
                             {run.ruleId ? (
@@ -194,19 +193,19 @@ function RunDetails_Card({ run }: { run: D4HNagRunDetail }) {
                             )}
                         </DataItemValue>
                     </DataItem>
-                    <DataItem inline>
+                    <DataItem>
                         <DataItemTitle>Team</DataItemTitle>
                         <DataItemValue>
                             <TeamLink team={{ id: run.teamId, name: run.teamName }} />
                         </DataItemValue>
                     </DataItem>
-                    <DataItem inline>
+                    <DataItem>
                         <DataItemTitle>Window</DataItemTitle>
                         <DataItemValue>
                             {formatDateTime(run.windowStart)} to {formatDateTime(run.windowEnd)}
                         </DataItemValue>
                     </DataItem>
-                    <DataItem inline>
+                    <DataItem>
                         <DataItemTitle>Trigger</DataItemTitle>
                         <DataItemValue>
                             {describeRunTrigger(run.trigger)}
@@ -218,23 +217,23 @@ function RunDetails_Card({ run }: { run: D4HNagRunDetail }) {
                             )}
                         </DataItemValue>
                     </DataItem>
-                    <DataItem inline>
+                    <DataItem>
                         <DataItemTitle>Dry Run</DataItemTitle>
                         <DataItemValue>{run.dryRun ? "Yes: nothing was sent" : "No"}</DataItemValue>
                     </DataItem>
-                    <DataItem inline>
+                    <DataItem>
                         <DataItemTitle>Started</DataItemTitle>
                         <DataItemDateValue date={run.startedAt} />
                     </DataItem>
                     {run.completedAt && (
-                        <DataItem inline>
+                        <DataItem>
                             <DataItemTitle>Finished</DataItemTitle>
                             <DataItemDateValue date={run.completedAt} />
                         </DataItem>
                     )}
                 </DataList>
             </CardContent>
-        </Card>
+        </RecordCard>
     );
 }
 

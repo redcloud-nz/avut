@@ -17,8 +17,9 @@ import { D4HI3Module_RecoverBundle_Dialog } from "./recover-bundle";
 const ACTIONS = ["update", "delete", "recover"] as const;
 
 /**
- * The bundle page's Actions menu. Edit opens the `?action=update` dialog that the Bundle Details
- * card hosts, so it only works while the bundle isn't deleted (the card hides the dialog then).
+ * The bundle page's Actions menu. Edit opens the `?action=update` dialog that the Bundle record
+ * card's header hosts, so it only works while the bundle isn't deleted (the card hides the dialog
+ * then).
  */
 export function D4HI3Module_Bundle_Menu({ bundle }: { bundle: I3Bundle }) {
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(ACTIONS));

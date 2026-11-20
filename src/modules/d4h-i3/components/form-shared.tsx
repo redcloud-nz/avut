@@ -59,9 +59,8 @@ export function UserNameFieldValue({ className }: { className?: string }) {
 export function SubmittedFormHeader({ title }: { title: string }) {
     return (
         <Saratoga.Header>
-            <Saratoga.Title className="flex items-center gap-2">
+            <Saratoga.Title badges={<Badge variant="outline">Submitted</Badge>}>
                 {title}
-                <Badge variant="outline">Submitted</Badge>
             </Saratoga.Title>
         </Saratoga.Header>
     );

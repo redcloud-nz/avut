@@ -19,15 +19,10 @@ import { TeamLink } from "@/components/entity-links/team-link";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    DataItem,
-    DataItemDateValue,
-    DataItemTitle,
-    DataItemValue,
-    DataList,
-} from "@/components/ui/data-item";
+import { CardContent } from "@/components/ui/card";
+import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -37,6 +32,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
@@ -79,7 +75,19 @@ export function D4HNag_Rule_Content({ ruleId }: { ruleId: D4HNagRuleId }) {
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
-                        <Saratoga.Title>{title}</Saratoga.Title>
+                        <Saratoga.Title
+                            badges={
+                                // A disabled rule is paused too ("disabled" is a paused reason),
+                                // but the badge names the rule's own state when it's that.
+                                paused && (
+                                    <Badge variant="outline">
+                                        {rule.enabled ? "Paused" : "Disabled"}
+                                    </Badge>
+                                )
+                            }
+                        >
+                            {title}
+                        </Saratoga.Title>
                         <Saratoga.Actions>
                             <Protect permissions={{ d4hNag: ["run"] }}>
                                 <RunRule_Buttons rule={rule} />
@@ -88,33 +96,40 @@ export function D4HNag_Rule_Content({ ruleId }: { ruleId: D4HNagRuleId }) {
                         </Saratoga.Actions>
                     </Saratoga.Header>
 
+                    {paused && (
+                        <Alert variant="warning">
+                            <AlertTitle>Paused: {paused.label}</AlertTitle>
+                            <AlertDescription>{paused.description}</AlertDescription>
+                        </Alert>
+                    )}
+
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Rule Details</CardTitle>
-                                    <CardAction>
-                                        <Protect permissions={{ d4hNag: ["update"] }}>
-                                            <D4HNag_UpdateRule_Dialog rule={rule} />
-                                        </Protect>
-                                    </CardAction>
-                                </CardHeader>
+                            <RecordCard
+                                label="Rule"
+                                action={
+                                    <Protect permissions={{ d4hNag: ["update"] }}>
+                                        <D4HNag_UpdateRule_Dialog rule={rule} />
+                                    </Protect>
+                                }
+                            >
                                 <CardContent>
                                     <DataList>
-                                        <DataItem inline>
+                                        <RecordCardId label="Rule ID" id={rule.id} />
+                                        <DataItem>
                                             <DataItemTitle>Team</DataItemTitle>
                                             <DataItemValue>
                                                 <TeamLink team={rule.team} />
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>When</DataItemTitle>
                                             <DataItemValue>
                                                 {rule.schedule} (
                                                 {organization.settings.general.timeZone})
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Window</DataItemTitle>
                                             <DataItemValue>
                                                 {describeWindow(rule.lookAheadHours)}
@@ -130,34 +145,9 @@ export function D4HNag_Rule_Content({ ruleId }: { ruleId: D4HNagRuleId }) {
                                                 )}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Status</DataItemTitle>
-                                            <DataItemValue>
-                                                {rule.enabled ? "Enabled" : "Disabled"}
-                                            </DataItemValue>
-                                        </DataItem>
                                     </DataList>
                                 </CardContent>
-                            </Card>
-                        </Saratoga.Column>
-
-                        <Saratoga.Column slot="secondary">
-                            {paused && (
-                                <Alert variant="warning">
-                                    <AlertTitle>Paused: {paused.label}</AlertTitle>
-                                    <AlertDescription>{paused.description}</AlertDescription>
-                                </Alert>
-                            )}
-                            <Card>
-                                <CardContent>
-                                    <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Created</DataItemTitle>
-                                            <DataItemDateValue date={rule.createdAt} />
-                                        </DataItem>
-                                    </DataList>
-                                </CardContent>
-                            </Card>
+                            </RecordCard>
                         </Saratoga.Column>
                     </Saratoga.Columns>
 

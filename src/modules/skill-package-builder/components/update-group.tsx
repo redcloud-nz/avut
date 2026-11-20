@@ -98,7 +98,7 @@ export function SkillPackageBuilder_UpdateGroup_Dialog({
     return (
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="ghost">
+                <Button variant="ghost" size="icon" aria-label="Update group">
                     <ObjectIcons.Edit />
                 </Button>
             </DialogTrigger>

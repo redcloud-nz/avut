@@ -26,8 +26,9 @@ import { D4HEquipmentItemLink } from "@/components/entity-links/d4h-equipment-it
 import { D4HEquipmentModelLink } from "@/components/entity-links/d4h-equipment-model-link";
 import { D4HEquipmentTypeLink } from "@/components/entity-links/d4h-equipment-type-link";
 import { D4HTeamLink } from "@/components/entity-links/d4h-team-link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { D4HEquipmentItem, D4HEquipmentStatus } from "@/lib/schemas/d4h/equipment-item";
@@ -203,17 +204,11 @@ export function D4HModule_Member_Content({
                         </Saratoga.Actions>
                     </Saratoga.Header>
                     <div className="flex flex-col gap-4">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Member Details</CardTitle>
-                            </CardHeader>
+                        <RecordCard label="D4H Member">
                             <CardContent>
                                 <DataList>
-                                    <DataItem inline>
-                                        <DataItemTitle>D4H ID</DataItemTitle>
-                                        <DataItemValue>{member.id}</DataItemValue>
-                                    </DataItem>
-                                    <DataItem inline>
+                                    <RecordCardId label="D4H ID" id={String(member.id)} />
+                                    <DataItem>
                                         <DataItemTitle>Name</DataItemTitle>
                                         <DataItemValue>{member.name}</DataItemValue>
                                     </DataItem>
@@ -222,24 +217,24 @@ export function D4HModule_Member_Content({
                                         <DataItemValue>{member.email.value}</DataItemValue>
                                     </DataItem>
                                     {member.ref && (
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Ref</DataItemTitle>
                                             <DataItemValue>{member.ref}</DataItemValue>
                                         </DataItem>
                                     )}
                                     {member.position && (
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Position</DataItemTitle>
                                             <DataItemValue>{member.position}</DataItemValue>
                                         </DataItem>
                                     )}
-                                    <DataItem inline>
+                                    <DataItem>
                                         <DataItemTitle>Team</DataItemTitle>
                                         <DataItemValue>
                                             <D4HTeamLink team={team} />
                                         </DataItemValue>
                                     </DataItem>
-                                    <DataItem inline>
+                                    <DataItem>
                                         <DataItemTitle>D4H Status</DataItemTitle>
                                         <DataItemValue>
                                             {formatD4HMemberStatus(member.status)}
@@ -247,7 +242,7 @@ export function D4HModule_Member_Content({
                                     </DataItem>
                                 </DataList>
                             </CardContent>
-                        </Card>
+                        </RecordCard>
                         <div>
                             <div className="mb-2 text-lg font-semibold">Issued Equipment</div>
                             <Kaga.TableToolbar table={table} />
