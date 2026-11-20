@@ -13,45 +13,84 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --radius: 0.45rem;
   /* Height of the impersonation banner while it's shown, 0 otherwise. The shell offsets its
      fixed sidebar and full-height inset by it (#87). Set by CSS rather than the banner's own
      JS, so the server-rendered shell already has it. */
   --impersonation-h: 0px;
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
+  /* Elevation (#548): flat (card, ring only) → raised (shadow-xs) → floating (popover, menus,
+     select: shadow-md on --popover) → overlay (dialog, sheet: shadow-lg on --popover-overlay). In
+     light mode every level is white; dark mode lifts each one a step, since shadows barely show. */
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.52 0.105 223.128); /*oklch(0.21 0.006 285.885);*/
-  --primary-foreground: oklch(0.984 0.019 200.873); /*oklch(0.985 0 0);*/
+  --popover-overlay: oklch(1 0 0);
+  /* The active tab: a solid surface a step above the tabs strip. */
+  --tab-active: var(--background);
+  /* Espresso: near-black with a warm brown cast. Hover, selected and the focus ring take the
+     caramel hue (55) of the dark-mode primary, so they read as soft browns in both themes. Email
+     templates can't read these variables, so their buttons hardcode the espresso as #553423. */
+  --primary: oklch(0.36 0.055 48);
+  --primary-foreground: oklch(0.985 0.011 48);
   --secondary: oklch(0.967 0.001 286.375);
   --secondary-foreground: oklch(0.21 0.006 285.885);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
-  /* Interactive highlight (hover, menu focus): a translucent blue, so it lands lighter on white
-     surfaces and a shade darker on --page, from the one value. Over white it's ≈ oklch(0.969 0.008 244). */
-  --accent: oklch(0.55 0.12 244 / 0.07);
-  --accent-foreground: oklch(0.3791 0.1378 265.5222);
-  /* Selected (active nav item, pressed toggle, chosen list entry): the accent's blue, heavier. */
-  --selected: oklch(0.55 0.12 244 / 0.13);
-  --selected-foreground: var(--accent-foreground);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.912 0.0052 247.8822);
+  /* Interactive highlight (hover, menu focus): a translucent caramel, so it lands lighter on white
+     surfaces and a shade darker on --page, from the one value. */
+  --accent: oklch(0.55 0.1 55 / 0.07);
+  --accent-foreground: oklch(0.38 0.09 55);
+  /* Selected (active nav item, pressed toggle, chosen list entry): the accent's caramel, heavier. */
+  --selected: oklch(0.55 0.1 55 / 0.13);
+  --selected-foreground: oklch(0.38 0.09 55);
+  /* Status colours: four families, one pattern. --X is the solid (icons, bar segments, borders at
+     /25–/40, solid badges); --X-foreground is tone-coloured text, on the card or on the tint;
+     --X-subtle is a translucent tint behind a badge or alert, so it sits the same on card, page and
+     muted rows; --on-X is text on a solid --X fill. Warning is a saturated orange so it reads apart
+     from the caramel primary, and info is its own blue. */
+  --success: oklch(0.58 0.13 155);
+  --success-foreground: oklch(0.46 0.111 155);
+  --success-subtle: oklch(0.58 0.13 155 / 0.11);
+  --on-success: oklch(1 0 0);
+  --info: oklch(0.56 0.105 245);
+  --info-foreground: oklch(0.44 0.089 245);
+  --info-subtle: oklch(0.56 0.105 245 / 0.11);
+  --on-info: oklch(1 0 0);
+  --warning: oklch(0.7 0.203 58);
+  --warning-foreground: oklch(0.5 0.172 58);
+  --warning-subtle: oklch(0.7 0.203 58 / 0.176);
+  --on-warning: oklch(0.24 0.071 58);
+  --destructive: oklch(0.58 0.2 22);
+  --destructive-foreground: oklch(0.46 0.17 22);
+  --destructive-subtle: oklch(0.58 0.2 22 / 0.11);
+  --on-destructive: oklch(1 0 0);
+  --border: oklch(0.912 0 0);
   --input: var(--border);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --ring: oklch(0.7 0.06 55);
+  /* Chart palettes. Categorical: distinct series, hues spread around the wheel at even lightness.
+     cat-2 is a mustard (hue 92) rather than an amber, so it stays clear of the caramel primary (55)
+     and the warning orange (58). Sequential: one hue, light → dark (reversed in dark mode), for
+     heatmaps. */
+  --chart-cat-1: oklch(0.56 0.1 228);
+  --chart-cat-2: oklch(0.74 0.14 92);
+  --chart-cat-3: oklch(0.6 0.13 158);
+  --chart-cat-4: oklch(0.56 0.15 300);
+  --chart-cat-5: oklch(0.63 0.17 25);
+  --chart-cat-6: oklch(0.7 0.1 195);
+  --chart-seq-1: oklch(0.92 0.03 228);
+  --chart-seq-2: oklch(0.82 0.06 228);
+  --chart-seq-3: oklch(0.7 0.09 228);
+  --chart-seq-4: oklch(0.58 0.105 228);
+  --chart-seq-5: oklch(0.47 0.1 228);
+  --chart-seq-6: oklch(0.36 0.08 228);
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.609 0.126 221.723);
-  --sidebar-primary-foreground: oklch(0.984 0.019 200.873);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
   --sidebar-accent: var(--accent);
   --sidebar-accent-foreground: var(--accent-foreground);
   --sidebar-border: var(--border);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-ring: var(--ring);
 
   --table-frame: oklch(0.645 0.246 16.439);
 
@@ -75,18 +114,19 @@
 
   /* Shell surfaces: the navbar frames the page alongside the sidebar; the page recedes behind both. */
   --navbar: oklch(1 0 0);
-  --page: oklch(0.975 0.0042 236.4993);
+  --page: oklch(0.975 0 0);
 }
 
-/* Glyph page background colours. The ripple is the primary's hue (223) with far less chroma: a
-   grey-blue. Dark mode dims the glyphs so they sit as quietly on near-black as they do on the tint. */
+/* Glyph page background colours. The ripple is the caramel hue (55) of the primary pair with far
+   less chroma: a warm grey-brown. Dark mode dims the glyphs so they sit as quietly on near-black as
+   they do on the tint. */
 :root {
   --glyph-glow: var(--muted-foreground);
-  --glyph-ripple: oklch(0.62 0.045 223);
+  --glyph-ripple: oklch(0.6 0.04 55);
 }
 .dark {
   --glyph-glow: oklch(0.7 0 0);
-  --glyph-ripple: oklch(0.68 0.05 223);
+  --glyph-ripple: oklch(0.68 0.045 55);
 }
 
 /* The glyph field shows only behind pages that render `<GlyphPage />` (glyph-page.tsx), which sets
@@ -194,31 +234,54 @@
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
+  --popover: oklch(0.235 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.45 0.085 224.283);
-  --primary-foreground: oklch(0.984 0.019 200.873);
+  --popover-overlay: oklch(0.26 0 0);
+  --tab-active: oklch(0.34 0 0);
+  /* Caramel, with dark text on it. */
+  --primary: oklch(0.66 0.1 55);
+  --primary-foreground: oklch(0.2 0.03 55);
   --secondary: oklch(0.274 0.006 286.033);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.7 0.12 244 / 0.14);
-  --accent-foreground: oklch(0.8823 0.0571 254.1284);
-  --selected: oklch(0.7 0.12 244 / 0.24);
-  --destructive: oklch(0.704 0.191 22.216);
+  --accent: oklch(0.7 0.1 55 / 0.14);
+  --accent-foreground: oklch(0.88 0.09 55);
+  --selected: oklch(0.7 0.1 55 / 0.24);
+  --selected-foreground: oklch(0.88 0.09 55);
+  --success: oklch(0.74 0.13 155);
+  --success-foreground: oklch(0.84 0.104 155);
+  --success-subtle: oklch(0.74 0.13 155 / 0.16);
+  --on-success: oklch(0.24 0.045 155);
+  --info: oklch(0.73 0.105 245);
+  --info-foreground: oklch(0.83 0.084 245);
+  --info-subtle: oklch(0.73 0.105 245 / 0.16);
+  --on-info: oklch(0.24 0.037 245);
+  --warning: oklch(0.8 0.203 58);
+  --warning-foreground: oklch(0.9 0.162 58);
+  --warning-subtle: oklch(0.8 0.203 58 / 0.16);
+  --on-warning: oklch(0.24 0.071 58);
+  --destructive: oklch(0.74 0.2 22);
+  --destructive-foreground: oklch(0.84 0.16 22);
+  --destructive-subtle: oklch(0.74 0.2 22 / 0.16);
+  --on-destructive: oklch(0.24 0.07 22);
   --border: oklch(1 0 0 / 14%);
   --input: oklch(1 0 0 / 18%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --ring: oklch(0.6 0.06 55);
+  --chart-cat-1: oklch(0.7 0.1 228);
+  --chart-cat-2: oklch(0.83 0.13 95);
+  --chart-cat-3: oklch(0.74 0.13 158);
+  --chart-cat-4: oklch(0.7 0.13 300);
+  --chart-cat-5: oklch(0.72 0.15 25);
+  --chart-cat-6: oklch(0.8 0.09 195);
+  --chart-seq-1: oklch(0.3 0.05 228);
+  --chart-seq-2: oklch(0.4 0.07 228);
+  --chart-seq-3: oklch(0.5 0.09 228);
+  --chart-seq-4: oklch(0.62 0.1 228);
+  --chart-seq-5: oklch(0.74 0.09 228);
+  --chart-seq-6: oklch(0.86 0.06 228);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.715 0.143 215.221);
-  --sidebar-primary-foreground: oklch(0.302 0.056 229.695);
-  --sidebar-ring: oklch(0.556 0 0);
 
   --navbar: oklch(0.205 0 0);
   --page: oklch(0.145 0 0);
@@ -232,6 +295,7 @@
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
+  --color-tab-active: var(--tab-active);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
@@ -242,16 +306,37 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-selected: var(--selected);
   --color-selected-foreground: var(--selected-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-subtle: var(--success-subtle);
+  --color-on-success: var(--on-success);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-subtle: var(--info-subtle);
+  --color-on-info: var(--on-info);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-on-warning: var(--on-warning);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-subtle: var(--destructive-subtle);
+  --color-on-destructive: var(--on-destructive);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
+  --color-chart-cat-1: var(--chart-cat-1);
+  --color-chart-cat-2: var(--chart-cat-2);
+  --color-chart-cat-3: var(--chart-cat-3);
+  --color-chart-cat-4: var(--chart-cat-4);
+  --color-chart-cat-5: var(--chart-cat-5);
+  --color-chart-cat-6: var(--chart-cat-6);
+  --color-chart-seq-1: var(--chart-seq-1);
+  --color-chart-seq-2: var(--chart-seq-2);
+  --color-chart-seq-3: var(--chart-seq-3);
+  --color-chart-seq-4: var(--chart-seq-4);
+  --color-chart-seq-5: var(--chart-seq-5);
+  --color-chart-seq-6: var(--chart-seq-6);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -276,19 +361,9 @@
 
   --font-heading: var(--font-sans);
 
-  --radius-sm: calc(var(--radius) * 0.6);
-
-  --radius-md: calc(var(--radius) * 0.8);
-
-  --radius-lg: var(--radius);
-
-  --radius-xl: calc(var(--radius) * 1.4);
-
-  --radius-2xl: calc(var(--radius) * 1.8);
-
-  --radius-3xl: calc(var(--radius) * 2.2);
-
-  --radius-4xl: calc(var(--radius) * 2.6);
+  /* Radii are Tailwind's default scale (sm 4 · md 6 · lg 8 · xl 12 · 2xl 16px), so they stay whole
+     pixels. Where one rounded element sits tightly inside another, make it concentric: inner radius =
+     outer radius − gap (a menu at rounded-lg with p-1 has rounded-sm items). */
 }
 
 @layer base {

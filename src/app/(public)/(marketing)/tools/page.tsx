@@ -18,7 +18,7 @@ const STATUS_LABEL: Record<ToolStatus, string> = {
 
 const STATUS_CLASSNAME: Record<ToolStatus, string> = {
     available: "",
-    "in-development": "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200",
+    "in-development": "bg-info-subtle text-info-foreground",
     planned: "border border-dashed border-muted-foreground/40 text-muted-foreground bg-transparent",
 };
 

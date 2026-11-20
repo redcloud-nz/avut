@@ -203,7 +203,9 @@ export function SkillsModule_ReviewChecks_Dialog({
                             />
                         ))}
                     </ul>
-                    {mutation.error && <Alert variant="error">{mutation.error.message}</Alert>}
+                    {mutation.error && (
+                        <Alert variant="destructive">{mutation.error.message}</Alert>
+                    )}
                 </DialogBody>
                 {readOnly ? (
                     <DialogFooter showCloseButton />

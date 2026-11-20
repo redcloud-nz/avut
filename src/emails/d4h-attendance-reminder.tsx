@@ -123,7 +123,7 @@ export default function D4HAttendanceReminderEmail({
                         {d4hExerciseUrl && (
                             <Section className="mt-8 mb-8 text-center">
                                 <Button
-                                    className="rounded bg-[#000000] px-5 py-3 text-center font-semibold text-[12px] text-white no-underline"
+                                    className="rounded bg-[#553423] px-5 py-3 text-center font-semibold text-[12px] text-white no-underline"
                                     href={d4hExerciseUrl}
                                 >
                                     Open in D4H
