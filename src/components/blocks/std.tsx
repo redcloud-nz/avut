@@ -4,8 +4,8 @@
  *
  * Std page shell components.
  *
- * The outer shell for a page within a sidebar layout: a sticky navbar with
- * breadcrumbs above a scrollable main content area.
+ * The outer shell for a page within a sidebar layout: the layout's navbar above a
+ * scrollable main content area.
  */
 
 import type { Route } from "next";
@@ -13,7 +13,6 @@ import Link from "next/link";
 import { ComponentProps, Fragment, ReactNode, Suspense } from "react";
 
 import { AVUTLogo } from "@/components/art/avut-logo";
-import { PageHelpButton } from "@/components/docs/help-button";
 import { GlyphPage } from "@/components/glyph-page";
 import { PageBackground, pageBackgroundAttributes } from "@/components/page-background";
 import {
@@ -25,11 +24,13 @@ import {
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { PageLoadingSpinner, RainbowSpinner } from "@/components/ui/loading";
-import { Separator } from "@/components/ui/separator";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 
-function SidebarInset({ children }: { children: ReactNode }) {
+/**
+ * The page column beside the sidebar. `navbar` renders above the page's `<Suspense>`, so it
+ * stays up while the page loads.
+ */
+function SidebarInset({ children, navbar }: { children: ReactNode; navbar?: ReactNode }) {
     return (
         <div
             data-component="StdSidebarInset"
@@ -38,6 +39,7 @@ function SidebarInset({ children }: { children: ReactNode }) {
             className="relative isolate flex w-full min-w-0 h-[calc(100svh-var(--impersonation-h))] flex-1 flex-col bg-page"
         >
             <PageBackground />
+            {navbar}
             <Suspense fallback={<PageLoadingSpinner />}>{children}</Suspense>
         </div>
     );
@@ -103,38 +105,24 @@ function Breadcrumbs({ breadcrumbs = [] }: BreadcrumbsProps) {
     );
 }
 
-type NavbarProps = {
-    sidebarTrigger?: boolean;
-} & (
+type NavbarProps =
     | {
           breadcrumbs?: (BreadcrumbItem | string)[];
           children?: never;
       }
-    | { children?: ReactNode; breadcrumbs?: never }
-);
+    | { children?: ReactNode; breadcrumbs?: never };
 
-/** The page's navbar. Help for the page (`PageHelpButton`) is pinned to its far right. */
-function Navbar({ breadcrumbs, children, sidebarTrigger = true }: NavbarProps) {
+/**
+ * @deprecated The app's navbar is now `AppNavbar`, rendered once by the authenticated layout.
+ * During the move of breadcrumbs into the page, this renders only a plain in-flow breadcrumb
+ * strip, so unconverted pages don't show two bars. It goes once no page uses it.
+ */
+function Navbar({ breadcrumbs, children }: NavbarProps) {
     return (
-        <header
-            slot="header"
-            className="bg-navbar sticky top-0 flex h-(--header-height) shrink-0 items-center gap-1 border-b px-2 z-5 backdrop-blur-md"
-        >
-            {sidebarTrigger && (
-                <>
-                    <SidebarTrigger />
-                    <Separator orientation="vertical" className="ml-1" />
-                </>
-            )}
+        <div className="flex shrink-0 items-center gap-1 px-2 py-1">
             {breadcrumbs && <Breadcrumbs breadcrumbs={breadcrumbs} />}
             {children}
-            <div className="ml-auto flex items-center gap-1 pr-1">
-                {/* `usePathname()` can suspend during prerender. */}
-                <Suspense fallback={null}>
-                    <PageHelpButton />
-                </Suspense>
-            </div>
-        </header>
+        </div>
     );
 }
 

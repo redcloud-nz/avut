@@ -12,7 +12,7 @@
 
 "use client";
 
-import { createContext, ReactNode, use, useState } from "react";
+import { createContext, ReactNode, use, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 
 import { SidebarGroup, SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
@@ -62,9 +62,23 @@ export function SidebarPortalOutlet() {
     );
 }
 
-/** Portals `children` into wherever `SidebarPortalOutlet` is mounted. Until the outlet exists, renders only the marker that tells the outlet to show its skeleton. */
+const noSubscribe = () => () => {};
+
+/**
+ * Portals `children` into wherever `SidebarPortalOutlet` is mounted. Until the outlet exists,
+ * renders only the marker that tells the outlet to show its skeleton.
+ *
+ * It renders the marker while hydrating too, whatever the outlet's state: the server HTML always
+ * has the marker, and the outlet can commit its container before this hydrates (that depends on
+ * what else hydrates in between them).
+ */
 export function SidebarPortal({ children }: { children: ReactNode }) {
     const ctx = use(SidebarPortalContext);
-    if (!ctx?.container) return <span hidden data-sidebar-portal-pending="" />;
+    const hydrated = useSyncExternalStore(
+        noSubscribe,
+        () => true,
+        () => false,
+    );
+    if (!hydrated || !ctx?.container) return <span hidden data-sidebar-portal-pending="" />;
     return createPortal(children, ctx.container);
 }

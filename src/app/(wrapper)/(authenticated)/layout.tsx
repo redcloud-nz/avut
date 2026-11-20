@@ -5,18 +5,15 @@
  *  Path: /(wrapper)/(authenticated)
  */
 
-import Image from "next/image";
 import { ReactNode, Suspense } from "react";
 
 import { SessionWatcher } from "@/components/auth/session-watcher";
 import { Std } from "@/components/blocks/std";
 import { HelpRoutesProvider } from "@/components/docs/help-routes-context";
-import { ModeToggle } from "@/components/nav/mode-toggle";
-import { NotificationsMenu } from "@/components/nav/notifications-menu";
+import { AppNavbar } from "@/components/nav/app-navbar";
 import { ScopeSidebar_Modules } from "@/components/nav/scope-sidebar-modules";
 import { ScopeSwitcher, ScopeSwitcher_Skeleton } from "@/components/nav/scope-switcher";
 import { SidebarPortalOutlet, SidebarPortalProvider } from "@/components/nav/sidebar-portal";
-import { UserMenu, UserMenu_Skeleton } from "@/components/nav/user-menu";
 import {
     Sidebar,
     SidebarContent,
@@ -54,7 +51,7 @@ export default async function AuthenticatedLayout(props: {
     // cookie is *present*; this is the check that actually validates it.
     await requireSession();
 
-    // `ScopeSwitcher` and `UserMenu` both read `getSession` via plain `useQuery` (not
+    // `ScopeSwitcher` and `UserMenu` (in `AppNavbar`) both read `getSession` via plain `useQuery` (not
     // suspense), so unlike `listMemberships` below it can't tolerate an unresolved prefetch —
     // a still-pending dehydrated snapshot racing the live query client's resolution is exactly
     // what produces a hydration mismatch. Awaiting costs nothing extra: `getSession` only
@@ -102,28 +99,14 @@ export default async function AuthenticatedLayout(props: {
             <SidebarPortalProvider>
                 <WhatsNewProvider>
                     <Sidebar>
-                        <SidebarHeader className="flex flex-row items-center justify-between border-b h-(--header-height)">
-                            <div className="w-[100px]">
-                                <Image
-                                    src="/avut-logo.svg"
-                                    alt="A.V.U.T. Logo"
-                                    width={99}
-                                    height={33}
-                                    loading="eager"
-                                    className="dark:invert"
-                                />
-                            </div>
-                            <div>
-                                <NotificationsMenu />
-                                <ModeToggle />
-                            </div>
-                        </SidebarHeader>
-                        <SidebarContent className="overflow-hidden">
-                            <div className="px-1 pt-1">
+                        <SidebarHeader className="flex flex-row items-center pb-0">
+                            <div className="min-w-0 flex-1">
                                 <Suspense fallback={<ScopeSwitcher_Skeleton />}>
                                     <ScopeSwitcher />
                                 </Suspense>
                             </div>
+                        </SidebarHeader>
+                        <SidebarContent className="overflow-hidden">
                             <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)] [scrollbar-gutter:stable]">
                                 <ScopeSidebar_Modules userModuleFlags={userModuleFlags} />
                                 <SidebarPortalOutlet />
@@ -133,20 +116,18 @@ export default async function AuthenticatedLayout(props: {
                             <div className="flex justify-center text-center text-xs text-muted-foreground">
                                 <WhatsNewVersionButton />
                             </div>
-                            <Suspense fallback={<UserMenu_Skeleton />}>
-                                <UserMenu />
-                            </Suspense>
                         </SidebarFooter>
                         <SidebarRail />
                     </Sidebar>
-                    {props.modal}
-                    {/* Outside `<Sidebar>`: on mobile its offcanvas sheet unmounts its content while
-                    closed, so a dialog in there could never open on its own. */}
-                    <WhatsNewBoundary>
-                        <WhatsNewDialog />
-                    </WhatsNewBoundary>
+                    {/* Wraps the `@modal` slot too, so whatever renders there can read the cards. */}
                     <HelpRoutesProvider cards={helpCardRoutes()}>
-                        <Std.SidebarInset>{props.children}</Std.SidebarInset>
+                        {props.modal}
+                        {/* Outside `<Sidebar>`: on mobile its offcanvas sheet unmounts its content
+                            while closed, so a dialog in there could never open on its own. */}
+                        <WhatsNewBoundary>
+                            <WhatsNewDialog />
+                        </WhatsNewBoundary>
+                        <Std.SidebarInset navbar={<AppNavbar />}>{props.children}</Std.SidebarInset>
                     </HelpRoutesProvider>
                 </WhatsNewProvider>
             </SidebarPortalProvider>
