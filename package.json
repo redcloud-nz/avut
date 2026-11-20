@@ -5,8 +5,8 @@
   "nz.avut": {
     "displayName": "AVUT",
     "repositoryUrl": "https://github.com/redcloud-nz/avut",
-    "version": "0.12",
-    "versionName": "Dunedin"
+    "version": "0.13",
+    "versionName": "Nucula"
   },
   "scripts": {
     "dev": "bash scripts/dev.sh",
