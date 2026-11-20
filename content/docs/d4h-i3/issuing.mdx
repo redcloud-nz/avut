@@ -15,10 +15,10 @@ you don't have to enter the items in D4H yourself.
 You need the **I3 Editor** or **I3 Admin** role, and your own D4H account must be
 allowed to create equipment in the member's team.
 
-## Drafts
+## Drafts and submitted forms
 
-**Issue** lists your draft forms, newest first. Only you see your drafts. **New**
-starts one.
+**Issue** has two tabs. **Drafts** lists your draft forms, newest first, and only
+you see them. **New** starts a draft and opens it.
 
 <Screenshot id="d4h-i3/issue-drafts" caption="Your draft Issue forms." />
 
@@ -26,20 +26,26 @@ A draft saves itself as you fill it in, and the form shows **Saved** once it
 has. Leave it and come back to it from the list at any time. The bin button at
 the bottom of the form discards the draft.
 
+**Submitted** lists the forms you've submitted, newest first, with **Load more**
+at the bottom. Opening one shows it read-only: **Issued to**, **Recorded
+by**, when it was submitted, its items and your comments. A form keeps the same link once it's
+submitted, so a link to a draft still works afterwards.
+
 ## Filling in the form
 
-You're recorded as the **Issuer**. Pick the **Recipient** first: the list holds
-the members of the D4H teams your access token can see, with each one's team.
+Pick the member under **Issued to** first. Type to search by name or team: the
+list holds the members of the D4H teams your access token can see, with each
+one's team. You're recorded under **Recorded by**.
 
 <Screenshot id="d4h-i3/issue-form" caption="A draft Issue form with three items for one member." />
 
-If your D4H account can't create equipment in the recipient's team, the form
-says so and **Submit** stays disabled. Ask whoever manages your D4H account for
-the permission, or pick someone from a team you can issue to.
+If your D4H account can't create equipment in the member's team, the form says
+so and **Submit** stays disabled. Ask whoever manages your D4H account for the
+permission, or pick someone from a team you can issue to.
 
 ### Adding items
 
-**Add Item** opens once you've picked a recipient. For each item, choose:
+**Add Item** opens once you've picked a member. For each item, choose:
 
 - the **Template**, which describes the kind of item (see
   [Templates](/docs/d4h-i3#templates)),
@@ -54,34 +60,34 @@ the permission, or pick someone from a team you can issue to.
 
 The pencil button changes an item and the bin button removes it.
 
-### Templates that fit the recipient
+### Templates that fit the member
 
 A template's D4H records can belong to your D4H organisation or to one of its
 teams. The form only offers templates and variants whose records belong to the
-recipient's team or to your D4H organisation, so every item can be created in
+member's team or to your D4H organisation, so every item can be created in
 that team. If none fit, the dialog says so.
 
-AVUT checks this against D4H when you pick the recipient, and shows **Checking
+AVUT checks this against D4H when you pick the member, and shows **Checking
 templates…** until it has. If it can't reach D4H, the form warns you and offers
 every template, and **Submit** checks them again.
 
-If you change the recipient after adding items, any item that doesn't fit the
-new recipient's team is marked **Can't be issued to** that team. **Submit** stays
+If you change the member after adding items, any item that doesn't fit the
+new member's team is marked **Can't be issued to** that team. **Submit** stays
 disabled until you change or remove it.
 
 ## Submitting
 
 Add any **Comments**, then **Submit**. AVUT:
 
-1. checks again that you can create equipment in the recipient's team and that
+1. checks again that you can create equipment in the member's team and that
    every item fits it,
-2. creates an equipment record in D4H for each item: in the recipient's team,
-   held by the recipient, with the template's category and type, the variant's
+2. creates an equipment record in D4H for each item: in the member's team,
+   held by them, with the template's category and type, the variant's
    brand and model, and the serial number, and
 3. emails a summary to the [notification lists](/docs/d4h-i3#notifications), and
    sends the member a receipt at their D4H email address.
 
-The draft then leaves your list. If the first check fails, nothing is created
+The form then moves to **Submitted**. If the first check fails, nothing is created
 and the draft stays, so you can fix it and submit again.
 
 <Callout type="warning">

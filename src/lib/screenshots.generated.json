@@ -56,16 +56,11 @@
   "getting-started/forgot-password": {
     "light": {
       "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/forgot-password.webp",
-      "width": 500,
-      "height": 306
-    },
-    "dark": {
-      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/forgot-password-dark.webp",
-      "width": 500,
-      "height": 306
+      "width": 384,
+      "height": 248
     },
     "alt": "The Forgot Password screen with a single email field and a Send reset code button",
-    "capturedAt": "2026-10-25T08:22:18.277Z"
+    "capturedAt": "2026-11-20T06:09:50.646Z"
   },
   "getting-started/module-switcher": {
     "light": {
@@ -79,16 +74,11 @@
   "getting-started/reset-password": {
     "light": {
       "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/reset-password.webp",
-      "width": 500,
-      "height": 583
-    },
-    "dark": {
-      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/reset-password-dark.webp",
-      "width": 500,
-      "height": 583
+      "width": 384,
+      "height": 524
     },
     "alt": "The Reset Password screen: a six-digit code input, new password and confirm password fields, and an Update Password button",
-    "capturedAt": "2026-10-25T08:22:22.928Z"
+    "capturedAt": "2026-11-20T06:09:53.166Z"
   },
   "getting-started/scope-switcher": {
     "light": {
@@ -97,21 +87,16 @@
       "height": 48
     },
     "alt": "The scope switcher at the top of the sidebar, showing the current organisation, Erehwon CDEM, with a building icon and an up-down chevron on the right",
-    "capturedAt": "2026-10-25T08:19:32.961Z"
+    "capturedAt": "2026-11-20T06:09:55.087Z"
   },
   "getting-started/sign-in": {
     "light": {
       "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/sign-in.webp",
-      "width": 500,
-      "height": 502
-    },
-    "dark": {
-      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/sign-in-dark.webp",
-      "width": 500,
-      "height": 502
+      "width": 384,
+      "height": 442
     },
     "alt": "The AVUT sign-in screen: email and password fields with a \"Forgot password?\" link and a Remember me checkbox, and GitHub and Google social sign-in buttons below",
-    "capturedAt": "2026-10-25T08:22:10.136Z"
+    "capturedAt": "2026-11-20T06:09:56.466Z"
   },
   "getting-started/user-menu": {
     "light": {
@@ -120,21 +105,16 @@
       "height": 48
     },
     "alt": "The user menu button in the sidebar footer, unopened: an avatar with the signed-in user's name and email and an up-down chevron on the right",
-    "capturedAt": "2026-10-25T08:19:35.595Z"
+    "capturedAt": "2026-11-20T06:09:58.213Z"
   },
   "getting-started/verify-email": {
     "light": {
       "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/verify-email.webp",
-      "width": 500,
-      "height": 335
-    },
-    "dark": {
-      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/verify-email-dark.webp",
-      "width": 500,
-      "height": 335
+      "width": 384,
+      "height": 276
     },
     "alt": "The email verification screen with six single-digit code inputs and a Verify button",
-    "capturedAt": "2026-10-25T08:22:14.152Z"
+    "capturedAt": "2026-11-20T06:10:00.001Z"
   },
   "marketing/skill-track-session": {
     "light": {
@@ -143,7 +123,7 @@
       "height": 900
     },
     "alt": "Skill Track: recording a Light Rescue training night session, assessing by person",
-    "capturedAt": "2026-10-25T08:36:39.889Z"
+    "capturedAt": "2026-11-20T06:10:02.284Z"
   },
   "notes/note-editing": {
     "light": {
@@ -152,7 +132,7 @@
       "height": 800
     },
     "alt": "A note being edited: an editable title, Cancel and Save buttons at the top right, and a formatting toolbar along the bottom.",
-    "capturedAt": "2026-10-25T08:40:31.215Z"
+    "capturedAt": "2026-11-20T06:10:03.906Z"
   },
   "notes/notes-list": {
     "light": {
@@ -161,7 +141,7 @@
       "height": 800
     },
     "alt": "The Notes page: a sortable list of notes with a New note button on the left, and the open note on the right with its pencil and menu buttons.",
-    "capturedAt": "2026-10-25T08:40:17.955Z"
+    "capturedAt": "2026-11-20T06:10:05.943Z"
   },
   "skill-package-builder/history": {
     "light": {
@@ -181,14 +161,23 @@
     "alt": "The First Aid package in the Skill Package Builder: its details, its groups and skills, and the package menu open with History, Export .json, Archive, Publish and Delete.",
     "capturedAt": "2026-10-25T19:14:36.112Z"
   },
+  "skill-track/checks-list": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/checks-list.webp",
+      "width": 1280,
+      "height": 800
+    },
+    "alt": "The Skill Checks page: a Filters card with Person, Skill, Session, Assessor, Result and Date filters, above a table of checks with each one's assessee, skill, result, session, date and assessor.",
+    "capturedAt": "2026-11-20T06:10:08.213Z"
+  },
   "skill-track/create-session": {
     "light": {
       "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/create-session.webp",
       "width": 448,
-      "height": 486
+      "height": 596
     },
-    "alt": "The New Session dialog: a Name field showing the suggested session number, a When section with today's start date and Add end date and Add time links, times shown in the organisation's time zone, and a Notes field.",
-    "capturedAt": "2026-10-25T08:15:44.913Z"
+    "alt": "The New Session dialog: a Name field showing the suggested session number, a Team select set to No team (whole organisation), a When section with All day and Multiple days switches above today's date and the organisation's time zone, and a Notes field.",
+    "capturedAt": "2026-11-20T06:10:10.277Z"
   },
   "skill-track/package-page": {
     "light": {
@@ -196,8 +185,8 @@
       "width": 1280,
       "height": 800
     },
-    "alt": "A subscribed package's page: Package Information with its name, description, publisher, skill and subscriber counts, then its Contents, each skill group listing its skills with a Required badge and description.",
-    "capturedAt": "2026-10-25T08:41:46.254Z"
+    "alt": "A subscribed package's page: its Skill Package card with ID, name and publisher, its Subscription card, Skills and Subscribers counts, then its Contents, each skill group listing its skills with a Required badge.",
+    "capturedAt": "2026-11-20T06:10:12.353Z"
   },
   "skill-track/report-matrix": {
     "light": {
@@ -206,7 +195,7 @@
       "height": 800
     },
     "alt": "The Personnel x Skill Matrix report: skills down the left, people across the top with rotated name headers, and a colored status icon in every cell",
-    "capturedAt": "2026-10-25T08:38:45.183Z"
+    "capturedAt": "2026-11-20T06:10:18.695Z"
   },
   "skill-track/report-matrix-cell": {
     "light": {
@@ -215,7 +204,7 @@
       "height": 168
     },
     "alt": "The popover from clicking a matrix cell: the recorded result, when it was assessed and when it expires with relative dates, the assessor, and the note left with the check",
-    "capturedAt": "2026-10-25T08:39:38.365Z"
+    "capturedAt": "2026-11-20T06:10:14.146Z"
   },
   "skill-track/report-matrix-skill": {
     "light": {
@@ -224,7 +213,7 @@
       "height": 108
     },
     "alt": "The popover from clicking a skill name in the matrix: the skill's name, its description, and how often it needs reassessing",
-    "capturedAt": "2026-10-25T08:39:40.389Z"
+    "capturedAt": "2026-11-20T06:10:15.952Z"
   },
   "skill-track/report-person": {
     "light": {
@@ -232,8 +221,8 @@
       "width": 1280,
       "height": 800
     },
-    "alt": "The Personnel Competency report for one person: a summary line reading 50 current, 6 expired, 20 not competent, 8 not assessed, then a table of every subscribed skill with its status and last-checked date, grouped by package and skill group",
-    "capturedAt": "2026-10-25T08:37:33.526Z"
+    "alt": "The Personnel Competency report for one person: a summary line counting current, expired, not competent and not assessed skills, then a table of every subscribed skill with its status and last-checked date, grouped by package and skill group",
+    "capturedAt": "2026-11-20T06:10:20.705Z"
   },
   "skill-track/report-skill": {
     "light": {
@@ -242,7 +231,7 @@
       "height": 800
     },
     "alt": "The Skill Coverage report for one skill: every person listed with their status and last-checked date, sorted with Not Competent and Expired above Current",
-    "capturedAt": "2026-10-25T08:38:23.661Z"
+    "capturedAt": "2026-11-20T06:10:22.798Z"
   },
   "skill-track/report-team": {
     "light": {
@@ -251,7 +240,7 @@
       "height": 800
     },
     "alt": "The Team Competency report: one row per skill with a stacked coverage bar and the percentage of the team currently competent, grouped by package and skill group",
-    "capturedAt": "2026-10-25T08:38:04.352Z"
+    "capturedAt": "2026-11-20T06:10:24.401Z"
   },
   "skill-track/session-also-checked-by": {
     "light": {
@@ -260,7 +249,7 @@
       "height": 280
     },
     "alt": "Recording rows where several say 'Also checked by Douglas Renshaw' with his result under the skill's name.",
-    "capturedAt": "2026-10-25T08:32:26.250Z"
+    "capturedAt": "2026-11-20T06:10:26.123Z"
   },
   "skill-track/session-by-person": {
     "light": {
@@ -268,8 +257,8 @@
       "width": 1280,
       "height": 800
     },
-    "alt": "Assess by Person: the session's personnel listed on the left with one selected, and their skills on the right, each with Fail, Pass and More buttons, the recorded result circled.",
-    "capturedAt": "2026-10-25T08:32:24.718Z"
+    "alt": "Assess by Person: the session's personnel listed on the left with one selected, and their skills on the right in Package · Group sections, each with Fail, Pass and More buttons, the recorded result circled.",
+    "capturedAt": "2026-11-20T06:10:29.685Z"
   },
   "skill-track/session-by-person-phone": {
     "light": {
@@ -278,7 +267,7 @@
       "height": 844
     },
     "alt": "Assess by Person on a phone: a Person dropdown above the selected person's skills to record.",
-    "capturedAt": "2026-10-25T08:35:47.984Z"
+    "capturedAt": "2026-11-20T06:10:27.646Z"
   },
   "skill-track/session-by-skill": {
     "light": {
@@ -287,7 +276,7 @@
       "height": 800
     },
     "alt": "Assess by Skill: the session's skills listed on the left with one selected, and every person in the session on the right, each with Fail, Pass and More buttons, the recorded result circled.",
-    "capturedAt": "2026-10-25T08:32:53.647Z"
+    "capturedAt": "2026-11-20T06:10:33.446Z"
   },
   "skill-track/session-by-skill-phone": {
     "light": {
@@ -296,7 +285,7 @@
       "height": 844
     },
     "alt": "Assess by Skill on a phone: a Skill dropdown above everyone in the session to record.",
-    "capturedAt": "2026-10-25T08:36:12.224Z"
+    "capturedAt": "2026-11-20T06:10:31.686Z"
   },
   "skill-track/session-page": {
     "light": {
@@ -304,8 +293,8 @@
       "width": 1280,
       "height": 800
     },
-    "alt": "A draft session's page: Session Details with its name, when it runs and its status on the left, and the Contents card listing personnel, skills, assessors, skill checks and conflicts on the right, with Record and a menu in the header.",
-    "capturedAt": "2026-10-25T08:16:16.040Z"
+    "alt": "A draft session's page: its Session card with name, when it runs, team and notes on the left, and tiles for its personnel, skills, assessors, skill checks and conflicts on the right, with Record and a menu in the header.",
+    "capturedAt": "2026-11-20T06:10:35.413Z"
   },
   "skill-track/session-personnel": {
     "light": {
@@ -314,7 +303,7 @@
       "height": 768
     },
     "alt": "The Change personnel dialog, listing the Erehwon Response Team with 18 of 32 personnel ticked, and Cancel and Save buttons.",
-    "capturedAt": "2026-10-25T08:33:53.861Z"
+    "capturedAt": "2026-11-20T06:10:36.976Z"
   },
   "skill-track/session-record-menu": {
     "light": {
@@ -322,8 +311,8 @@
       "width": 368,
       "height": 300
     },
-    "alt": "The Record menu open in the session header, offering By Person and By Skill, with the Contents card behind it.",
-    "capturedAt": "2026-10-25T08:34:22.126Z"
+    "alt": "The Record menu open in the session header, offering By Person and By Skill, with the session's tiles behind it.",
+    "capturedAt": "2026-11-20T06:10:38.696Z"
   },
   "skill-track/session-recording-options": {
     "light": {
@@ -332,16 +321,16 @@
       "height": 800
     },
     "alt": "The Recording Options sheet: Recording Mode (By Person or By Skill), Skill Order (Alphabetical or By Package/Group), and Configure Session links for Personnel, Skills and Assessors.",
-    "capturedAt": "2026-10-25T08:33:11.983Z"
+    "capturedAt": "2026-11-20T06:10:40.048Z"
   },
   "skill-track/session-resolve-conflict": {
     "light": {
       "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/session-resolve-conflict.webp",
       "width": 672,
-      "height": 316
+      "height": 274
     },
     "alt": "The dialog for resolving a conflict: two assessors' checks of the same person and skill side by side, one picked, with an Exclude all option and Cancel and Save buttons.",
-    "capturedAt": "2026-10-25T08:35:13.685Z"
+    "capturedAt": "2026-11-20T06:10:41.408Z"
   },
   "skill-track/session-review": {
     "light": {
@@ -350,7 +339,7 @@
       "height": 800
     },
     "alt": "A session's review page: Unique checks, Personnel, Skills and Coverage tiles, and a Conflicts card with six conflicts resolved and three still to resolve.",
-    "capturedAt": "2026-10-25T08:34:56.273Z"
+    "capturedAt": "2026-11-20T06:10:43.406Z"
   },
   "skill-track/session-skills": {
     "light": {
@@ -358,8 +347,8 @@
       "width": 448,
       "height": 768
     },
-    "alt": "The Change skills dialog, with skills ticked under the Search Techniques and Ladders skill groups, and Cancel and Save buttons.",
-    "capturedAt": "2026-10-25T08:33:30.889Z"
+    "alt": "The Change skills dialog, with every skill ticked in the Light Rescue · Search Techniques and Light Rescue · Ladders sections, each section showing how many of its skills are selected, and Cancel and Save buttons.",
+    "capturedAt": "2026-11-20T06:10:45.334Z"
   },
   "skill-track/skill-page": {
     "light": {
@@ -367,8 +356,8 @@
       "width": 1280,
       "height": 800
     },
-    "alt": "A skill's page: Skill Information with its description, package, group, frequency, tags and the Required and Included flags, and a Related card linking to the Skill Coverage report.",
-    "capturedAt": "2026-10-25T08:41:50.972Z"
+    "alt": "A skill's page: its Skill card with ID, name, package, group, frequency, tags and the Required and Included flags, and tiles linking to Skill Coverage and Recent checks.",
+    "capturedAt": "2026-11-20T06:10:47.358Z"
   },
   "skill-track/skills-list": {
     "light": {
@@ -377,6 +366,6 @@
       "height": 800
     },
     "alt": "The Skills page: a searchable table of every subscribed skill with its group, package and frequency.",
-    "capturedAt": "2026-10-25T08:41:48.770Z"
+    "capturedAt": "2026-11-20T06:10:49.179Z"
   }
 }

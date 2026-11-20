@@ -1,6 +1,6 @@
 ---
 title: Teams
-description: Grouping personnel into teams, and keeping a team in sync with D4H.
+description: Grouping personnel into teams, giving a team its own space, and keeping it in sync with D4H.
 section: org-admin
 order: 30
 keyTerms: ["team", "person", "d4h"]
@@ -16,15 +16,33 @@ described below.
 
 ## Teams and members
 
-The Teams list shows **Active** teams. **New Team** adds one.
+The Teams list shows **Active** teams. **New Team** adds one, with a **Name**,
+an optional **Slug** and a description.
 
-A team's page shows its details, and its **Related** card counts the personnel
-on it. Open that for the member list, where **New Member** adds someone. **Add
+A team's page has a **Team** card with its details, an **Access** card, and,
+once it's linked to D4H, a **Linked D4H Team** card. Under **Related**, a tile
+counts the personnel on it. Open that for the member list, where **New Member** adds someone. **Add
 person**, in the team's menu, does the same.
 
 Open a member to see the membership itself. **Remove from team** takes them off
 the team and moves the membership to the [Rubbish bin](/docs/admin/rubbish-bin),
 so it can be recovered. The person record isn't touched.
+
+## Slug and access
+
+A team's **slug** gives it its own [team space](/docs/getting-started/team-spaces),
+at `/teams/<slug>`, where the people given access can see and look after the
+team. Set it under **Edit**. It's optional, it must be unique across all of
+AVUT, not just your organisation, and it's 2 to 50 lowercase letters,
+numbers and hyphens. A few words, such as `admin` and `new`, are reserved. Clear it to close the team's space. Renaming a slug moves
+the space, and links to the old address stop working.
+
+The **Access** card lists the users who can open the team's space. Grant access
+with **+** and revoke it from a user's row. Access is separate from the roster:
+a user whose person is on the team shows an **On roster** badge, but being on
+the roster doesn't give access, and nor does being an owner or admin. Grant it
+to yourself if you need it. Removing someone from the organisation removes
+their access too.
 
 ## Archiving and deleting
 
@@ -49,7 +67,7 @@ a D4H team that token can see.
   the sync preview straight away, so you see who would be imported before
   anyone is. Each D4H member is matched to a person record by email; anyone
   without one gets a new record.
-- **Sync with D4H**, on the team's **D4H Integration** card, fetches the D4H
+- **Sync with D4H**, on the team's **Linked D4H Team** card, fetches the D4H
   team and previews what would change before anything does: members to
   **Add**, **Update**, **Reactivate** or **Archive**, and changes to the team's
   own details. Untick any change you don't want, then **Apply** the rest;
