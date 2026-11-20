@@ -331,11 +331,11 @@ const CELL_MARKS: Record<CellMarkKind, { icon: ReactNode; label: string }> = {
         label: "held",
     },
     incomplete: {
-        icon: <AlertWarningIcon className="mx-auto size-4 text-warning" />,
+        icon: <AlertWarningIcon className="mx-auto size-4 text-warning-foreground" />,
         label: "held, incomplete",
     },
     mismatch: {
-        icon: <AlertWarningIcon className="mx-auto size-4 text-warning" />,
+        icon: <AlertWarningIcon className="mx-auto size-4 text-warning-foreground" />,
         label: "held, doesn't match",
     },
     missing: {

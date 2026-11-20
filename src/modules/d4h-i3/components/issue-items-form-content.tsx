@@ -551,7 +551,7 @@ function MisfitMarker({ teamTitle }: { teamTitle: string }) {
     const label = `Can't be issued to ${teamTitle}`;
     return (
         <span title={label} className="inline-flex">
-            <AlertWarningIcon className="size-3.5 text-warning" />
+            <AlertWarningIcon className="size-3.5 text-warning-foreground" />
             <span className="sr-only">{label}</span>
         </span>
     );

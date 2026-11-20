@@ -94,7 +94,7 @@ export function StatusIcon({
             <CircleCheckIcon className={cn(iconClass, "text-success")} aria-label={label} />
         ))
         .with("expired", () => (
-            <ClockIcon className={cn(iconClass, "text-warning")} aria-label={label} />
+            <ClockIcon className={cn(iconClass, "text-warning-foreground")} aria-label={label} />
         ))
         .with("not-competent", () => (
             <CircleXIcon className={cn(iconClass, "text-destructive")} aria-label={label} />

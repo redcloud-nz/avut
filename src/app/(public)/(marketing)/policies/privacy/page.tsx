@@ -29,7 +29,10 @@ export default function PrivacyPolicy_Page() {
                         AVUT is operated by Alex Westphal, Christchurch, New Zealand. For anything
                         in this policy, including access and correction requests and privacy
                         complaints, contact{" "}
-                        <a href="mailto:support@avut.nz" className="text-primary hover:underline">
+                        <a
+                            href="mailto:support@avut.nz"
+                            className="text-primary underline underline-offset-2"
+                        >
                             support@avut.nz
                         </a>
                         . Alex Westphal is also the privacy officer for the purposes of section 201
@@ -310,7 +313,7 @@ export default function PrivacyPolicy_Page() {
                         complain to the Office of the Privacy Commissioner at{" "}
                         <a
                             href="https://www.privacy.org.nz"
-                            className="text-primary hover:underline"
+                            className="text-primary underline underline-offset-2"
                             rel="noopener noreferrer"
                             target="_blank"
                         >
@@ -330,7 +333,7 @@ export default function PrivacyPolicy_Page() {
                         See also our{" "}
                         <Link
                             href="/policies/terms-of-service"
-                            className="text-primary hover:underline"
+                            className="text-primary underline underline-offset-2"
                         >
                             Terms of Service
                         </Link>

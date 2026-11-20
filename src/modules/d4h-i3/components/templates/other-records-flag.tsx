@@ -34,7 +34,7 @@ export function D4HI3Module_OtherRecords_Badge() {
 export function D4HI3Module_OtherRecords_Marker() {
     return (
         <span title={FLAG_LABEL} className="inline-flex align-middle">
-            <AlertWarningIcon className="size-3.5 text-warning" />
+            <AlertWarningIcon className="size-3.5 text-warning-foreground" />
             <span className="sr-only">{FLAG_LABEL}</span>
         </span>
     );

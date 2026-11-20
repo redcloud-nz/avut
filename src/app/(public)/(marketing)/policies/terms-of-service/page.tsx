@@ -30,7 +30,10 @@ export default function TermsOfService_Page() {
                     <p className="mb-4">
                         AVUT is operated by Alex Westphal, Christchurch, New Zealand
                         (&ldquo;we&rdquo;, &ldquo;us&rdquo;). You can reach us at{" "}
-                        <a href="mailto:support@avut.nz" className="text-primary hover:underline">
+                        <a
+                            href="mailto:support@avut.nz"
+                            className="text-primary underline underline-offset-2"
+                        >
                             support@avut.nz
                         </a>
                         .
@@ -57,7 +60,10 @@ export default function TermsOfService_Page() {
                     <p className="mb-4">
                         Being pre-release has a consequence worth stating plainly: some of what
                         these terms and our{" "}
-                        <Link href="/policies/privacy" className="text-primary hover:underline">
+                        <Link
+                            href="/policies/privacy"
+                            className="text-primary underline underline-offset-2"
+                        >
                             Privacy Policy
                         </Link>{" "}
                         commit us to is not built yet. Closing an account, exporting an
@@ -72,7 +78,10 @@ export default function TermsOfService_Page() {
                     <h2 className="text-2xl font-semibold mt-6 mb-4">3. Accepting these terms</h2>
                     <p className="mb-4">
                         By creating an account or using AVUT, you agree to these terms and to our{" "}
-                        <Link href="/policies/privacy" className="text-primary hover:underline">
+                        <Link
+                            href="/policies/privacy"
+                            className="text-primary underline underline-offset-2"
+                        >
                             Privacy Policy
                         </Link>
                         . If you do not agree, please do not use AVUT. If you are agreeing on behalf
@@ -92,7 +101,10 @@ export default function TermsOfService_Page() {
                         provider is governed by its terms, not ours, and losing access to it may
                         mean losing the ability to sign in to AVUT. What we receive from them is set
                         out in our{" "}
-                        <Link href="/policies/privacy" className="text-primary hover:underline">
+                        <Link
+                            href="/policies/privacy"
+                            className="text-primary underline underline-offset-2"
+                        >
                             Privacy Policy
                         </Link>
                         .
@@ -279,7 +291,10 @@ export default function TermsOfService_Page() {
                     <h2 className="text-2xl font-semibold mt-6 mb-4">15. Contact us</h2>
                     <p className="mb-4">
                         If you have any questions about these Terms of Service, please contact us at{" "}
-                        <a href="mailto:support@avut.nz" className="text-primary hover:underline">
+                        <a
+                            href="mailto:support@avut.nz"
+                            className="text-primary underline underline-offset-2"
+                        >
                             support@avut.nz
                         </a>
                         .
