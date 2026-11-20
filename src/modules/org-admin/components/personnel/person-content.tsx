@@ -10,7 +10,6 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
 import { Badge } from "@/components/ui/badge";
 import { CardContent, CardLoadingFallback } from "@/components/ui/card";
@@ -47,7 +46,6 @@ export function AdminModule_Person_Content({ personId }: { personId: PersonId })
                     },
                     person.name,
                 ]}
-                actions={<HelpButton id="admin/personnel" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

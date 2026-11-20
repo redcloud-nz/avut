@@ -38,7 +38,7 @@ const sheetMdxComponents = {
 };
 
 /**
- * Global contextual-help sheet. Reads `?help=<id>` (written by `<HelpButton>`),
+ * Global contextual-help sheet. Reads `?help=<id>` (written by `<PageHelpButton>`),
  * fetches that help card (`content/help/<id>.mdx`), and renders it in a side
  * sheet: the card body, its key terms, and a link to the full guide. Mounted
  * once in `src/components/providers/app-providers.tsx`.

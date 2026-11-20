@@ -6,7 +6,6 @@
  */
 
 import { Std } from "@/components/blocks/std";
-import { HelpButton } from "@/components/docs/help-button";
 import { route } from "@/lib/routes";
 import SkillTrack_ChecksList from "@/modules/skill-track/components/checks-list";
 import {
@@ -40,7 +39,6 @@ export default async function SkillTrack_Checks_Page(
                             href: route("/orgs/[slug]/skill-track/checks", { slug }),
                         },
                     ]}
-                    actions={<HelpButton id="skill-track/checks" />}
                 />
                 <Std.ScrollContainer>
                     <SkillTrack_ChecksList />

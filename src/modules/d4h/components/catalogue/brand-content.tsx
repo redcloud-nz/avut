@@ -20,7 +20,6 @@ import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { D4HOwner } from "@/components/d4h/d4h-owner";
-import { HelpButton } from "@/components/docs/help-button";
 import { D4HEquipmentModelLink } from "@/components/entity-links/d4h-equipment-model-link";
 import { CardContent } from "@/components/ui/card";
 import {
@@ -110,7 +109,6 @@ export function D4HModule_Brand_Content({ brandId }: { brandId: number }) {
                     { label: "Equipment Brands", href: route("/orgs/[slug]/d4h/brands", { slug }) },
                     { label: brand.title },
                 ]}
-                actions={<HelpButton id="d4h" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

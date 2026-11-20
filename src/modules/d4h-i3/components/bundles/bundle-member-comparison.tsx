@@ -10,7 +10,6 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { HelpButton } from "@/components/docs/help-button";
 import { D4HEquipmentItemLink } from "@/components/entity-links/d4h-equipment-item-link";
 import { D4HMemberLink } from "@/components/entity-links/d4h-member-link";
 import { I3BundleLink } from "@/components/entity-links/i3-bundle-link";
@@ -125,7 +124,6 @@ export function D4HI3Module_BundleMemberComparison({
                     },
                     { label: member.name },
                 ]}
-                actions={<HelpButton id="d4h-i3/bundles" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

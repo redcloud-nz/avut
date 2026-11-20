@@ -7,7 +7,7 @@
 
 import type { Route } from "next";
 import { useSelectedLayoutSegments } from "next/navigation";
-import { ReactNode, useState } from "react";
+import { useState } from "react";
 
 import { Std } from "@/components/blocks/std";
 
@@ -18,7 +18,6 @@ interface NotesBreadcrumbsProps {
     listHref: Route;
     /** A note's detail route; the title crumb links there from the note's History. */
     noteHref: (noteId: string) => Route;
-    actions?: ReactNode;
 }
 
 /**
@@ -28,7 +27,7 @@ interface NotesBreadcrumbsProps {
  * way back at phone width, where the list pane is hidden. On a note's History, the note's title
  * links back to the note.
  */
-export function NotesBreadcrumbs({ notes, listHref, noteHref, actions }: NotesBreadcrumbsProps) {
+export function NotesBreadcrumbs({ notes, listHref, noteHref }: NotesBreadcrumbsProps) {
     const [selectedId = null, subpage] = useSelectedLayoutSegments();
     const selected = selectedId === null ? undefined : notes.find((note) => note.id === selectedId);
 
@@ -53,7 +52,6 @@ export function NotesBreadcrumbs({ notes, listHref, noteHref, actions }: NotesBr
                         ]
                       : [{ label: "Notes", href: listHref }, title]
             }
-            actions={actions}
         />
     );
 }

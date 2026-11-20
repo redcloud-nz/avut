@@ -18,7 +18,6 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { D4HTeamMemberSelect } from "@/components/controls/d4h-team-member-select";
 import { D4HItemRef } from "@/components/d4h/d4h-item-ref";
-import { HelpButton } from "@/components/docs/help-button";
 import { ObjectIcons } from "@/components/icons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button, MutationButton } from "@/components/ui/button";
@@ -146,7 +145,6 @@ export function D4HI3Module_ReturnItems_FormInstance_Content({
                     { label: "Return Items", href: listHref },
                     { label: recipient.name || "No one selected" },
                 ]}
-                actions={<HelpButton id="d4h-i3/return" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

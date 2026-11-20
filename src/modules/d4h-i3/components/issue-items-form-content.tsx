@@ -17,7 +17,6 @@ import { i3Effects } from "@/client/i3-effects";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { D4HTeamMemberSelect } from "@/components/controls/d4h-team-member-select";
-import { HelpButton } from "@/components/docs/help-button";
 import { AlertWarningIcon, ObjectIcons } from "@/components/icons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button, MutationButton } from "@/components/ui/button";
@@ -188,7 +187,6 @@ export function D4HI3Module_IssueItems_FormInstance_Content({
                     },
                     { label: form.getValues().recipient.name || "No one selected" },
                 ]}
-                actions={<HelpButton id="d4h-i3/issue" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

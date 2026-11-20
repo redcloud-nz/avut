@@ -9,7 +9,6 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 
 import { Std } from "@/components/blocks/std";
-import { HelpButton } from "@/components/docs/help-button";
 import { PageLoadingSpinner } from "@/components/ui/loading";
 import { syntheticChecksFlag } from "@/lib/flags";
 import { route } from "@/lib/routes";
@@ -76,7 +75,6 @@ export default async function SkillTrack_ReportsSkillCoverage_Page(
                             href: route("/orgs/[slug]/skill-track/reports/skill", { slug }),
                         },
                     ]}
-                    actions={<HelpButton id="skill-track/report-skill" />}
                 />
                 <Suspense fallback={<PageLoadingSpinner />}>
                     <SkillTrack_SkillCoverageReport

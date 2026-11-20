@@ -7,7 +7,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Std } from "@/components/blocks/std";
-import { HelpButton } from "@/components/docs/help-button";
 import { ObjectHistory } from "@/components/history/object-history";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -53,7 +52,6 @@ export function SkillTrack_SessionHistory_Content({
                     },
                     "History",
                 ]}
-                actions={<HelpButton id="skill-track/session" />}
             />
             <Std.ScrollContainer>
                 <ObjectHistory

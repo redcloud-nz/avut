@@ -70,6 +70,14 @@ export async function getVisibleHelpCard(id: string): Promise<HelpCard | undefin
 }
 
 /**
+ * Every help card's id and route patterns, for `HelpRoutesProvider`. Build-time data, not
+ * flag-filtered: a flag-hidden card's button still shows, and the sheet's fetch respects the flag.
+ */
+export function helpCardRoutes(): { id: string; routes: string[] }[] {
+    return allHelpCards.map((card) => ({ id: card.id, routes: card.routes }));
+}
+
+/**
  * Glossary entries sorted A-Z, minus those whose modules are all flag-hidden
  * (see `visibleGlossaryEntries`).
  */

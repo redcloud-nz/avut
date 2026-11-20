@@ -9,7 +9,6 @@ import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 
 import { Std } from "@/components/blocks/std";
-import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
 import {
     Item,
@@ -28,7 +27,6 @@ export default async function D4HI3_Index_Page(props: PageProps<`/orgs/[slug]/d4
         <>
             <Std.Navbar
                 breadcrumbs={[{ href: route("/orgs/[slug]/d4h-i3", { slug }), label: "D4H I3" }]}
-                actions={<HelpButton id="d4h-i3" />}
             />
             <Std.ScrollContainer>
                 <Std.IndexPage title="D4H I3">

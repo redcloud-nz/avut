@@ -12,7 +12,6 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { D4HItemRef } from "@/components/d4h/d4h-item-ref";
-import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -77,7 +76,6 @@ export function D4HI3Module_ReturnItems_SubmittedView({
                     },
                     { label: recipientName },
                 ]}
-                actions={<HelpButton id="d4h-i3/return" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

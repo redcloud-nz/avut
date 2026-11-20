@@ -9,7 +9,6 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { HelpButton } from "@/components/docs/help-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FieldGroup, FieldSeparator } from "@/components/ui/field";
 import { Item, ItemContent, ItemDescription, ItemGroup, ItemTitle } from "@/components/ui/item";
@@ -62,7 +61,6 @@ export function D4HI3Module_IssueItems_SubmittedView({
                     },
                     { label: recipientName },
                 ]}
-                actions={<HelpButton id="d4h-i3/issue" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

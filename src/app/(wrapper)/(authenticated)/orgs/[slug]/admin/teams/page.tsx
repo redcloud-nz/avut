@@ -6,7 +6,6 @@
  */
 
 import { Std } from "@/components/blocks/std";
-import { HelpButton } from "@/components/docs/help-button";
 import { route } from "@/lib/routes";
 import { AdminModule_Teams_List } from "@/modules/org-admin/components/teams/teams-list";
 import { getOrganizationBySlug } from "@/server/cache/organization";
@@ -32,7 +31,6 @@ export default async function AdminModule_TeamsList_Page(
                         { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
                         { label: "Teams", href: route("/orgs/[slug]/admin/teams", { slug }) },
                     ]}
-                    actions={<HelpButton id="admin/teams" />}
                 />
                 <Std.ScrollContainer>
                     <AdminModule_Teams_List />

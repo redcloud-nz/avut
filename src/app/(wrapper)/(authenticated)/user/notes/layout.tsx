@@ -10,7 +10,6 @@ import { Suspense } from "react";
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Std } from "@/components/blocks/std";
-import { HelpButton } from "@/components/docs/help-button";
 import {
     UserNotes_Breadcrumbs,
     UserNotes_List,
@@ -31,12 +30,10 @@ export default async function UserNotes_Layout(props: LayoutProps<"/user/notes">
 
     prefetch(trpc.userNotes.listNotes.queryOptions());
 
-    const helpButton = <HelpButton id="notes" />;
-
     return (
         <HydrateClient>
-            <Suspense fallback={<Std.Navbar breadcrumbs={["Notes"]} actions={helpButton} />}>
-                <UserNotes_Breadcrumbs actions={helpButton} />
+            <Suspense fallback={<Std.Navbar breadcrumbs={["Notes"]} />}>
+                <UserNotes_Breadcrumbs />
             </Suspense>
             <Hermes.Root>
                 <Hermes.List>

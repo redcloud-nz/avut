@@ -8,7 +8,6 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { HelpButton } from "@/components/docs/help-button";
 import { SkillPackageLink } from "@/components/entity-links/skill-package-link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -64,7 +63,6 @@ export function SkillTrack_SkillGroup_Content({
                     { label: group.skillPackage.name, href: packageHref },
                     group.name,
                 ]}
-                actions={<HelpButton id="skill-track/packages" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

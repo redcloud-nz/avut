@@ -13,6 +13,7 @@ import Link from "next/link";
 import { ComponentProps, Fragment, ReactNode, Suspense } from "react";
 
 import { AVUTLogo } from "@/components/art/avut-logo";
+import { PageHelpButton } from "@/components/docs/help-button";
 import { GlyphPage } from "@/components/glyph-page";
 import { PageBackground, pageBackgroundAttributes } from "@/components/page-background";
 import {
@@ -107,14 +108,13 @@ type NavbarProps = {
 } & (
     | {
           breadcrumbs?: (BreadcrumbItem | string)[];
-          /** Right-aligned controls (e.g. `<HelpButton>`), pinned to the far edge of the navbar. */
-          actions?: ReactNode;
           children?: never;
       }
-    | { children?: ReactNode; breadcrumbs?: never; actions?: never }
+    | { children?: ReactNode; breadcrumbs?: never }
 );
 
-function Navbar({ breadcrumbs, actions, children, sidebarTrigger = true }: NavbarProps) {
+/** The page's navbar. Help for the page (`PageHelpButton`) is pinned to its far right. */
+function Navbar({ breadcrumbs, children, sidebarTrigger = true }: NavbarProps) {
     return (
         <header
             slot="header"
@@ -128,7 +128,12 @@ function Navbar({ breadcrumbs, actions, children, sidebarTrigger = true }: Navba
             )}
             {breadcrumbs && <Breadcrumbs breadcrumbs={breadcrumbs} />}
             {children}
-            {actions && <div className="ml-auto flex items-center gap-1 pr-1">{actions}</div>}
+            <div className="ml-auto flex items-center gap-1 pr-1">
+                {/* `usePathname()` can suspend during prerender. */}
+                <Suspense fallback={null}>
+                    <PageHelpButton />
+                </Suspense>
+            </div>
         </header>
     );
 }

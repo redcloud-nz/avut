@@ -11,7 +11,6 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
 import { Teams_D4HCard } from "@/components/teams/d4h-link-card";
 import { Teams_TeamAccess_Card } from "@/components/teams/team-access-card";
@@ -66,7 +65,6 @@ export function TeamAdmin_Overview_Content() {
                     { label: team.name, href: route("/teams/[slug]", { slug: teamSlug }) },
                     "Admin",
                 ]}
-                actions={<HelpButton id="team-admin" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

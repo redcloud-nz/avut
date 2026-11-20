@@ -6,7 +6,6 @@
 "use client";
 
 import { useRouter, useSelectedLayoutSegment } from "next/navigation";
-import { ReactNode } from "react";
 
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
@@ -73,7 +72,7 @@ export function OrgNotes_List() {
 }
 
 /** The navbar for the org notes layout; names the selected note from the list query. */
-export function OrgNotes_Breadcrumbs({ actions }: { actions?: ReactNode }) {
+export function OrgNotes_Breadcrumbs() {
     const { organization, notes } = useOrgNotes();
 
     return (
@@ -83,7 +82,6 @@ export function OrgNotes_Breadcrumbs({ actions }: { actions?: ReactNode }) {
             noteHref={(noteId) =>
                 route("/orgs/[slug]/notes/[note_id]", { slug: organization.slug, note_id: noteId })
             }
-            actions={actions}
         />
     );
 }
