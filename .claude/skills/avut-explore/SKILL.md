@@ -48,7 +48,7 @@ Write real code from the start, because part of the point is seeing what the cod
 
 When the question is "which is better", build the variants and let the user compare. Pick the form that suits the case:
 
-- **Side by side on one page** — when the variants fit together on screen and don't need their real surroundings: a scratch page at `orgs/[slug]/system/scratch/<task>/page.tsx` (see its README; gitignored, delete when done).
+- **Side by side on one page** — when the variants fit together on screen and don't need their real surroundings: a scratch page at `orgs/[slug]/system/scratch/<task>/page.tsx` (see its README; tracked like any page and gated by the `scratch` flag, delete when done).
 - **Separate pages** — when each variant needs the full width, its own layout, or its own route to be judged fairly: `system/scratch/<task>/a/page.tsx`, `.../b/page.tsx`, and so on. Give the user every URL.
 - **In situ** — when a component has to be judged where it's actually used. Duplicate the component's file next to the original as `<name>.explore-<variant>.tsx`, keeping every export name the same, change the copy, and point the **single import** in the consumer at it. Swapping variants is then a one-line import change, and the original stays untouched. Say which variant is live after each swap.
 
@@ -96,7 +96,7 @@ If this session started a server on 3100, stop it once the work leaves the main 
 ### Drop
 
 1. Confirm first: this discards the work.
-2. `git restore` and remove any new files (scratch pages are gitignored, so remove those by hand), switch back to the branch from Step 1, `git branch -D explore/<slug>`, and restore the stash (by its SHA) if you made one: that's the user's work, and it's the one thing Drop must not lose. Stop your 3100 server if you started one.
+2. `git restore` and remove any new files, scratch pages included, then switch back to the branch from Step 1, `git branch -D explore/<slug>`, and restore the stash (by its SHA) if you made one: that's the user's work, and it's the one thing Drop must not lose. Stop your 3100 server if you started one.
 
 ## Common mistakes
 
