@@ -25,20 +25,12 @@ export default async function AdminModule_PersonnelList_Page(
 
     return (
         <HydrateClient>
-            <>
-                <Std.Navbar
-                    breadcrumbs={[
-                        { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
-                        {
-                            label: "Personnel",
-                            href: route("/orgs/[slug]/admin/personnel", { slug }),
-                        },
-                    ]}
+            <Std.ScrollContainer>
+                <AdminModule_Personnel_List
+                    organization={organization}
+                    breadcrumbs={[{ label: "Admin", href: route("/orgs/[slug]/admin", { slug }) }]}
                 />
-                <Std.ScrollContainer>
-                    <AdminModule_Personnel_List organization={organization} />
-                </Std.ScrollContainer>
-            </>
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

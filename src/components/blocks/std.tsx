@@ -13,6 +13,7 @@ import Link from "next/link";
 import { ComponentProps, Fragment, ReactNode, Suspense } from "react";
 
 import { AVUTLogo } from "@/components/art/avut-logo";
+import { Saratoga, type SaratogaBreadcrumb } from "@/components/blocks/saratoga";
 import { GlyphPage } from "@/components/glyph-page";
 import { PageBackground, pageBackgroundAttributes } from "@/components/page-background";
 import {
@@ -153,12 +154,17 @@ function ScrollContainer({ children, className, ...props }: ComponentProps<"main
     );
 }
 
+/**
+ * A nav-list page: the logo and `title` above a list of links. `breadcrumbs` (ancestors only)
+ * render top-left above the logo, for the index pages that sit below another page.
+ */
 function IndexPage({
     children,
     className,
     title,
+    breadcrumbs,
     ...props
-}: ComponentProps<"div"> & { title: string }) {
+}: ComponentProps<"div"> & { title: string; breadcrumbs?: SaratogaBreadcrumb[] }) {
     return (
         <div
             data-slot="std-index-page"
@@ -167,6 +173,7 @@ function IndexPage({
         >
             {/* Index pages are low-traffic, so they show the glyph background. */}
             <GlyphPage />
+            {breadcrumbs && <Saratoga.Breadcrumbs items={breadcrumbs} />}
             {/* Sized to its content so the glyph halo hugs the logo and title. */}
             <div className="glyph-halo mx-auto my-4 flex w-fit flex-col items-center gap-4">
                 <AVUTLogo />

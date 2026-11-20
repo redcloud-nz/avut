@@ -9,14 +9,16 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { ObjectHistory } from "@/components/history/object-history";
 import { isNoteNotFound, NoteGoneBoundary } from "@/components/notes/note-gone-boundary";
+import { notesBreadcrumbs } from "@/components/notes/notes-breadcrumbs";
 import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 import { OrganizationNoteId } from "@/lib/schemas/organization-note";
 import { trpc } from "@/trpc/client";
 
 /**
- * An org note's History, in the notes detail pane. The notes layout supplies the navbar (whose
- * breadcrumbs lead back to the note), and the pane scrolls, so this renders only the history. A
- * note that's gone says so instead, as on the note itself (see `NoteGoneBoundary`).
+ * An org note's History, in the notes detail pane, with a trail leading back to the note. The pane
+ * scrolls, so this renders only the history. A note that's gone says so instead, as on the note
+ * itself (see `NoteGoneBoundary`).
  */
 export function OrgNoteHistory_Content({ noteId }: { noteId: OrganizationNoteId }) {
     const organization = useOrganization();
@@ -44,6 +46,16 @@ function OrgNoteHistory_Body({ noteId }: { noteId: OrganizationNoteId }) {
             objectType="OrganizationNote"
             objectId={noteId}
             title={`${note.title} — History`}
+            breadcrumbs={notesBreadcrumbs(
+                route("/orgs/[slug]/notes", { slug: organization.slug }),
+                {
+                    title: note.title,
+                    href: route("/orgs/[slug]/notes/[note_id]", {
+                        slug: organization.slug,
+                        note_id: noteId,
+                    }),
+                },
+            )}
         />
     );
 }

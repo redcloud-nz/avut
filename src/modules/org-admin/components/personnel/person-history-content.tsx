@@ -6,7 +6,6 @@
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { Std } from "@/components/blocks/std";
 import { ObjectHistory } from "@/components/history/object-history";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -21,34 +20,27 @@ export function AdminModule_PersonHistory_Content({ personId }: { personId: Pers
     );
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    {
-                        label: "Admin",
-                        href: route("/orgs/[slug]/admin", { slug: organization.slug }),
-                    },
-                    {
-                        label: "Personnel",
-                        href: route("/orgs/[slug]/admin/personnel", { slug: organization.slug }),
-                    },
-                    {
-                        label: person.name,
-                        href: route("/orgs/[slug]/admin/personnel/[person_id]", {
-                            slug: organization.slug,
-                            person_id: personId,
-                        }),
-                    },
-                    "History",
-                ]}
-            />
-            <Std.ScrollContainer>
-                <ObjectHistory
-                    objectType="Person"
-                    objectId={personId}
-                    title={`${person.name} — History`}
-                />
-            </Std.ScrollContainer>
-        </>
+        <ObjectHistory
+            objectType="Person"
+            objectId={personId}
+            title={`${person.name} — History`}
+            breadcrumbs={[
+                {
+                    label: "Admin",
+                    href: route("/orgs/[slug]/admin", { slug: organization.slug }),
+                },
+                {
+                    label: "Personnel",
+                    href: route("/orgs/[slug]/admin/personnel", { slug: organization.slug }),
+                },
+                {
+                    label: person.name,
+                    href: route("/orgs/[slug]/admin/personnel/[person_id]", {
+                        slug: organization.slug,
+                        person_id: personId,
+                    }),
+                },
+            ]}
+        />
     );
 }

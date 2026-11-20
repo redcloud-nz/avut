@@ -9,7 +9,6 @@ import { Suspense } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
 import { Badge } from "@/components/ui/badge";
 import { CardContent, CardLoadingFallback } from "@/components/ui/card";
@@ -33,80 +32,77 @@ export function AdminModule_Person_Content({ personId }: { personId: PersonId })
     );
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
+        <Saratoga.Root>
+            <Saratoga.Breadcrumbs
+                items={[
                     {
                         label: "Admin",
                         href: route("/orgs/[slug]/admin", { slug: organization.slug }),
                     },
                     {
                         label: "Personnel",
-                        href: route("/orgs/[slug]/admin/personnel", { slug: organization.slug }),
+                        href: route("/orgs/[slug]/admin/personnel", {
+                            slug: organization.slug,
+                        }),
                     },
-                    person.name,
                 ]}
             />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title
-                            badges={
-                                person.status !== "Active" && (
-                                    <Badge variant="outline">{person.status}</Badge>
-                                )
-                            }
-                        >
-                            {person.name}
-                        </Saratoga.Title>
-                        <Saratoga.Actions>
-                            <AdminModule_PersonMenu person={person} />
-                        </Saratoga.Actions>
-                    </Saratoga.Header>
+            <Saratoga.Header>
+                <Saratoga.Title
+                    badges={
+                        person.status !== "Active" && (
+                            <Badge variant="outline">{person.status}</Badge>
+                        )
+                    }
+                >
+                    {person.name}
+                </Saratoga.Title>
+                <Saratoga.Actions>
+                    <AdminModule_PersonMenu person={person} />
+                </Saratoga.Actions>
+            </Saratoga.Header>
 
-                    <Saratoga.Columns>
-                        <Saratoga.Column slot="main">
-                            <RecordCard
-                                label="Person"
-                                updatedAt={person.updatedAt}
-                                historyHref={route(
-                                    "/orgs/[slug]/admin/personnel/[person_id]/history",
-                                    { slug: organization.slug, person_id: person.id },
-                                )}
-                                action={
-                                    <Protect permissions={{ person: ["update"] }}>
-                                        <AdminModule_UpdatePerson_Dialog person={person} />
-                                    </Protect>
-                                }
-                            >
-                                <CardContent>
-                                    <DataList>
-                                        <RecordCardId label="Person ID" id={person.id} />
-                                        <DataItem>
-                                            <DataItemTitle>Name</DataItemTitle>
-                                            <DataItemValue>{person.name}</DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Email</DataItemTitle>
-                                            <DataItemValue>{person.email}</DataItemValue>
-                                        </DataItem>
-                                    </DataList>
-                                </CardContent>
-                            </RecordCard>
-                            <Protect permissions={{ member: ["view"] }}>
-                                <Suspense fallback={<CardLoadingFallback />}>
-                                    <AdminModule_Person_LinkedUser_Card personId={person.id} />
-                                </Suspense>
+            <Saratoga.Columns>
+                <Saratoga.Column slot="main">
+                    <RecordCard
+                        label="Person"
+                        updatedAt={person.updatedAt}
+                        historyHref={route("/orgs/[slug]/admin/personnel/[person_id]/history", {
+                            slug: organization.slug,
+                            person_id: person.id,
+                        })}
+                        action={
+                            <Protect permissions={{ person: ["update"] }}>
+                                <AdminModule_UpdatePerson_Dialog person={person} />
                             </Protect>
-                        </Saratoga.Column>
-                        <Saratoga.Column slot="secondary">
-                            <Suspense fallback={<CardLoadingFallback />}>
-                                <AdminModule_Person_TeamMemberships_Card person={person} />
-                            </Suspense>
-                        </Saratoga.Column>
-                    </Saratoga.Columns>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+                        }
+                    >
+                        <CardContent>
+                            <DataList>
+                                <RecordCardId label="Person ID" id={person.id} />
+                                <DataItem>
+                                    <DataItemTitle>Name</DataItemTitle>
+                                    <DataItemValue>{person.name}</DataItemValue>
+                                </DataItem>
+                                <DataItem>
+                                    <DataItemTitle>Email</DataItemTitle>
+                                    <DataItemValue>{person.email}</DataItemValue>
+                                </DataItem>
+                            </DataList>
+                        </CardContent>
+                    </RecordCard>
+                    <Protect permissions={{ member: ["view"] }}>
+                        <Suspense fallback={<CardLoadingFallback />}>
+                            <AdminModule_Person_LinkedUser_Card personId={person.id} />
+                        </Suspense>
+                    </Protect>
+                </Saratoga.Column>
+                <Saratoga.Column slot="secondary">
+                    <Suspense fallback={<CardLoadingFallback />}>
+                        <AdminModule_Person_TeamMemberships_Card person={person} />
+                    </Suspense>
+                </Saratoga.Column>
+            </Saratoga.Columns>
+        </Saratoga.Root>
     );
 }

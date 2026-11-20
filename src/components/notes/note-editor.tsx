@@ -7,6 +7,7 @@
 
 import { FormEvent, ReactNode, useEffect, useRef, useState } from "react";
 
+import type { SaratogaBreadcrumb } from "@/components/blocks/saratoga";
 import { MarkdownEditor } from "@/components/markdown/editor";
 import { Button, MutationButton } from "@/components/ui/button";
 import { NoteTitle } from "@/lib/schemas/note-fields";
@@ -29,6 +30,8 @@ interface NoteEditorProps {
     onCancel: () => void;
     /** The status of the save mutation. */
     status: "error" | "pending" | "success" | "idle";
+    /** The page's ancestors, shown above the note, as in view mode. */
+    breadcrumbs?: SaratogaBreadcrumb[];
 }
 
 /**
@@ -36,7 +39,14 @@ interface NoteEditorProps {
  * place and Cancel/Save where the Edit controls were. Saving is explicit (no autosave). The editor
  * holds its own draft, so remount it (e.g. with a `key`) to start over from a different note.
  */
-export function NoteEditor({ note, byline, onSave, onCancel, status }: NoteEditorProps) {
+export function NoteEditor({
+    note,
+    byline,
+    onSave,
+    onCancel,
+    status,
+    breadcrumbs,
+}: NoteEditorProps) {
     const [title, setTitle] = useState(note.title);
     const [content, setContent] = useState(note.content);
     const [titleError, setTitleError] = useState<string | null>(null);
@@ -74,6 +84,7 @@ export function NoteEditor({ note, byline, onSave, onCancel, status }: NoteEdito
                     titleError ? <span className="text-destructive">{titleError}</span> : byline
                 }
                 className="h-full"
+                breadcrumbs={breadcrumbs}
                 title={
                     <input
                         aria-label="Title"

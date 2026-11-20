@@ -9,7 +9,7 @@ import { useId, useMemo, type ReactNode } from "react";
 
 import { useSuspenseInfiniteQuery } from "@tanstack/react-query";
 
-import { Saratoga } from "@/components/blocks/saratoga";
+import { Saratoga, type SaratogaBreadcrumb } from "@/components/blocks/saratoga";
 import { PersonLink } from "@/components/entity-links/person-link";
 import { TeamLink } from "@/components/entity-links/team-link";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,8 @@ export type ObjectHistoryProps = {
     objectId: string;
     /** The page heading. Defaults to "History". */
     title?: ReactNode;
+    /** The page's ancestors (the record itself last), shown above the heading. */
+    breadcrumbs?: SaratogaBreadcrumb[];
 } & (
     | {
           /** An organization's object, read with `history.listObjectHistory`. The default. */
@@ -85,10 +87,12 @@ function OrgObjectHistory({
     objectType,
     objectId,
     title,
+    breadcrumbs,
 }: {
     objectType: HistoryObjectType;
     objectId: string;
     title?: ReactNode;
+    breadcrumbs?: SaratogaBreadcrumb[];
 }) {
     const organization = useOrganization();
 
@@ -99,17 +103,26 @@ function OrgObjectHistory({
         ),
     );
 
-    return <ObjectHistoryList query={query} pageType={objectType} title={title} />;
+    return (
+        <ObjectHistoryList
+            query={query}
+            pageType={objectType}
+            title={title}
+            breadcrumbs={breadcrumbs}
+        />
+    );
 }
 
 function OwnObjectHistory({
     objectType,
     objectId,
     title,
+    breadcrumbs,
 }: {
     objectType: OwnHistoryObjectType;
     objectId: string;
     title?: ReactNode;
+    breadcrumbs?: SaratogaBreadcrumb[];
 }) {
     const query = useSuspenseInfiniteQuery(
         trpc.history.listOwnObjectHistory.infiniteQueryOptions(
@@ -118,7 +131,14 @@ function OwnObjectHistory({
         ),
     );
 
-    return <ObjectHistoryList query={query} pageType={objectType} title={title} />;
+    return (
+        <ObjectHistoryList
+            query={query}
+            pageType={objectType}
+            title={title}
+            breadcrumbs={breadcrumbs}
+        />
+    );
 }
 
 interface HistoryQuery {
@@ -132,10 +152,12 @@ function ObjectHistoryList({
     query: { data, hasNextPage, fetchNextPage, isFetchingNextPage },
     pageType,
     title = "History",
+    breadcrumbs,
 }: {
     query: HistoryQuery;
     pageType: string;
     title?: ReactNode;
+    breadcrumbs?: SaratogaBreadcrumb[];
 }) {
     const titleId = useId();
 
@@ -154,6 +176,7 @@ function ObjectHistoryList({
 
     return (
         <Saratoga.Root>
+            {breadcrumbs && <Saratoga.Breadcrumbs items={breadcrumbs} />}
             <Saratoga.Header>
                 <Saratoga.Title id={titleId}>{title}</Saratoga.Title>
             </Saratoga.Header>

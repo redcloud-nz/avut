@@ -7,6 +7,7 @@
 
 import { Metadata } from "next";
 
+import { Std } from "@/components/blocks/std";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { PersonId } from "@/lib/schemas/person";
 import { AdminModule_PersonHistory_Content } from "@/modules/org-admin/components/personnel/person-history-content";
@@ -46,7 +47,9 @@ export default async function AdminModule_PersonHistory_Page(props: Props) {
 
     return (
         <HydrateClient>
-            <AdminModule_PersonHistory_Content personId={personId} />
+            <Std.ScrollContainer>
+                <AdminModule_PersonHistory_Content personId={personId} />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

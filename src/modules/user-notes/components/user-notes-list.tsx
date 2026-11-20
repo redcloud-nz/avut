@@ -10,7 +10,6 @@ import { useRouter, useSelectedLayoutSegment } from "next/navigation";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
 import { userNotesEffects } from "@/client/user-notes-effects";
-import { NotesBreadcrumbs } from "@/components/notes/notes-breadcrumbs";
 import { NotesList } from "@/components/notes/notes-list";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
@@ -55,11 +54,4 @@ export function UserNotes_List() {
             creating={createMutation.isPending}
         />
     );
-}
-
-/** The navbar for the personal notes layout; names the selected note from the list query. */
-export function UserNotes_Breadcrumbs() {
-    const notes = useUserNotes();
-
-    return <NotesBreadcrumbs notes={notes} listHref="/user/notes" noteHref={noteHref} />;
 }

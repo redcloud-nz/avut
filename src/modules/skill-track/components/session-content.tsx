@@ -11,7 +11,6 @@ import { Suspense } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { TeamLink } from "@/components/entity-links/team-link";
 import { Protect } from "@/components/protect";
 import { Badge } from "@/components/ui/badge";
@@ -52,156 +51,141 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
 
     return (
         <>
-            <Std.Navbar
-                breadcrumbs={[
-                    {
-                        label: "Skill Track",
-                        href: route("/orgs/[slug]/skill-track", { slug: organization.slug }),
-                    },
-                    {
-                        label: "Sessions",
-                        href: route("/orgs/[slug]/skill-track/sessions", {
-                            slug: organization.slug,
-                        }),
-                    },
-                    { label: session.name || session.id },
-                ]}
-            />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title
-                            badges={
-                                session.status !== "Draft" && (
-                                    <Badge variant="outline">
-                                        {SKILL_CHECK_STATUS_LABELS[session.status] ??
-                                            session.status}
-                                    </Badge>
+            <Saratoga.Root>
+                <Saratoga.Breadcrumbs
+                    items={[
+                        {
+                            label: "Skill Track",
+                            href: route("/orgs/[slug]/skill-track", { slug: organization.slug }),
+                        },
+                        {
+                            label: "Sessions",
+                            href: route("/orgs/[slug]/skill-track/sessions", {
+                                slug: organization.slug,
+                            }),
+                        },
+                    ]}
+                />
+                <Saratoga.Header>
+                    <Saratoga.Title
+                        badges={
+                            session.status !== "Draft" && (
+                                <Badge variant="outline">
+                                    {SKILL_CHECK_STATUS_LABELS[session.status] ?? session.status}
+                                </Badge>
+                            )
+                        }
+                    >
+                        {session.name || session.id}
+                    </Saratoga.Title>
+                    <Saratoga.Actions>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline">
+                                    Record <ChevronDownIcon />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuGroup>
+                                    <DropdownMenuLabel>Record skill checks</DropdownMenuLabel>
+                                    {/* An approved session's checks are locked until it's
+                                            reopened, so the entry pages have nothing to record. */}
+                                    {isApproved ? (
+                                        <>
+                                            <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                                                Locked while the session is approved
+                                            </DropdownMenuLabel>
+                                            <DropdownMenuItem disabled>By Person</DropdownMenuItem>
+                                            <DropdownMenuItem disabled>By Skill</DropdownMenuItem>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <DropdownMenuItem asChild>
+                                                <Link
+                                                    href={route(
+                                                        "/orgs/[slug]/skill-track/sessions/[session_id]/by-person",
+                                                        {
+                                                            slug: organization.slug,
+                                                            session_id: session.id,
+                                                        },
+                                                    )}
+                                                >
+                                                    By Person
+                                                </Link>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem asChild>
+                                                <Link
+                                                    href={route(
+                                                        "/orgs/[slug]/skill-track/sessions/[session_id]/by-skill",
+                                                        {
+                                                            slug: organization.slug,
+                                                            session_id: session.id,
+                                                        },
+                                                    )}
+                                                >
+                                                    By Skill
+                                                </Link>
+                                            </DropdownMenuItem>
+                                        </>
+                                    )}
+                                </DropdownMenuGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        <SkillsModule_SessionMenu session={session} />
+                    </Saratoga.Actions>
+                </Saratoga.Header>
+                <Saratoga.Columns>
+                    <Saratoga.Column slot="main">
+                        <RecordCard
+                            label="Session"
+                            updatedAt={session.updatedAt}
+                            historyHref={route(
+                                "/orgs/[slug]/skill-track/sessions/[session_id]/history",
+                                { slug: organization.slug, session_id: session.id },
+                            )}
+                            action={
+                                // Not mounted when approved, so ?action=update can't open it either.
+                                !isApproved && (
+                                    <Protect permissions={{ skillCheckSession: ["update"] }}>
+                                        <SkillsModule_UpdateSession_Dialog session={session} />
+                                    </Protect>
                                 )
                             }
                         >
-                            {session.name || session.id}
-                        </Saratoga.Title>
-                        <Saratoga.Actions>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline">
-                                        Record <ChevronDownIcon />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuGroup>
-                                        <DropdownMenuLabel>Record skill checks</DropdownMenuLabel>
-                                        {/* An approved session's checks are locked until it's
-                                            reopened, so the entry pages have nothing to record. */}
-                                        {isApproved ? (
-                                            <>
-                                                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-                                                    Locked while the session is approved
-                                                </DropdownMenuLabel>
-                                                <DropdownMenuItem disabled>
-                                                    By Person
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem disabled>
-                                                    By Skill
-                                                </DropdownMenuItem>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <DropdownMenuItem asChild>
-                                                    <Link
-                                                        href={route(
-                                                            "/orgs/[slug]/skill-track/sessions/[session_id]/by-person",
-                                                            {
-                                                                slug: organization.slug,
-                                                                session_id: session.id,
-                                                            },
-                                                        )}
-                                                    >
-                                                        By Person
-                                                    </Link>
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem asChild>
-                                                    <Link
-                                                        href={route(
-                                                            "/orgs/[slug]/skill-track/sessions/[session_id]/by-skill",
-                                                            {
-                                                                slug: organization.slug,
-                                                                session_id: session.id,
-                                                            },
-                                                        )}
-                                                    >
-                                                        By Skill
-                                                    </Link>
-                                                </DropdownMenuItem>
-                                            </>
-                                        )}
-                                    </DropdownMenuGroup>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                            <SkillsModule_SessionMenu session={session} />
-                        </Saratoga.Actions>
-                    </Saratoga.Header>
-                    <Saratoga.Columns>
-                        <Saratoga.Column slot="main">
-                            <RecordCard
-                                label="Session"
-                                updatedAt={session.updatedAt}
-                                historyHref={route(
-                                    "/orgs/[slug]/skill-track/sessions/[session_id]/history",
-                                    { slug: organization.slug, session_id: session.id },
-                                )}
-                                action={
-                                    // Not mounted when approved, so ?action=update can't open it either.
-                                    !isApproved && (
-                                        <Protect permissions={{ skillCheckSession: ["update"] }}>
-                                            <SkillsModule_UpdateSession_Dialog session={session} />
-                                        </Protect>
-                                    )
-                                }
-                            >
-                                <CardContent>
-                                    <DataList>
-                                        <RecordCardId label="Session ID" id={session.id} />
-                                        <DataItem>
-                                            <DataItemTitle>Name</DataItemTitle>
-                                            <DataItemValue>{session.name}</DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>When</DataItemTitle>
-                                            <DataItemValue>
-                                                {formatSessionWhen(
-                                                    session.startsAt,
-                                                    session.endsAt,
-                                                )}
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Team</DataItemTitle>
-                                            <DataItemValue>
-                                                {session.team ? (
-                                                    <TeamLink team={session.team} />
-                                                ) : (
-                                                    "—"
-                                                )}
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Notes</DataItemTitle>
-                                            <DataItemValue>{session.notes}</DataItemValue>
-                                        </DataItem>
-                                    </DataList>
-                                </CardContent>
-                            </RecordCard>
-                        </Saratoga.Column>
-                        <Saratoga.Column slot="secondary">
-                            <Suspense fallback={<CardLoadingFallback />}>
-                                <SkillsModule_Session_Contents_Card sessionId={session.id} />
-                            </Suspense>
-                        </Saratoga.Column>
-                    </Saratoga.Columns>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
+                            <CardContent>
+                                <DataList>
+                                    <RecordCardId label="Session ID" id={session.id} />
+                                    <DataItem>
+                                        <DataItemTitle>Name</DataItemTitle>
+                                        <DataItemValue>{session.name}</DataItemValue>
+                                    </DataItem>
+                                    <DataItem>
+                                        <DataItemTitle>When</DataItemTitle>
+                                        <DataItemValue>
+                                            {formatSessionWhen(session.startsAt, session.endsAt)}
+                                        </DataItemValue>
+                                    </DataItem>
+                                    <DataItem>
+                                        <DataItemTitle>Team</DataItemTitle>
+                                        <DataItemValue>
+                                            {session.team ? <TeamLink team={session.team} /> : "—"}
+                                        </DataItemValue>
+                                    </DataItem>
+                                    <DataItem>
+                                        <DataItemTitle>Notes</DataItemTitle>
+                                        <DataItemValue>{session.notes}</DataItemValue>
+                                    </DataItem>
+                                </DataList>
+                            </CardContent>
+                        </RecordCard>
+                    </Saratoga.Column>
+                    <Saratoga.Column slot="secondary">
+                        <Suspense fallback={<CardLoadingFallback />}>
+                            <SkillsModule_Session_Contents_Card sessionId={session.id} />
+                        </Suspense>
+                    </Saratoga.Column>
+                </Saratoga.Columns>
+            </Saratoga.Root>
             <SkillTrack_SessionConfigDialogs sessionId={session.id} />
         </>
     );

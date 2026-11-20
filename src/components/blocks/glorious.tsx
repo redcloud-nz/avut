@@ -14,6 +14,7 @@
 import { ChevronDownIcon } from "lucide-react";
 import { ComponentProps, ReactNode, useState } from "react";
 
+import { Saratoga, type SaratogaBreadcrumb } from "@/components/blocks/saratoga";
 import { cn } from "@/lib/utils";
 
 function GloriousRoot({ children, className, ...props }: ComponentProps<"main">) {
@@ -47,6 +48,21 @@ function GloriousHeader({ children, className, ...props }: ComponentProps<"heade
             {children}
         </header>
     );
+}
+
+/**
+ * The page's breadcrumb trail (ancestors only), the same component as `Saratoga.Breadcrumbs`.
+ * Place it inside `Glorious.Header`, before `Glorious.Title`: it takes the first row of the
+ * title column, beside `Glorious.Actions`.
+ */
+function GloriousBreadcrumbs({
+    items,
+    className,
+}: {
+    items: SaratogaBreadcrumb[];
+    className?: string;
+}) {
+    return <Saratoga.Breadcrumbs items={items} className={cn("col-start-1", className)} />;
 }
 
 function GloriousTitle({ children, className, ...props }: ComponentProps<"h1">) {
@@ -187,6 +203,7 @@ function GloriousGroupSection({
 export const Glorious = {
     Root: GloriousRoot,
     Header: GloriousHeader,
+    Breadcrumbs: GloriousBreadcrumbs,
     Title: GloriousTitle,
     Subtitle: GloriousSubtitle,
     Actions: GloriousActions,

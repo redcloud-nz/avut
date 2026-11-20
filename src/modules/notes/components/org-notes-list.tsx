@@ -10,7 +10,6 @@ import { useRouter, useSelectedLayoutSegment } from "next/navigation";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
 import { organizationNotesEffects } from "@/client/organization-notes-effects";
-import { NotesBreadcrumbs } from "@/components/notes/notes-breadcrumbs";
 import { NotesList } from "@/components/notes/notes-list";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
@@ -67,21 +66,6 @@ export function OrgNotes_List() {
                     : undefined
             }
             creating={createMutation.isPending}
-        />
-    );
-}
-
-/** The navbar for the org notes layout; names the selected note from the list query. */
-export function OrgNotes_Breadcrumbs() {
-    const { organization, notes } = useOrgNotes();
-
-    return (
-        <NotesBreadcrumbs
-            notes={notes}
-            listHref={route("/orgs/[slug]/notes", { slug: organization.slug })}
-            noteHref={(noteId) =>
-                route("/orgs/[slug]/notes/[note_id]", { slug: organization.slug, note_id: noteId })
-            }
         />
     );
 }
