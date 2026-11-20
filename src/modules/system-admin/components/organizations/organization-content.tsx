@@ -4,26 +4,29 @@
  */
 "use client";
 
-import { ExternalLinkIcon } from "lucide-react";
+import { ChevronRightIcon, ExternalLinkIcon } from "lucide-react";
 import Link from "next/link";
+import { useId } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { OrganizationGroupLink } from "@/components/entity-links/organization-group-link";
 import { UserLink } from "@/components/entity-links/user-link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import {
-    DataItem,
-    DataItemDateValue,
-    DataItemTitle,
-    DataItemValue,
-    DataList,
-} from "@/components/ui/data-item";
+    Item,
+    ItemActions,
+    ItemContent,
+    ItemDescription,
+    ItemGroup,
+    ItemTitle,
+} from "@/components/ui/item";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { isModuleUsable, type ModuleFlagState } from "@/lib/module-flags";
 import { Modules, type ModuleId } from "@/lib/modules";
 import { hasOwnerRole } from "@/lib/permissions";
@@ -35,7 +38,6 @@ import {
 } from "@/lib/schemas/organization-group";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { UserId } from "@/lib/schemas/user";
-import { cn } from "@/lib/utils";
 import { trpc } from "@/trpc/client";
 
 import { SystemAdmin_AddMember_Dialog } from "./add-member-dialog";
@@ -73,6 +75,8 @@ export function SystemAdmin_Organization_Content({
         ),
     );
     const ownerCount = organization.members.filter((m) => hasOwnerRole(m.role)).length;
+    const groupsHeadingId = useId();
+    const recordCountsHeadingId = useId();
 
     return (
         <>
@@ -111,35 +115,26 @@ export function SystemAdmin_Organization_Content({
 
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Identity</CardTitle>
-                                </CardHeader>
+                            <RecordCard label="Organisation">
                                 <CardContent>
                                     <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Organisation ID</DataItemTitle>
-                                            <DataItemValue className="font-mono">
-                                                {organization.id}
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem inline>
+                                        <RecordCardId
+                                            label="Organisation ID"
+                                            id={organization.id}
+                                        />
+                                        <DataItem>
                                             <DataItemTitle>Name</DataItemTitle>
                                             <DataItemValue>{organization.name}</DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Slug</DataItemTitle>
                                             <DataItemValue className="font-mono">
                                                 {organization.slug}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Created</DataItemTitle>
-                                            <DataItemDateValue date={organization.createdAt} />
-                                        </DataItem>
                                     </DataList>
                                 </CardContent>
-                            </Card>
+                            </RecordCard>
 
                             <Card>
                                 <CardHeader>
@@ -260,76 +255,60 @@ export function SystemAdmin_Organization_Content({
                                     )}
                                 </CardContent>
                             </Card>
-
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Groups</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    {groupMemberships.length === 0 ? (
-                                        <p className="text-sm text-muted-foreground">
-                                            Not in any group.
-                                        </p>
-                                    ) : (
-                                        <table className="w-full text-sm">
-                                            <thead>
-                                                <tr className="text-left text-muted-foreground">
-                                                    <th className="py-1 pr-4 font-medium">Group</th>
-                                                    <th className="py-1 pr-4 font-medium">Role</th>
-                                                    <th className="py-1 font-medium">Membership</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {groupMemberships.map((membership) => {
-                                                    const active = membership.status === "Active";
-                                                    return (
-                                                        <tr
-                                                            key={membership.id}
-                                                            className={cn(
-                                                                "border-t",
-                                                                !active && "text-muted-foreground",
-                                                            )}
-                                                        >
-                                                            <td className="py-1 pr-4">
-                                                                <OrganizationGroupLink
-                                                                    group={membership.group}
-                                                                />
-                                                            </td>
-                                                            <td className="py-1 pr-4">
-                                                                {
-                                                                    OrganizationGroupRole
-                                                                        .displayNames[
-                                                                        membership.role
-                                                                    ]
-                                                                }
-                                                            </td>
-                                                            <td className="py-1">
-                                                                <Badge
-                                                                    variant={
-                                                                        active
-                                                                            ? "secondary"
-                                                                            : "outline"
-                                                                    }
-                                                                >
-                                                                    {
-                                                                        OrganizationGroupMembershipStatus
-                                                                            .displayNames[
-                                                                            membership.status
-                                                                        ]
-                                                                    }
-                                                                </Badge>
-                                                            </td>
-                                                        </tr>
-                                                    );
-                                                })}
-                                            </tbody>
-                                        </table>
-                                    )}
-                                </CardContent>
-                            </Card>
                         </Saratoga.Column>
 
                         <Saratoga.Column slot="secondary">
+                            <section aria-labelledby={groupsHeadingId} className="space-y-2">
+                                <div className="flex min-h-8 items-center justify-between gap-2 pl-1">
+                                    <h2 id={groupsHeadingId} className="text-base font-medium">
+                                        Groups
+                                    </h2>
+                                </div>
+                                {groupMemberships.length === 0 ? (
+                                    <p className="pl-1 text-sm text-muted-foreground">
+                                        Not in any group.
+                                    </p>
+                                ) : (
+                                    <ItemGroup className="gap-2">
+                                        {groupMemberships.map((membership) => (
+                                            <Item
+                                                key={membership.id}
+                                                variant="outline"
+                                                role="listitem"
+                                                asChild
+                                            >
+                                                <Link
+                                                    href={route("/system/admin/groups/[groupId]", {
+                                                        groupId: membership.group.id,
+                                                    })}
+                                                >
+                                                    <ItemContent>
+                                                        <ItemTitle>
+                                                            {membership.group.name}
+                                                        </ItemTitle>
+                                                        <ItemDescription>
+                                                            {
+                                                                OrganizationGroupRole.displayNames[
+                                                                    membership.role
+                                                                ]
+                                                            }
+                                                            {membership.status !== "Active" &&
+                                                                ` · ${OrganizationGroupMembershipStatus.displayNames[membership.status]}`}
+                                                        </ItemDescription>
+                                                    </ItemContent>
+                                                    <ItemActions>
+                                                        <ChevronRightIcon
+                                                            aria-hidden
+                                                            className="size-4 text-muted-foreground"
+                                                        />
+                                                    </ItemActions>
+                                                </Link>
+                                            </Item>
+                                        ))}
+                                    </ItemGroup>
+                                )}
+                            </section>
+
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Enabled Modules</CardTitle>
@@ -353,47 +332,45 @@ export function SystemAdmin_Organization_Content({
                                 </CardContent>
                             </Card>
 
-                            <Card>
-                                <CardContent>
-                                    <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>D4H access tokens</DataItemTitle>
-                                            <DataItemValue>
-                                                {organization.d4hTokenCount}
-                                            </DataItemValue>
-                                        </DataItem>
-                                    </DataList>
-                                </CardContent>
-                            </Card>
-
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Record Counts</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <dl className="divide-y divide-border/50 text-sm">
-                                        {Object.entries(organization.recordCounts).map(
-                                            ([key, count]) => (
-                                                <div
-                                                    key={key}
-                                                    className="flex items-center justify-between gap-4 py-2 first:pt-0 last:pb-0"
-                                                >
-                                                    <dt className="text-muted-foreground">
-                                                        {RECORD_COUNT_LABELS[key] ?? key}
-                                                    </dt>
-                                                    <dd className="font-medium tabular-nums">
-                                                        {count}
-                                                    </dd>
-                                                </div>
-                                            ),
-                                        )}
-                                    </dl>
-                                </CardContent>
-                            </Card>
+                            <section aria-labelledby={recordCountsHeadingId} className="space-y-2">
+                                <div className="flex min-h-8 items-center pl-1">
+                                    <h2
+                                        id={recordCountsHeadingId}
+                                        className="text-base font-medium"
+                                    >
+                                        Record Counts
+                                    </h2>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {Object.entries(organization.recordCounts).map(
+                                        ([key, count]) => (
+                                            <Metric
+                                                key={key}
+                                                label={RECORD_COUNT_LABELS[key] ?? key}
+                                                value={count}
+                                            />
+                                        ),
+                                    )}
+                                    <Metric
+                                        label="D4H access tokens"
+                                        value={organization.d4hTokenCount}
+                                    />
+                                </div>
+                            </section>
                         </Saratoga.Column>
                     </Saratoga.Columns>
                 </Saratoga.Root>
             </Std.ScrollContainer>
         </>
+    );
+}
+
+/** A compact count tile: the number over a small muted label. */
+function Metric({ label, value }: { label: string; value: number }) {
+    return (
+        <div className="rounded-lg border bg-card px-3 py-2">
+            <div className="text-2xl leading-tight font-semibold tabular-nums">{value}</div>
+            <div className="text-xs text-muted-foreground">{label}</div>
+        </div>
     );
 }
