@@ -63,8 +63,8 @@ export function AdminModule_TeamLinks_Card({ team }: { team: TeamData }) {
                     </Protect>
                 )}
             </div>
+            {teamMembersQuery.isLoading && <Skeleton className="h-16 w-full" />}
             <ItemGroup className="gap-2">
-                {teamMembersQuery.isLoading && <Skeleton className="h-16 w-full" />}
                 {teamMembersQuery.data && (
                     <Item variant="outline" role="listitem" asChild>
                         <Link

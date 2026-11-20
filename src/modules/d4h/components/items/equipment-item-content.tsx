@@ -201,6 +201,12 @@ export function D4HModule_EquipmentItem_Content({
                                     <DataList>
                                         <RecordCardId label="D4H ID" id={String(item.id)} />
                                         <DataItem>
+                                            <DataItemTitle>Ref</DataItemTitle>
+                                            <DataItemValue>
+                                                <D4HItemRef value={item.ref} />
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem>
                                             <DataItemTitle>Team</DataItemTitle>
                                             <DataItemValue>
                                                 <D4HTeamLink team={team} />

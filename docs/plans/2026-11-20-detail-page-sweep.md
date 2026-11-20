@@ -91,7 +91,7 @@ For every page in Tasks 2–7: replace the "… Details"/"… Information"/"Iden
 
 ## Docs impact
 
-Every detail page's cards change (record cards with a small type label, collapsible, Updated footer; status as a title badge; related lists as tiles): re-shoot detail-page screenshots in `content/docs/admin/{personnel,teams,users,organization}.mdx`, `skill-track/{packages,sessions}.mdx`, `skill-package-builder/index.mdx`, `d4h-i3/index.mdx`, `d4h/index.mdx`, fix "Details card" wording, and the "Subscribed · Withdrawn" text in `skill-track/packages.mdx` and `skill-package-builder/index.mdx` (now a Withdrawn/Deleted title badge and a warning box); note it on #494.
+Every detail page's cards change (record cards with a small type label, collapsible, Updated footer; status as a title badge; related lists as tiles): re-shoot detail-page screenshots in `content/docs/admin/{personnel,teams,users,organization}.mdx`, `skill-track/{packages,sessions}.mdx`, `skill-package-builder/index.mdx`, `d4h-i3/index.mdx`, `d4h/index.mdx`, fix "Details card" wording, and the "Subscribed · Withdrawn" text in `skill-track/packages.mdx` and `skill-package-builder/index.mdx` (now a Withdrawn/Deleted title badge and a warning box), and the team page's "D4H Integration" card in `admin/teams.mdx` (now "Linked D4H Team", shown only once linked; linking is in the menu); note it on #494.
 
 ## Out of scope
 
