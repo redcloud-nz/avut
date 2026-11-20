@@ -86,13 +86,13 @@ function DialogContent({
                 data-slot="dialog-content"
                 className={cn(
                     // Full screen (below `sm`)
-                    "group/dialog-content fixed inset-0 z-50 flex w-full flex-col overflow-hidden bg-popover text-sm text-popover-foreground outline-none data-open:animate-in data-open:slide-in-from-bottom data-open:duration-200 data-closed:animate-out data-closed:slide-out-to-bottom data-closed:duration-150",
+                    "group/dialog-content fixed inset-0 z-50 flex w-full flex-col overflow-hidden bg-popover shadow-lg [--popover:var(--popover-overlay)] text-sm text-popover-foreground outline-none data-open:animate-in data-open:slide-in-from-bottom data-open:duration-200 data-closed:animate-out data-closed:slide-out-to-bottom data-closed:duration-150",
                     // Bottom sheet (below `sm`, `mobile="sheet"`): drops the top edge so the sheet rests on the
                     // bottom one, as tall as its content up to 92dvh. Every class is `max-sm:`-scoped so none
                     // of them fight the centred-modal classes below.
-                    "max-sm:data-[mobile=sheet]:top-auto max-sm:data-[mobile=sheet]:max-h-[92dvh] max-sm:data-[mobile=sheet]:rounded-t-2xl max-sm:data-[mobile=sheet]:ring-1 max-sm:data-[mobile=sheet]:ring-foreground/10",
+                    "max-sm:data-[mobile=sheet]:top-auto max-sm:data-[mobile=sheet]:max-h-[92dvh] max-sm:data-[mobile=sheet]:rounded-t-2xl max-sm:data-[mobile=sheet]:ring-1 max-sm:data-[mobile=sheet]:ring-foreground/10 dark:max-sm:data-[mobile=sheet]:ring-foreground/15",
                     // Centred modal (`sm` and up)
-                    "sm:top-1/2 sm:right-auto sm:bottom-auto sm:left-1/2 sm:max-h-[calc(100dvh-2rem)] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:ring-1 sm:ring-foreground/10 sm:data-open:fade-in-0 sm:data-open:zoom-in-95 sm:data-open:slide-in-from-bottom-0 sm:data-open:duration-100 sm:data-closed:fade-out-0 sm:data-closed:zoom-out-95 sm:data-closed:slide-out-to-bottom-0 sm:data-closed:duration-100",
+                    "sm:top-1/2 sm:right-auto sm:bottom-auto sm:left-1/2 sm:max-h-[calc(100dvh-2rem)] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:ring-1 sm:ring-foreground/10 dark:sm:ring-foreground/15 sm:data-open:fade-in-0 sm:data-open:zoom-in-95 sm:data-open:slide-in-from-bottom-0 sm:data-open:duration-100 sm:data-closed:fade-out-0 sm:data-closed:zoom-out-95 sm:data-closed:slide-out-to-bottom-0 sm:data-closed:duration-100",
                     // Width (`sm` and up). The default is a bare `sm:max-w-md` so tailwind-merge still drops
                     // it for a caller's own `sm:max-w-*` (the screenshot lightboxes); the larger sizes
                     // outrank it by their `data-size` selector.

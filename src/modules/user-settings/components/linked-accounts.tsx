@@ -44,7 +44,7 @@ export function UserSettings_LinkedAccounts_Card() {
                 {accountsQuery.isPending ? (
                     SocialProviders.map((provider) => <RowSkeleton key={provider.id} />)
                 ) : accountsQuery.isError ? (
-                    <Alert variant="error">
+                    <Alert variant="destructive">
                         Failed to load linked accounts: {accountsQuery.error.message}
                     </Alert>
                 ) : (

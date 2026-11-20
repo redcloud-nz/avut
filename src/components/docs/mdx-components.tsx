@@ -19,7 +19,7 @@ import { Alert } from "@/components/ui/alert";
 import { Kbd } from "@/components/ui/kbd";
 import { cn } from "@/lib/utils";
 
-type CalloutVariant = "default" | "warning" | "success" | "error";
+type CalloutVariant = "default" | "info" | "success" | "warning" | "destructive";
 
 /** A highlighted aside. `type` maps to the shared `<Alert>` variants. */
 export function Callout({

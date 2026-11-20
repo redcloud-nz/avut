@@ -327,15 +327,15 @@ type CellMarkKind = "held" | "incomplete" | "mismatch" | "missing";
 
 const CELL_MARKS: Record<CellMarkKind, { icon: ReactNode; label: string }> = {
     held: {
-        icon: <CircleCheckIcon className="mx-auto size-4 text-green-600 dark:text-green-500" />,
+        icon: <CircleCheckIcon className="mx-auto size-4 text-success" />,
         label: "held",
     },
     incomplete: {
-        icon: <AlertWarningIcon className="mx-auto size-4 text-amber-600 dark:text-amber-500" />,
+        icon: <AlertWarningIcon className="mx-auto size-4 text-warning-foreground" />,
         label: "held, incomplete",
     },
     mismatch: {
-        icon: <AlertWarningIcon className="mx-auto size-4 text-amber-600 dark:text-amber-500" />,
+        icon: <AlertWarningIcon className="mx-auto size-4 text-warning-foreground" />,
         label: "held, doesn't match",
     },
     missing: {

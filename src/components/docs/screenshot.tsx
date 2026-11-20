@@ -122,7 +122,7 @@ export function Screenshot({ id, caption, alt }: ScreenshotProps) {
  */
 export function UnsupportedImg({ src }: { src?: string }) {
     return (
-        <span className="my-4 block rounded border border-red-500 bg-red-500/10 p-3 text-sm text-red-600 dark:text-red-400">
+        <span className="my-4 block rounded border border-destructive bg-destructive-subtle p-3 text-sm text-destructive-foreground">
             Raw Markdown images aren’t supported in docs. Use <code>{`<Screenshot id="…" />`}</code>{" "}
             instead
             {src ? ` (found: ${src})` : ""}.

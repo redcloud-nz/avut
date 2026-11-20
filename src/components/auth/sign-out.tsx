@@ -64,7 +64,7 @@ export function SignOut() {
 
     if (failed) {
         return (
-            <Alert variant="error">
+            <Alert variant="destructive">
                 <AlertTitle>Couldn&apos;t sign you out</AlertTitle>
                 <AlertDescription>
                     <p>You&apos;re still signed in. Check your connection and try again.</p>

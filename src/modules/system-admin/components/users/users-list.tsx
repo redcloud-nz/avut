@@ -74,13 +74,9 @@ export function SystemAdmin_Users_List() {
                     header: "Status",
                     cell: (ctx) =>
                         ctx.row.original.banned ? (
-                            <Badge className="bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300">
-                                Banned
-                            </Badge>
+                            <Badge variant="destructive">Banned</Badge>
                         ) : (
-                            <Badge className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300">
-                                Active
-                            </Badge>
+                            <Badge variant="success">Active</Badge>
                         ),
                     enableSorting: true,
                     enableGlobalFilter: false,

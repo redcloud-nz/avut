@@ -72,11 +72,13 @@ export function ImpersonationBanner() {
 
     const label = user.name || user.email || "another user";
 
+    // The warning tint is translucent, so it's laid as a flat gradient over an opaque background:
+    // the banner is fixed over the page.
     return (
         <div
             role="alert"
             data-slot="impersonation-banner"
-            className="fixed inset-x-0 top-0 z-50 flex h-9 items-center gap-2 border-b border-amber-300 bg-amber-50 px-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100"
+            className="fixed inset-x-0 top-0 z-50 flex h-9 items-center gap-2 border-b border-warning/30 bg-background bg-linear-to-r from-warning-subtle to-warning-subtle px-3 text-xs text-warning-foreground"
         >
             <TriangleAlertIcon className="size-4 shrink-0" />
             <span className="flex-1">

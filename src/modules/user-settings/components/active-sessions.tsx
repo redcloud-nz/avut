@@ -79,7 +79,7 @@ export function UserSettings_ActiveSessions_Card() {
                         <RainbowSpinner className="mx-auto" />
                     </div>
                 ) : sessionsQuery.isError ? (
-                    <Alert variant="error">
+                    <Alert variant="destructive">
                         Failed to load active sessions: {sessionsQuery.error.message}
                     </Alert>
                 ) : (

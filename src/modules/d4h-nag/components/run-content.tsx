@@ -252,7 +252,7 @@ function RunStatus_Alert({ run }: { run: D4HNagRunDetail }) {
     }
     if (run.status === "Failed") {
         return (
-            <Alert variant="error">
+            <Alert variant="destructive">
                 <AlertTitle>Failed</AlertTitle>
                 <AlertDescription>{run.error ?? "The run failed."}</AlertDescription>
             </Alert>
