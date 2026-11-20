@@ -13,7 +13,6 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --radius: 0.45rem;
   /* Height of the impersonation banner while it's shown, 0 otherwise. The shell offsets its
      fixed sidebar and full-height inset by it (#87). Set by CSS rather than the banner's own
      JS, so the server-rendered shell already has it. */
@@ -338,19 +337,9 @@
 
   --font-heading: var(--font-sans);
 
-  --radius-sm: calc(var(--radius) * 0.6);
-
-  --radius-md: calc(var(--radius) * 0.8);
-
-  --radius-lg: var(--radius);
-
-  --radius-xl: calc(var(--radius) * 1.4);
-
-  --radius-2xl: calc(var(--radius) * 1.8);
-
-  --radius-3xl: calc(var(--radius) * 2.2);
-
-  --radius-4xl: calc(var(--radius) * 2.6);
+  /* Radii are Tailwind's default scale (sm 4 · md 6 · lg 8 · xl 12 · 2xl 16px), so they stay whole
+     pixels. Where one rounded element sits tightly inside another, make it concentric: inner radius =
+     outer radius − gap (a menu at rounded-lg with p-1 has rounded-sm items). */
 }
 
 @layer base {
