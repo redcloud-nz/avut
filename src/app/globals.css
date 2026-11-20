@@ -114,7 +114,7 @@
 
   /* Shell surfaces: the navbar frames the page alongside the sidebar; the page recedes behind both. */
   --navbar: oklch(1 0 0);
-  --page: oklch(0.975 0.005 70);
+  --page: oklch(0.975 0 0);
 }
 
 /* Glyph page background colours. The ripple is the caramel hue (55) of the primary pair with far
@@ -285,7 +285,7 @@
   --sidebar-ring: oklch(0.556 0 0);
 
   --navbar: oklch(0.205 0 0);
-  --page: oklch(0.145 0.004 60);
+  --page: oklch(0.145 0 0);
   --table-group: oklch(0.269 0 0);
 }
 
