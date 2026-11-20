@@ -22,23 +22,26 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.52 0.105 223.128); /*oklch(0.21 0.006 285.885);*/
-  --primary-foreground: oklch(0.984 0.019 200.873); /*oklch(0.985 0 0);*/
+  /* Espresso: near-black with a warm brown cast. Hover, selected and the focus ring take the
+     caramel hue (55) of the dark-mode primary, so they read as soft browns in both themes. Email
+     templates can't read these variables, so their buttons hardcode the espresso as #553423. */
+  --primary: oklch(0.36 0.055 48);
+  --primary-foreground: oklch(0.985 0.011 48);
   --secondary: oklch(0.967 0.001 286.375);
   --secondary-foreground: oklch(0.21 0.006 285.885);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
-  /* Interactive highlight (hover, menu focus): a translucent blue, so it lands lighter on white
-     surfaces and a shade darker on --page, from the one value. Over white it's ≈ oklch(0.969 0.008 244). */
-  --accent: oklch(0.55 0.12 244 / 0.07);
-  --accent-foreground: oklch(0.3791 0.1378 265.5222);
-  /* Selected (active nav item, pressed toggle, chosen list entry): the accent's blue, heavier. */
-  --selected: oklch(0.55 0.12 244 / 0.13);
-  --selected-foreground: var(--accent-foreground);
+  /* Interactive highlight (hover, menu focus): a translucent caramel, so it lands lighter on white
+     surfaces and a shade darker on --page, from the one value. */
+  --accent: oklch(0.55 0.1 55 / 0.07);
+  --accent-foreground: oklch(0.38 0.09 55);
+  /* Selected (active nav item, pressed toggle, chosen list entry): the accent's caramel, heavier. */
+  --selected: oklch(0.55 0.1 55 / 0.13);
+  --selected-foreground: oklch(0.38 0.09 55);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.912 0.0052 247.8822);
   --input: var(--border);
-  --ring: oklch(0.708 0 0);
+  --ring: oklch(0.7 0.06 55);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -46,8 +49,8 @@
   --chart-5: oklch(0.269 0 0);
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.609 0.126 221.723);
-  --sidebar-primary-foreground: oklch(0.984 0.019 200.873);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
   --sidebar-accent: var(--accent);
   --sidebar-accent-foreground: var(--accent-foreground);
   --sidebar-border: var(--border);
@@ -75,18 +78,19 @@
 
   /* Shell surfaces: the navbar frames the page alongside the sidebar; the page recedes behind both. */
   --navbar: oklch(1 0 0);
-  --page: oklch(0.975 0.0042 236.4993);
+  --page: oklch(0.975 0.005 70);
 }
 
-/* Glyph page background colours. The ripple is the primary's hue (223) with far less chroma: a
-   grey-blue. Dark mode dims the glyphs so they sit as quietly on near-black as they do on the tint. */
+/* Glyph page background colours. The ripple is the caramel hue (55) of the primary pair with far
+   less chroma: a warm grey-brown. Dark mode dims the glyphs so they sit as quietly on near-black as
+   they do on the tint. */
 :root {
   --glyph-glow: var(--muted-foreground);
-  --glyph-ripple: oklch(0.62 0.045 223);
+  --glyph-ripple: oklch(0.6 0.04 55);
 }
 .dark {
   --glyph-glow: oklch(0.7 0 0);
-  --glyph-ripple: oklch(0.68 0.05 223);
+  --glyph-ripple: oklch(0.68 0.045 55);
 }
 
 /* The glyph field shows only behind pages that render `<GlyphPage />` (glyph-page.tsx), which sets
@@ -196,19 +200,21 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.45 0.085 224.283);
-  --primary-foreground: oklch(0.984 0.019 200.873);
+  /* Caramel, with dark text on it. */
+  --primary: oklch(0.66 0.1 55);
+  --primary-foreground: oklch(0.2 0.03 55);
   --secondary: oklch(0.274 0.006 286.033);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.7 0.12 244 / 0.14);
-  --accent-foreground: oklch(0.8823 0.0571 254.1284);
-  --selected: oklch(0.7 0.12 244 / 0.24);
+  --accent: oklch(0.7 0.1 55 / 0.14);
+  --accent-foreground: oklch(0.88 0.09 55);
+  --selected: oklch(0.7 0.1 55 / 0.24);
+  --selected-foreground: oklch(0.88 0.09 55);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 14%);
   --input: oklch(1 0 0 / 18%);
-  --ring: oklch(0.556 0 0);
+  --ring: oklch(0.6 0.06 55);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -216,12 +222,10 @@
   --chart-5: oklch(0.269 0 0);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.715 0.143 215.221);
-  --sidebar-primary-foreground: oklch(0.302 0.056 229.695);
   --sidebar-ring: oklch(0.556 0 0);
 
   --navbar: oklch(0.205 0 0);
-  --page: oklch(0.145 0 0);
+  --page: oklch(0.145 0.004 60);
   --table-group: oklch(0.269 0 0);
 }
 
