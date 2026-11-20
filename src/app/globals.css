@@ -64,7 +64,7 @@
   --destructive-foreground: oklch(0.46 0.17 22);
   --destructive-subtle: oklch(0.58 0.2 22 / 0.11);
   --on-destructive: oklch(1 0 0);
-  --border: oklch(0.912 0.0052 247.8822);
+  --border: oklch(0.912 0 0);
   --input: var(--border);
   --ring: oklch(0.7 0.06 55);
   /* Chart palettes. Categorical: distinct series, hues spread around the wheel at even lightness.
