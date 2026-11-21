@@ -6,7 +6,6 @@
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { Std } from "@/components/blocks/std";
 import { ObjectHistory } from "@/components/history/object-history";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -28,32 +27,19 @@ export function SkillPackageBuilder_PackageHistory_Content({
     );
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    {
-                        label: "Skill Package Builder",
-                        href: route("/orgs/[slug]/skill-package-builder", {
-                            slug: organization.slug,
-                        }),
-                    },
-                    {
-                        label: skillPackage.name,
-                        href: route("/orgs/[slug]/skill-package-builder/packages/[package_id]", {
-                            slug: organization.slug,
-                            package_id: skillPackageId,
-                        }),
-                    },
-                    "History",
-                ]}
-            />
-            <Std.ScrollContainer>
-                <ObjectHistory
-                    objectType="SkillPackage"
-                    objectId={skillPackageId}
-                    title={`${skillPackage.name} — History`}
-                />
-            </Std.ScrollContainer>
-        </>
+        <ObjectHistory
+            objectType="SkillPackage"
+            objectId={skillPackageId}
+            title="Package History"
+            breadcrumbs={[
+                {
+                    label: skillPackage.name,
+                    href: route("/orgs/[slug]/skill-package-builder/packages/[package_id]", {
+                        slug: organization.slug,
+                        package_id: skillPackageId,
+                    }),
+                },
+            ]}
+        />
     );
 }

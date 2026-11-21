@@ -7,7 +7,6 @@
 
 import { AVUTLogo } from "@/components/art/avut-logo";
 import { Std } from "@/components/blocks/std";
-import { route } from "@/lib/routes";
 import { SkillPackageBuilder_Packages_List } from "@/modules/skill-package-builder/components/packages-list";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { isOrganizationModuleUsable } from "@/server/module-flags";
@@ -26,23 +25,13 @@ export default async function SkillPackageBuilder_Index_Page(
 
     return (
         <HydrateClient>
-            <>
-                <Std.Navbar
-                    breadcrumbs={[
-                        {
-                            label: "Skill Package Builder",
-                            href: route("/orgs/[slug]/skill-package-builder", { slug }),
-                        },
-                    ]}
-                />
-                <Std.ScrollContainer>
-                    <div className="flex flex-col items-center my-4 gap-4">
-                        <AVUTLogo />
-                        <div className="font-semibold">Skill Package Builder Module</div>
-                    </div>
-                    <SkillPackageBuilder_Packages_List organization={organization} />
-                </Std.ScrollContainer>
-            </>
+            <Std.ScrollContainer>
+                <div className="flex flex-col items-center my-4 gap-4">
+                    <AVUTLogo />
+                    <div className="font-semibold">Skill Package Builder Module</div>
+                </div>
+                <SkillPackageBuilder_Packages_List organization={organization} />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }
