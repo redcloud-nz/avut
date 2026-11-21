@@ -15,8 +15,9 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 
 /**
  * The app's one navbar, rendered once by the authenticated layout above the page's own
- * `<Suspense>`, so it stays up while a page loads. It carries no page data: its three
- * request-dependent parts (user menu, notifications, Help) each sit in their own `<Suspense>`.
+ * `<Suspense>`, so it stays up while a page loads. It carries no page data: its two
+ * suspending parts (user menu, Help) each sit in their own `<Suspense>`; notifications reads with
+ * a plain `useQuery`, so it never suspends.
  *
  * Layout: everything sits in the page column, the same centred `max-w-5xl` that
  * `Std.ScrollContainer` gives `Saratoga.Root` below. The wrapper reserves the same scrollbar
@@ -49,9 +50,7 @@ export function AppNavbar() {
                     />
                     {/* `icon` (32px) buttons around 16px icons: 8px each side. */}
                     <div className="-mr-2 ml-auto flex items-center gap-1">
-                        <Suspense fallback={<div className="size-8" />}>
-                            <NotificationsMenu />
-                        </Suspense>
+                        <NotificationsMenu />
                         <ModeToggle />
                         <Suspense fallback={<UserMenu_Skeleton />}>
                             <UserMenu />

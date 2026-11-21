@@ -51,7 +51,7 @@ export default async function AuthenticatedLayout(props: {
     // cookie is *present*; this is the check that actually validates it.
     await requireSession();
 
-    // `ScopeSwitcher` and `UserMenu` (in `AppNavbar`) both read `getSession` via plain `useQuery` (not
+    // `ScopeSwitcher` reads `getSession` via plain `useQuery` (not
     // suspense), so unlike `listMemberships` below it can't tolerate an unresolved prefetch —
     // a still-pending dehydrated snapshot racing the live query client's resolution is exactly
     // what produces a hydration mismatch. Awaiting costs nothing extra: `getSession` only
