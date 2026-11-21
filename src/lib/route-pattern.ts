@@ -36,6 +36,9 @@ function matchSegments(patternSegments: string[], pathSegments: string[]): boole
     return patternSegments.every((segment, i) => isParam(segment) || segment === pathSegments[i]);
 }
 
+/** A help card's id and the route patterns it covers (its `routes` frontmatter). */
+export type HelpCardRoutes = { id: string; routes: string[] };
+
 /**
  * Whether `pathname` is a page of `pattern`. A trailing slash, query string or hash on
  * `pathname` is ignored.

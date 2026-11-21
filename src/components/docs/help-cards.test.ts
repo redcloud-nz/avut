@@ -81,16 +81,23 @@ const OPT_OUT_ROUTES = [
  * The route pattern of every `page.tsx` under the authenticated layout: its folder path with
  * route groups `(…)` and parallel-route slots `@…` dropped.
  */
+const SCRATCH_ROOT = "/orgs/[slug]/system/scratch/";
+
 function pageRoutes(): string[] {
-    return globSync(`${APP_ROOT}/**/page.tsx`)
-        .map((file) => {
-            const segments = path
-                .relative(APP_ROOT, path.dirname(file))
-                .split(path.sep)
-                .filter((s) => s !== "" && !/^\(.*\)$/.test(s) && !s.startsWith("@"));
-            return "/" + segments.join("/");
-        })
-        .sort();
+    return (
+        globSync(`${APP_ROOT}/**/page.tsx`)
+            .map((file) => {
+                const segments = path
+                    .relative(APP_ROOT, path.dirname(file))
+                    .split(path.sep)
+                    .filter((s) => s !== "" && !/^\(.*\)$/.test(s) && !s.startsWith("@"));
+                return "/" + segments.join("/");
+            })
+            // Scratch pages are throwaway visual tests, committed freely (see the scratch README),
+            // so they're never Help pages and don't each need an opt-out entry.
+            .filter((route) => !route.startsWith(SCRATCH_ROOT))
+            .sort()
+    );
 }
 
 describe("help card routes", () => {

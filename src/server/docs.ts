@@ -22,6 +22,7 @@ import {
     visibleGlossaryEntries,
     type GlossaryEntry,
 } from "@/lib/glossary";
+import type { HelpCardRoutes } from "@/lib/route-pattern";
 import { resolveModuleFlags } from "@/server/module-flags";
 
 /** Section ids hidden for the current deployment environment. Cached per request. */
@@ -73,7 +74,7 @@ export async function getVisibleHelpCard(id: string): Promise<HelpCard | undefin
  * Every help card's id and route patterns, for `HelpRoutesProvider`. Build-time data, not
  * flag-filtered: a flag-hidden card's button still shows, and the sheet's fetch respects the flag.
  */
-export function helpCardRoutes(): { id: string; routes: string[] }[] {
+export function helpCardRoutes(): HelpCardRoutes[] {
     return allHelpCards.map((card) => ({ id: card.id, routes: card.routes }));
 }
 

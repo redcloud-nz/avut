@@ -7,8 +7,7 @@
 
 import { createContext, ReactNode, useContext } from "react";
 
-/** A help card's id and the route patterns it covers (its `routes` frontmatter). */
-export type HelpCardRoutes = { id: string; routes: string[] };
+import type { HelpCardRoutes } from "@/lib/route-pattern";
 
 const HelpRoutesContext = createContext<readonly HelpCardRoutes[]>([]);
 
