@@ -23,7 +23,7 @@ export function AdminModule_PersonHistory_Content({ personId }: { personId: Pers
         <ObjectHistory
             objectType="Person"
             objectId={personId}
-            title={`${person.name} — History`}
+            title="Person History"
             breadcrumbs={[
                 {
                     label: "Personnel",

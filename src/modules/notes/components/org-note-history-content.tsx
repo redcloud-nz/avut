@@ -45,7 +45,7 @@ function OrgNoteHistory_Body({ noteId }: { noteId: OrganizationNoteId }) {
         <ObjectHistory
             objectType="OrganizationNote"
             objectId={noteId}
-            title={`${note.title} — History`}
+            title="Note History"
             breadcrumbs={notesBreadcrumbs(
                 route("/orgs/[slug]/notes", { slug: organization.slug }),
                 {

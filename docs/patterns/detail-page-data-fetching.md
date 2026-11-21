@@ -214,6 +214,13 @@ Apply it to the page **and** to the content, list and Glorious components it ren
    list like Personnel, Sessions or Teams) and has no trail: render no `Breadcrumbs`
    and pass no prop.
 
+   **Retitle to fit the trail.** The trail names the parent records, so the `<h1>` says
+   what this page is, not which record it belongs to:
+   - A History page is titled "`<Record type>` History" ("Team History", "Person
+     History", "Session History"), not "`<name>` — History".
+   - A page that's one of a record's related items (a team membership) takes that item's
+     own name (the person's name), not its type ("Team Membership").
+
    Exceptions are decided case by case and listed in the app-frame plan
    (`docs/plans/2026-11-21-app-frame.md` → Decisions). So far there is one: a note keeps
    its "Notes" crumb, the way back to the list on phones, where Hermes hides the list

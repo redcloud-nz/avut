@@ -80,7 +80,7 @@ export function AdminModule_TeamMembership_Content({
                         )
                     }
                 >
-                    Team Membership
+                    {membership.person.name}
                 </Saratoga.Title>
                 <Saratoga.Actions>
                     <AdminModule_TeamMembership_Menu team={team} person={membership.person} />

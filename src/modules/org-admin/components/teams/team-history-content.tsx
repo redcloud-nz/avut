@@ -23,7 +23,7 @@ export function AdminModule_TeamHistory_Content({ teamId }: { teamId: TeamId }) 
         <ObjectHistory
             objectType="Team"
             objectId={teamId}
-            title={`${team.name} — History`}
+            title="Team History"
             breadcrumbs={[
                 {
                     label: "Teams",

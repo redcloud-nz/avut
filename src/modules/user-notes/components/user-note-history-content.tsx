@@ -46,7 +46,7 @@ function UserNoteHistory_Body({ noteId }: { noteId: UserNoteId }) {
             scope="user"
             objectType="UserNote"
             objectId={noteId}
-            title={`${note.title} — History`}
+            title="Note History"
             breadcrumbs={notesBreadcrumbs("/user/notes", {
                 title: note.title,
                 href: route("/user/notes/[note_id]", { note_id: noteId }),
