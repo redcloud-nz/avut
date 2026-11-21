@@ -24,7 +24,11 @@ export function OrgNoteHistory_Content({ noteId }: { noteId: OrganizationNoteId 
     const organization = useOrganization();
 
     return (
-        <NoteGoneBoundary scopeId={organization.id} noteId={noteId}>
+        <NoteGoneBoundary
+            scopeId={organization.id}
+            noteId={noteId}
+            listHref={route("/orgs/[slug]/notes", { slug: organization.slug })}
+        >
             <OrgNoteHistory_Body noteId={noteId} />
         </NoteGoneBoundary>
     );

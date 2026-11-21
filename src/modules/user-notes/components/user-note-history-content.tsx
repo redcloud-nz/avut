@@ -26,7 +26,7 @@ export function UserNoteHistory_Content({ noteId }: { noteId: UserNoteId }) {
     if (!session) throw new Error("Personal notes need a signed-in user.");
 
     return (
-        <NoteGoneBoundary scopeId={session.user.id} noteId={noteId}>
+        <NoteGoneBoundary scopeId={session.user.id} noteId={noteId} listHref="/user/notes">
             <UserNoteHistory_Body noteId={noteId} />
         </NoteGoneBoundary>
     );
