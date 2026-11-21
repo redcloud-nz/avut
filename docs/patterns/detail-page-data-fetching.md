@@ -125,7 +125,6 @@ full-height fallback; keep it where it's already there.
     <SkillTrack_SkillMatrixReport
       syntheticChecksEnabled={syntheticChecksEnabled}
       breadcrumbs={[
-        { label: "Skill Track", href: route("/orgs/[slug]/skill-track", { slug }) },
         { label: "Reports", href: route("/orgs/[slug]/skill-track/reports", { slug }) },
       ]}
     />
@@ -157,7 +156,6 @@ export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
     <Saratoga.Root>
       <Saratoga.Breadcrumbs
         items={[
-          { label: "Admin", href: route("/orgs/[slug]/admin", { slug: organization.slug }) },
           { label: "Teams", href: route("/orgs/[slug]/admin/teams", { slug: organization.slug }) },
         ]}
       />
@@ -197,10 +195,13 @@ Apply it to the page **and** to the content, list and Glorious components it ren
 
 1. **Delete the navbar.** Remove the navbar element, wherever it's rendered (`page.tsx`
    or a component), and any `<>…</>` fragment it leaves around a single child.
-2. **Build the trail from its `breadcrumbs`.** The ancestors are today's `breadcrumbs`
-   **minus the last entry** (the last entry is the page itself, which its `<h1>` already
-   names). Every ancestor in the trail is a link, so for each remaining entry that is a
-   bare string or has no `href`:
+2. **Build the trail from its `breadcrumbs`.** The trail is the record hierarchy above
+   the page: today's `breadcrumbs` **minus the first entry** (the module, such as
+   "Admin", "Skill Track", "D4H" or "System Admin", which the sidebar already shows)
+   **and minus the last** (the page itself, which its `<h1>` already names). So a person
+   shows `Personnel`, a person's History `Personnel › Aaron Gray`, a session's By Person
+   page `Sessions › Session #2`. Every crumb is a link, so for each remaining entry that
+   is a bare string or has no `href`:
    - "User Settings" (`d4h-access-token-content.tsx`, `organization-content.tsx`): drop
      it. There's no `/user/settings` page.
    - "Access Tokens": link it to `"/user/settings/d4h"` (a static route, so a plain
@@ -209,8 +210,14 @@ Apply it to the page **and** to the content, list and Glorious components it ren
      History pages): drop them. Neither has an index page.
    - Any other: drop it, and list it in your commit body.
 
-   If no ancestors are left (a single-entry `breadcrumbs`, as on a dashboard or a module
-   root), the page has no trail: render no `Breadcrumbs` and pass no prop.
+   If nothing is left, the page is at its module's top level (a module root, or a module
+   list like Personnel, Sessions or Teams) and has no trail: render no `Breadcrumbs`
+   and pass no prop.
+
+   Exceptions are decided case by case and listed in the app-frame plan
+   (`docs/plans/2026-11-21-app-frame.md` → Decisions). So far there is one: a note keeps
+   its "Notes" crumb, the way back to the list on phones, where Hermes hides the list
+   pane.
 
 3. **Place the trail** by the page's shape (table below).
 4. **Move `Std.ScrollContainer` into `page.tsx`**, around the component that rendered it,
@@ -221,17 +228,18 @@ Apply it to the page **and** to the content, list and Glorious components it ren
    `route` (often unused in an index or single-crumb `page.tsx` now), and
    `type SaratogaBreadcrumb` from `@/components/blocks/saratoga` where you add a prop.
 
-| Page shape                                               | Trail                                                                                                                                                                                        | `Std.ScrollContainer`                                                   |
-| -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| Content component owns `Saratoga.Root`                   | `<Saratoga.Breadcrumbs items={[…]} />` first inside `Saratoga.Root`, in the content component                                                                                                | `page.tsx`                                                              |
-| List component owns `Saratoga.Root`; the trail is static | The list component takes `breadcrumbs?: SaratogaBreadcrumb[]` and renders `{breadcrumbs && <Saratoga.Breadcrumbs items={breadcrumbs} />}` first inside `Saratoga.Root`; `page.tsx` passes it | `page.tsx`                                                              |
-| History page                                             | The `breadcrumbs` prop on `ObjectHistory`, ending with the record                                                                                                                            | `page.tsx`                                                              |
-| `Glorious`                                               | `<Glorious.Breadcrumbs items={…} />` first inside `Glorious.Header`, in every branch with a header; a static trail arrives as a `breadcrumbs` prop from `page.tsx`                           | none                                                                    |
-| `Hermes` (notes)                                         | Detail pane only, from `notesBreadcrumbs()` (`src/components/notes/notes-breadcrumbs.ts`); none on the list pane or the index route                                                          | none                                                                    |
-| `Std.IndexPage`                                          | None                                                                                                                                                                                         | `page.tsx` (unchanged)                                                  |
-| No Saratoga or Glorious header (a bare `Card`)           | `<Saratoga.Breadcrumbs items={…} className="mb-2" />` directly above the content                                                                                                             | `page.tsx`                                                              |
-| Playground                                               | None                                                                                                                                                                                         | `page.tsx`                                                              |
-| The `ScrollContainer` `className` depends on the data    | As for the page's shape                                                                                                                                                                      | `page.tsx`, plain; the content renders an inner wrapper for that branch |
+| Page shape                                                               | Trail                                                                                                                                                                                                                             | `Std.ScrollContainer`                                                   |
+| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Content component owns `Saratoga.Root`                                   | `<Saratoga.Breadcrumbs items={[…]} />` first inside `Saratoga.Root`, in the content component                                                                                                                                     | `page.tsx`                                                              |
+| List component owns `Saratoga.Root`; the trail is static                 | None for a top-level list. Otherwise the list component takes `breadcrumbs?: SaratogaBreadcrumb[]` and renders `{breadcrumbs && <Saratoga.Breadcrumbs items={breadcrumbs} />}` first inside `Saratoga.Root`; `page.tsx` passes it |
+| List component owns `Saratoga.Root` and reads the record its trail names | `<Saratoga.Breadcrumbs items={[…]} />` first inside `Saratoga.Root`, in the list component, as for a content component                                                                                                            | `page.tsx`                                                              |
+| History page                                                             | The `breadcrumbs` prop on `ObjectHistory`, ending with the record                                                                                                                                                                 | `page.tsx`                                                              |
+| `Glorious`                                                               | `<Glorious.Breadcrumbs items={…} />` first inside `Glorious.Header`, in every branch with a header; a static trail arrives as a `breadcrumbs` prop from `page.tsx`                                                                | none                                                                    |
+| `Hermes` (notes)                                                         | Detail pane only, from `notesBreadcrumbs()` (`src/components/notes/notes-breadcrumbs.ts`); none on the list pane or the index route                                                                                               | none                                                                    |
+| `Std.IndexPage`                                                          | None                                                                                                                                                                                                                              | `page.tsx` (unchanged)                                                  |
+| No Saratoga or Glorious header (a bare `Card`)                           | `<Saratoga.Breadcrumbs items={…} className="mb-2" />` directly above the content                                                                                                                                                  | `page.tsx`                                                              |
+| Playground                                                               | None                                                                                                                                                                                                                              | `page.tsx`                                                              |
+| The `ScrollContainer` `className` depends on the data                    | As for the page's shape                                                                                                                                                                                                           | `page.tsx`, plain; the content renders an inner wrapper for that branch |
 
 ### Before/after: content component owns `Saratoga.Root`
 
@@ -269,7 +277,6 @@ return (
   <Saratoga.Root>
     <Saratoga.Breadcrumbs
       items={[
-        { label: "Admin", href: route("/orgs/[slug]/admin", { slug: organization.slug }) },
         {
           label: "Personnel",
           href: route("/orgs/[slug]/admin/personnel", { slug: organization.slug }),
@@ -295,7 +302,7 @@ and `page.tsx` goes from
 </HydrateClient>
 ```
 
-### Before/after: list component, trail from `page.tsx`
+### Before/after: a list component
 
 Before (`admin/personnel/page.tsx`):
 
@@ -315,26 +322,25 @@ Before (`admin/personnel/page.tsx`):
 </HydrateClient>
 ```
 
-After:
+After: Personnel is at the Admin module's top level, so once "Admin" (the module) and
+"Personnel" (the page) go, nothing is left. The page has no trail, the list takes no
+prop, and `route` drops out of `page.tsx`:
 
 ```tsx
 <HydrateClient>
   <Std.ScrollContainer>
-    <AdminModule_Personnel_List
-      organization={organization}
-      breadcrumbs={[{ label: "Admin", href: route("/orgs/[slug]/admin", { slug }) }]}
-    />
+    <AdminModule_Personnel_List organization={organization} />
   </Std.ScrollContainer>
 </HydrateClient>
 ```
 
-and the list component (`personnel-list.tsx`) takes the prop:
+A list **below** its module's top level does have a trail. When the trail is static,
+the list component takes it as a prop, and `page.tsx` passes it:
 
 ```tsx
 import { Saratoga, type SaratogaBreadcrumb } from "@/components/blocks/saratoga";
 
-interface AdminModule_PersonnelListProps {
-  organization: OrganizationData;
+interface SomeListProps {
   /** The page's ancestors, shown above the title. */
   breadcrumbs?: SaratogaBreadcrumb[];
 }
@@ -343,6 +349,27 @@ interface AdminModule_PersonnelListProps {
 <Saratoga.Root>
   {breadcrumbs && <Saratoga.Breadcrumbs items={breadcrumbs} />}
   <Saratoga.Header>{/* ... */}</Saratoga.Header>
+```
+
+When the trail names a record the list reads anyway, the list builds it, as a content
+component does. A team's members list (`team-members-list.tsx`) shows `Teams › <team>`:
+
+```tsx
+<Saratoga.Root>
+  <Saratoga.Breadcrumbs
+    items={[
+      { label: "Teams", href: route("/orgs/[slug]/admin/teams", { slug: organization.slug }) },
+      {
+        label: team.name,
+        href: route("/orgs/[slug]/admin/teams/[team_id]", {
+          slug: organization.slug,
+          team_id: teamId,
+        }),
+      },
+    ]}
+  />
+  <Saratoga.Header>
+    <Saratoga.Title>Members of {team.name}</Saratoga.Title>
 ```
 
 A list component that renders more than one `Saratoga.Root` (an empty or error branch,
@@ -377,7 +404,8 @@ Before (`person-history-content.tsx`):
 </>
 ```
 
-After (the last entry, "History", goes; the record stays as the last ancestor):
+After (the first entry, "Admin", and the last, "History", go; the record stays as the
+last ancestor):
 
 ```tsx
 <ObjectHistory
@@ -385,7 +413,6 @@ After (the last entry, "History", goes; the record stays as the last ancestor):
   objectId={personId}
   title={`${person.name} — History`}
   breadcrumbs={[
-    { label: "Admin", href: route("/orgs/[slug]/admin", { slug: organization.slug }) },
     {
       label: "Personnel",
       href: route("/orgs/[slug]/admin/personnel", { slug: organization.slug }),
@@ -428,7 +455,8 @@ Before (`skill-track/reports/matrix/page.tsx`):
 </HydrateClient>
 ```
 
-After: `page.tsx` is the one shown under
+After: the trail keeps only "Reports" ("Skill Track" is the module, and the report is
+the page). `page.tsx` is the one shown under
 [full-height pages](#variant-full-height-pages-glorious-reports-and-matrices) (a
 `breadcrumbs` prop, still no `ScrollContainer`), and the report renders the trail in both
 branches:

@@ -240,13 +240,12 @@ Typical page layout. The authenticated layout renders the one navbar (`AppNavbar
 // page.tsx
 <HydrateClient>
     <Std.ScrollContainer>
-        <ClientComponent breadcrumbs={[{ label: "Admin", href: route("/orgs/[slug]/admin", { slug }) }]} />
+        <ClientComponent />
     </Std.ScrollContainer>
 </HydrateClient>
 
-// client component — list page
+// client component — a list at its module's top level, so no trail
 <Saratoga.Root>
-    {breadcrumbs && <Saratoga.Breadcrumbs items={breadcrumbs} />}
     <Saratoga.Header>
         <Saratoga.Title>Title</Saratoga.Title>
         <Saratoga.Actions>{/* buttons */}</Saratoga.Actions>
@@ -259,19 +258,19 @@ Typical page layout. The authenticated layout renders the one navbar (`AppNavbar
 </Saratoga.Root>
 ```
 
-**The trail** (`Saratoga.Breadcrumbs`, items `SaratogaBreadcrumb = { label, href: Route }`) lists the page's **ancestors only**, every one a link: the `<h1>` is the current crumb and isn't repeated. A page with no ancestors (a dashboard, a module root) has no trail. An ancestor with no page to link to is dropped, except "Access Tokens", which links to `/user/settings/d4h`. Where the trail is built depends on who renders the page's root:
+**The trail** (`Saratoga.Breadcrumbs`, items `SaratogaBreadcrumb = { label, href: Route }`) shows the **record hierarchy** above the page, every crumb a link. It leaves out the module (the sidebar already shows it) and the page itself (its `<h1>` names it). A page at its module's top level (a module root, or a module list like Personnel, Sessions or Teams) has no trail; below that, trails are short: a person shows `Personnel`, a person's History `Personnel › Aaron Gray`, a session's By Person page `Sessions › Session #2`. An ancestor with no page to link to is dropped, except "Access Tokens", which links to `/user/settings/d4h`. Exceptions to the rule are decided case by case; so far only Notes, whose note pages keep a "Notes" crumb as the way back to the list on phones. Where the trail is built depends on who renders the page's root:
 
-| Page shape                                                                     | Where the trail goes                                                                                                                                                                      |
-| ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Content component owns `Saratoga.Root` (detail pages)                          | The content component renders `<Saratoga.Breadcrumbs items={[…]} />` first inside `Saratoga.Root`, built from the data it reads (a record's name on its History page).                    |
-| List component owns `Saratoga.Root`, `page.tsx` knows the trail                | The list component takes `breadcrumbs?: SaratogaBreadcrumb[]` and renders `{breadcrumbs && <Saratoga.Breadcrumbs items={breadcrumbs} />}`; `page.tsx` passes the static trail.            |
-| History page (`ObjectHistory`)                                                 | Pass `breadcrumbs` to `ObjectHistory`, ending with the record itself.                                                                                                                     |
-| `Glorious` matrix                                                              | `<Glorious.Breadcrumbs items={…} />` first inside `Glorious.Header`, before `Glorious.Title`, in every branch that renders a header. No `Std.ScrollContainer`: Glorious is full height.   |
-| `Hermes` (notes)                                                               | In the detail pane only, from `notesBreadcrumbs()` (`src/components/notes/notes-breadcrumbs.ts`). The list pane and the index route have none. No `Std.ScrollContainer`.                  |
-| `Std.IndexPage`                                                                | None. No trail and no on-page logo: the navbar carries the logo, and the sidebar is the way back up.                                                                                      |
-| No Saratoga or Glorious header (a bare `Card`)                                 | `<Saratoga.Breadcrumbs items={…} className="mb-2" />` directly above the content, inside `Std.ScrollContainer`.                                                                           |
-| Playground pages                                                               | None.                                                                                                                                                                                     |
-| The content needs a `Std.ScrollContainer` `className` that depends on its data | `page.tsx` renders a plain `Std.ScrollContainer`; the content renders its own wrapper for that branch (e.g. `<div className="flex min-h-full flex-col">` in place of `className="flex"`). |
+| Page shape                                                                     | Where the trail goes                                                                                                                                                                                                                                                            |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Content component owns `Saratoga.Root` (detail pages)                          | The content component renders `<Saratoga.Breadcrumbs items={[…]} />` first inside `Saratoga.Root`, built from the data it reads (a record's name on its History page).                                                                                                          |
+| List component owns `Saratoga.Root`, `page.tsx` knows the trail                | A top-level list has none. Otherwise the list takes `breadcrumbs?: SaratogaBreadcrumb[]` and renders `{breadcrumbs && <Saratoga.Breadcrumbs items={breadcrumbs} />}`; `page.tsx` passes the static trail. A list that reads the record its trail names builds the trail itself. |
+| History page (`ObjectHistory`)                                                 | Pass `breadcrumbs` to `ObjectHistory`, ending with the record itself.                                                                                                                                                                                                           |
+| `Glorious` matrix                                                              | `<Glorious.Breadcrumbs items={…} />` first inside `Glorious.Header`, before `Glorious.Title`, in every branch that renders a header. No `Std.ScrollContainer`: Glorious is full height.                                                                                         |
+| `Hermes` (notes)                                                               | In the detail pane only, from `notesBreadcrumbs()` (`src/components/notes/notes-breadcrumbs.ts`). The list pane and the index route have none. No `Std.ScrollContainer`.                                                                                                        |
+| `Std.IndexPage`                                                                | None. No trail and no on-page logo: the navbar carries the logo, and the sidebar is the way back up.                                                                                                                                                                            |
+| No Saratoga or Glorious header (a bare `Card`)                                 | `<Saratoga.Breadcrumbs items={…} className="mb-2" />` directly above the content, inside `Std.ScrollContainer`.                                                                                                                                                                 |
+| Playground pages                                                               | None.                                                                                                                                                                                                                                                                           |
+| The content needs a `Std.ScrollContainer` `className` that depends on its data | `page.tsx` renders a plain `Std.ScrollContainer`; the content renders its own wrapper for that branch (e.g. `<div className="flex min-h-full flex-col">` in place of `className="flex"`).                                                                                       |
 
 Converting an existing page to this shape, case by case with before/after code, is in [`docs/patterns/detail-page-data-fetching.md` → Page shell](docs/patterns/detail-page-data-fetching.md#page-shell-scrollcontainer-and-the-trail).
 
