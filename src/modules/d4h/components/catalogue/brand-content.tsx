@@ -18,7 +18,6 @@ import {
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { D4HOwner } from "@/components/d4h/d4h-owner";
 import { D4HEquipmentModelLink } from "@/components/entity-links/d4h-equipment-model-link";
 import { CardContent } from "@/components/ui/card";
@@ -102,60 +101,54 @@ export function D4HModule_Brand_Content({ brandId }: { brandId: number }) {
     });
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "D4H", href: route("/orgs/[slug]/d4h", { slug }) },
+        <Saratoga.Root>
+            <Saratoga.Breadcrumbs
+                items={[
                     { label: "Equipment Brands", href: route("/orgs/[slug]/d4h/brands", { slug }) },
-                    { label: brand.title },
                 ]}
             />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>{brand.title}</Saratoga.Title>
-                        <Saratoga.Actions>
-                            <D4HModule_OpenRecordInD4H_Button
-                                record="brand"
-                                id={brand.id}
-                                teamId={ownerTeamId(brand.owner)}
-                            />
-                        </Saratoga.Actions>
-                    </Saratoga.Header>
-                    <div className="flex flex-col gap-4">
-                        <RecordCard label="D4H Equipment Brand">
-                            <CardContent>
-                                <DataList>
-                                    <RecordCardId label="D4H ID" id={String(brand.id)} />
-                                    <DataItem>
-                                        <DataItemTitle>Title</DataItemTitle>
-                                        <DataItemValue>{brand.title}</DataItemValue>
-                                    </DataItem>
-                                    <DataItem>
-                                        <DataItemTitle>Owner</DataItemTitle>
-                                        <DataItemValue>
-                                            <D4HOwner
-                                                owner={brand.owner}
-                                                linkable={reachableTeamIds.has(brand.owner.id)}
-                                            />
-                                        </DataItemValue>
-                                    </DataItem>
-                                    <DataItem>
-                                        <DataItemTitle>Updated</DataItemTitle>
-                                        <DataItemDateValue date={brand.updatedAt} />
-                                    </DataItem>
-                                </DataList>
-                            </CardContent>
-                        </RecordCard>
-                        <div>
-                            <div className="mb-2 text-lg font-semibold">Models</div>
-                            <Kaga.TableToolbar table={table} />
-                            <Kaga.Table table={table} />
-                            <Kaga.TablePagination table={table} />
-                        </div>
-                    </div>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+            <Saratoga.Header>
+                <Saratoga.Title>{brand.title}</Saratoga.Title>
+                <Saratoga.Actions>
+                    <D4HModule_OpenRecordInD4H_Button
+                        record="brand"
+                        id={brand.id}
+                        teamId={ownerTeamId(brand.owner)}
+                    />
+                </Saratoga.Actions>
+            </Saratoga.Header>
+            <div className="flex flex-col gap-4">
+                <RecordCard label="D4H Equipment Brand">
+                    <CardContent>
+                        <DataList>
+                            <RecordCardId label="D4H ID" id={String(brand.id)} />
+                            <DataItem>
+                                <DataItemTitle>Title</DataItemTitle>
+                                <DataItemValue>{brand.title}</DataItemValue>
+                            </DataItem>
+                            <DataItem>
+                                <DataItemTitle>Owner</DataItemTitle>
+                                <DataItemValue>
+                                    <D4HOwner
+                                        owner={brand.owner}
+                                        linkable={reachableTeamIds.has(brand.owner.id)}
+                                    />
+                                </DataItemValue>
+                            </DataItem>
+                            <DataItem>
+                                <DataItemTitle>Updated</DataItemTitle>
+                                <DataItemDateValue date={brand.updatedAt} />
+                            </DataItem>
+                        </DataList>
+                    </CardContent>
+                </RecordCard>
+                <div>
+                    <div className="mb-2 text-lg font-semibold">Models</div>
+                    <Kaga.TableToolbar table={table} />
+                    <Kaga.Table table={table} />
+                    <Kaga.TablePagination table={table} />
+                </div>
+            </div>
+        </Saratoga.Root>
     );
 }

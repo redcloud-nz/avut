@@ -18,7 +18,6 @@ import {
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { D4HTeamPickerDialog } from "@/components/d4h/team-picker-dialog";
 import { D4HMemberLink } from "@/components/entity-links/d4h-member-link";
 import { useOrganization } from "@/hooks/use-organization";
@@ -100,10 +99,9 @@ export function D4HModule_TeamMembers_List({ teamId }: { teamId: number }) {
     });
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "D4H", href: route("/orgs/[slug]/d4h", { slug }) },
+        <Saratoga.Root>
+            <Saratoga.Breadcrumbs
+                items={[
                     { label: "Teams", href: route("/orgs/[slug]/d4h/teams", { slug }) },
                     {
                         label: team.title,
@@ -112,33 +110,28 @@ export function D4HModule_TeamMembers_List({ teamId }: { teamId: number }) {
                             d4h_team_id: String(team.id),
                         }),
                     },
-                    { label: "Members" },
                 ]}
             />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>Members</Saratoga.Title>
-                        {teams.length > 1 && (
-                            <Saratoga.Actions>
-                                <D4HTeamPickerDialog
-                                    section={(id) =>
-                                        route("/orgs/[slug]/d4h/teams/[d4h_team_id]/members", {
-                                            slug,
-                                            d4h_team_id: String(id),
-                                        })
-                                    }
-                                />
-                            </Saratoga.Actions>
-                        )}
-                    </Saratoga.Header>
-                    <div>
-                        <Kaga.TableToolbar table={table} />
-                        <Kaga.Table table={table} />
-                        <Kaga.TablePagination table={table} />
-                    </div>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+            <Saratoga.Header>
+                <Saratoga.Title>Members</Saratoga.Title>
+                {teams.length > 1 && (
+                    <Saratoga.Actions>
+                        <D4HTeamPickerDialog
+                            section={(id) =>
+                                route("/orgs/[slug]/d4h/teams/[d4h_team_id]/members", {
+                                    slug,
+                                    d4h_team_id: String(id),
+                                })
+                            }
+                        />
+                    </Saratoga.Actions>
+                )}
+            </Saratoga.Header>
+            <div>
+                <Kaga.TableToolbar table={table} />
+                <Kaga.Table table={table} />
+                <Kaga.TablePagination table={table} />
+            </div>
+        </Saratoga.Root>
     );
 }

@@ -18,16 +18,13 @@ import {
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { D4HTeamLink } from "@/components/entity-links/d4h-team-link";
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 /** The D4H teams the viewer's personal token can reach, each linking to its team index. */
 export function D4HModule_Teams_List() {
     const organization = useOrganization();
-    const { slug } = organization;
 
     const { data: teams } = useSuspenseQuery(
         trpc.d4hApi.listAccessibleTeams.queryOptions({ organizationId: organization.id }),
@@ -62,25 +59,15 @@ export function D4HModule_Teams_List() {
     });
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "D4H", href: route("/orgs/[slug]/d4h", { slug }) },
-                    { label: "Teams" },
-                ]}
-            />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>Teams</Saratoga.Title>
-                    </Saratoga.Header>
-                    <div>
-                        <Kaga.TableToolbar table={table} />
-                        <Kaga.Table table={table} />
-                        <Kaga.TablePagination table={table} />
-                    </div>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+        <Saratoga.Root>
+            <Saratoga.Header>
+                <Saratoga.Title>Teams</Saratoga.Title>
+            </Saratoga.Header>
+            <div>
+                <Kaga.TableToolbar table={table} />
+                <Kaga.Table table={table} />
+                <Kaga.TablePagination table={table} />
+            </div>
+        </Saratoga.Root>
     );
 }

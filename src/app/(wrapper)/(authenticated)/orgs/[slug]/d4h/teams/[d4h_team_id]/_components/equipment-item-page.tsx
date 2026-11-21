@@ -8,6 +8,7 @@ import { notFound } from "next/navigation";
 
 import { TRPCError } from "@trpc/server";
 
+import { Std } from "@/components/blocks/std";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import {
     D4HI3Module_ItemReturn_Dialog,
@@ -125,26 +126,28 @@ export async function D4HEquipmentItemPage({
 
     return (
         <HydrateClient>
-            <D4HModule_EquipmentItem_Content
-                teamId={teamId}
-                itemId={itemId}
-                memberId={memberId}
-                menuActions={
-                    withI3 ? (
-                        <D4HI3Module_ItemReturn_MenuAction teamId={teamId} itemId={itemId} />
-                    ) : null
-                }
-                menuDialogs={
-                    withI3 ? (
-                        <D4HI3Module_ItemReturn_Dialog teamId={teamId} itemId={itemId} />
-                    ) : null
-                }
-                statusBadge={
-                    withI3 ? (
-                        <D4HI3Module_ItemReturnedBadge teamId={teamId} itemId={itemId} />
-                    ) : null
-                }
-            />
+            <Std.ScrollContainer>
+                <D4HModule_EquipmentItem_Content
+                    teamId={teamId}
+                    itemId={itemId}
+                    memberId={memberId}
+                    menuActions={
+                        withI3 ? (
+                            <D4HI3Module_ItemReturn_MenuAction teamId={teamId} itemId={itemId} />
+                        ) : null
+                    }
+                    menuDialogs={
+                        withI3 ? (
+                            <D4HI3Module_ItemReturn_Dialog teamId={teamId} itemId={itemId} />
+                        ) : null
+                    }
+                    statusBadge={
+                        withI3 ? (
+                            <D4HI3Module_ItemReturnedBadge teamId={teamId} itemId={itemId} />
+                        ) : null
+                    }
+                />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

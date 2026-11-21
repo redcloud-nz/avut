@@ -7,6 +7,7 @@
 
 import { Metadata } from "next";
 
+import { Std } from "@/components/blocks/std";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { D4HModule_Categories_List } from "@/modules/d4h/components/catalogue/categories-list";
 import { getOrganizationBySlug } from "@/server/cache/organization";
@@ -29,7 +30,9 @@ export default async function D4HModule_Categories_Page(
 
     return (
         <HydrateClient>
-            <D4HModule_Categories_List />
+            <Std.ScrollContainer>
+                <D4HModule_Categories_List />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

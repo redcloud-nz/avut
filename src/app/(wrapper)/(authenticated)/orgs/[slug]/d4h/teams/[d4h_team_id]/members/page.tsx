@@ -8,6 +8,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { Std } from "@/components/blocks/std";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { D4HModule_TeamMembers_List } from "@/modules/d4h/components/members/team-members-list";
 import { getOrganizationBySlug } from "@/server/cache/organization";
@@ -31,7 +32,9 @@ export default async function D4HModule_TeamMembers_Page(
 
     return (
         <HydrateClient>
-            <D4HModule_TeamMembers_List teamId={teamId} />
+            <Std.ScrollContainer>
+                <D4HModule_TeamMembers_List teamId={teamId} />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

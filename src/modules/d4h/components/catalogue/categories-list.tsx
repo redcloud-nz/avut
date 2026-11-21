@@ -17,11 +17,9 @@ import {
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { D4HOwner } from "@/components/d4h/d4h-owner";
 import { D4HEquipmentCategoryLink } from "@/components/entity-links/d4h-equipment-category-link";
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
 import { useReachableTeamIds } from "@/modules/d4h/lib/use-reachable-team-ids";
 import { trpc } from "@/trpc/client";
 
@@ -29,7 +27,6 @@ import { trpc } from "@/trpc/client";
 export function D4HModule_Categories_List() {
     const organization = useOrganization();
     const reachableTeamIds = useReachableTeamIds();
-    const { slug } = organization;
 
     const [{ data: categories }, { data: kinds }] = useSuspenseQueries({
         queries: [
@@ -97,25 +94,15 @@ export function D4HModule_Categories_List() {
     });
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "D4H", href: route("/orgs/[slug]/d4h", { slug }) },
-                    { label: "Equipment Categories" },
-                ]}
-            />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>Equipment Categories</Saratoga.Title>
-                    </Saratoga.Header>
-                    <div>
-                        <Kaga.TableToolbar table={table} />
-                        <Kaga.Table table={table} />
-                        <Kaga.TablePagination table={table} />
-                    </div>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+        <Saratoga.Root>
+            <Saratoga.Header>
+                <Saratoga.Title>Equipment Categories</Saratoga.Title>
+            </Saratoga.Header>
+            <div>
+                <Kaga.TableToolbar table={table} />
+                <Kaga.Table table={table} />
+                <Kaga.TablePagination table={table} />
+            </div>
+        </Saratoga.Root>
     );
 }
