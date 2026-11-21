@@ -7,7 +7,6 @@
 import { useSuspenseQueries } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { PersonLink } from "@/components/entity-links/person-link";
 import { TeamLink } from "@/components/entity-links/team-link";
 import { D4HMemberStatusBadge } from "@/components/teams/d4h-member-status-badge";
@@ -50,13 +49,9 @@ export function AdminModule_TeamMembership_Content({
     });
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    {
-                        label: "Admin",
-                        href: route("/orgs/[slug]/admin", { slug: organization.slug }),
-                    },
+        <Saratoga.Root>
+            <Saratoga.Breadcrumbs
+                items={[
                     {
                         label: "Teams",
                         href: route("/orgs/[slug]/admin/teams", { slug: organization.slug }),
@@ -75,103 +70,93 @@ export function AdminModule_TeamMembership_Content({
                             team_id: teamId,
                         }),
                     },
-                    membership.person.name,
                 ]}
             />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title
-                            badges={
-                                membership.status !== "Active" && (
-                                    <Badge variant="outline">{membership.status}</Badge>
-                                )
-                            }
-                        >
-                            Team Membership
-                        </Saratoga.Title>
-                        <Saratoga.Actions>
-                            <AdminModule_TeamMembership_Menu
-                                team={team}
-                                person={membership.person}
-                            />
-                        </Saratoga.Actions>
-                    </Saratoga.Header>
+            <Saratoga.Header>
+                <Saratoga.Title
+                    badges={
+                        membership.status !== "Active" && (
+                            <Badge variant="outline">{membership.status}</Badge>
+                        )
+                    }
+                >
+                    Team Membership
+                </Saratoga.Title>
+                <Saratoga.Actions>
+                    <AdminModule_TeamMembership_Menu team={team} person={membership.person} />
+                </Saratoga.Actions>
+            </Saratoga.Header>
 
-                    <Saratoga.Columns>
-                        <Saratoga.Column slot="main">
-                            <RecordCard label="Membership" updatedAt={membership.updatedAt}>
-                                <CardContent>
-                                    <DataList>
-                                        <RecordCardId label="Membership ID" id={membership.id} />
-                                        <DataItem>
-                                            <DataItemTitle>Person</DataItemTitle>
-                                            <DataItemValue>
-                                                <PersonLink person={membership.person} />
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Team</DataItemTitle>
-                                            <DataItemValue>
-                                                <TeamLink team={team} />
-                                            </DataItemValue>
-                                        </DataItem>
-                                    </DataList>
-                                </CardContent>
-                            </RecordCard>
+            <Saratoga.Columns>
+                <Saratoga.Column slot="main">
+                    <RecordCard label="Membership" updatedAt={membership.updatedAt}>
+                        <CardContent>
+                            <DataList>
+                                <RecordCardId label="Membership ID" id={membership.id} />
+                                <DataItem>
+                                    <DataItemTitle>Person</DataItemTitle>
+                                    <DataItemValue>
+                                        <PersonLink person={membership.person} />
+                                    </DataItemValue>
+                                </DataItem>
+                                <DataItem>
+                                    <DataItemTitle>Team</DataItemTitle>
+                                    <DataItemValue>
+                                        <TeamLink team={team} />
+                                    </DataItemValue>
+                                </DataItem>
+                            </DataList>
+                        </CardContent>
+                    </RecordCard>
 
-                            {membership.d4h && (
-                                <RecordCard label="D4H Member">
-                                    <CardContent>
-                                        <DataList>
-                                            <RecordCardId
-                                                label="Member ID"
-                                                id={String(membership.d4h.d4hMemberId)}
+                    {membership.d4h && (
+                        <RecordCard label="D4H Member">
+                            <CardContent>
+                                <DataList>
+                                    <RecordCardId
+                                        label="Member ID"
+                                        id={String(membership.d4h.d4hMemberId)}
+                                    />
+                                    <DataItem>
+                                        <DataItemTitle>Role ID</DataItemTitle>
+                                        <DataItemValue>
+                                            {membership.d4h.d4hRoleId ?? "—"}
+                                        </DataItemValue>
+                                    </DataItem>
+                                    <DataItem>
+                                        <DataItemTitle>D4H Status</DataItemTitle>
+                                        <DataItemValue>
+                                            <D4HMemberStatusBadge
+                                                status={membership.d4h.d4hStatus}
                                             />
-                                            <DataItem>
-                                                <DataItemTitle>Role ID</DataItemTitle>
-                                                <DataItemValue>
-                                                    {membership.d4h.d4hRoleId ?? "—"}
-                                                </DataItemValue>
-                                            </DataItem>
-                                            <DataItem>
-                                                <DataItemTitle>D4H Status</DataItemTitle>
-                                                <DataItemValue>
-                                                    <D4HMemberStatusBadge
-                                                        status={membership.d4h.d4hStatus}
-                                                    />
-                                                </DataItemValue>
-                                            </DataItem>
-                                            <DataItem>
-                                                <DataItemTitle>Position</DataItemTitle>
-                                                <DataItemValue>
-                                                    {membership.d4h.d4hPosition || "—"}
-                                                </DataItemValue>
-                                            </DataItem>
-                                            <DataItem>
-                                                <DataItemTitle>Ref</DataItemTitle>
-                                                <DataItemValue>
-                                                    {membership.d4h.d4hRef || "—"}
-                                                </DataItemValue>
-                                            </DataItem>
-                                            <DataItem>
-                                                <DataItemTitle>Team last synced</DataItemTitle>
-                                                {team.d4h?.lastSyncedAt ? (
-                                                    <DataItemDateValue
-                                                        date={team.d4h.lastSyncedAt}
-                                                    />
-                                                ) : (
-                                                    <DataItemValue>Never</DataItemValue>
-                                                )}
-                                            </DataItem>
-                                        </DataList>
-                                    </CardContent>
-                                </RecordCard>
-                            )}
-                        </Saratoga.Column>
-                    </Saratoga.Columns>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+                                        </DataItemValue>
+                                    </DataItem>
+                                    <DataItem>
+                                        <DataItemTitle>Position</DataItemTitle>
+                                        <DataItemValue>
+                                            {membership.d4h.d4hPosition || "—"}
+                                        </DataItemValue>
+                                    </DataItem>
+                                    <DataItem>
+                                        <DataItemTitle>Ref</DataItemTitle>
+                                        <DataItemValue>
+                                            {membership.d4h.d4hRef || "—"}
+                                        </DataItemValue>
+                                    </DataItem>
+                                    <DataItem>
+                                        <DataItemTitle>Team last synced</DataItemTitle>
+                                        {team.d4h?.lastSyncedAt ? (
+                                            <DataItemDateValue date={team.d4h.lastSyncedAt} />
+                                        ) : (
+                                            <DataItemValue>Never</DataItemValue>
+                                        )}
+                                    </DataItem>
+                                </DataList>
+                            </CardContent>
+                        </RecordCard>
+                    )}
+                </Saratoga.Column>
+            </Saratoga.Columns>
+        </Saratoga.Root>
     );
 }

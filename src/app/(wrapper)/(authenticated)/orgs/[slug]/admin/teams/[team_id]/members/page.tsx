@@ -7,6 +7,7 @@
 
 import { Metadata } from "next";
 
+import { Std } from "@/components/blocks/std";
 import { TeamId } from "@/lib/schemas/team";
 import { AdminModule_TeamMembers_List } from "@/modules/org-admin/components/teams/team-members-list";
 import { getOrganizationBySlug } from "@/server/cache/organization";
@@ -42,7 +43,9 @@ export default async function AdminModule_Team_Memberships_Page(props: Props) {
 
     return (
         <HydrateClient>
-            <AdminModule_TeamMembers_List teamId={teamId} />
+            <Std.ScrollContainer>
+                <AdminModule_TeamMembers_List teamId={teamId} />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

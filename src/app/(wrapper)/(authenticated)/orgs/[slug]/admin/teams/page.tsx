@@ -6,7 +6,6 @@
  */
 
 import { Std } from "@/components/blocks/std";
-import { route } from "@/lib/routes";
 import { AdminModule_Teams_List } from "@/modules/org-admin/components/teams/teams-list";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
@@ -25,17 +24,9 @@ export default async function AdminModule_TeamsList_Page(
 
     return (
         <HydrateClient>
-            <>
-                <Std.Navbar
-                    breadcrumbs={[
-                        { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
-                        { label: "Teams", href: route("/orgs/[slug]/admin/teams", { slug }) },
-                    ]}
-                />
-                <Std.ScrollContainer>
-                    <AdminModule_Teams_List />
-                </Std.ScrollContainer>
-            </>
+            <Std.ScrollContainer>
+                <AdminModule_Teams_List />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

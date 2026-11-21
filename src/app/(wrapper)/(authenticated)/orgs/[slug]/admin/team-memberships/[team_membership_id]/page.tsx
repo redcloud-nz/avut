@@ -7,6 +7,7 @@
 
 import { Metadata } from "next";
 
+import { Std } from "@/components/blocks/std";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { TeamMembershipId } from "@/lib/schemas/team-membership";
 import { AdminModule_TeamMembership_Content } from "@/modules/org-admin/components/teams/team-membership-content";
@@ -58,7 +59,9 @@ export default async function AdminModule_TeamMembershipById_Page(props: Props) 
 
     return (
         <HydrateClient>
-            <AdminModule_TeamMembership_Content teamId={teamId} personId={personId} />
+            <Std.ScrollContainer>
+                <AdminModule_TeamMembership_Content teamId={teamId} personId={personId} />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }
