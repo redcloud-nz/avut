@@ -71,12 +71,7 @@ export function UserSettings_D4HAccessTokenContent({ tokenId }: { tokenId: Provi
 
     return (
         <Saratoga.Root>
-            <Saratoga.Breadcrumbs
-                items={[
-                    { label: "D4H", href: "/user/settings/d4h" },
-                    { label: "Access Tokens", href: "/user/settings/d4h" },
-                ]}
-            />
+            <Saratoga.Breadcrumbs items={[{ label: "D4H", href: "/user/settings/d4h" }]} />
             <Saratoga.Header>
                 <Saratoga.Title
                     badges={

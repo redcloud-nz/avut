@@ -205,8 +205,8 @@ Apply it to the page **and** to the content, list and Glorious components it ren
    is a bare string or has no `href`:
    - "User Settings" (`d4h-access-token-content.tsx`, `organization-content.tsx`): drop
      it. There's no `/user/settings` page.
-   - "Access Tokens": link it to `"/user/settings/d4h"` (a static route, so a plain
-     string).
+   - "Access Tokens": drop it. It would link to `/user/settings/d4h`, the same page as
+     the `D4H` crumb before it.
    - Skill Package Builder "Groups" and "Skills" (the group and skill pages and their
      History pages): drop them. Neither has an index page.
    - Any other: drop it, and list it in your commit body.
