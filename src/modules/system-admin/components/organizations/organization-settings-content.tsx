@@ -41,7 +41,7 @@ export function SystemAdmin_OrganizationSettings_Content({
         <Saratoga.Root>
             <Saratoga.Breadcrumbs
                 items={[
-                    { label: "Organizations", href: "/system/admin/organizations" },
+                    { label: "Organisations", href: "/system/admin/organizations" },
                     {
                         label: organization.name,
                         href: route("/system/admin/organizations/[organizationId]", {

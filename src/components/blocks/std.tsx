@@ -4,24 +4,15 @@
  *
  * Std page shell components.
  *
- * The outer shell for a page within a sidebar layout: the layout's navbar above a
- * scrollable main content area.
+ * The outer shell for a page within a sidebar layout: the page column beside the sidebar
+ * (with the layout's `AppNavbar` above it), a scrollable main content area, and nav-list
+ * index pages. Breadcrumb trails live in the page itself, not here.
  */
 
-import type { Route } from "next";
-import Link from "next/link";
-import { ComponentProps, Fragment, ReactNode, Suspense } from "react";
+import { ComponentProps, ReactNode, Suspense } from "react";
 
 import { GlyphPage } from "@/components/glyph-page";
 import { PageBackground, pageBackgroundAttributes } from "@/components/page-background";
-import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbLink,
-    BreadcrumbList,
-    BreadcrumbPage,
-    BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 import { PageLoadingSpinner, RainbowSpinner } from "@/components/ui/loading";
 import { cn } from "@/lib/utils";
 
@@ -40,87 +31,6 @@ function SidebarInset({ children, navbar }: { children: ReactNode; navbar?: Reac
             <PageBackground />
             {navbar}
             <Suspense fallback={<PageLoadingSpinner />}>{children}</Suspense>
-        </div>
-    );
-}
-
-type BreadcrumbItem = {
-    label: string;
-    href?: Route;
-};
-
-function normalizeBreadcrumbs(breadcrumbs: (BreadcrumbItem | string)[]): BreadcrumbItem[] {
-    return breadcrumbs.map((breadcrumb) =>
-        typeof breadcrumb === "string" ? { label: breadcrumb } : breadcrumb,
-    );
-}
-
-interface BreadcrumbsProps {
-    breadcrumbs?: (BreadcrumbItem | string)[];
-}
-
-function Breadcrumbs({ breadcrumbs = [] }: BreadcrumbsProps) {
-    const normalizedBreadcrumbs = normalizeBreadcrumbs(breadcrumbs);
-    const ancestors = normalizedBreadcrumbs.slice(0, -1);
-    const current = normalizedBreadcrumbs[normalizedBreadcrumbs.length - 1];
-    // Mobile shows a single crumb: the nearest ancestor with somewhere to go. The
-    // leaf is dropped, since the page's own title repeats it.
-    const primary = ancestors.findLast((breadcrumb) => breadcrumb.href);
-
-    return (
-        <Breadcrumb className="px-2 max-md:min-w-0">
-            <BreadcrumbList className="flex-nowrap">
-                {primary?.href && (
-                    <BreadcrumbItem className="min-w-0 md:hidden">
-                        <BreadcrumbLink asChild>
-                            <Link href={primary.href} className="truncate">
-                                {primary.label}
-                            </Link>
-                        </BreadcrumbLink>
-                    </BreadcrumbItem>
-                )}
-
-                {/* Desktop: full inline trail. */}
-                {ancestors.map((breadcrumb, idx) => (
-                    <Fragment key={idx}>
-                        <BreadcrumbItem className="hidden md:block">
-                            {breadcrumb.href ? (
-                                <BreadcrumbLink asChild>
-                                    <Link href={breadcrumb.href}>{breadcrumb.label}</Link>
-                                </BreadcrumbLink>
-                            ) : (
-                                <span className="text-muted-foreground">{breadcrumb.label}</span>
-                            )}
-                        </BreadcrumbItem>
-                        <BreadcrumbSeparator className="hidden md:block" />
-                    </Fragment>
-                ))}
-                {/* No linked ancestor: the leaf stands in on mobile too. */}
-                <BreadcrumbItem className={primary ? "hidden md:block" : undefined}>
-                    <BreadcrumbPage>{current.label}</BreadcrumbPage>
-                </BreadcrumbItem>
-            </BreadcrumbList>
-        </Breadcrumb>
-    );
-}
-
-type NavbarProps =
-    | {
-          breadcrumbs?: (BreadcrumbItem | string)[];
-          children?: never;
-      }
-    | { children?: ReactNode; breadcrumbs?: never };
-
-/**
- * @deprecated The app's navbar is now `AppNavbar`, rendered once by the authenticated layout.
- * During the move of breadcrumbs into the page, this renders only a plain in-flow breadcrumb
- * strip, so unconverted pages don't show two bars. It goes once no page uses it.
- */
-function Navbar({ breadcrumbs, children }: NavbarProps) {
-    return (
-        <div className="flex shrink-0 items-center gap-1 px-2 py-1">
-            {breadcrumbs && <Breadcrumbs breadcrumbs={breadcrumbs} />}
-            {children}
         </div>
     );
 }
@@ -183,7 +93,5 @@ function IndexPage({
 export const Std = {
     SidebarInset,
     ScrollContainer,
-    Breadcrumbs,
-    Navbar,
     IndexPage,
 };

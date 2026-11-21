@@ -189,8 +189,9 @@ Key points:
 
 ## Page shell: `ScrollContainer` and the trail
 
-How to convert a page that still renders its own navbar (the deprecated `Navbar` member
-of `Std`, written `<Navbar …>` in the "before" snippets below) to the current shape.
+How a page that rendered its own navbar (the old `Navbar` member of `Std`, since removed,
+written `<Navbar …>` in the "before" snippets below) was converted to the current shape.
+Every page is converted now; the steps stay as a reference for the shape.
 Apply it to the page **and** to the content, list and Glorious components it renders.
 
 1. **Delete the navbar.** Remove the navbar element, wherever it's rendered (`page.tsx`

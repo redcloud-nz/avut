@@ -80,7 +80,7 @@ export function SystemAdmin_Organization_Content({
     return (
         <Saratoga.Root>
             <Saratoga.Breadcrumbs
-                items={[{ label: "Organizations", href: "/system/admin/organizations" }]}
+                items={[{ label: "Organisations", href: "/system/admin/organizations" }]}
             />
             <Saratoga.Header>
                 <Saratoga.Title>{organization.name}</Saratoga.Title>
