@@ -7,6 +7,7 @@
 
 import { Metadata } from "next";
 
+import { Std } from "@/components/blocks/std";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { D4HModule_Teams_List } from "@/modules/d4h/components/teams/d4h-teams-list";
 import { getOrganizationBySlug } from "@/server/cache/organization";
@@ -24,7 +25,9 @@ export default async function D4HModule_Teams_Page(props: PageProps<"/orgs/[slug
 
     return (
         <HydrateClient>
-            <D4HModule_Teams_List />
+            <Std.ScrollContainer>
+                <D4HModule_Teams_List />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

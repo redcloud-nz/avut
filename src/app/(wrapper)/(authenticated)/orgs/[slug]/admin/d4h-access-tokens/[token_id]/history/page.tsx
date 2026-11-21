@@ -7,6 +7,7 @@
 
 import { Metadata } from "next";
 
+import { Std } from "@/components/blocks/std";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { AdminModule_D4HAccessTokenHistory_Content } from "@/modules/org-admin/components/d4h-access-tokens/access-token-history-content";
@@ -55,7 +56,9 @@ export default async function AdminModule_D4HAccessTokenHistory_Page(props: Prop
 
     return (
         <HydrateClient>
-            <AdminModule_D4HAccessTokenHistory_Content tokenId={tokenId} />
+            <Std.ScrollContainer>
+                <AdminModule_D4HAccessTokenHistory_Content tokenId={tokenId} />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

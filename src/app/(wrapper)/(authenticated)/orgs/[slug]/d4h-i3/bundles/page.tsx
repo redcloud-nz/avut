@@ -8,7 +8,6 @@
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
-import { route } from "@/lib/routes";
 import { D4HI3Module_BundleList } from "@/modules/d4h-i3/components/bundles/bundles-list";
 import { D4HI3Module_CreateBundle_Dialog } from "@/modules/d4h-i3/components/bundles/create-bundle";
 import { getOrganizationBySlug } from "@/server/cache/organization";
@@ -30,12 +29,6 @@ export default async function D4HI3Module_BundleList_Page(
 
     return (
         <HydrateClient>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "D4H I3", href: route("/orgs/[slug]/d4h-i3", { slug }) },
-                    "Bundles",
-                ]}
-            />
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>

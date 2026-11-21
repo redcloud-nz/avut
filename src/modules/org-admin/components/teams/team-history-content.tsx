@@ -6,7 +6,6 @@
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { Std } from "@/components/blocks/std";
 import { ObjectHistory } from "@/components/history/object-history";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -21,34 +20,23 @@ export function AdminModule_TeamHistory_Content({ teamId }: { teamId: TeamId }) 
     );
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    {
-                        label: "Admin",
-                        href: route("/orgs/[slug]/admin", { slug: organization.slug }),
-                    },
-                    {
-                        label: "Teams",
-                        href: route("/orgs/[slug]/admin/teams", { slug: organization.slug }),
-                    },
-                    {
-                        label: team.name,
-                        href: route("/orgs/[slug]/admin/teams/[team_id]", {
-                            slug: organization.slug,
-                            team_id: teamId,
-                        }),
-                    },
-                    "History",
-                ]}
-            />
-            <Std.ScrollContainer>
-                <ObjectHistory
-                    objectType="Team"
-                    objectId={teamId}
-                    title={`${team.name} — History`}
-                />
-            </Std.ScrollContainer>
-        </>
+        <ObjectHistory
+            objectType="Team"
+            objectId={teamId}
+            title="Team History"
+            breadcrumbs={[
+                {
+                    label: "Teams",
+                    href: route("/orgs/[slug]/admin/teams", { slug: organization.slug }),
+                },
+                {
+                    label: team.name,
+                    href: route("/orgs/[slug]/admin/teams/[team_id]", {
+                        slug: organization.slug,
+                        team_id: teamId,
+                    }),
+                },
+            ]}
+        />
     );
 }

@@ -11,21 +11,18 @@ import { UserSettings_Account } from "@/modules/user-settings/components/user-ac
 
 export default async function UserSettings_Account_Page() {
     return (
-        <>
-            <Std.Navbar breadcrumbs={["User Settings", "Account"]} />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>Account</Saratoga.Title>
-                    </Saratoga.Header>
-                    <Saratoga.Columns>
-                        <Saratoga.Column slot="main">
-                            <UserSettings_Account />
-                        </Saratoga.Column>
-                        <Saratoga.Column slot="secondary" />
-                    </Saratoga.Columns>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+        <Std.ScrollContainer>
+            <Saratoga.Root>
+                <Saratoga.Header>
+                    <Saratoga.Title>Account</Saratoga.Title>
+                </Saratoga.Header>
+                <Saratoga.Columns>
+                    <Saratoga.Column slot="main">
+                        <UserSettings_Account />
+                    </Saratoga.Column>
+                    <Saratoga.Column slot="secondary" />
+                </Saratoga.Columns>
+            </Saratoga.Root>
+        </Std.ScrollContainer>
     );
 }

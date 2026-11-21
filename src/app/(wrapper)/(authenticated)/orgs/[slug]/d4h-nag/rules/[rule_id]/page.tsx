@@ -7,6 +7,7 @@
 
 import { Metadata } from "next";
 
+import { Std } from "@/components/blocks/std";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { D4HNagRuleId } from "@/lib/schemas/d4h-nag";
 import { D4HNag_Rule_Content } from "@/modules/d4h-nag/components/rule-content";
@@ -49,7 +50,9 @@ export default async function D4HNag_Rule_Page(props: Props) {
 
     return (
         <HydrateClient>
-            <D4HNag_Rule_Content ruleId={ruleId} />
+            <Std.ScrollContainer>
+                <D4HNag_Rule_Content ruleId={ruleId} />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

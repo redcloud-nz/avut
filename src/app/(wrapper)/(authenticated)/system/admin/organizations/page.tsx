@@ -21,17 +21,9 @@ export default async function SystemAdmin_Organizations_Page() {
 
     return (
         <HydrateClient>
-            <>
-                <Std.Navbar
-                    breadcrumbs={[
-                        { label: "System Admin", href: "/system/admin" },
-                        { label: "Organizations", href: "/system/admin/organizations" },
-                    ]}
-                />
-                <Std.ScrollContainer>
-                    <SystemAdmin_Organizations_List />
-                </Std.ScrollContainer>
-            </>
+            <Std.ScrollContainer>
+                <SystemAdmin_Organizations_List />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

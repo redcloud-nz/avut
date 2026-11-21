@@ -11,7 +11,6 @@ import { match } from "ts-pattern";
 import { useSuspenseQueries } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { Show } from "@/components/show";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
@@ -199,15 +198,11 @@ export function SkillTrack_SessionByPerson_Content({
     // Session skills that are no longer in the assessable set (e.g. subscription removed).
     const ungroupedSkills = sessionSkills.filter((skill) => !assessableSkillById.has(skill.id));
 
-    const navbar = (
-        <Std.Navbar
-            breadcrumbs={[
+    const breadcrumbs = (
+        <Saratoga.Breadcrumbs
+            items={[
                 {
-                    label: "Skill Track",
-                    href: route("/orgs/[slug]/skill-track", { slug: organization.slug }),
-                },
-                {
-                    label: "Sessions",
+                    label: "Skill Check Sessions",
                     href: route("/orgs/[slug]/skill-track/sessions", {
                         slug: organization.slug,
                     }),
@@ -219,263 +214,238 @@ export function SkillTrack_SessionByPerson_Content({
                         session_id: sessionId,
                     }),
                 },
-                "By Person",
             ]}
         />
     );
 
     if (isApproved) {
         return (
-            <>
-                {navbar}
-                <Std.ScrollContainer className="flex">
-                    <SkillTrack_SessionApprovedEmpty sessionId={sessionId} />
-                </Std.ScrollContainer>
-            </>
+            // Fills the scroll area, so the empty state centres below the trail.
+            <div className="flex min-h-full flex-col">
+                <Saratoga.Root>{breadcrumbs}</Saratoga.Root>
+                <SkillTrack_SessionApprovedEmpty sessionId={sessionId} />
+            </div>
         );
     }
 
     return (
-        <>
-            {navbar}
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>Assess by Person</Saratoga.Title>
-                        <Saratoga.Actions>
-                            <SkillTrack_RecordingOptionsSheet
-                                sessionId={sessionId}
-                                mode="by-person"
-                                view={{ skillOrder, onSkillOrderChange: setSkillOrder }}
-                            />
-                        </Saratoga.Actions>
-                    </Saratoga.Header>
-                    <Show
-                        when={!!personSelf}
-                        fallback={
+        <Saratoga.Root>
+            {breadcrumbs}
+            <Saratoga.Header>
+                <Saratoga.Title>Assess by Person</Saratoga.Title>
+                <Saratoga.Actions>
+                    <SkillTrack_RecordingOptionsSheet
+                        sessionId={sessionId}
+                        mode="by-person"
+                        view={{ skillOrder, onSkillOrderChange: setSkillOrder }}
+                    />
+                </Saratoga.Actions>
+            </Saratoga.Header>
+            <Show
+                when={!!personSelf}
+                fallback={
+                    <Alert variant="warning">
+                        <AlertTitle>No linked person record</AlertTitle>
+                        <AlertDescription>
+                            Your account is not linked to a person record in this organisation.
+                            Contact an administrator to link your account before recording skill
+                            checks.
+                        </AlertDescription>
+                    </Alert>
+                }
+            >
+                <Show
+                    when={isAssignedAssessor && canRecordChecks}
+                    fallback={
+                        isAssignedAssessor ? (
                             <Alert variant="warning">
-                                <AlertTitle>No linked person record</AlertTitle>
+                                <AlertTitle>Cannot record skill checks</AlertTitle>
                                 <AlertDescription>
-                                    Your account is not linked to a person record in this
-                                    organisation. Contact an administrator to link your account
-                                    before recording skill checks.
+                                    You are an assessor on this session, but your role does not
+                                    allow recording skill checks.
                                 </AlertDescription>
                             </Alert>
-                        }
-                    >
-                        <Show
-                            when={isAssignedAssessor && canRecordChecks}
-                            fallback={
-                                isAssignedAssessor ? (
-                                    <Alert variant="warning">
-                                        <AlertTitle>Cannot record skill checks</AlertTitle>
-                                        <AlertDescription>
-                                            You are an assessor on this session, but your role does
-                                            not allow recording skill checks.
-                                        </AlertDescription>
-                                    </Alert>
-                                ) : (
-                                    <Alert variant="warning">
-                                        <AlertTitle>Not an assigned assessor</AlertTitle>
-                                        <AlertDescription>
-                                            You are not an assigned assessor for this session, so
-                                            you cannot record skill checks here.
-                                        </AlertDescription>
-                                    </Alert>
-                                )
-                            }
-                        >
-                            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto_2fr] rounded-xl bg-card p-4 ring-1 ring-foreground/10">
-                                <div>
-                                    <FieldGroup className="block lg:hidden">
-                                        <Field>
-                                            <FieldLabel>Person</FieldLabel>
-                                            <Select
-                                                value={selected?.personId ?? undefined}
-                                                onValueChange={(value) => {
-                                                    handleSwitchPerson(value as PersonId);
-                                                }}
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select a person" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {assignedPersonnel.map((person) => (
-                                                        <SelectItem
-                                                            key={person.id}
-                                                            value={person.id}
-                                                        >
-                                                            {person.name}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </Field>
-                                    </FieldGroup>
-                                    <ItemGroup className="hidden lg:block">
-                                        {assignedPersonnel.map((person) => (
-                                            <Item
-                                                key={person.id}
-                                                asChild
-                                                data-active={
-                                                    person.id === selected?.personId || undefined
-                                                }
-                                            >
-                                                <a
-                                                    onClick={() => {
-                                                        handleSwitchPerson(person.id);
-                                                    }}
-                                                >
-                                                    <ItemContent>
-                                                        <ItemTitle>{person.name}</ItemTitle>
-                                                    </ItemContent>
+                        ) : (
+                            <Alert variant="warning">
+                                <AlertTitle>Not an assigned assessor</AlertTitle>
+                                <AlertDescription>
+                                    You are not an assigned assessor for this session, so you cannot
+                                    record skill checks here.
+                                </AlertDescription>
+                            </Alert>
+                        )
+                    }
+                >
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto_2fr] rounded-xl bg-card p-4 ring-1 ring-foreground/10">
+                        <div>
+                            <FieldGroup className="block lg:hidden">
+                                <Field>
+                                    <FieldLabel>Person</FieldLabel>
+                                    <Select
+                                        value={selected?.personId ?? undefined}
+                                        onValueChange={(value) => {
+                                            handleSwitchPerson(value as PersonId);
+                                        }}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select a person" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {assignedPersonnel.map((person) => (
+                                                <SelectItem key={person.id} value={person.id}>
+                                                    {person.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </Field>
+                            </FieldGroup>
+                            <ItemGroup className="hidden lg:block">
+                                {assignedPersonnel.map((person) => (
+                                    <Item
+                                        key={person.id}
+                                        asChild
+                                        data-active={person.id === selected?.personId || undefined}
+                                    >
+                                        <a
+                                            onClick={() => {
+                                                handleSwitchPerson(person.id);
+                                            }}
+                                        >
+                                            <ItemContent>
+                                                <ItemTitle>{person.name}</ItemTitle>
+                                            </ItemContent>
 
-                                                    <ItemActions>
-                                                        <ChevronRightIcon className="size-4 text-muted-foreground" />
-                                                    </ItemActions>
-                                                </a>
-                                            </Item>
-                                        ))}
-                                    </ItemGroup>
-                                </div>
-                                <Separator orientation="vertical" className="hidden lg:block" />
-                                <Separator orientation="horizontal" className="block lg:hidden" />
-                                <div className="flex w-full flex-col gap-5">
-                                    {match(selected)
-                                        .with(null, () => (
-                                            <Empty>
-                                                <EmptyMedia>
-                                                    <ArrowLeftIcon className="hidden lg:block size-12 text-muted-foreground" />
-                                                    <ArrowUpIcon className="block lg:hidden size-12 text-muted-foreground" />
-                                                </EmptyMedia>
-                                                <EmptyDescription>
-                                                    Select a person to assess their skills.
-                                                </EmptyDescription>
-                                            </Empty>
-                                        ))
-                                        .with({ status: "Loading" }, () => (
-                                            <div className="flex justify-center items-center my-8">
-                                                <RainbowSpinner />
-                                            </div>
-                                        ))
-                                        .with({ status: "Selected" }, ({ personId }) => {
-                                            const renderRow = (
-                                                skill: (typeof sessionSkills)[number],
-                                            ) => (
-                                                <SkillTrack_CheckRow
-                                                    key={skill.id}
-                                                    title={skill.name}
-                                                    check={getSavedCheck(personId, skill.id)}
-                                                    pending={pendingChecks.get(
-                                                        sessionCheckKey(personId, skill.id),
-                                                    )}
-                                                    resultOptions={resultOptions}
-                                                    resultLabel={resultLabel}
-                                                    otherChecks={otherChecksByKey.get(
-                                                        sessionCheckKey(personId, skill.id),
-                                                    )}
-                                                    onRecord={(value) =>
-                                                        record({
-                                                            assesseeId: personId,
-                                                            skillId: skill.id,
-                                                            ...value,
-                                                        })
-                                                    }
-                                                    onRemove={() =>
-                                                        remove({
-                                                            assesseeId: personId,
-                                                            skillId: skill.id,
-                                                        })
-                                                    }
-                                                    onOpenDialog={() =>
-                                                        openDialog(personId, skill.id)
-                                                    }
-                                                />
-                                            );
-
-                                            return match(skillOrder)
-                                                .with("alphabetical", () => (
-                                                    <>{sessionSkills.map(renderRow)}</>
-                                                ))
-                                                .with("by-package-group", () => (
-                                                    <div className="space-y-6">
-                                                        {groupSections.map((section) => (
-                                                            <div
-                                                                key={section.id}
-                                                                className="space-y-6"
-                                                            >
-                                                                <div className="font-semibold border-b pb-1">
-                                                                    {section.label}
-                                                                </div>
-                                                                <div className="flex flex-col gap-5">
-                                                                    {section.items.map(renderRow)}
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                        {ungroupedSkills.length > 0 && (
-                                                            <div className="space-y-6">
-                                                                <div className="font-semibold border-b pb-1">
-                                                                    No longer available
-                                                                </div>
-                                                                <div className="flex flex-col gap-5">
-                                                                    {ungroupedSkills.map(renderRow)}
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                ))
-                                                .exhaustive();
-                                        })
-                                        .exhaustive()}
-                                    {target && (
-                                        <SkillTrack_RecordCheckDialog
-                                            open={dialogOpen}
-                                            onOpenChange={setDialogOpen}
-                                            targetKey={sessionCheckKey(
-                                                target.assesseeId,
-                                                target.skillId,
-                                            )}
-                                            skillName={
-                                                sessionSkills.find(
-                                                    (skill) => skill.id === target.skillId,
-                                                )?.name ?? ""
-                                            }
-                                            skillDescription={
-                                                assessableSkillById.get(target.skillId)
-                                                    ?.description || undefined
-                                            }
-                                            personName={
-                                                assignedPersonnel.find(
-                                                    (person) => person.id === target.assesseeId,
-                                                )?.name ?? ""
-                                            }
-                                            current={getSavedCheck(
-                                                target.assesseeId,
-                                                target.skillId,
+                                            <ItemActions>
+                                                <ChevronRightIcon className="size-4 text-muted-foreground" />
+                                            </ItemActions>
+                                        </a>
+                                    </Item>
+                                ))}
+                            </ItemGroup>
+                        </div>
+                        <Separator orientation="vertical" className="hidden lg:block" />
+                        <Separator orientation="horizontal" className="block lg:hidden" />
+                        <div className="flex w-full flex-col gap-5">
+                            {match(selected)
+                                .with(null, () => (
+                                    <Empty>
+                                        <EmptyMedia>
+                                            <ArrowLeftIcon className="hidden lg:block size-12 text-muted-foreground" />
+                                            <ArrowUpIcon className="block lg:hidden size-12 text-muted-foreground" />
+                                        </EmptyMedia>
+                                        <EmptyDescription>
+                                            Select a person to assess their skills.
+                                        </EmptyDescription>
+                                    </Empty>
+                                ))
+                                .with({ status: "Loading" }, () => (
+                                    <div className="flex justify-center items-center my-8">
+                                        <RainbowSpinner />
+                                    </div>
+                                ))
+                                .with({ status: "Selected" }, ({ personId }) => {
+                                    const renderRow = (skill: (typeof sessionSkills)[number]) => (
+                                        <SkillTrack_CheckRow
+                                            key={skill.id}
+                                            title={skill.name}
+                                            check={getSavedCheck(personId, skill.id)}
+                                            pending={pendingChecks.get(
+                                                sessionCheckKey(personId, skill.id),
                                             )}
                                             resultOptions={resultOptions}
                                             resultLabel={resultLabel}
+                                            otherChecks={otherChecksByKey.get(
+                                                sessionCheckKey(personId, skill.id),
+                                            )}
                                             onRecord={(value) =>
                                                 record({
-                                                    assesseeId: target.assesseeId,
-                                                    skillId: target.skillId,
+                                                    assesseeId: personId,
+                                                    skillId: skill.id,
                                                     ...value,
                                                 })
                                             }
-                                            onDelete={() =>
+                                            onRemove={() =>
                                                 remove({
-                                                    assesseeId: target.assesseeId,
-                                                    skillId: target.skillId,
+                                                    assesseeId: personId,
+                                                    skillId: skill.id,
                                                 })
                                             }
+                                            onOpenDialog={() => openDialog(personId, skill.id)}
                                         />
-                                    )}
-                                </div>
-                            </div>
-                        </Show>
-                    </Show>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+                                    );
+
+                                    return match(skillOrder)
+                                        .with("alphabetical", () => (
+                                            <>{sessionSkills.map(renderRow)}</>
+                                        ))
+                                        .with("by-package-group", () => (
+                                            <div className="space-y-6">
+                                                {groupSections.map((section) => (
+                                                    <div key={section.id} className="space-y-6">
+                                                        <div className="font-semibold border-b pb-1">
+                                                            {section.label}
+                                                        </div>
+                                                        <div className="flex flex-col gap-5">
+                                                            {section.items.map(renderRow)}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                {ungroupedSkills.length > 0 && (
+                                                    <div className="space-y-6">
+                                                        <div className="font-semibold border-b pb-1">
+                                                            No longer available
+                                                        </div>
+                                                        <div className="flex flex-col gap-5">
+                                                            {ungroupedSkills.map(renderRow)}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))
+                                        .exhaustive();
+                                })
+                                .exhaustive()}
+                            {target && (
+                                <SkillTrack_RecordCheckDialog
+                                    open={dialogOpen}
+                                    onOpenChange={setDialogOpen}
+                                    targetKey={sessionCheckKey(target.assesseeId, target.skillId)}
+                                    skillName={
+                                        sessionSkills.find((skill) => skill.id === target.skillId)
+                                            ?.name ?? ""
+                                    }
+                                    skillDescription={
+                                        assessableSkillById.get(target.skillId)?.description ||
+                                        undefined
+                                    }
+                                    personName={
+                                        assignedPersonnel.find(
+                                            (person) => person.id === target.assesseeId,
+                                        )?.name ?? ""
+                                    }
+                                    current={getSavedCheck(target.assesseeId, target.skillId)}
+                                    resultOptions={resultOptions}
+                                    resultLabel={resultLabel}
+                                    onRecord={(value) =>
+                                        record({
+                                            assesseeId: target.assesseeId,
+                                            skillId: target.skillId,
+                                            ...value,
+                                        })
+                                    }
+                                    onDelete={() =>
+                                        remove({
+                                            assesseeId: target.assesseeId,
+                                            skillId: target.skillId,
+                                        })
+                                    }
+                                />
+                            )}
+                        </div>
+                    </div>
+                </Show>
+            </Show>
+        </Saratoga.Root>
     );
 }

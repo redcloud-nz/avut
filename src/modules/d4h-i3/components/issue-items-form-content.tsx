@@ -15,7 +15,6 @@ import { useMutation, useQuery, useSuspenseQueries } from "@tanstack/react-query
 
 import { i3Effects } from "@/client/i3-effects";
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { D4HTeamMemberSelect } from "@/components/controls/d4h-team-member-select";
 import { AlertWarningIcon, ObjectIcons } from "@/components/icons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -176,168 +175,152 @@ export function D4HI3Module_IssueItems_FormInstance_Content({
     );
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "D4H I3", href: route("/orgs/[slug]/d4h-i3", { slug }) },
-                    { label: "Forms" },
+        <Saratoga.Root>
+            <Saratoga.Breadcrumbs
+                items={[
                     {
-                        label: "Issue Items",
+                        label: "I3 Forms",
                         href: route("/orgs/[slug]/d4h-i3/forms/issue-items", { slug }),
                     },
-                    { label: form.getValues().recipient.name || "No one selected" },
                 ]}
             />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>Issue Items</Saratoga.Title>
-                    </Saratoga.Header>
-                    <Card>
-                        <CardHeader>
-                            <CardDescription>
-                                Use this form to record items being issued to an individual.
-                            </CardDescription>
-                            <CardAction>
-                                <SaveStatusIndicator status={saveStatus} />
-                            </CardAction>
-                        </CardHeader>
-                        <CardContent>
-                            <form
-                                id="item-issue-form"
-                                onSubmit={handleSubmit}
-                                onChange={handleChange}
-                            >
-                                <FieldGroup>
-                                    <div className="grid gap-5 sm:grid-cols-2">
-                                        <Controller
-                                            control={form.control}
-                                            name="recipient"
-                                            render={({ field, fieldState }) => (
-                                                <Field data-invalid={fieldState.invalid}>
-                                                    <FieldLabel htmlFor={`${idPrefix}-recipient`}>
-                                                        Issued to
-                                                    </FieldLabel>
-                                                    <D4HTeamMemberSelect
-                                                        value={field.value}
-                                                        onChange={(value) => {
-                                                            field.onChange(value);
-                                                            handleChange();
-                                                        }}
-                                                        organizationId={organization.id}
-                                                        id={`${idPrefix}-recipient`}
-                                                        aria-invalid={fieldState.invalid}
-                                                    />
-                                                    {fieldState.error && (
-                                                        <FieldError errors={[fieldState.error]} />
-                                                    )}
-                                                </Field>
+            <Saratoga.Header>
+                <Saratoga.Title>Issue Items</Saratoga.Title>
+            </Saratoga.Header>
+            <Card>
+                <CardHeader>
+                    <CardDescription>
+                        Use this form to record items being issued to an individual.
+                    </CardDescription>
+                    <CardAction>
+                        <SaveStatusIndicator status={saveStatus} />
+                    </CardAction>
+                </CardHeader>
+                <CardContent>
+                    <form id="item-issue-form" onSubmit={handleSubmit} onChange={handleChange}>
+                        <FieldGroup>
+                            <div className="grid gap-5 sm:grid-cols-2">
+                                <Controller
+                                    control={form.control}
+                                    name="recipient"
+                                    render={({ field, fieldState }) => (
+                                        <Field data-invalid={fieldState.invalid}>
+                                            <FieldLabel htmlFor={`${idPrefix}-recipient`}>
+                                                Issued to
+                                            </FieldLabel>
+                                            <D4HTeamMemberSelect
+                                                value={field.value}
+                                                onChange={(value) => {
+                                                    field.onChange(value);
+                                                    handleChange();
+                                                }}
+                                                organizationId={organization.id}
+                                                id={`${idPrefix}-recipient`}
+                                                aria-invalid={fieldState.invalid}
+                                            />
+                                            {fieldState.error && (
+                                                <FieldError errors={[fieldState.error]} />
                                             )}
-                                        />
-                                        <Field>
-                                            <FieldLabel>Recorded by</FieldLabel>
-                                            {/* Matches the height of the person select it sits beside. */}
-                                            <UserNameFieldValue className="flex h-8 items-center text-sm" />
                                         </Field>
-                                    </div>
-
-                                    {lacksCreatePermission && (
-                                        <Alert variant="warning">
-                                            <AlertTitle>
-                                                Can&apos;t issue items to this team
-                                            </AlertTitle>
-                                            <AlertDescription>
-                                                Your D4H account doesn&apos;t have permission to
-                                                create equipment in{" "}
-                                                {recipientTeam?.title ?? "this person's team"}.
-                                            </AlertDescription>
-                                        </Alert>
                                     )}
+                                />
+                                <Field>
+                                    <FieldLabel>Recorded by</FieldLabel>
+                                    {/* Matches the height of the person select it sits beside. */}
+                                    <UserNameFieldValue className="flex h-8 items-center text-sm" />
+                                </Field>
+                            </div>
 
-                                    {/* An unreachable team trips both alerts; the permission one is enough. */}
-                                    {fitsQuery.isError && !lacksCreatePermission && (
-                                        <Alert variant="warning">
-                                            <AlertTitle>
-                                                Couldn&apos;t check templates against D4H
-                                            </AlertTitle>
-                                            <AlertDescription>
-                                                Every template is offered. Submit still refuses any
-                                                that can&apos;t be issued to {recipientTeamTitle}.
-                                            </AlertDescription>
-                                        </Alert>
-                                    )}
+                            {lacksCreatePermission && (
+                                <Alert variant="warning">
+                                    <AlertTitle>Can&apos;t issue items to this team</AlertTitle>
+                                    <AlertDescription>
+                                        Your D4H account doesn&apos;t have permission to create
+                                        equipment in {recipientTeam?.title ?? "this person's team"}.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
 
-                                    {checkingFits && (
-                                        <p className="text-sm text-muted-foreground">
-                                            Checking templates…
-                                        </p>
-                                    )}
+                            {/* An unreachable team trips both alerts; the permission one is enough. */}
+                            {fitsQuery.isError && !lacksCreatePermission && (
+                                <Alert variant="warning">
+                                    <AlertTitle>
+                                        Couldn&apos;t check templates against D4H
+                                    </AlertTitle>
+                                    <AlertDescription>
+                                        Every template is offered. Submit still refuses any that
+                                        can&apos;t be issued to {recipientTeamTitle}.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
 
-                                    <FieldSeparator />
+                            {checkingFits && (
+                                <p className="text-sm text-muted-foreground">Checking templates…</p>
+                            )}
 
-                                    <D4HI3_Issue_ItemsSection
-                                        form={form}
-                                        organizationId={organization.id}
-                                        hasRecipient={recipient.id > 0}
-                                        fits={fits}
-                                        teamTitle={recipientTeamTitle}
-                                        misfitIndexes={misfitIndexes}
-                                        onChange={handleChange}
-                                    />
+                            <FieldSeparator />
 
-                                    <FieldSeparator />
+                            <D4HI3_Issue_ItemsSection
+                                form={form}
+                                organizationId={organization.id}
+                                hasRecipient={recipient.id > 0}
+                                fits={fits}
+                                teamTitle={recipientTeamTitle}
+                                misfitIndexes={misfitIndexes}
+                                onChange={handleChange}
+                            />
 
-                                    <Controller
-                                        control={form.control}
-                                        name="comments"
-                                        render={({ field, fieldState }) => (
-                                            <Field data-invalid={fieldState.invalid}>
-                                                <FieldLabel htmlFor={`${idPrefix}-comments`}>
-                                                    Comments
-                                                </FieldLabel>
-                                                <Textarea
-                                                    id={`${idPrefix}-comments`}
-                                                    {...field}
-                                                    aria-invalid={fieldState.invalid}
-                                                />
-                                                {fieldState.error && (
-                                                    <FieldError errors={[fieldState.error]} />
-                                                )}
-                                            </Field>
-                                        )}
-                                    />
-                                    <Field orientation="horizontal" className="justify-between">
-                                        <MutationButton
-                                            type="submit"
-                                            status={submitMutation.status}
-                                            disabled={
-                                                lacksCreatePermission ||
-                                                checkingFits ||
-                                                misfitIndexes.length > 0
-                                            }
-                                            text={{
-                                                idle: "Submit",
-                                                pending: "Submitting",
-                                                success: "Submitted",
-                                            }}
+                            <FieldSeparator />
+
+                            <Controller
+                                control={form.control}
+                                name="comments"
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor={`${idPrefix}-comments`}>
+                                            Comments
+                                        </FieldLabel>
+                                        <Textarea
+                                            id={`${idPrefix}-comments`}
+                                            {...field}
+                                            aria-invalid={fieldState.invalid}
                                         />
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            onClick={handleDelete}
-                                            className="text-destructive"
-                                            aria-label="Delete draft"
-                                        >
-                                            <ObjectIcons.Delete />
-                                        </Button>
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
                                     </Field>
-                                </FieldGroup>
-                            </form>
-                        </CardContent>
-                    </Card>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+                                )}
+                            />
+                            <Field orientation="horizontal" className="justify-between">
+                                <MutationButton
+                                    type="submit"
+                                    status={submitMutation.status}
+                                    disabled={
+                                        lacksCreatePermission ||
+                                        checkingFits ||
+                                        misfitIndexes.length > 0
+                                    }
+                                    text={{
+                                        idle: "Submit",
+                                        pending: "Submitting",
+                                        success: "Submitted",
+                                    }}
+                                />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={handleDelete}
+                                    className="text-destructive"
+                                    aria-label="Delete draft"
+                                >
+                                    <ObjectIcons.Delete />
+                                </Button>
+                            </Field>
+                        </FieldGroup>
+                    </form>
+                </CardContent>
+            </Card>
+        </Saratoga.Root>
     );
 }
 

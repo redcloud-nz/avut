@@ -6,9 +6,18 @@
  *
  */
 
-import { ComponentProps, ReactNode } from "react";
+import type { Route } from "next";
+import Link from "next/link";
+import { ComponentProps, Fragment, ReactNode } from "react";
 import { tv, VariantProps } from "tailwind-variants";
 
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { cn } from "@/lib/utils";
 
 import { SaratogaContents, SaratogaContentsSpacer } from "./saratoga-contents";
@@ -37,12 +46,48 @@ function SaratogaHeader({ children, className, ...props }: ComponentProps<"heade
     );
 }
 
+/** One ancestor in a page's breadcrumb trail. Every ancestor is a link. */
+export type SaratogaBreadcrumb = { label: string; href: Route };
+
+/**
+ * The trail of pages above this one, rendered in the page directly above `Saratoga.Header` rather
+ * than in the navbar. Ancestors only: the page's own `<h1>` is the current crumb, so it isn't
+ * repeated. On a narrow screen the trail stays on one line and each ancestor truncates.
+ */
+function SaratogaBreadcrumbs({
+    items,
+    className,
+}: {
+    items: SaratogaBreadcrumb[];
+    className?: string;
+}) {
+    return (
+        <Breadcrumb data-component="SaratogaBreadcrumbs" className={className}>
+            <BreadcrumbList className="flex-nowrap text-xs">
+                {items.map((item, idx) => (
+                    <Fragment key={idx}>
+                        {idx > 0 && <BreadcrumbSeparator />}
+                        <BreadcrumbItem className="min-w-0">
+                            <BreadcrumbLink asChild>
+                                <Link href={item.href} className="truncate">
+                                    {item.label}
+                                </Link>
+                            </BreadcrumbLink>
+                        </BreadcrumbItem>
+                    </Fragment>
+                ))}
+            </BreadcrumbList>
+        </Breadcrumb>
+    );
+}
+
 /**
  * The page's `<h1>`. A long title truncates with an ellipsis.
  *
  * `badges` (e.g. a record's non-normal status: "Archived", "Withdrawn") render beside the `<h1>`,
  * not inside it, so they stay visible when the title truncates and stay out of the heading's
- * accessible name.
+ * accessible name. When the title and badges don't fit on one line (a long title, a narrow screen)
+ * the badges drop to the next row, and the title, alone on its line, truncates.
  */
 function SaratogaTitle({
     children,
@@ -66,9 +111,12 @@ function SaratogaTitle({
     if (!badges) return title;
 
     return (
-        <div data-component="SaratogaTitleGroup" className="flex min-w-0 items-center gap-2">
+        <div
+            data-component="SaratogaTitleGroup"
+            className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1"
+        >
             {title}
-            <div className="flex shrink-0 items-center gap-2">{badges}</div>
+            <div className="flex shrink-0 items-center gap-2 empty:hidden">{badges}</div>
         </div>
     );
 }
@@ -136,6 +184,7 @@ function SaratogaColumn({
 
 export const Saratoga = {
     Root: SaratogaRoot,
+    Breadcrumbs: SaratogaBreadcrumbs,
     Header: SaratogaHeader,
     Title: SaratogaTitle,
     Actions: SaratogaActions,

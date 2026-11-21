@@ -9,7 +9,6 @@ import { notFound } from "next/navigation";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { Badge } from "@/components/ui/badge";
 import { CardContent } from "@/components/ui/card";
 import {
@@ -39,64 +38,53 @@ export function UserSettings_OrganizationContent({
     const { organization } = membership;
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    "User Settings",
-                    { label: "Organisations", href: "/user/settings/organizations" },
-                    organization.name,
-                ]}
+        <Saratoga.Root>
+            <Saratoga.Breadcrumbs
+                items={[{ label: "Organisations", href: "/user/settings/organizations" }]}
             />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>{organization.name}</Saratoga.Title>
-                        <Saratoga.Actions>
-                            <UserSettings_Organization_Menu membership={membership} />
-                        </Saratoga.Actions>
-                    </Saratoga.Header>
-                    <Saratoga.Columns>
-                        <Saratoga.Column slot="main">
-                            <RecordCard label="Organisation">
-                                <CardContent>
-                                    <DataList>
-                                        <RecordCardId
-                                            label="Organisation ID"
-                                            id={organization.id}
-                                        />
-                                        <DataItem>
-                                            <DataItemTitle>Name</DataItemTitle>
-                                            <DataItemValue>{organization.name}</DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Slug</DataItemTitle>
-                                            <DataItemValue className="font-mono">
-                                                {organization.slug}
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Your Roles</DataItemTitle>
-                                            <DataItemValue>
-                                                <div className="flex flex-wrap gap-1">
-                                                    {membership.roles.map((role) => (
-                                                        <Badge key={role} variant="secondary">
-                                                            {OrganizationRole.displayNames[role]}
-                                                        </Badge>
-                                                    ))}
-                                                </div>
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Joined</DataItemTitle>
-                                            <DataItemDateValue date={membership.createdAt} />
-                                        </DataItem>
-                                    </DataList>
-                                </CardContent>
-                            </RecordCard>
-                        </Saratoga.Column>
-                    </Saratoga.Columns>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+            <Saratoga.Header>
+                <Saratoga.Title>{organization.name}</Saratoga.Title>
+                <Saratoga.Actions>
+                    <UserSettings_Organization_Menu membership={membership} />
+                </Saratoga.Actions>
+            </Saratoga.Header>
+            <Saratoga.Columns>
+                <Saratoga.Column slot="main">
+                    <RecordCard label="Organisation">
+                        <CardContent>
+                            <DataList>
+                                <RecordCardId label="Organisation ID" id={organization.id} />
+                                <DataItem>
+                                    <DataItemTitle>Name</DataItemTitle>
+                                    <DataItemValue>{organization.name}</DataItemValue>
+                                </DataItem>
+                                <DataItem>
+                                    <DataItemTitle>Slug</DataItemTitle>
+                                    <DataItemValue className="font-mono">
+                                        {organization.slug}
+                                    </DataItemValue>
+                                </DataItem>
+                                <DataItem>
+                                    <DataItemTitle>Your Roles</DataItemTitle>
+                                    <DataItemValue>
+                                        <div className="flex flex-wrap gap-1">
+                                            {membership.roles.map((role) => (
+                                                <Badge key={role} variant="secondary">
+                                                    {OrganizationRole.displayNames[role]}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    </DataItemValue>
+                                </DataItem>
+                                <DataItem>
+                                    <DataItemTitle>Joined</DataItemTitle>
+                                    <DataItemDateValue date={membership.createdAt} />
+                                </DataItem>
+                            </DataList>
+                        </CardContent>
+                    </RecordCard>
+                </Saratoga.Column>
+            </Saratoga.Columns>
+        </Saratoga.Root>
     );
 }

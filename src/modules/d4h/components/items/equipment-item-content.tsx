@@ -20,7 +20,6 @@ import {
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { D4HItemRef } from "@/components/d4h/d4h-item-ref";
 import { D4HEquipmentBrandLink } from "@/components/entity-links/d4h-equipment-brand-link";
 import { D4HEquipmentCategoryLink } from "@/components/entity-links/d4h-equipment-category-link";
@@ -148,206 +147,193 @@ export function D4HModule_EquipmentItem_Content({
     ].filter((date): date is { label: string; value: string } => date.value !== null);
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "D4H", href: route("/orgs/[slug]/d4h", { slug }) },
+        <Saratoga.Root>
+            <Saratoga.Breadcrumbs
+                items={[
                     { label: "Teams", href: route("/orgs/[slug]/d4h/teams", { slug }) },
                     { label: team.title, href: teamHref },
                     ...memberBreadcrumbs,
-                    { label: `Item ${item.ref}` },
                 ]}
             />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>
-                            <D4HItemRef value={item.ref} /> {item.kind.title}
-                        </Saratoga.Title>
-                        <Saratoga.Actions>
-                            <D4HModule_OpenInD4H_Button href={d4hUrl} />
-                            <D4HModule_EquipmentItem_Menu
-                                canUpdateInD4H={canUpdateInD4H}
-                                extraActions={menuActions}
-                                dialogs={menuDialogs}
-                            />
-                        </Saratoga.Actions>
-                    </Saratoga.Header>
+            <Saratoga.Header>
+                <Saratoga.Title>
+                    <D4HItemRef value={item.ref} /> {item.kind.title}
+                </Saratoga.Title>
+                <Saratoga.Actions>
+                    <D4HModule_OpenInD4H_Button href={d4hUrl} />
+                    <D4HModule_EquipmentItem_Menu
+                        canUpdateInD4H={canUpdateInD4H}
+                        extraActions={menuActions}
+                        dialogs={menuDialogs}
+                    />
+                </Saratoga.Actions>
+            </Saratoga.Header>
 
-                    <Saratoga.Columns>
-                        <Saratoga.Column slot="main">
-                            <RecordCard
-                                label="D4H Item"
-                                action={
-                                    <Protect
-                                        permissions={{ d4hEquipment: ["update"] }}
-                                        render={(hasPermission) => (
-                                            <D4HModule_UpdateEquipmentItem_Dialog
-                                                teamId={teamId}
-                                                item={item}
-                                                disabledReason={updateEquipmentItemDisabledReason({
-                                                    hasPermission,
-                                                    canUpdateInD4H,
-                                                    teamTitle: team.title,
-                                                })}
-                                            />
-                                        )}
-                                    />
-                                }
-                            >
-                                <CardContent>
-                                    <DataList>
-                                        <RecordCardId label="D4H ID" id={String(item.id)} />
-                                        <DataItem>
-                                            <DataItemTitle>Ref</DataItemTitle>
-                                            <DataItemValue>
-                                                <D4HItemRef value={item.ref} />
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Team</DataItemTitle>
-                                            <DataItemValue>
-                                                <D4HTeamLink team={team} />
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Type</DataItemTitle>
-                                            <DataItemValue>
-                                                <D4HEquipmentTypeLink type={item.kind} />
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Category</DataItemTitle>
-                                            <DataItemValue>
-                                                {category ? (
-                                                    <D4HEquipmentCategoryLink category={category} />
-                                                ) : (
-                                                    "—"
-                                                )}
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Brand</DataItemTitle>
-                                            <DataItemValue>
-                                                {item.brand.id != null && item.brand.title ? (
-                                                    <D4HEquipmentBrandLink
-                                                        brand={{
-                                                            id: item.brand.id,
-                                                            title: item.brand.title,
-                                                        }}
-                                                    />
-                                                ) : (
-                                                    item.brand.title || "—"
-                                                )}
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Model</DataItemTitle>
-                                            <DataItemValue>
-                                                {item.model?.id != null && item.model.title ? (
-                                                    <D4HEquipmentModelLink
-                                                        model={{
-                                                            id: item.model.id,
-                                                            title: item.model.title,
-                                                        }}
-                                                    />
-                                                ) : (
-                                                    item.model?.title || "—"
-                                                )}
-                                            </DataItemValue>
-                                        </DataItem>
-                                        {item.parents.length > 0 && (
-                                            <DataItem>
-                                                <DataItemTitle>Parents</DataItemTitle>
-                                                <DataItemValue>
-                                                    <ParentsTree
-                                                        parents={item.parents}
-                                                        teamId={teamId}
-                                                    />
-                                                </DataItemValue>
-                                            </DataItem>
-                                        )}
-                                        <DataItem>
-                                            <DataItemTitle>Serial Number</DataItemTitle>
-                                            <DataItemValue>{item.serial}</DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>D4H Status</DataItemTitle>
-                                            <DataItemValue className="flex flex-wrap items-center gap-2">
-                                                {D4HEquipmentStatus.label(item.status)}
-                                                {statusBadge}
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Issued To</DataItemTitle>
-                                            <DataItemValue>
-                                                {holder ? (
-                                                    // The name comes from this team's member list,
-                                                    // so the member page is under this team.
-                                                    <D4HMemberLink
-                                                        member={{
-                                                            ...holder,
-                                                            owner: { id: teamId },
-                                                        }}
-                                                    />
-                                                ) : (
-                                                    // Not held by a member: Parents already says
-                                                    // which container it's in.
-                                                    "—"
-                                                )}
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Critical</DataItemTitle>
-                                            <DataItemValue>
-                                                {item.isCritical ? "Yes" : "No"}
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Monitor</DataItemTitle>
-                                            <DataItemValue>
-                                                {item.isMonitor ? "Yes" : "No"}
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Barcode</DataItemTitle>
-                                            <DataItemValue>{item.barcode}</DataItemValue>
-                                        </DataItem>
-                                        {dates.map(({ label, value }) => (
-                                            <DataItem key={label}>
-                                                <DataItemTitle>{label}</DataItemTitle>
-                                                <DataItemValue>{formatDate(value)}</DataItemValue>
-                                            </DataItem>
-                                        ))}
-                                        <DataItem>
-                                            <DataItemTitle>Notes</DataItemTitle>
-                                            <DataItemValue className="whitespace-pre-line">
-                                                {item.notes}
-                                            </DataItemValue>
-                                        </DataItem>
-                                    </DataList>
-                                </CardContent>
-                            </RecordCard>
-                            <ItemContentsBoundary>
-                                <ItemContents teamId={teamId} itemId={itemId} />
-                            </ItemContentsBoundary>
-                        </Saratoga.Column>
-                        <Saratoga.Column slot="secondary">
-                            <Protect permissions={{ d4hTask: ["view"] }}>
-                                <Suspense fallback={<CardLoadingFallback />}>
-                                    <D4HModule_ItemTasks_Card
+            <Saratoga.Columns>
+                <Saratoga.Column slot="main">
+                    <RecordCard
+                        label="D4H Item"
+                        action={
+                            <Protect
+                                permissions={{ d4hEquipment: ["update"] }}
+                                render={(hasPermission) => (
+                                    <D4HModule_UpdateEquipmentItem_Dialog
                                         teamId={teamId}
-                                        itemId={itemId}
-                                        itemLabel={`#${item.ref} ${item.kind.title}`}
-                                        canRetireInD4H={canRetireInD4H}
+                                        item={item}
+                                        disabledReason={updateEquipmentItemDisabledReason({
+                                            hasPermission,
+                                            canUpdateInD4H,
+                                            teamTitle: team.title,
+                                        })}
                                     />
-                                </Suspense>
-                            </Protect>
-                        </Saratoga.Column>
-                    </Saratoga.Columns>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+                                )}
+                            />
+                        }
+                    >
+                        <CardContent>
+                            <DataList>
+                                <RecordCardId label="D4H ID" id={String(item.id)} />
+                                <DataItem>
+                                    <DataItemTitle>Ref</DataItemTitle>
+                                    <DataItemValue>
+                                        <D4HItemRef value={item.ref} />
+                                    </DataItemValue>
+                                </DataItem>
+                                <DataItem>
+                                    <DataItemTitle>Team</DataItemTitle>
+                                    <DataItemValue>
+                                        <D4HTeamLink team={team} />
+                                    </DataItemValue>
+                                </DataItem>
+                                <DataItem>
+                                    <DataItemTitle>Type</DataItemTitle>
+                                    <DataItemValue>
+                                        <D4HEquipmentTypeLink type={item.kind} />
+                                    </DataItemValue>
+                                </DataItem>
+                                <DataItem>
+                                    <DataItemTitle>Category</DataItemTitle>
+                                    <DataItemValue>
+                                        {category ? (
+                                            <D4HEquipmentCategoryLink category={category} />
+                                        ) : (
+                                            "—"
+                                        )}
+                                    </DataItemValue>
+                                </DataItem>
+                                <DataItem>
+                                    <DataItemTitle>Brand</DataItemTitle>
+                                    <DataItemValue>
+                                        {item.brand.id != null && item.brand.title ? (
+                                            <D4HEquipmentBrandLink
+                                                brand={{
+                                                    id: item.brand.id,
+                                                    title: item.brand.title,
+                                                }}
+                                            />
+                                        ) : (
+                                            item.brand.title || "—"
+                                        )}
+                                    </DataItemValue>
+                                </DataItem>
+                                <DataItem>
+                                    <DataItemTitle>Model</DataItemTitle>
+                                    <DataItemValue>
+                                        {item.model?.id != null && item.model.title ? (
+                                            <D4HEquipmentModelLink
+                                                model={{
+                                                    id: item.model.id,
+                                                    title: item.model.title,
+                                                }}
+                                            />
+                                        ) : (
+                                            item.model?.title || "—"
+                                        )}
+                                    </DataItemValue>
+                                </DataItem>
+                                {item.parents.length > 0 && (
+                                    <DataItem>
+                                        <DataItemTitle>Parents</DataItemTitle>
+                                        <DataItemValue>
+                                            <ParentsTree parents={item.parents} teamId={teamId} />
+                                        </DataItemValue>
+                                    </DataItem>
+                                )}
+                                <DataItem>
+                                    <DataItemTitle>Serial Number</DataItemTitle>
+                                    <DataItemValue>{item.serial}</DataItemValue>
+                                </DataItem>
+                                <DataItem>
+                                    <DataItemTitle>D4H Status</DataItemTitle>
+                                    <DataItemValue className="flex flex-wrap items-center gap-2">
+                                        {D4HEquipmentStatus.label(item.status)}
+                                        {statusBadge}
+                                    </DataItemValue>
+                                </DataItem>
+                                <DataItem>
+                                    <DataItemTitle>Issued To</DataItemTitle>
+                                    <DataItemValue>
+                                        {holder ? (
+                                            // The name comes from this team's member list,
+                                            // so the member page is under this team.
+                                            <D4HMemberLink
+                                                member={{
+                                                    ...holder,
+                                                    owner: { id: teamId },
+                                                }}
+                                            />
+                                        ) : (
+                                            // Not held by a member: Parents already says
+                                            // which container it's in.
+                                            "—"
+                                        )}
+                                    </DataItemValue>
+                                </DataItem>
+                                <DataItem>
+                                    <DataItemTitle>Critical</DataItemTitle>
+                                    <DataItemValue>{item.isCritical ? "Yes" : "No"}</DataItemValue>
+                                </DataItem>
+                                <DataItem>
+                                    <DataItemTitle>Monitor</DataItemTitle>
+                                    <DataItemValue>{item.isMonitor ? "Yes" : "No"}</DataItemValue>
+                                </DataItem>
+                                <DataItem>
+                                    <DataItemTitle>Barcode</DataItemTitle>
+                                    <DataItemValue>{item.barcode}</DataItemValue>
+                                </DataItem>
+                                {dates.map(({ label, value }) => (
+                                    <DataItem key={label}>
+                                        <DataItemTitle>{label}</DataItemTitle>
+                                        <DataItemValue>{formatDate(value)}</DataItemValue>
+                                    </DataItem>
+                                ))}
+                                <DataItem>
+                                    <DataItemTitle>Notes</DataItemTitle>
+                                    <DataItemValue className="whitespace-pre-line">
+                                        {item.notes}
+                                    </DataItemValue>
+                                </DataItem>
+                            </DataList>
+                        </CardContent>
+                    </RecordCard>
+                    <ItemContentsBoundary>
+                        <ItemContents teamId={teamId} itemId={itemId} />
+                    </ItemContentsBoundary>
+                </Saratoga.Column>
+                <Saratoga.Column slot="secondary">
+                    <Protect permissions={{ d4hTask: ["view"] }}>
+                        <Suspense fallback={<CardLoadingFallback />}>
+                            <D4HModule_ItemTasks_Card
+                                teamId={teamId}
+                                itemId={itemId}
+                                itemLabel={`#${item.ref} ${item.kind.title}`}
+                                canRetireInD4H={canRetireInD4H}
+                            />
+                        </Suspense>
+                    </Protect>
+                </Saratoga.Column>
+            </Saratoga.Columns>
+        </Saratoga.Root>
     );
 }
 

@@ -10,6 +10,7 @@ import { redirect } from "next/navigation";
 
 import { TRPCError } from "@trpc/server";
 
+import { Std } from "@/components/blocks/std";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { route } from "@/lib/routes";
 import { D4HModule_Members_SelectTeam } from "@/modules/d4h/components/members/select-team";
@@ -53,7 +54,9 @@ export default async function D4HModule_Members_Page(props: PageProps<"/orgs/[sl
 
     return (
         <HydrateClient>
-            <D4HModule_Members_SelectTeam />
+            <Std.ScrollContainer>
+                <D4HModule_Members_SelectTeam />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

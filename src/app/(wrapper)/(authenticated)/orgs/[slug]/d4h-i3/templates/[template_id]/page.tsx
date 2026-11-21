@@ -7,6 +7,7 @@
 
 import { Metadata } from "next";
 
+import { Std } from "@/components/blocks/std";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { I3TemplateId } from "@/lib/schemas/i3-template";
 import { D4HI3Module_Template_Content } from "@/modules/d4h-i3/components/templates/template-content";
@@ -45,7 +46,9 @@ export default async function D4HI3Module_Template_Page(props: Props) {
 
     return (
         <HydrateClient>
-            <D4HI3Module_Template_Content templateId={templateId} />
+            <Std.ScrollContainer>
+                <D4HI3Module_Template_Content templateId={templateId} />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

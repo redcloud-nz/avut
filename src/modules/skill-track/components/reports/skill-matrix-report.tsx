@@ -12,6 +12,7 @@ import * as R from "remeda";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Glorious } from "@/components/blocks/glorious";
+import type { SaratogaBreadcrumb } from "@/components/blocks/saratoga";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import {
@@ -83,8 +84,11 @@ function columnHoverCss(columnCount: number): string {
 
 export function SkillTrack_SkillMatrixReport({
     syntheticChecksEnabled,
+    breadcrumbs,
 }: {
     syntheticChecksEnabled: boolean;
+    /** The page's ancestors, shown above the title. */
+    breadcrumbs?: SaratogaBreadcrumb[];
 }) {
     const [team] = useQueryState("team");
 
@@ -94,6 +98,7 @@ export function SkillTrack_SkillMatrixReport({
         return (
             <Glorious.Root className="mx-auto w-full max-w-4xl">
                 <Glorious.Header>
+                    {breadcrumbs && <Glorious.Breadcrumbs items={breadcrumbs} />}
                     <Glorious.Title>Personnel × Skill Matrix Report</Glorious.Title>
                     <Glorious.Actions>
                         <SkillTrack_TeamScopeDialog forceOpen label="Select a scope" />
@@ -109,16 +114,22 @@ export function SkillTrack_SkillMatrixReport({
     }
 
     return (
-        <SkillMatrixReportView teamParam={team} syntheticChecksEnabled={syntheticChecksEnabled} />
+        <SkillMatrixReportView
+            teamParam={team}
+            syntheticChecksEnabled={syntheticChecksEnabled}
+            breadcrumbs={breadcrumbs}
+        />
     );
 }
 
 function SkillMatrixReportView({
     teamParam,
     syntheticChecksEnabled,
+    breadcrumbs,
 }: {
     teamParam: string;
     syntheticChecksEnabled: boolean;
+    breadcrumbs?: SaratogaBreadcrumb[];
 }) {
     const organization = useOrganization();
 
@@ -204,6 +215,7 @@ function SkillMatrixReportView({
         <ReportCellPopoversProvider isSynthetic={isSynthetic}>
             <Glorious.Root>
                 <Glorious.Header>
+                    {breadcrumbs && <Glorious.Breadcrumbs items={breadcrumbs} />}
                     <Glorious.Title>Personnel × Skill Matrix Report</Glorious.Title>
                     <Glorious.Subtitle>
                         <div>

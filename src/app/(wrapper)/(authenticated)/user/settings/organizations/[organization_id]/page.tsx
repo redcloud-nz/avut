@@ -8,6 +8,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { Std } from "@/components/blocks/std";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { UserSettings_OrganizationContent } from "@/modules/user-settings/components/organization-content";
 import { fetchQuery, HydrateClient, trpc } from "@/trpc/server";
@@ -33,7 +34,9 @@ export default async function UserSettings_Organization_Page(props: Props) {
 
     return (
         <HydrateClient>
-            <UserSettings_OrganizationContent organizationId={organizationId} />
+            <Std.ScrollContainer>
+                <UserSettings_OrganizationContent organizationId={organizationId} />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

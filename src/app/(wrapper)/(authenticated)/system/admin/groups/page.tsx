@@ -21,17 +21,9 @@ export default async function SystemAdmin_Groups_Page() {
 
     return (
         <HydrateClient>
-            <>
-                <Std.Navbar
-                    breadcrumbs={[
-                        { label: "System Admin", href: "/system/admin" },
-                        { label: "Groups", href: "/system/admin/groups" },
-                    ]}
-                />
-                <Std.ScrollContainer>
-                    <SystemAdmin_Groups_List />
-                </Std.ScrollContainer>
-            </>
+            <Std.ScrollContainer>
+                <SystemAdmin_Groups_List />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

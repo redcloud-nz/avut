@@ -10,6 +10,7 @@ import { notFound } from "next/navigation";
 
 import { TRPCError } from "@trpc/server";
 
+import { Std } from "@/components/blocks/std";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { D4HModule_Member_Content } from "@/modules/d4h/components/members/member-content";
 import { getOrganizationBySlug } from "@/server/cache/organization";
@@ -75,7 +76,9 @@ export default async function D4HModule_Member_Page(props: Props) {
 
     return (
         <HydrateClient>
-            <D4HModule_Member_Content teamId={teamId} memberId={memberId} />
+            <Std.ScrollContainer>
+                <D4HModule_Member_Content teamId={teamId} memberId={memberId} />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

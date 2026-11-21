@@ -7,6 +7,7 @@
 
 import { ReactNode } from "react";
 
+import type { SaratogaBreadcrumb } from "@/components/blocks/saratoga";
 import { RenderMarkdown } from "@/components/markdown/render";
 import { cn } from "@/lib/utils";
 
@@ -18,15 +19,18 @@ interface NoteDetailProps {
     byline?: ReactNode;
     /** The controls the caller is allowed to show: the Edit button and the actions menu. */
     actions?: ReactNode;
+    /** The page's ancestors, shown above the note. */
+    breadcrumbs?: SaratogaBreadcrumb[];
 }
 
 /** A note in view mode: its title, when it was last updated, and its rendered markdown. */
-export function NoteDetail({ note, byline, actions }: NoteDetailProps) {
+export function NoteDetail({ note, byline, actions, breadcrumbs }: NoteDetailProps) {
     return (
         <NoteCard
             note={note}
             byline={byline}
             actions={actions}
+            breadcrumbs={breadcrumbs}
             title={<h1 className={cn(noteTitleClassName, "border-transparent")}>{note.title}</h1>}
         >
             {note.content.trim() === "" ? (

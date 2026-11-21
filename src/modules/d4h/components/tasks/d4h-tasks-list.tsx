@@ -9,7 +9,6 @@ import { ExternalLinkIcon } from "lucide-react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { D4HEquipmentItemLink } from "@/components/entity-links/d4h-equipment-item-link";
 import { D4HTeamLink } from "@/components/entity-links/d4h-team-link";
 import { Button } from "@/components/ui/button";
@@ -24,7 +23,6 @@ import {
 } from "@/components/ui/item";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
-import { route } from "@/lib/routes";
 import { D4HTask } from "@/lib/schemas/d4h-task";
 import { trpc } from "@/trpc/client";
 
@@ -44,7 +42,6 @@ type OpenTaskRow = {
  */
 export function D4HModule_D4HTasks_List() {
     const organization = useOrganization();
-    const { slug } = organization;
 
     const { data: rows } = useSuspenseQuery(
         trpc.d4hTasks.listOpenTasks.queryOptions({ organizationId: organization.id }),
@@ -58,57 +55,47 @@ export function D4HModule_D4HTasks_List() {
     }
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "D4H", href: route("/orgs/[slug]/d4h", { slug }) },
-                    { label: "Tasks" },
-                ]}
-            />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>D4H Tasks</Saratoga.Title>
-                    </Saratoga.Header>
-                    {groups.size === 0 ? (
-                        <Empty>
-                            <EmptyHeader>
-                                <EmptyTitle>No open D4H tasks</EmptyTitle>
-                                <EmptyDescription>
-                                    When AVUT queues a change the D4H API can&apos;t make, it waits
-                                    here until someone applies it in D4H and checks it off.
-                                </EmptyDescription>
-                            </EmptyHeader>
-                        </Empty>
-                    ) : (
-                        <>
-                            <p className="text-sm text-muted-foreground">
-                                Changes the D4H API can&apos;t make, waiting to be applied by hand
-                                in D4H. Apply each one in D4H, then Check it here to close it.
-                            </p>
-                            {[...groups.values()].map((teamRows) => (
-                                <section key={teamRows[0].task.d4hTeamId} className="space-y-2">
-                                    <h2 className="text-lg font-semibold">
-                                        <D4HTeamLink
-                                            team={{
-                                                id: teamRows[0].task.d4hTeamId,
-                                                resourceType: "Team",
-                                                title: teamRows[0].teamTitle,
-                                            }}
-                                        />
-                                    </h2>
-                                    <ItemGroup>
-                                        {teamRows.map((row) => (
-                                            <TaskRow key={row.task.id} row={row} />
-                                        ))}
-                                    </ItemGroup>
-                                </section>
-                            ))}
-                        </>
-                    )}
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+        <Saratoga.Root>
+            <Saratoga.Header>
+                <Saratoga.Title>D4H Tasks</Saratoga.Title>
+            </Saratoga.Header>
+            {groups.size === 0 ? (
+                <Empty>
+                    <EmptyHeader>
+                        <EmptyTitle>No open D4H tasks</EmptyTitle>
+                        <EmptyDescription>
+                            When AVUT queues a change the D4H API can&apos;t make, it waits here
+                            until someone applies it in D4H and checks it off.
+                        </EmptyDescription>
+                    </EmptyHeader>
+                </Empty>
+            ) : (
+                <>
+                    <p className="text-sm text-muted-foreground">
+                        Changes the D4H API can&apos;t make, waiting to be applied by hand in D4H.
+                        Apply each one in D4H, then Check it here to close it.
+                    </p>
+                    {[...groups.values()].map((teamRows) => (
+                        <section key={teamRows[0].task.d4hTeamId} className="space-y-2">
+                            <h2 className="text-lg font-semibold">
+                                <D4HTeamLink
+                                    team={{
+                                        id: teamRows[0].task.d4hTeamId,
+                                        resourceType: "Team",
+                                        title: teamRows[0].teamTitle,
+                                    }}
+                                />
+                            </h2>
+                            <ItemGroup>
+                                {teamRows.map((row) => (
+                                    <TaskRow key={row.task.id} row={row} />
+                                ))}
+                            </ItemGroup>
+                        </section>
+                    ))}
+                </>
+            )}
+        </Saratoga.Root>
     );
 }
 

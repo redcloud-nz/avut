@@ -7,7 +7,6 @@
 
 import { Std } from "@/components/blocks/std";
 import { TITLE_SEPARATOR } from "@/lib/constants";
-import { route } from "@/lib/routes";
 import SkillTrack_Sessions_List from "@/modules/skill-track/components/sessions-list";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
@@ -28,23 +27,9 @@ export default async function SkillTrack_Sessions_Page(
 
     return (
         <HydrateClient>
-            <>
-                <Std.Navbar
-                    breadcrumbs={[
-                        {
-                            label: "Skill Track",
-                            href: route("/orgs/[slug]/skill-track", { slug }),
-                        },
-                        {
-                            label: "Sessions",
-                            href: route("/orgs/[slug]/skill-track/sessions", { slug }),
-                        },
-                    ]}
-                />
-                <Std.ScrollContainer>
-                    <SkillTrack_Sessions_List />
-                </Std.ScrollContainer>
-            </>
+            <Std.ScrollContainer>
+                <SkillTrack_Sessions_List />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

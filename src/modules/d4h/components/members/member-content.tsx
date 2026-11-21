@@ -18,7 +18,6 @@ import {
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { D4HItemRef } from "@/components/d4h/d4h-item-ref";
 import { D4HEquipmentBrandLink } from "@/components/entity-links/d4h-equipment-brand-link";
 import { D4HEquipmentItemLink } from "@/components/entity-links/d4h-equipment-item-link";
@@ -167,10 +166,9 @@ export function D4HModule_Member_Content({
     });
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "D4H", href: route("/orgs/[slug]/d4h", { slug }) },
+        <Saratoga.Root>
+            <Saratoga.Breadcrumbs
+                items={[
                     { label: "Teams", href: route("/orgs/[slug]/d4h/teams", { slug }) },
                     {
                         label: team.title,
@@ -186,70 +184,65 @@ export function D4HModule_Member_Content({
                             d4h_team_id: String(team.id),
                         }),
                     },
-                    { label: member.name },
                 ]}
             />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>{member.name}</Saratoga.Title>
-                        <Saratoga.Actions>
-                            <D4HModule_OpenRecordInD4H_Button
-                                record="member"
-                                id={member.id}
-                                teamId={teamId}
-                            />
-                        </Saratoga.Actions>
-                    </Saratoga.Header>
-                    <div className="flex flex-col gap-4">
-                        <RecordCard label="D4H Member">
-                            <CardContent>
-                                <DataList>
-                                    <RecordCardId label="D4H ID" id={String(member.id)} />
-                                    <DataItem>
-                                        <DataItemTitle>Name</DataItemTitle>
-                                        <DataItemValue>{member.name}</DataItemValue>
-                                    </DataItem>
-                                    <DataItem>
-                                        <DataItemTitle>Email</DataItemTitle>
-                                        <DataItemValue>{member.email.value}</DataItemValue>
-                                    </DataItem>
-                                    {member.ref && (
-                                        <DataItem>
-                                            <DataItemTitle>Ref</DataItemTitle>
-                                            <DataItemValue>{member.ref}</DataItemValue>
-                                        </DataItem>
-                                    )}
-                                    {member.position && (
-                                        <DataItem>
-                                            <DataItemTitle>Position</DataItemTitle>
-                                            <DataItemValue>{member.position}</DataItemValue>
-                                        </DataItem>
-                                    )}
-                                    <DataItem>
-                                        <DataItemTitle>Team</DataItemTitle>
-                                        <DataItemValue>
-                                            <D4HTeamLink team={team} />
-                                        </DataItemValue>
-                                    </DataItem>
-                                    <DataItem>
-                                        <DataItemTitle>D4H Status</DataItemTitle>
-                                        <DataItemValue>
-                                            {formatD4HMemberStatus(member.status)}
-                                        </DataItemValue>
-                                    </DataItem>
-                                </DataList>
-                            </CardContent>
-                        </RecordCard>
-                        <div>
-                            <div className="mb-2 text-lg font-semibold">Issued Equipment</div>
-                            <Kaga.TableToolbar table={table} />
-                            <Kaga.Table table={table} />
-                            <Kaga.TablePagination table={table} />
-                        </div>
-                    </div>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+            <Saratoga.Header>
+                <Saratoga.Title>{member.name}</Saratoga.Title>
+                <Saratoga.Actions>
+                    <D4HModule_OpenRecordInD4H_Button
+                        record="member"
+                        id={member.id}
+                        teamId={teamId}
+                    />
+                </Saratoga.Actions>
+            </Saratoga.Header>
+            <div className="flex flex-col gap-4">
+                <RecordCard label="D4H Member">
+                    <CardContent>
+                        <DataList>
+                            <RecordCardId label="D4H ID" id={String(member.id)} />
+                            <DataItem>
+                                <DataItemTitle>Name</DataItemTitle>
+                                <DataItemValue>{member.name}</DataItemValue>
+                            </DataItem>
+                            <DataItem>
+                                <DataItemTitle>Email</DataItemTitle>
+                                <DataItemValue>{member.email.value}</DataItemValue>
+                            </DataItem>
+                            {member.ref && (
+                                <DataItem>
+                                    <DataItemTitle>Ref</DataItemTitle>
+                                    <DataItemValue>{member.ref}</DataItemValue>
+                                </DataItem>
+                            )}
+                            {member.position && (
+                                <DataItem>
+                                    <DataItemTitle>Position</DataItemTitle>
+                                    <DataItemValue>{member.position}</DataItemValue>
+                                </DataItem>
+                            )}
+                            <DataItem>
+                                <DataItemTitle>Team</DataItemTitle>
+                                <DataItemValue>
+                                    <D4HTeamLink team={team} />
+                                </DataItemValue>
+                            </DataItem>
+                            <DataItem>
+                                <DataItemTitle>D4H Status</DataItemTitle>
+                                <DataItemValue>
+                                    {formatD4HMemberStatus(member.status)}
+                                </DataItemValue>
+                            </DataItem>
+                        </DataList>
+                    </CardContent>
+                </RecordCard>
+                <div>
+                    <div className="mb-2 text-lg font-semibold">Issued Equipment</div>
+                    <Kaga.TableToolbar table={table} />
+                    <Kaga.Table table={table} />
+                    <Kaga.TablePagination table={table} />
+                </div>
+            </div>
+        </Saratoga.Root>
     );
 }

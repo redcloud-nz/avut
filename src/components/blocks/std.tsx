@@ -4,32 +4,23 @@
  *
  * Std page shell components.
  *
- * The outer shell for a page within a sidebar layout: a sticky navbar with
- * breadcrumbs above a scrollable main content area.
+ * The outer shell for a page within a sidebar layout: the page column beside the sidebar
+ * (with the layout's `AppNavbar` above it), a scrollable main content area, and nav-list
+ * index pages. Breadcrumb trails live in the page itself, not here.
  */
 
-import type { Route } from "next";
-import Link from "next/link";
-import { ComponentProps, Fragment, ReactNode, Suspense } from "react";
+import { ComponentProps, ReactNode, Suspense } from "react";
 
-import { AVUTLogo } from "@/components/art/avut-logo";
-import { PageHelpButton } from "@/components/docs/help-button";
 import { GlyphPage } from "@/components/glyph-page";
 import { PageBackground, pageBackgroundAttributes } from "@/components/page-background";
-import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbLink,
-    BreadcrumbList,
-    BreadcrumbPage,
-    BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 import { PageLoadingSpinner, RainbowSpinner } from "@/components/ui/loading";
-import { Separator } from "@/components/ui/separator";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 
-function SidebarInset({ children }: { children: ReactNode }) {
+/**
+ * The page column beside the sidebar. `navbar` renders above the page's `<Suspense>`, so it
+ * stays up while the page loads.
+ */
+function SidebarInset({ children, navbar }: { children: ReactNode; navbar?: ReactNode }) {
     return (
         <div
             data-component="StdSidebarInset"
@@ -38,103 +29,9 @@ function SidebarInset({ children }: { children: ReactNode }) {
             className="relative isolate flex w-full min-w-0 h-[calc(100svh-var(--impersonation-h))] flex-1 flex-col bg-page"
         >
             <PageBackground />
+            {navbar}
             <Suspense fallback={<PageLoadingSpinner />}>{children}</Suspense>
         </div>
-    );
-}
-
-type BreadcrumbItem = {
-    label: string;
-    href?: Route;
-};
-
-function normalizeBreadcrumbs(breadcrumbs: (BreadcrumbItem | string)[]): BreadcrumbItem[] {
-    return breadcrumbs.map((breadcrumb) =>
-        typeof breadcrumb === "string" ? { label: breadcrumb } : breadcrumb,
-    );
-}
-
-interface BreadcrumbsProps {
-    breadcrumbs?: (BreadcrumbItem | string)[];
-}
-
-function Breadcrumbs({ breadcrumbs = [] }: BreadcrumbsProps) {
-    const normalizedBreadcrumbs = normalizeBreadcrumbs(breadcrumbs);
-    const ancestors = normalizedBreadcrumbs.slice(0, -1);
-    const current = normalizedBreadcrumbs[normalizedBreadcrumbs.length - 1];
-    // Mobile shows a single crumb: the nearest ancestor with somewhere to go. The
-    // leaf is dropped, since the page's own title repeats it.
-    const primary = ancestors.findLast((breadcrumb) => breadcrumb.href);
-
-    return (
-        <Breadcrumb className="px-2 max-md:min-w-0">
-            <BreadcrumbList className="flex-nowrap">
-                {primary?.href && (
-                    <BreadcrumbItem className="min-w-0 md:hidden">
-                        <BreadcrumbLink asChild>
-                            <Link href={primary.href} className="truncate">
-                                {primary.label}
-                            </Link>
-                        </BreadcrumbLink>
-                    </BreadcrumbItem>
-                )}
-
-                {/* Desktop: full inline trail. */}
-                {ancestors.map((breadcrumb, idx) => (
-                    <Fragment key={idx}>
-                        <BreadcrumbItem className="hidden md:block">
-                            {breadcrumb.href ? (
-                                <BreadcrumbLink asChild>
-                                    <Link href={breadcrumb.href}>{breadcrumb.label}</Link>
-                                </BreadcrumbLink>
-                            ) : (
-                                <span className="text-muted-foreground">{breadcrumb.label}</span>
-                            )}
-                        </BreadcrumbItem>
-                        <BreadcrumbSeparator className="hidden md:block" />
-                    </Fragment>
-                ))}
-                {/* No linked ancestor: the leaf stands in on mobile too. */}
-                <BreadcrumbItem className={primary ? "hidden md:block" : undefined}>
-                    <BreadcrumbPage>{current.label}</BreadcrumbPage>
-                </BreadcrumbItem>
-            </BreadcrumbList>
-        </Breadcrumb>
-    );
-}
-
-type NavbarProps = {
-    sidebarTrigger?: boolean;
-} & (
-    | {
-          breadcrumbs?: (BreadcrumbItem | string)[];
-          children?: never;
-      }
-    | { children?: ReactNode; breadcrumbs?: never }
-);
-
-/** The page's navbar. Help for the page (`PageHelpButton`) is pinned to its far right. */
-function Navbar({ breadcrumbs, children, sidebarTrigger = true }: NavbarProps) {
-    return (
-        <header
-            slot="header"
-            className="bg-navbar sticky top-0 flex h-(--header-height) shrink-0 items-center gap-1 border-b px-2 z-5 backdrop-blur-md"
-        >
-            {sidebarTrigger && (
-                <>
-                    <SidebarTrigger />
-                    <Separator orientation="vertical" className="ml-1" />
-                </>
-            )}
-            {breadcrumbs && <Breadcrumbs breadcrumbs={breadcrumbs} />}
-            {children}
-            <div className="ml-auto flex items-center gap-1 pr-1">
-                {/* `usePathname()` can suspend during prerender. */}
-                <Suspense fallback={null}>
-                    <PageHelpButton />
-                </Suspense>
-            </div>
-        </header>
     );
 }
 
@@ -143,7 +40,10 @@ function ScrollContainer({ children, className, ...props }: ComponentProps<"main
         <Suspense
             fallback={
                 <main
-                    className={cn("flex items-center justify-center flex-1 p-4", className)}
+                    className={cn(
+                        "flex items-center justify-center flex-1 px-2 py-4 md:px-4",
+                        className,
+                    )}
                     data-slot="scroll-container"
                     {...props}
                 >
@@ -153,7 +53,7 @@ function ScrollContainer({ children, className, ...props }: ComponentProps<"main
         >
             <main
                 className={cn(
-                    "relative flex-1 p-4 overflow-y-auto [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)] [scrollbar-gutter:stable_both-edges]",
+                    "relative flex-1 px-2 py-4 md:px-4 overflow-y-auto [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)] [scrollbar-gutter:stable]",
                     className,
                 )}
                 data-slot="scroll-container"
@@ -165,6 +65,10 @@ function ScrollContainer({ children, className, ...props }: ComponentProps<"main
     );
 }
 
+/**
+ * A nav-list page: `title` above a list of links. No trail and no logo: the navbar carries the
+ * logo, and the sidebar is the way back up.
+ */
 function IndexPage({
     children,
     className,
@@ -179,11 +83,8 @@ function IndexPage({
         >
             {/* Index pages are low-traffic, so they show the glyph background. */}
             <GlyphPage />
-            {/* Sized to its content so the glyph halo hugs the logo and title. */}
-            <div className="glyph-halo mx-auto my-4 flex w-fit flex-col items-center gap-4">
-                <AVUTLogo />
-                <div className="font-semibold">{title}</div>
-            </div>
+            {/* Sized to its content so the glyph halo hugs the title. */}
+            <div className="glyph-halo mx-auto my-4 w-fit font-semibold">{title}</div>
             {children}
         </div>
     );
@@ -192,7 +93,5 @@ function IndexPage({
 export const Std = {
     SidebarInset,
     ScrollContainer,
-    Breadcrumbs,
-    Navbar,
     IndexPage,
 };

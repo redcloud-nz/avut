@@ -10,13 +10,14 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { sessionQueryOptions } from "@/client/auth-queries";
 import { ObjectHistory } from "@/components/history/object-history";
 import { isNoteNotFound, NoteGoneBoundary } from "@/components/notes/note-gone-boundary";
+import { notesBreadcrumbs } from "@/components/notes/notes-breadcrumbs";
+import { route } from "@/lib/routes";
 import { UserNoteId } from "@/lib/schemas/user-note";
 import { trpc } from "@/trpc/client";
 
 /**
- * A personal note's History, in the notes detail pane, read from the caller's own log. The notes
- * layout supplies the navbar (whose breadcrumbs lead back to the note), and the pane scrolls, so
- * this renders only the history. A note that's gone says so instead, as on the note itself (see
+ * A personal note's History, in the notes detail pane, read from the caller's own log, with a
+ * trail leading back to the note. The pane scrolls, so this renders only the history. A note that's gone says so instead, as on the note itself (see
  * `NoteGoneBoundary`).
  */
 export function UserNoteHistory_Content({ noteId }: { noteId: UserNoteId }) {
@@ -25,7 +26,7 @@ export function UserNoteHistory_Content({ noteId }: { noteId: UserNoteId }) {
     if (!session) throw new Error("Personal notes need a signed-in user.");
 
     return (
-        <NoteGoneBoundary scopeId={session.user.id} noteId={noteId}>
+        <NoteGoneBoundary scopeId={session.user.id} noteId={noteId} listHref="/user/notes">
             <UserNoteHistory_Body noteId={noteId} />
         </NoteGoneBoundary>
     );
@@ -45,7 +46,11 @@ function UserNoteHistory_Body({ noteId }: { noteId: UserNoteId }) {
             scope="user"
             objectType="UserNote"
             objectId={noteId}
-            title={`${note.title} — History`}
+            title="Note History"
+            breadcrumbs={notesBreadcrumbs("/user/notes", {
+                title: note.title,
+                href: route("/user/notes/[note_id]", { note_id: noteId }),
+            })}
         />
     );
 }

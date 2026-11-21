@@ -7,7 +7,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
@@ -25,32 +24,27 @@ export function Team_Dashboard_Content() {
     const team = useTeam();
 
     return (
-        <>
-            <Std.Navbar breadcrumbs={[team.name]} />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <div className="min-w-0">
-                            <Saratoga.Title>{team.name}</Saratoga.Title>
-                            <p className="text-sm text-muted-foreground">{organization.name}</p>
-                        </div>
-                    </Saratoga.Header>
+        <Saratoga.Root>
+            <Saratoga.Header>
+                <div className="min-w-0">
+                    <Saratoga.Title>{team.name}</Saratoga.Title>
+                    <p className="text-sm text-muted-foreground">{organization.name}</p>
+                </div>
+            </Saratoga.Header>
 
-                    <Saratoga.Columns>
-                        <Saratoga.Column slot="main">
-                            <Protect permissions={{ team: ["view"] }}>
-                                <RosterCard organizationId={organization.id} teamId={team.id} />
-                            </Protect>
-                        </Saratoga.Column>
+            <Saratoga.Columns>
+                <Saratoga.Column slot="main">
+                    <Protect permissions={{ team: ["view"] }}>
+                        <RosterCard organizationId={organization.id} teamId={team.id} />
+                    </Protect>
+                </Saratoga.Column>
 
-                        <Saratoga.Column slot="secondary">
-                            <AboutCard team={team} organizationName={organization.name} />
-                            <D4HLinkCard team={team} />
-                        </Saratoga.Column>
-                    </Saratoga.Columns>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+                <Saratoga.Column slot="secondary">
+                    <AboutCard team={team} organizationName={organization.name} />
+                    <D4HLinkCard team={team} />
+                </Saratoga.Column>
+            </Saratoga.Columns>
+        </Saratoga.Root>
     );
 }
 

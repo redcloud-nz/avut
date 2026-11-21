@@ -11,7 +11,6 @@ import { notFound } from "next/navigation";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { D4HTeamPickerDialog } from "@/components/d4h/team-picker-dialog";
 import { Protect } from "@/components/protect";
 import { CardContent } from "@/components/ui/card";
@@ -43,76 +42,61 @@ export function D4HModule_Team_Content({ teamId }: { teamId: number }) {
     if (!team) notFound();
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "D4H", href: route("/orgs/[slug]/d4h", { slug }) },
-                    { label: "Teams", href: route("/orgs/[slug]/d4h/teams", { slug }) },
-                    { label: team.title },
-                ]}
+        <Saratoga.Root>
+            <Saratoga.Breadcrumbs
+                items={[{ label: "Teams", href: route("/orgs/[slug]/d4h/teams", { slug }) }]}
             />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>{team.title}</Saratoga.Title>
-                        <Saratoga.Actions>
-                            <D4HModule_OpenRecordInD4H_Button
-                                record="team"
-                                id={teamId}
-                                teamId={teamId}
-                            />
-                            {teams.length > 1 && (
-                                <D4HTeamPickerDialog
-                                    section={(id) =>
-                                        route("/orgs/[slug]/d4h/teams/[d4h_team_id]", {
-                                            slug,
-                                            d4h_team_id: String(id),
-                                        })
-                                    }
-                                />
-                            )}
-                        </Saratoga.Actions>
-                    </Saratoga.Header>
-                    <div className="flex flex-col gap-4">
-                        <RecordCard label="D4H Team">
-                            <CardContent>
-                                <DataList>
-                                    <RecordCardId label="D4H ID" id={String(team.id)} />
-                                    <DataItem>
-                                        <DataItemTitle>Name</DataItemTitle>
-                                        <DataItemValue>{team.title}</DataItemValue>
-                                    </DataItem>
-                                </DataList>
-                            </CardContent>
-                        </RecordCard>
-                        <Protect permissions={{ d4hEquipment: ["view"] }}>
-                            <ItemGroup>
-                                <Item asChild>
-                                    <Link
-                                        href={route(
-                                            "/orgs/[slug]/d4h/teams/[d4h_team_id]/members",
-                                            {
-                                                slug,
-                                                d4h_team_id: String(team.id),
-                                            },
-                                        )}
-                                    >
-                                        <ItemContent>
-                                            <ItemTitle>Members</ItemTitle>
-                                            <ItemDescription>
-                                                The team&apos;s members in D4H.
-                                            </ItemDescription>
-                                        </ItemContent>
-                                        <ItemActions>
-                                            <ChevronRightIcon className="size-4" />
-                                        </ItemActions>
-                                    </Link>
-                                </Item>
-                            </ItemGroup>
-                        </Protect>
-                    </div>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+            <Saratoga.Header>
+                <Saratoga.Title>{team.title}</Saratoga.Title>
+                <Saratoga.Actions>
+                    <D4HModule_OpenRecordInD4H_Button record="team" id={teamId} teamId={teamId} />
+                    {teams.length > 1 && (
+                        <D4HTeamPickerDialog
+                            section={(id) =>
+                                route("/orgs/[slug]/d4h/teams/[d4h_team_id]", {
+                                    slug,
+                                    d4h_team_id: String(id),
+                                })
+                            }
+                        />
+                    )}
+                </Saratoga.Actions>
+            </Saratoga.Header>
+            <div className="flex flex-col gap-4">
+                <RecordCard label="D4H Team">
+                    <CardContent>
+                        <DataList>
+                            <RecordCardId label="D4H ID" id={String(team.id)} />
+                            <DataItem>
+                                <DataItemTitle>Name</DataItemTitle>
+                                <DataItemValue>{team.title}</DataItemValue>
+                            </DataItem>
+                        </DataList>
+                    </CardContent>
+                </RecordCard>
+                <Protect permissions={{ d4hEquipment: ["view"] }}>
+                    <ItemGroup>
+                        <Item asChild>
+                            <Link
+                                href={route("/orgs/[slug]/d4h/teams/[d4h_team_id]/members", {
+                                    slug,
+                                    d4h_team_id: String(team.id),
+                                })}
+                            >
+                                <ItemContent>
+                                    <ItemTitle>Members</ItemTitle>
+                                    <ItemDescription>
+                                        The team&apos;s members in D4H.
+                                    </ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
+                    </ItemGroup>
+                </Protect>
+            </div>
+        </Saratoga.Root>
     );
 }

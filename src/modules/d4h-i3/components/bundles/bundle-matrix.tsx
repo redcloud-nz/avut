@@ -12,7 +12,6 @@ import { Fragment, type ReactNode } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Glorious } from "@/components/blocks/glorious";
-import { Std } from "@/components/blocks/std";
 import { D4HTeamPickerDialog } from "@/components/d4h/team-picker-dialog";
 import { I3TemplateLink } from "@/components/entity-links/i3-template-link";
 import { AlertWarningIcon } from "@/components/icons";
@@ -105,219 +104,211 @@ export function D4HI3Module_BundleMatrix({
     const memberCount = rows.length;
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "D4H I3", href: route("/orgs/[slug]/d4h-i3", { slug }) },
-                    { label: "Bundles", href: route("/orgs/[slug]/d4h-i3/bundles", { slug }) },
-                    {
-                        label: bundle.name,
-                        href: route("/orgs/[slug]/d4h-i3/bundles/[bundle_id]", {
-                            slug,
-                            bundle_id: bundle.id,
-                        }),
-                    },
-                    { label: team.title },
-                ]}
-            />
-            <Glorious.Root>
-                <Glorious.Header>
-                    <Glorious.Title>
-                        {bundle.name} compared with {team.title}
-                    </Glorious.Title>
-                    <Glorious.Subtitle>
-                        {memberCount} {memberCount === 1 ? "member" : "members"} · {columns.length}{" "}
-                        {columns.length === 1 ? "template" : "templates"}
-                    </Glorious.Subtitle>
-                    {teams.length > 1 && (
-                        <Glorious.Actions>
-                            <D4HTeamPickerDialog
-                                section={(id) =>
-                                    route(
-                                        "/orgs/[slug]/d4h-i3/bundles/[bundle_id]/teams/[d4h_team_id]",
-                                        {
-                                            slug,
-                                            bundle_id: bundle.id,
-                                            d4h_team_id: String(id),
-                                        },
-                                    )
-                                }
-                            />
-                        </Glorious.Actions>
-                    )}
-                </Glorious.Header>
+        <Glorious.Root>
+            <Glorious.Header>
+                <Glorious.Breadcrumbs
+                    items={[
+                        {
+                            label: "I3 Bundles",
+                            href: route("/orgs/[slug]/d4h-i3/bundles", { slug }),
+                        },
+                        {
+                            label: bundle.name,
+                            href: route("/orgs/[slug]/d4h-i3/bundles/[bundle_id]", {
+                                slug,
+                                bundle_id: bundle.id,
+                            }),
+                        },
+                    ]}
+                />
+                <Glorious.Title>Compared with {team.title}</Glorious.Title>
+                <Glorious.Subtitle>
+                    {memberCount} {memberCount === 1 ? "member" : "members"} · {columns.length}{" "}
+                    {columns.length === 1 ? "template" : "templates"}
+                </Glorious.Subtitle>
+                {teams.length > 1 && (
+                    <Glorious.Actions>
+                        <D4HTeamPickerDialog
+                            section={(id) =>
+                                route(
+                                    "/orgs/[slug]/d4h-i3/bundles/[bundle_id]/teams/[d4h_team_id]",
+                                    {
+                                        slug,
+                                        bundle_id: bundle.id,
+                                        d4h_team_id: String(id),
+                                    },
+                                )
+                            }
+                        />
+                    </Glorious.Actions>
+                )}
+            </Glorious.Header>
 
-                {columns.length > 0 && rows.length > 0 && <CellMarkLegend />}
+            {columns.length > 0 && rows.length > 0 && <CellMarkLegend />}
 
-                {excluded.length > 0 && <D4HI3Module_BundleExcludedLines excluded={excluded} />}
+            {excluded.length > 0 && <D4HI3Module_BundleExcludedLines excluded={excluded} />}
 
-                {columns.length === 0 ? (
-                    <Empty>
-                        <EmptyHeader>
-                            <EmptyTitle>Nothing to compare</EmptyTitle>
-                            <EmptyDescription>
-                                {lines.length === 0
-                                    ? "Add templates to this bundle to compare it."
-                                    : `None of this bundle's templates can be compared with ${team.title}.`}
-                            </EmptyDescription>
-                        </EmptyHeader>
-                    </Empty>
-                ) : rows.length === 0 ? (
-                    <Empty>
-                        <EmptyHeader>
-                            <EmptyTitle>No members</EmptyTitle>
-                            <EmptyDescription>
-                                {team.title} has no members to compare.
-                            </EmptyDescription>
-                        </EmptyHeader>
-                    </Empty>
-                ) : (
-                    <Glorious.ScrollFrame>
-                        <Glorious.Table>
-                            <colgroup>
-                                <col style={{ width: MEMBER_COL_WIDTH }} />
-                                {columns.map((column) => (
-                                    <col
-                                        key={column.template.id}
-                                        style={{ width: LINE_COL_WIDTH }}
+            {columns.length === 0 ? (
+                <Empty>
+                    <EmptyHeader>
+                        <EmptyTitle>Nothing to compare</EmptyTitle>
+                        <EmptyDescription>
+                            {lines.length === 0
+                                ? "Add templates to this bundle to compare it."
+                                : `None of this bundle's templates can be compared with ${team.title}.`}
+                        </EmptyDescription>
+                    </EmptyHeader>
+                </Empty>
+            ) : rows.length === 0 ? (
+                <Empty>
+                    <EmptyHeader>
+                        <EmptyTitle>No members</EmptyTitle>
+                        <EmptyDescription>{team.title} has no members to compare.</EmptyDescription>
+                    </EmptyHeader>
+                </Empty>
+            ) : (
+                <Glorious.ScrollFrame>
+                    <Glorious.Table>
+                        <colgroup>
+                            <col style={{ width: MEMBER_COL_WIDTH }} />
+                            {columns.map((column) => (
+                                <col key={column.template.id} style={{ width: LINE_COL_WIDTH }} />
+                            ))}
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th className={cn(stickyFirstCol, "top-0 z-30 p-0")}>
+                                    <DiagonalLeadColumnHeader
+                                        label="Member"
+                                        headerHeight={HEADER_HEIGHT}
+                                        columnWidth={MEMBER_COL_WIDTH}
                                     />
-                                ))}
-                            </colgroup>
-                            <thead>
-                                <tr>
-                                    <th className={cn(stickyFirstCol, "top-0 z-30 p-0")}>
-                                        <DiagonalLeadColumnHeader
-                                            label="Member"
+                                </th>
+                                {columns.map((column) => (
+                                    <th
+                                        key={column.template.id}
+                                        className="sticky top-0 z-20 p-0 font-medium"
+                                    >
+                                        <DiagonalColumnHeader
+                                            label={column.template.name}
                                             headerHeight={HEADER_HEIGHT}
-                                            columnWidth={MEMBER_COL_WIDTH}
+                                            columnWidth={LINE_COL_WIDTH}
                                         />
                                     </th>
-                                    {columns.map((column) => (
-                                        <th
-                                            key={column.template.id}
-                                            className="sticky top-0 z-20 p-0 font-medium"
-                                        >
-                                            <DiagonalColumnHeader
-                                                label={column.template.name}
-                                                headerHeight={HEADER_HEIGHT}
-                                                columnWidth={LINE_COL_WIDTH}
-                                            />
-                                        </th>
-                                    ))}
-                                </tr>
-                                <tr>
+                                ))}
+                            </tr>
+                            <tr>
+                                <th
+                                    style={{ top: HEADER_HEIGHT, height: CATEGORY_ROW_HEIGHT }}
+                                    className="sticky left-0 z-30 border-r border-b bg-card"
+                                />
+                                {categoryGroups.map((group) => (
                                     <th
-                                        style={{ top: HEADER_HEIGHT, height: CATEGORY_ROW_HEIGHT }}
-                                        className="sticky left-0 z-30 border-r border-b bg-card"
-                                    />
-                                    {categoryGroups.map((group) => (
+                                        key={group.key}
+                                        colSpan={group.span}
+                                        style={{
+                                            top: HEADER_HEIGHT,
+                                            height: CATEGORY_ROW_HEIGHT,
+                                        }}
+                                        className="sticky z-20 border-b border-l bg-table-group px-1.5 text-left text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+                                        title={group.title}
+                                    >
+                                        <div className="truncate">{group.title}</div>
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {rows.map((row) => {
+                                const memberHref = route(
+                                    "/orgs/[slug]/d4h-i3/bundles/[bundle_id]/teams/[d4h_team_id]/members/[member_id]",
+                                    {
+                                        slug,
+                                        bundle_id: bundle.id,
+                                        d4h_team_id: String(teamId),
+                                        member_id: String(row.member.id),
+                                    },
+                                );
+                                return (
+                                    <tr
+                                        key={row.member.id}
+                                        className="group/row hover:bg-accent/50"
+                                    >
                                         <th
-                                            key={group.key}
-                                            colSpan={group.span}
-                                            style={{
-                                                top: HEADER_HEIGHT,
-                                                height: CATEGORY_ROW_HEIGHT,
-                                            }}
-                                            className="sticky z-20 border-b border-l bg-table-group px-1.5 text-left text-xs font-semibold tracking-wide text-muted-foreground uppercase"
-                                            title={group.title}
+                                            scope="row"
+                                            className={cn(
+                                                stickyFirstCol,
+                                                "border-r border-b px-3 py-1.5 text-left font-normal",
+                                            )}
                                         >
-                                            <div className="truncate">{group.title}</div>
+                                            <div className="flex items-baseline justify-between gap-2">
+                                                <Link
+                                                    href={memberHref}
+                                                    className="truncate hover:underline"
+                                                    title={row.member.name}
+                                                >
+                                                    {row.member.name}
+                                                </Link>
+                                                <span className="shrink-0 text-xs text-muted-foreground">
+                                                    {row.heldCount} of {columns.length}
+                                                </span>
+                                            </div>
                                         </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {rows.map((row) => {
-                                    const memberHref = route(
-                                        "/orgs/[slug]/d4h-i3/bundles/[bundle_id]/teams/[d4h_team_id]/members/[member_id]",
-                                        {
-                                            slug,
-                                            bundle_id: bundle.id,
-                                            d4h_team_id: String(teamId),
-                                            member_id: String(row.member.id),
-                                        },
-                                    );
-                                    return (
-                                        <tr
-                                            key={row.member.id}
-                                            className="group/row hover:bg-accent/50"
-                                        >
-                                            <th
-                                                scope="row"
+                                        {row.cells.map((cell, i) => (
+                                            <td
+                                                key={columns[i].template.id}
                                                 className={cn(
-                                                    stickyFirstCol,
-                                                    "border-r border-b px-3 py-1.5 text-left font-normal",
+                                                    "border-b p-0 text-center",
+                                                    i > 0 && "border-l",
+                                                    categoryStarts.has(i) &&
+                                                        i > 0 &&
+                                                        "border-l-muted-foreground/40",
+                                                    i === columns.length - 1 && "border-r",
                                                 )}
                                             >
-                                                <div className="flex items-baseline justify-between gap-2">
-                                                    <Link
-                                                        href={memberHref}
-                                                        className="truncate hover:underline"
-                                                        title={row.member.name}
-                                                    >
-                                                        {row.member.name}
-                                                    </Link>
-                                                    <span className="shrink-0 text-xs text-muted-foreground">
-                                                        {row.heldCount} of {columns.length}
-                                                    </span>
-                                                </div>
-                                            </th>
-                                            {row.cells.map((cell, i) => (
-                                                <td
-                                                    key={columns[i].template.id}
-                                                    className={cn(
-                                                        "border-b p-0 text-center",
-                                                        i > 0 && "border-l",
-                                                        categoryStarts.has(i) &&
-                                                            i > 0 &&
-                                                            "border-l-muted-foreground/40",
-                                                        i === columns.length - 1 && "border-r",
-                                                    )}
+                                                <Link
+                                                    href={memberHref}
+                                                    className="block px-2 py-1.5 hover:bg-accent"
                                                 >
-                                                    <Link
-                                                        href={memberHref}
-                                                        className="block px-2 py-1.5 hover:bg-accent"
-                                                    >
-                                                        <CellMark
-                                                            state={cell.state}
-                                                            quality={cell.quality}
-                                                            label={`${row.member.name}: ${columns[i].template.name}`}
-                                                        />
-                                                    </Link>
-                                                </td>
-                                            ))}
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <th
-                                        scope="row"
-                                        className="sticky bottom-0 left-0 z-30 border-r bg-card px-3 py-1.5 text-left font-medium"
+                                                    <CellMark
+                                                        state={cell.state}
+                                                        quality={cell.quality}
+                                                        label={`${row.member.name}: ${columns[i].template.name}`}
+                                                    />
+                                                </Link>
+                                            </td>
+                                        ))}
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th
+                                    scope="row"
+                                    className="sticky bottom-0 left-0 z-30 border-r bg-card px-3 py-1.5 text-left font-medium"
+                                >
+                                    Holding
+                                </th>
+                                {columnTotals.map((total, i) => (
+                                    <td
+                                        key={columns[i].template.id}
+                                        className={cn(
+                                            "sticky bottom-0 z-20 bg-card px-1 py-1.5 text-center text-xs text-muted-foreground",
+                                            i > 0 && "border-l",
+                                            i === columns.length - 1 && "border-r",
+                                        )}
+                                        title={`${total} of ${memberCount} hold ${columns[i].template.name}`}
                                     >
-                                        Holding
-                                    </th>
-                                    {columnTotals.map((total, i) => (
-                                        <td
-                                            key={columns[i].template.id}
-                                            className={cn(
-                                                "sticky bottom-0 z-20 bg-card px-1 py-1.5 text-center text-xs text-muted-foreground",
-                                                i > 0 && "border-l",
-                                                i === columns.length - 1 && "border-r",
-                                            )}
-                                            title={`${total} of ${memberCount} hold ${columns[i].template.name}`}
-                                        >
-                                            {total}/{memberCount}
-                                        </td>
-                                    ))}
-                                </tr>
-                            </tfoot>
-                        </Glorious.Table>
-                    </Glorious.ScrollFrame>
-                )}
-            </Glorious.Root>
-        </>
+                                        {total}/{memberCount}
+                                    </td>
+                                ))}
+                            </tr>
+                        </tfoot>
+                    </Glorious.Table>
+                </Glorious.ScrollFrame>
+            )}
+        </Glorious.Root>
     );
 }
 

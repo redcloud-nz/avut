@@ -10,6 +10,7 @@ import { notFound } from "next/navigation";
 
 import { TRPCError } from "@trpc/server";
 
+import { Std } from "@/components/blocks/std";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { D4HModule_Type_Content } from "@/modules/d4h/components/catalogue/type-content";
 import { getOrganizationBySlug } from "@/server/cache/organization";
@@ -65,7 +66,9 @@ export default async function D4HModule_Type_Page(props: Props) {
 
     return (
         <HydrateClient>
-            <D4HModule_Type_Content typeId={typeId} />
+            <Std.ScrollContainer>
+                <D4HModule_Type_Content typeId={typeId} />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

@@ -7,6 +7,7 @@
 
 import { Metadata } from "next";
 
+import { Std } from "@/components/blocks/std";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { SkillTrack_Package_Content } from "@/modules/skill-track/components/package-content";
@@ -45,7 +46,9 @@ export default async function SkillTrack_Package_Page(props: Props) {
 
     return (
         <HydrateClient>
-            <SkillTrack_Package_Content skillPackageId={skillPackageId} />
+            <Std.ScrollContainer>
+                <SkillTrack_Package_Content skillPackageId={skillPackageId} />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

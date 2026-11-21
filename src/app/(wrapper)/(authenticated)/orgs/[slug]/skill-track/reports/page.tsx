@@ -25,91 +25,79 @@ export default async function SkillsTrack_Reports_Page(
 ) {
     const { slug } = await props.params;
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "Skill Track", href: route("/orgs/[slug]/skill-track", { slug }) },
-                    { label: "Reports", href: route("/orgs/[slug]/skill-track/reports", { slug }) },
-                ]}
-            />
-            <Std.ScrollContainer>
-                <Std.IndexPage title="Skills Reports">
-                    <ItemGroup>
-                        <Protect permissions={{ skillCheck: ["view"] }}>
-                            <Item variant="outline" asChild>
-                                <Link
-                                    href={route("/orgs/[slug]/skill-track/reports/person", {
-                                        slug,
-                                    })}
-                                >
-                                    <ItemContent>
-                                        <ItemTitle>Personnel Competency</ItemTitle>
-                                        <ItemDescription>
-                                            Competency and currency for an individual person.
-                                        </ItemDescription>
-                                    </ItemContent>
-                                    <ItemActions>
-                                        <ChevronRightIcon className="size-4" />
-                                    </ItemActions>
-                                </Link>
-                            </Item>
-                        </Protect>
-                        {/* These three also list teams for their scope picker/filter, so they
+        <Std.ScrollContainer>
+            <Std.IndexPage title="Skills Reports">
+                <ItemGroup>
+                    <Protect permissions={{ skillCheck: ["view"] }}>
+                        <Item variant="outline" asChild>
+                            <Link
+                                href={route("/orgs/[slug]/skill-track/reports/person", {
+                                    slug,
+                                })}
+                            >
+                                <ItemContent>
+                                    <ItemTitle>Personnel Competency</ItemTitle>
+                                    <ItemDescription>
+                                        Competency and currency for an individual person.
+                                    </ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
+                    </Protect>
+                    {/* These three also list teams for their scope picker/filter, so they
                         need `team: ["view"]` too — `skillCheck: ["view"]` alone would show
                         a link that then hits a FORBIDDEN error when it loads. */}
-                        <Protect permissions={{ skillCheck: ["view"], team: ["view"] }}>
-                            <Item variant="outline" asChild>
-                                <Link
-                                    href={route("/orgs/[slug]/skill-track/reports/team", { slug })}
-                                >
-                                    <ItemContent>
-                                        <ItemTitle>Team Competency</ItemTitle>
-                                        <ItemDescription>
-                                            Competency gaps across a team or the whole organisation,
-                                            summarised per skill.
-                                        </ItemDescription>
-                                    </ItemContent>
-                                    <ItemActions>
-                                        <ChevronRightIcon className="size-4" />
-                                    </ItemActions>
-                                </Link>
-                            </Item>
-                            <Item variant="outline" asChild>
-                                <Link
-                                    href={route("/orgs/[slug]/skill-track/reports/matrix", {
-                                        slug,
-                                    })}
-                                >
-                                    <ItemContent>
-                                        <ItemTitle>Personnel × Skill Matrix</ItemTitle>
-                                        <ItemDescription>
-                                            Every person against every skill in one grid.
-                                        </ItemDescription>
-                                    </ItemContent>
-                                    <ItemActions>
-                                        <ChevronRightIcon className="size-4" />
-                                    </ItemActions>
-                                </Link>
-                            </Item>
-                            <Item variant="outline" asChild>
-                                <Link
-                                    href={route("/orgs/[slug]/skill-track/reports/skill", { slug })}
-                                >
-                                    <ItemContent>
-                                        <ItemTitle>Skill Coverage</ItemTitle>
-                                        <ItemDescription>
-                                            Who currently holds a given skill.
-                                        </ItemDescription>
-                                    </ItemContent>
-                                    <ItemActions>
-                                        <ChevronRightIcon className="size-4" />
-                                    </ItemActions>
-                                </Link>
-                            </Item>
-                        </Protect>
-                    </ItemGroup>
-                </Std.IndexPage>
-            </Std.ScrollContainer>
-        </>
+                    <Protect permissions={{ skillCheck: ["view"], team: ["view"] }}>
+                        <Item variant="outline" asChild>
+                            <Link href={route("/orgs/[slug]/skill-track/reports/team", { slug })}>
+                                <ItemContent>
+                                    <ItemTitle>Team Competency</ItemTitle>
+                                    <ItemDescription>
+                                        Competency gaps across a team or the whole organisation,
+                                        summarised per skill.
+                                    </ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
+                        <Item variant="outline" asChild>
+                            <Link
+                                href={route("/orgs/[slug]/skill-track/reports/matrix", {
+                                    slug,
+                                })}
+                            >
+                                <ItemContent>
+                                    <ItemTitle>Personnel × Skill Matrix</ItemTitle>
+                                    <ItemDescription>
+                                        Every person against every skill in one grid.
+                                    </ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
+                        <Item variant="outline" asChild>
+                            <Link href={route("/orgs/[slug]/skill-track/reports/skill", { slug })}>
+                                <ItemContent>
+                                    <ItemTitle>Skill Coverage</ItemTitle>
+                                    <ItemDescription>
+                                        Who currently holds a given skill.
+                                    </ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
+                    </Protect>
+                </ItemGroup>
+            </Std.IndexPage>
+        </Std.ScrollContainer>
     );
 }

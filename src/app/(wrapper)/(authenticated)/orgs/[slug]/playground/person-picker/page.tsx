@@ -11,11 +11,8 @@ import { PersonPicker_Sandbox } from "./sandbox";
 
 export default async function Playground_PersonPicker_Page() {
     return (
-        <>
-            <Std.Navbar breadcrumbs={["Playground", "Person picker"]} />
-            <Std.ScrollContainer>
-                <PersonPicker_Sandbox />
-            </Std.ScrollContainer>
-        </>
+        <Std.ScrollContainer>
+            <PersonPicker_Sandbox />
+        </Std.ScrollContainer>
     );
 }

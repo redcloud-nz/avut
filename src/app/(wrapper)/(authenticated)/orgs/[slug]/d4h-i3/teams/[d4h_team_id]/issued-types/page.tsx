@@ -8,6 +8,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { Std } from "@/components/blocks/std";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { D4HI3Module_TeamIssuedTypes } from "@/modules/d4h-i3/components/issued-types/team-issued-types";
 import { getOrganizationBySlug } from "@/server/cache/organization";
@@ -37,7 +38,9 @@ export default async function D4HI3Module_TeamIssuedTypes_Page(
 
     return (
         <HydrateClient>
-            <D4HI3Module_TeamIssuedTypes teamId={teamId} />
+            <Std.ScrollContainer>
+                <D4HI3Module_TeamIssuedTypes teamId={teamId} />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

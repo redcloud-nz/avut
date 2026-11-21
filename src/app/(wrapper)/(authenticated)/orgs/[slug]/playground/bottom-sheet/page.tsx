@@ -11,11 +11,8 @@ import { BottomSheet_Sandbox } from "./sandbox";
 
 export default async function Playground_BottomSheet_Page() {
     return (
-        <Std.SidebarInset>
-            <Std.Navbar breadcrumbs={["Playground", "Bottom sheet"]} />
-            <Std.ScrollContainer>
-                <BottomSheet_Sandbox />
-            </Std.ScrollContainer>
-        </Std.SidebarInset>
+        <Std.ScrollContainer>
+            <BottomSheet_Sandbox />
+        </Std.ScrollContainer>
     );
 }

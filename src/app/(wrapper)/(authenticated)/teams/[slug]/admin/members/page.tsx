@@ -7,6 +7,7 @@
 
 import { Metadata } from "next";
 
+import { Std } from "@/components/blocks/std";
 import { TeamAdmin_Members_List } from "@/modules/team-admin/components/members-list";
 import { requireTeam } from "@/server/team-access";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
@@ -28,7 +29,9 @@ export default async function TeamAdmin_Members_Page(
 
     return (
         <HydrateClient>
-            <TeamAdmin_Members_List />
+            <Std.ScrollContainer>
+                <TeamAdmin_Members_List />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

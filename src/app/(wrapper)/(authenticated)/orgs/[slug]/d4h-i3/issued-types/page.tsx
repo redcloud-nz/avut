@@ -10,6 +10,7 @@ import { redirect } from "next/navigation";
 
 import { TRPCError } from "@trpc/server";
 
+import { Std } from "@/components/blocks/std";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { route } from "@/lib/routes";
 import { D4HI3Module_IssuedTypes_SelectTeam } from "@/modules/d4h-i3/components/issued-types/select-team";
@@ -55,7 +56,9 @@ export default async function D4HI3Module_IssuedTypes_Page(
 
     return (
         <HydrateClient>
-            <D4HI3Module_IssuedTypes_SelectTeam />
+            <Std.ScrollContainer>
+                <D4HI3Module_IssuedTypes_SelectTeam />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

@@ -11,7 +11,6 @@ import * as R from "remeda";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { D4HEquipmentBrandLink } from "@/components/entity-links/d4h-equipment-brand-link";
 import { D4HEquipmentItemLink } from "@/components/entity-links/d4h-equipment-item-link";
 import { D4HEquipmentModelLink } from "@/components/entity-links/d4h-equipment-model-link";
@@ -201,10 +200,9 @@ export function D4HI3Module_IssuedType_Content({
     const visibleColumns = OPTIONAL_COLUMNS.filter((column) => showColumns[column.key]);
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "D4H I3", href: route("/orgs/[slug]/d4h-i3", { slug }) },
+        <Saratoga.Root>
+            <Saratoga.Breadcrumbs
+                items={[
                     {
                         label: "Issued Types",
                         href: route("/orgs/[slug]/d4h-i3/issued-types", { slug }),
@@ -216,133 +214,128 @@ export function D4HI3Module_IssuedType_Content({
                             d4h_team_id: String(teamId),
                         }),
                     },
-                    { label: kind.title },
                 ]}
             />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>{kind.title}</Saratoga.Title>
-                        <Saratoga.Actions>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" aria-label="Actions">
-                                        <DropdownMenuTriggerIcon />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent size="sm" align="end">
+            <Saratoga.Header>
+                <Saratoga.Title>{kind.title}</Saratoga.Title>
+                <Saratoga.Actions>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" aria-label="Actions">
+                                <DropdownMenuTriggerIcon />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent size="sm" align="end">
+                            <DropdownMenuGroup>
+                                <DropdownMenuLabel>Show Columns</DropdownMenuLabel>
+                                {OPTIONAL_COLUMNS.map((column) => (
+                                    <DropdownMenuCheckboxItem
+                                        key={column.key}
+                                        checked={showColumns[column.key]}
+                                        onCheckedChange={(checked) =>
+                                            setShowColumns((prev) => ({
+                                                ...prev,
+                                                [column.key]: checked,
+                                            }))
+                                        }
+                                    >
+                                        {column.label}
+                                    </DropdownMenuCheckboxItem>
+                                ))}
+                            </DropdownMenuGroup>
+                            {hasRules && (
+                                <>
+                                    <DropdownMenuSeparator />
                                     <DropdownMenuGroup>
-                                        <DropdownMenuLabel>Show Columns</DropdownMenuLabel>
-                                        {OPTIONAL_COLUMNS.map((column) => (
-                                            <DropdownMenuCheckboxItem
-                                                key={column.key}
-                                                checked={showColumns[column.key]}
-                                                onCheckedChange={(checked) =>
-                                                    setShowColumns((prev) => ({
-                                                        ...prev,
-                                                        [column.key]: checked,
-                                                    }))
-                                                }
-                                            >
-                                                {column.label}
-                                            </DropdownMenuCheckboxItem>
-                                        ))}
+                                        <DropdownMenuCheckboxItem
+                                            checked={onlyFlagged}
+                                            onCheckedChange={setOnlyFlagged}
+                                        >
+                                            Only show flagged items
+                                        </DropdownMenuCheckboxItem>
                                     </DropdownMenuGroup>
+                                </>
+                            )}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </Saratoga.Actions>
+            </Saratoga.Header>
+            <p className="text-muted-foreground text-sm">
+                D4H Type: <D4HEquipmentTypeLink type={kind} />
+            </p>
+            {hasRules && judgedCount > 0 && (
+                <p className="text-sm">{qualitySummary(incompleteCount, mismatchCount)}</p>
+            )}
+            {visibleRows.length === 0 ? (
+                <Empty>
+                    <EmptyDescription>
+                        {filterFlagged && rows.length > 0
+                            ? "No flagged items."
+                            : `No ${kind.title} is issued to members of ${team.title}.`}
+                    </EmptyDescription>
+                </Empty>
+            ) : (
+                <TablePanel>
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="hover:bg-transparent">
+                                <TableHeadCell>Ref</TableHeadCell>
+                                <TableHeadCell>Issued To</TableHeadCell>
+                                {hasRules && <TableHeadCell>Check</TableHeadCell>}
+                                {visibleColumns.map((column) => (
+                                    <TableHeadCell
+                                        key={column.key}
+                                        className="hidden lg:table-cell"
+                                    >
+                                        {column.label}
+                                    </TableHeadCell>
+                                ))}
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {visibleRows.map(({ item, quality }) => (
+                                <TableRow key={item.id}>
+                                    <TableCell>
+                                        <D4HEquipmentItemLink item={item} />
+                                        {returnedIds.has(item.id) && (
+                                            <>
+                                                {" "}
+                                                <D4HI3Module_ReturnedBadge />
+                                            </>
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
+                                        <D4HMemberLink
+                                            member={{
+                                                ...item.holder,
+                                                owner: { id: teamId },
+                                            }}
+                                        />
+                                    </TableCell>
                                     {hasRules && (
-                                        <>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuGroup>
-                                                <DropdownMenuCheckboxItem
-                                                    checked={onlyFlagged}
-                                                    onCheckedChange={setOnlyFlagged}
-                                                >
-                                                    Only show flagged items
-                                                </DropdownMenuCheckboxItem>
-                                            </DropdownMenuGroup>
-                                        </>
-                                    )}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </Saratoga.Actions>
-                    </Saratoga.Header>
-                    <p className="text-muted-foreground text-sm">
-                        D4H Type: <D4HEquipmentTypeLink type={kind} />
-                    </p>
-                    {hasRules && judgedCount > 0 && (
-                        <p className="text-sm">{qualitySummary(incompleteCount, mismatchCount)}</p>
-                    )}
-                    {visibleRows.length === 0 ? (
-                        <Empty>
-                            <EmptyDescription>
-                                {filterFlagged && rows.length > 0
-                                    ? "No flagged items."
-                                    : `No ${kind.title} is issued to members of ${team.title}.`}
-                            </EmptyDescription>
-                        </Empty>
-                    ) : (
-                        <TablePanel>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow className="hover:bg-transparent">
-                                        <TableHeadCell>Ref</TableHeadCell>
-                                        <TableHeadCell>Issued To</TableHeadCell>
-                                        {hasRules && <TableHeadCell>Check</TableHeadCell>}
-                                        {visibleColumns.map((column) => (
-                                            <TableHeadCell
-                                                key={column.key}
-                                                className="hidden lg:table-cell"
-                                            >
-                                                {column.label}
-                                            </TableHeadCell>
-                                        ))}
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {visibleRows.map(({ item, quality }) => (
-                                        <TableRow key={item.id}>
-                                            <TableCell>
-                                                <D4HEquipmentItemLink item={item} />
-                                                {returnedIds.has(item.id) && (
-                                                    <>
-                                                        {" "}
-                                                        <D4HI3Module_ReturnedBadge />
-                                                    </>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                <D4HMemberLink
-                                                    member={{
-                                                        ...item.holder,
-                                                        owner: { id: teamId },
-                                                    }}
+                                        <TableCell>
+                                            {quality && (
+                                                <D4HI3Module_ItemQuality_Badge
+                                                    result={quality}
+                                                    item={item}
                                                 />
-                                            </TableCell>
-                                            {hasRules && (
-                                                <TableCell>
-                                                    {quality && (
-                                                        <D4HI3Module_ItemQuality_Badge
-                                                            result={quality}
-                                                            item={item}
-                                                        />
-                                                    )}
-                                                </TableCell>
                                             )}
-                                            {visibleColumns.map((column) => (
-                                                <TableCell
-                                                    key={column.key}
-                                                    className="hidden lg:table-cell"
-                                                >
-                                                    {optionalCell(item, column.key, formatDate)}
-                                                </TableCell>
-                                            ))}
-                                        </TableRow>
+                                        </TableCell>
+                                    )}
+                                    {visibleColumns.map((column) => (
+                                        <TableCell
+                                            key={column.key}
+                                            className="hidden lg:table-cell"
+                                        >
+                                            {optionalCell(item, column.key, formatDate)}
+                                        </TableCell>
                                     ))}
-                                </TableBody>
-                            </Table>
-                        </TablePanel>
-                    )}
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </TablePanel>
+            )}
+        </Saratoga.Root>
     );
 }

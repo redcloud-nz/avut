@@ -8,7 +8,6 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
 
-import { Std } from "@/components/blocks/std";
 import { PageLoadingSpinner } from "@/components/ui/loading";
 import { syntheticChecksFlag } from "@/lib/flags";
 import { route } from "@/lib/routes";
@@ -57,26 +56,17 @@ export default async function SkillTrack_ReportsTeamCompetency_Page(
 
     return (
         <HydrateClient>
-            <>
-                <Std.Navbar
+            <Suspense fallback={<PageLoadingSpinner />}>
+                <SkillTrack_TeamCompetencyReport
+                    syntheticChecksEnabled={syntheticChecksEnabled}
                     breadcrumbs={[
-                        { label: "Skill Track", href: route("/orgs/[slug]/skill-track", { slug }) },
                         {
-                            label: "Reports",
+                            label: "Skills Reports",
                             href: route("/orgs/[slug]/skill-track/reports", { slug }),
-                        },
-                        {
-                            label: "Team Competency",
-                            href: route("/orgs/[slug]/skill-track/reports/team", { slug }),
                         },
                     ]}
                 />
-                <Suspense fallback={<PageLoadingSpinner />}>
-                    <SkillTrack_TeamCompetencyReport
-                        syntheticChecksEnabled={syntheticChecksEnabled}
-                    />
-                </Suspense>
-            </>
+            </Suspense>
         </HydrateClient>
     );
 }

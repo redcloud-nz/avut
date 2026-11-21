@@ -5,6 +5,7 @@
  * Path: /orgs/[slug]/d4h-i3/forms/return-items
  */
 
+import { Std } from "@/components/blocks/std";
 import { I3ReturnItemsForm } from "@/lib/forms";
 import { D4HI3Module_ReturnItems_FormInstanceList } from "@/modules/d4h-i3/components/return-items-form-list";
 import { getOrganizationBySlug } from "@/server/cache/organization";
@@ -38,7 +39,9 @@ export default async function D4HI3Module_Return_FormInstanceList_Page(
 
     return (
         <HydrateClient>
-            <D4HI3Module_ReturnItems_FormInstanceList />
+            <Std.ScrollContainer>
+                <D4HI3Module_ReturnItems_FormInstanceList />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

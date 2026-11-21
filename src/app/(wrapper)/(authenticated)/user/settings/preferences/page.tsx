@@ -5,6 +5,7 @@
  * Path: /user/settings/preferences
  */
 
+import { Std } from "@/components/blocks/std";
 import { UserSettings_PreferencesContent } from "@/modules/user-settings/components/user-settings-content";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
@@ -13,7 +14,9 @@ export default async function UserSettings_Preferences_Page() {
 
     return (
         <HydrateClient>
-            <UserSettings_PreferencesContent />
+            <Std.ScrollContainer>
+                <UserSettings_PreferencesContent />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

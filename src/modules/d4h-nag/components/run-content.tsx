@@ -18,7 +18,6 @@ import {
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { EntityLink } from "@/components/entity-links/entity-link";
 import { TeamLink } from "@/components/entity-links/team-link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -87,7 +86,6 @@ const OUTCOMES: D4HNagOutcome[] = [
 export function D4HNag_Run_Content({ runId }: { runId: D4HNagRunId }) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
-    const { formatDateTime } = usePreferences();
 
     const { data: run } = useSuspenseQuery(
         trpc.d4hNag.getRun.queryOptions(
@@ -118,52 +116,45 @@ export function D4HNag_Run_Content({ runId }: { runId: D4HNagRunId }) {
     const title = `${run.dryRun ? "Dry Run" : "Run"}: ${run.teamName}`;
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    {
-                        label: "D4H Attendance Reminders",
-                        href: route("/orgs/[slug]/d4h-nag", { slug: organization.slug }),
-                    },
+        <Saratoga.Root>
+            <Saratoga.Breadcrumbs
+                items={[
                     {
                         label: "Rules",
                         href: route("/orgs/[slug]/d4h-nag", { slug: organization.slug }),
                     },
-                    run.ruleId
-                        ? {
-                              label: `Rule for ${run.teamName}`,
-                              href: route("/orgs/[slug]/d4h-nag/rules/[rule_id]", {
-                                  slug: organization.slug,
-                                  rule_id: run.ruleId,
-                              }),
-                          }
-                        : { label: "Deleted rule" },
-                    { label: `${run.dryRun ? "Dry Run" : "Run"} ${formatDateTime(run.startedAt)}` },
+                    ...(run.ruleId
+                        ? [
+                              {
+                                  label: `Rule for ${run.teamName}`,
+                                  href: route("/orgs/[slug]/d4h-nag/rules/[rule_id]", {
+                                      slug: organization.slug,
+                                      rule_id: run.ruleId,
+                                  }),
+                              },
+                          ]
+                        : []),
                 ]}
             />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>{title}</Saratoga.Title>
-                    </Saratoga.Header>
+            <Saratoga.Header>
+                <Saratoga.Title>{title}</Saratoga.Title>
+            </Saratoga.Header>
 
-                    <Saratoga.Columns>
-                        <Saratoga.Column slot="main">
-                            <RunDetails_Card run={run} />
-                        </Saratoga.Column>
-                        <Saratoga.Column slot="secondary">
-                            <RunStatus_Alert run={run} />
-                            <RunCounts_Card run={run} />
-                        </Saratoga.Column>
-                    </Saratoga.Columns>
+            <Saratoga.Columns>
+                <Saratoga.Column slot="main">
+                    <RunDetails_Card run={run} />
+                </Saratoga.Column>
+                <Saratoga.Column slot="secondary">
+                    <RunStatus_Alert run={run} />
+                    <RunCounts_Card run={run} />
+                </Saratoga.Column>
+            </Saratoga.Columns>
 
-                    <section className="space-y-3 pt-4">
-                        <h2 className="text-lg font-semibold tracking-tight">Recipients</h2>
-                        <Recipients_Table run={run} />
-                    </section>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+            <section className="space-y-3 pt-4">
+                <h2 className="text-lg font-semibold tracking-tight">Recipients</h2>
+                <Recipients_Table run={run} />
+            </section>
+        </Saratoga.Root>
     );
 }
 

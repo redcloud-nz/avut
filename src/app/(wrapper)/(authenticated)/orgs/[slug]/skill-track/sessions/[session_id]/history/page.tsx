@@ -7,6 +7,7 @@
 
 import { Metadata } from "next";
 
+import { Std } from "@/components/blocks/std";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { SkillTrack_SessionHistory_Content } from "@/modules/skill-track/components/session-history-content";
@@ -58,7 +59,9 @@ export default async function SkillTrack_SessionHistory_Page(props: Props) {
 
     return (
         <HydrateClient>
-            <SkillTrack_SessionHistory_Content sessionId={skillCheckSessionId} />
+            <Std.ScrollContainer>
+                <SkillTrack_SessionHistory_Content sessionId={skillCheckSessionId} />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

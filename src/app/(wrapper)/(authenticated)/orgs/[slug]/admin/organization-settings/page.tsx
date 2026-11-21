@@ -5,6 +5,7 @@
  * Paths: /orgs/[slug]/admin/organization-settings
  */
 
+import { Std } from "@/components/blocks/std";
 import { AdminModule_Settings_Content } from "@/modules/org-admin/components/organization-settings/organization-settings-content";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
@@ -20,7 +21,9 @@ export default async function AdminModule_Settings_Page(
 
     return (
         <HydrateClient>
-            <AdminModule_Settings_Content />
+            <Std.ScrollContainer>
+                <AdminModule_Settings_Content />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

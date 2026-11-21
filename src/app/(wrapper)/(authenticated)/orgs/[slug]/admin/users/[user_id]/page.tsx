@@ -5,6 +5,7 @@
  * Paths: /orgs/[slug]/admin/users/[user_id]
  */
 
+import { Std } from "@/components/blocks/std";
 import { UserId } from "@/lib/schemas/user";
 import { AdminModule_User_Content } from "@/modules/org-admin/components/users/user-content";
 import { getOrganizationBySlug } from "@/server/cache/organization";
@@ -29,7 +30,9 @@ export default async function AdminModule_User_Page(
 
     return (
         <HydrateClient>
-            <AdminModule_User_Content userId={userId} />
+            <Std.ScrollContainer>
+                <AdminModule_User_Content userId={userId} />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

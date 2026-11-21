@@ -9,11 +9,8 @@ import { Std } from "@/components/blocks/std";
 
 export default async function AdminScripts_Page() {
     return (
-        <>
-            <Std.Navbar breadcrumbs={["Admin", "Scripts"]} />
-            <Std.ScrollContainer>
-                <Std.IndexPage title="Admin Scripts" />
-            </Std.ScrollContainer>
-        </>
+        <Std.ScrollContainer>
+            <Std.IndexPage title="Admin Scripts" />
+        </Std.ScrollContainer>
     );
 }

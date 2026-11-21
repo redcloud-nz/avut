@@ -11,7 +11,6 @@ import * as R from "remeda";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { D4HTeamPickerDialog } from "@/components/d4h/team-picker-dialog";
 import { D4HEquipmentCategoryLink } from "@/components/entity-links/d4h-equipment-category-link";
 import { D4HIssuedTypeLink } from "@/components/entity-links/d4h-issued-type-link";
@@ -83,86 +82,77 @@ export function D4HI3Module_TeamIssuedTypes({ teamId }: { teamId: number }) {
     );
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "D4H I3", href: route("/orgs/[slug]/d4h-i3", { slug }) },
+        <Saratoga.Root>
+            <Saratoga.Breadcrumbs
+                items={[
                     {
                         label: "Issued Types",
                         href: route("/orgs/[slug]/d4h-i3/issued-types", { slug }),
                     },
-                    { label: team.title },
                 ]}
             />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>Equipment Types issued to {team.title}</Saratoga.Title>
-                        {teams.length > 1 && (
-                            <Saratoga.Actions>
-                                <D4HTeamPickerDialog
-                                    section={(id) =>
-                                        route(
-                                            "/orgs/[slug]/d4h-i3/teams/[d4h_team_id]/issued-types",
-                                            { slug, d4h_team_id: String(id) },
-                                        )
-                                    }
-                                />
-                            </Saratoga.Actions>
-                        )}
-                    </Saratoga.Header>
-                    {groups.length === 0 ? (
-                        <Empty>
-                            <EmptyDescription>
-                                No equipment is issued to members of {team.title}.
-                            </EmptyDescription>
-                        </Empty>
-                    ) : (
-                        <TablePanel>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow className="hover:bg-transparent">
-                                        <TableHeadCell>Type</TableHeadCell>
-                                        <TableHeadCell className="w-32 text-center">
-                                            Issued Count
+            <Saratoga.Header>
+                <Saratoga.Title>Equipment Types issued to {team.title}</Saratoga.Title>
+                {teams.length > 1 && (
+                    <Saratoga.Actions>
+                        <D4HTeamPickerDialog
+                            section={(id) =>
+                                route("/orgs/[slug]/d4h-i3/teams/[d4h_team_id]/issued-types", {
+                                    slug,
+                                    d4h_team_id: String(id),
+                                })
+                            }
+                        />
+                    </Saratoga.Actions>
+                )}
+            </Saratoga.Header>
+            {groups.length === 0 ? (
+                <Empty>
+                    <EmptyDescription>
+                        No equipment is issued to members of {team.title}.
+                    </EmptyDescription>
+                </Empty>
+            ) : (
+                <TablePanel>
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="hover:bg-transparent">
+                                <TableHeadCell>Type</TableHeadCell>
+                                <TableHeadCell className="w-32 text-center">
+                                    Issued Count
+                                </TableHeadCell>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {groups.map((group) => (
+                                <Fragment key={group.id}>
+                                    <TableRow className="bg-table-group hover:bg-table-group">
+                                        <TableHeadCell colSpan={2}>
+                                            {group.category ? (
+                                                <D4HEquipmentCategoryLink
+                                                    category={group.category}
+                                                />
+                                            ) : (
+                                                group.title
+                                            )}
                                         </TableHeadCell>
                                     </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {groups.map((group) => (
-                                        <Fragment key={group.id}>
-                                            <TableRow className="bg-table-group hover:bg-table-group">
-                                                <TableHeadCell colSpan={2}>
-                                                    {group.category ? (
-                                                        <D4HEquipmentCategoryLink
-                                                            category={group.category}
-                                                        />
-                                                    ) : (
-                                                        group.title
-                                                    )}
-                                                </TableHeadCell>
-                                            </TableRow>
-                                            {group.types.map((type) => (
-                                                <TableRow key={type.id}>
-                                                    <TableCell className="pl-6">
-                                                        <D4HIssuedTypeLink
-                                                            teamId={teamId}
-                                                            type={type}
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell className="text-center">
-                                                        {type.count}
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </Fragment>
+                                    {group.types.map((type) => (
+                                        <TableRow key={type.id}>
+                                            <TableCell className="pl-6">
+                                                <D4HIssuedTypeLink teamId={teamId} type={type} />
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                {type.count}
+                                            </TableCell>
+                                        </TableRow>
                                     ))}
-                                </TableBody>
-                            </Table>
-                        </TablePanel>
-                    )}
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+                                </Fragment>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </TablePanel>
+            )}
+        </Saratoga.Root>
     );
 }

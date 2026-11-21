@@ -83,39 +83,35 @@ export default async function Admin_D4HAccessToken_EquipmentCategories_Page(
     const successCount = categories.filter((i) => i.parsed.success).length;
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
-                    {
-                        label: "D4H Access Tokens",
-                        href: route("/orgs/[slug]/admin/d4h-access-tokens", { slug }),
-                    },
-                    {
-                        label: accessToken.label || accessToken.id,
-                        href: route("/orgs/[slug]/admin/d4h-access-tokens/[token_id]/members", {
-                            slug,
-                            token_id,
-                        }),
-                    },
-                    "Equipment Categories",
-                ]}
-            />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>
-                            Equipment Categories ({successCount} of {categories.length})
-                        </Saratoga.Title>
-                    </Saratoga.Header>
-                    {categories.map((item) => (
-                        <Eagle.Section key={item.raw.id}>
-                            <Eagle.Title>{item.raw.id}</Eagle.Title>
-                            <Eagle.Content raw={item.raw} parsed={item.parsed} />
-                        </Eagle.Section>
-                    ))}
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+        <Std.ScrollContainer>
+            <Saratoga.Root>
+                <Saratoga.Breadcrumbs
+                    items={[
+                        {
+                            label: "D4H Access Tokens",
+                            href: route("/orgs/[slug]/admin/d4h-access-tokens", { slug }),
+                        },
+                        {
+                            label: accessToken.label || accessToken.id,
+                            href: route("/orgs/[slug]/admin/d4h-access-tokens/[token_id]", {
+                                slug,
+                                token_id,
+                            }),
+                        },
+                    ]}
+                />
+                <Saratoga.Header>
+                    <Saratoga.Title>
+                        Equipment Categories ({successCount} of {categories.length})
+                    </Saratoga.Title>
+                </Saratoga.Header>
+                {categories.map((item) => (
+                    <Eagle.Section key={item.raw.id}>
+                        <Eagle.Title>{item.raw.id}</Eagle.Title>
+                        <Eagle.Content raw={item.raw} parsed={item.parsed} />
+                    </Eagle.Section>
+                ))}
+            </Saratoga.Root>
+        </Std.ScrollContainer>
     );
 }

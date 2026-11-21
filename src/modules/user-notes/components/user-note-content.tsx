@@ -13,10 +13,12 @@ import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
 import { sessionQueryOptions } from "@/client/auth-queries";
 import { userNotesEffects } from "@/client/user-notes-effects";
+import type { SaratogaBreadcrumb } from "@/components/blocks/saratoga";
 import { ObjectIcons } from "@/components/icons";
 import { NoteDetail } from "@/components/notes/note-detail";
 import { NoteEditor } from "@/components/notes/note-editor";
 import { isNoteNotFound, NoteGoneBoundary } from "@/components/notes/note-gone-boundary";
+import { notesBreadcrumbs } from "@/components/notes/notes-breadcrumbs";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenuGroup,
@@ -41,7 +43,7 @@ export function UserNote_Content({ noteId }: { noteId: UserNoteId }) {
     if (!session) throw new Error("Personal notes need a signed-in user.");
 
     return (
-        <NoteGoneBoundary scopeId={session.user.id} noteId={noteId}>
+        <NoteGoneBoundary scopeId={session.user.id} noteId={noteId} listHref="/user/notes">
             <UserNote_Body noteId={noteId} />
         </NoteGoneBoundary>
     );
@@ -61,6 +63,8 @@ function UserNote_Body({ noteId }: { noteId: UserNoteId }) {
     const [edit, setEdit] = useQueryState("edit", parseAsBoolean.withDefault(false));
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["delete"] as const));
 
+    const breadcrumbs = notesBreadcrumbs("/user/notes");
+
     function openEditor() {
         void setEdit(true, { history: "push" });
     }
@@ -76,10 +80,11 @@ function UserNote_Body({ noteId }: { noteId: UserNoteId }) {
     return (
         <>
             {edit ? (
-                <UserNote_Editor note={note} onDone={closeEditor} />
+                <UserNote_Editor note={note} breadcrumbs={breadcrumbs} onDone={closeEditor} />
             ) : (
                 <NoteDetail
                     note={note}
+                    breadcrumbs={breadcrumbs}
                     actions={
                         <>
                             <Button
@@ -141,7 +146,15 @@ function UserNote_Body({ noteId }: { noteId: UserNoteId }) {
  * Edit mode. Owns the update mutation, so both it and the draft start fresh each time the editor
  * opens.
  */
-function UserNote_Editor({ note, onDone }: { note: UserNoteData; onDone: () => void }) {
+function UserNote_Editor({
+    note,
+    breadcrumbs,
+    onDone,
+}: {
+    note: UserNoteData;
+    breadcrumbs: SaratogaBreadcrumb[];
+    onDone: () => void;
+}) {
     const mutation = useMutation(
         trpc.userNotes.updateNote.mutationOptions({
             meta: { effects: userNotesEffects.updateNote },
@@ -158,6 +171,7 @@ function UserNote_Editor({ note, onDone }: { note: UserNoteData; onDone: () => v
     return (
         <NoteEditor
             note={note}
+            breadcrumbs={breadcrumbs}
             status={mutation.status}
             onCancel={onDone}
             onSave={(changes) => mutation.mutate({ noteId: note.id, ...changes })}

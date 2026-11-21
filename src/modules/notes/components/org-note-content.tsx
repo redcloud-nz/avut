@@ -13,10 +13,12 @@ import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
 import { sessionQueryOptions } from "@/client/auth-queries";
 import { organizationNotesEffects } from "@/client/organization-notes-effects";
+import type { SaratogaBreadcrumb } from "@/components/blocks/saratoga";
 import { ObjectIcons } from "@/components/icons";
 import { NoteDetail } from "@/components/notes/note-detail";
 import { NoteEditor } from "@/components/notes/note-editor";
 import { isNoteNotFound, NoteGoneBoundary } from "@/components/notes/note-gone-boundary";
+import { notesBreadcrumbs } from "@/components/notes/notes-breadcrumbs";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenuGroup,
@@ -41,7 +43,11 @@ export function OrgNote_Content({ noteId }: { noteId: OrganizationNoteId }) {
     const organization = useOrganization();
 
     return (
-        <NoteGoneBoundary scopeId={organization.id} noteId={noteId}>
+        <NoteGoneBoundary
+            scopeId={organization.id}
+            noteId={noteId}
+            listHref={route("/orgs/[slug]/notes", { slug: organization.slug })}
+        >
             <OrgNote_Body noteId={noteId} />
         </NoteGoneBoundary>
     );
@@ -80,6 +86,7 @@ function OrgNote_Body({ noteId }: { noteId: OrganizationNoteId }) {
 
     const editing = edit && canEdit;
     const byline = note.authorId === null ? "Unknown author" : author?.name;
+    const breadcrumbs = notesBreadcrumbs(route("/orgs/[slug]/notes", { slug: organization.slug }));
 
     function openEditor() {
         void setEdit(true, { history: "push" });
@@ -96,11 +103,17 @@ function OrgNote_Body({ noteId }: { noteId: OrganizationNoteId }) {
     return (
         <>
             {editing ? (
-                <OrgNote_Editor note={note} byline={byline} onDone={closeEditor} />
+                <OrgNote_Editor
+                    note={note}
+                    byline={byline}
+                    breadcrumbs={breadcrumbs}
+                    onDone={closeEditor}
+                />
             ) : (
                 <NoteDetail
                     note={note}
                     byline={byline}
+                    breadcrumbs={breadcrumbs}
                     actions={
                         <>
                             {canEdit && (
@@ -175,10 +188,12 @@ function OrgNote_Body({ noteId }: { noteId: OrganizationNoteId }) {
 function OrgNote_Editor({
     note,
     byline,
+    breadcrumbs,
     onDone,
 }: {
     note: OrganizationNoteData;
     byline: string | undefined;
+    breadcrumbs: SaratogaBreadcrumb[];
     onDone: () => void;
 }) {
     const organization = useOrganization();
@@ -200,6 +215,7 @@ function OrgNote_Editor({
         <NoteEditor
             note={note}
             byline={byline}
+            breadcrumbs={breadcrumbs}
             status={mutation.status}
             onCancel={onDone}
             onSave={(changes) =>

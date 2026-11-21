@@ -5,12 +5,9 @@
  * Path: /orgs/[slug]/notes
  */
 
-import { Suspense } from "react";
-
 import { Hermes } from "@/components/blocks/hermes";
-import { Std } from "@/components/blocks/std";
 import { Notes_ModuleGate } from "@/modules/notes/components/notes-module-gate";
-import { OrgNotes_Breadcrumbs, OrgNotes_List } from "@/modules/notes/components/org-notes-list";
+import { OrgNotes_List } from "@/modules/notes/components/org-notes-list";
 import { isOrganizationModuleUsable } from "@/server/module-flags";
 import { requireOrganization } from "@/server/organization-access";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
@@ -30,9 +27,6 @@ export default async function Notes_Layout(props: LayoutProps<"/orgs/[slug]/note
     return (
         <Notes_ModuleGate>
             <HydrateClient>
-                <Suspense fallback={<Std.Navbar breadcrumbs={["Notes"]} />}>
-                    <OrgNotes_Breadcrumbs />
-                </Suspense>
                 <Hermes.Root>
                     <Hermes.List>
                         <OrgNotes_List />

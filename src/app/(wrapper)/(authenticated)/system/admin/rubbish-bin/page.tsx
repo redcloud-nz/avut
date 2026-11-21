@@ -21,17 +21,9 @@ export default async function SystemAdmin_RubbishBin_Page() {
 
     return (
         <HydrateClient>
-            <>
-                <Std.Navbar
-                    breadcrumbs={[
-                        { label: "System Admin", href: "/system/admin" },
-                        { label: "Rubbish", href: "/system/admin/rubbish-bin" },
-                    ]}
-                />
-                <Std.ScrollContainer>
-                    <SystemAdmin_RubbishBin_List />
-                </Std.ScrollContainer>
-            </>
+            <Std.ScrollContainer>
+                <SystemAdmin_RubbishBin_List />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

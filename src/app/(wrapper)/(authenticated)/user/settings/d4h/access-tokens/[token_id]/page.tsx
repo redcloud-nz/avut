@@ -8,6 +8,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { Std } from "@/components/blocks/std";
 import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { UserSettings_D4HAccessTokenContent } from "@/modules/user-settings/components/d4h-access-token-content";
 import { fetchQuery, HydrateClient, trpc } from "@/trpc/server";
@@ -33,7 +34,9 @@ export default async function UserSettings_D4HAccessToken_Page(props: Props) {
 
     return (
         <HydrateClient>
-            <UserSettings_D4HAccessTokenContent tokenId={tokenId} />
+            <Std.ScrollContainer>
+                <UserSettings_D4HAccessTokenContent tokenId={tokenId} />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

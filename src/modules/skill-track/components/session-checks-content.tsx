@@ -18,7 +18,6 @@ import {
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { Show } from "@/components/show";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 import { useOrganization } from "@/hooks/use-organization";
@@ -181,15 +180,11 @@ export function SkillTrack_SessionChecks_Content({
     });
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
+        <Saratoga.Root>
+            <Saratoga.Breadcrumbs
+                items={[
                     {
-                        label: "Skill Track",
-                        href: route("/orgs/[slug]/skill-track", { slug: organization.slug }),
-                    },
-                    {
-                        label: "Sessions",
+                        label: "Skill Check Sessions",
                         href: route("/orgs/[slug]/skill-track/sessions", {
                             slug: organization.slug,
                         }),
@@ -201,37 +196,30 @@ export function SkillTrack_SessionChecks_Content({
                             session_id: sessionId,
                         }),
                     },
-                    "Checks",
                 ]}
             />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>
-                            Skill checks recorded in {session.name || session.id}
-                        </Saratoga.Title>
-                    </Saratoga.Header>
-                    <Show
-                        when={skillChecks.length > 0}
-                        fallback={
-                            <Empty>
-                                <EmptyMedia>
-                                    <ClipboardCheckIcon className="size-12 text-muted-foreground" />
-                                </EmptyMedia>
-                                <EmptyDescription>
-                                    No skill checks have been recorded for this session yet.
-                                </EmptyDescription>
-                            </Empty>
-                        }
-                    >
-                        <div>
-                            <Kaga.TableToolbar table={table} />
-                            <Kaga.Table table={table} />
-                            <Kaga.TablePagination table={table} />
-                        </div>
-                    </Show>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+            <Saratoga.Header>
+                <Saratoga.Title>Skill Checks</Saratoga.Title>
+            </Saratoga.Header>
+            <Show
+                when={skillChecks.length > 0}
+                fallback={
+                    <Empty>
+                        <EmptyMedia>
+                            <ClipboardCheckIcon className="size-12 text-muted-foreground" />
+                        </EmptyMedia>
+                        <EmptyDescription>
+                            No skill checks have been recorded for this session yet.
+                        </EmptyDescription>
+                    </Empty>
+                }
+            >
+                <div>
+                    <Kaga.TableToolbar table={table} />
+                    <Kaga.Table table={table} />
+                    <Kaga.TablePagination table={table} />
+                </div>
+            </Show>
+        </Saratoga.Root>
     );
 }

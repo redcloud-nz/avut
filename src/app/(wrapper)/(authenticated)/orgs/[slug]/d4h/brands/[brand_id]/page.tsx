@@ -10,6 +10,7 @@ import { notFound } from "next/navigation";
 
 import { TRPCError } from "@trpc/server";
 
+import { Std } from "@/components/blocks/std";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { D4HModule_Brand_Content } from "@/modules/d4h/components/catalogue/brand-content";
 import { getOrganizationBySlug } from "@/server/cache/organization";
@@ -60,7 +61,9 @@ export default async function D4HModule_Brand_Page(props: Props) {
 
     return (
         <HydrateClient>
-            <D4HModule_Brand_Content brandId={brandId} />
+            <Std.ScrollContainer>
+                <D4HModule_Brand_Content brandId={brandId} />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

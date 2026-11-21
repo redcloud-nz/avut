@@ -7,6 +7,7 @@
 
 import { Metadata } from "next";
 
+import { Std } from "@/components/blocks/std";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { UserId } from "@/lib/schemas/user";
 import { SystemAdmin_User_Content } from "@/modules/system-admin/components/users/user-content";
@@ -38,7 +39,9 @@ export default async function SystemAdmin_User_Page(props: Props) {
 
     return (
         <HydrateClient>
-            <SystemAdmin_User_Content userId={userId} />
+            <Std.ScrollContainer>
+                <SystemAdmin_User_Content userId={userId} />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

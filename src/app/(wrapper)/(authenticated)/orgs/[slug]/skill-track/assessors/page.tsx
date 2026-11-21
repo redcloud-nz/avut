@@ -6,7 +6,6 @@
  */
 
 import { Std } from "@/components/blocks/std";
-import { route } from "@/lib/routes";
 import { SkillTrack_AssessorsList } from "@/modules/skill-track/components/assessors-list";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
@@ -30,20 +29,9 @@ export default async function SkillTrack_Assessors_Page(
 
     return (
         <HydrateClient>
-            <>
-                <Std.Navbar
-                    breadcrumbs={[
-                        { label: "Skill Track", href: route("/orgs/[slug]/skill-track", { slug }) },
-                        {
-                            label: "Assessors",
-                            href: route("/orgs/[slug]/skill-track/assessors", { slug }),
-                        },
-                    ]}
-                />
-                <Std.ScrollContainer>
-                    <SkillTrack_AssessorsList />
-                </Std.ScrollContainer>
-            </>
+            <Std.ScrollContainer>
+                <SkillTrack_AssessorsList />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

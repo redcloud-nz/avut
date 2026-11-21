@@ -7,6 +7,7 @@
 
 import { Metadata } from "next";
 
+import { Std } from "@/components/blocks/std";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { SystemAdmin_Organization_Content } from "@/modules/system-admin/components/organizations/organization-content";
@@ -44,10 +45,12 @@ export default async function SystemAdmin_Organization_Page(props: Props) {
 
     return (
         <HydrateClient>
-            <SystemAdmin_Organization_Content
-                organizationId={organizationId}
-                moduleFlags={moduleFlags}
-            />
+            <Std.ScrollContainer>
+                <SystemAdmin_Organization_Content
+                    organizationId={organizationId}
+                    moduleFlags={moduleFlags}
+                />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

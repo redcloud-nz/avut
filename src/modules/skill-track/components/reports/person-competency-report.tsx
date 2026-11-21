@@ -13,6 +13,7 @@ import * as R from "remeda";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Glorious } from "@/components/blocks/glorious";
+import type { SaratogaBreadcrumb } from "@/components/blocks/saratoga";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,8 +49,11 @@ import { trpc } from "@/trpc/client";
 
 export function SkillTrack_PersonCompetencyReport({
     syntheticChecksEnabled,
+    breadcrumbs,
 }: {
     syntheticChecksEnabled: boolean;
+    /** The page's ancestors, shown above the title. */
+    breadcrumbs?: SaratogaBreadcrumb[];
 }) {
     const [personParam] = useQueryState("person");
     const parsedPersonId = personParam ? PersonId.schema.safeParse(personParam) : undefined;
@@ -60,6 +64,7 @@ export function SkillTrack_PersonCompetencyReport({
         return (
             <Glorious.Root className="mx-auto w-full max-w-4xl">
                 <Glorious.Header>
+                    {breadcrumbs && <Glorious.Breadcrumbs items={breadcrumbs} />}
                     <Glorious.Title>Personnel Competency Report</Glorious.Title>
                     <Glorious.Actions>
                         <SkillTrack_PersonScopeDialog forceOpen label="Select a person" />
@@ -78,6 +83,7 @@ export function SkillTrack_PersonCompetencyReport({
         <PersonCompetencyReportView
             personId={parsedPersonId.data}
             syntheticChecksEnabled={syntheticChecksEnabled}
+            breadcrumbs={breadcrumbs}
         />
     );
 }
@@ -96,9 +102,11 @@ const headCell =
 function PersonCompetencyReportView({
     personId,
     syntheticChecksEnabled,
+    breadcrumbs,
 }: {
     personId: PersonId;
     syntheticChecksEnabled: boolean;
+    breadcrumbs?: SaratogaBreadcrumb[];
 }) {
     const organization = useOrganization();
     const { formatDate } = usePreferences();
@@ -172,6 +180,7 @@ function PersonCompetencyReportView({
         return (
             <Glorious.Root className="mx-auto w-full max-w-4xl">
                 <Glorious.Header>
+                    {breadcrumbs && <Glorious.Breadcrumbs items={breadcrumbs} />}
                     <Glorious.Title>Personnel Competency Report</Glorious.Title>
                     <Glorious.Actions>
                         <SkillTrack_PersonScopeDialog label="Select a person" />
@@ -193,6 +202,7 @@ function PersonCompetencyReportView({
         <ReportCellPopoversProvider isSynthetic={isSynthetic}>
             <Glorious.Root>
                 <Glorious.Header>
+                    {breadcrumbs && <Glorious.Breadcrumbs items={breadcrumbs} />}
                     <Glorious.Title>Personnel Competency Report</Glorious.Title>
                     <Glorious.Subtitle>
                         <div>
