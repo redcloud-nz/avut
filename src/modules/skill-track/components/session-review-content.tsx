@@ -17,7 +17,6 @@ import { useCallback, useEffect, useMemo } from "react";
 import { useIsMutating, useSuspenseQueries } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Show } from "@/components/show";
@@ -422,13 +421,9 @@ export function SkillTrack_SessionReview_Content({
     const reviewRows = review?.rows.toSorted((a, b) => a.label.localeCompare(b.label)) ?? [];
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    {
-                        label: "Skill Track",
-                        href: route("/orgs/[slug]/skill-track", { slug: organization.slug }),
-                    },
+        <Saratoga.Root>
+            <Saratoga.Breadcrumbs
+                items={[
                     {
                         label: "Sessions",
                         href: route("/orgs/[slug]/skill-track/sessions", {
@@ -442,196 +437,187 @@ export function SkillTrack_SessionReview_Content({
                             session_id: sessionId,
                         }),
                     },
-                    "Review",
                 ]}
             />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>Review</Saratoga.Title>
-                        <Saratoga.Actions>
-                            <Protect permissions={{ skillCheckSession: ["approve"] }}>
-                                {isApproved ? (
-                                    <Button variant="outline" onClick={() => openAction("reopen")}>
-                                        <LockOpenIcon /> Reopen
-                                    </Button>
-                                ) : approveBlockedReason ? (
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            {/* A disabled button gets no pointer events, so the
+            <Saratoga.Header>
+                <Saratoga.Title>Review</Saratoga.Title>
+                <Saratoga.Actions>
+                    <Protect permissions={{ skillCheckSession: ["approve"] }}>
+                        {isApproved ? (
+                            <Button variant="outline" onClick={() => openAction("reopen")}>
+                                <LockOpenIcon /> Reopen
+                            </Button>
+                        ) : approveBlockedReason ? (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    {/* A disabled button gets no pointer events, so the
                                                 wrapper takes the hover and focus instead. */}
-                                            <span tabIndex={0}>
-                                                <Button disabled>Approve</Button>
-                                            </span>
-                                        </TooltipTrigger>
-                                        <TooltipContent>{approveBlockedReason}</TooltipContent>
-                                    </Tooltip>
-                                ) : (
-                                    <Button onClick={() => openAction("approve")}>Approve</Button>
-                                )}
-                                <SkillsModule_ReopenSession_Dialog
-                                    session={session}
-                                    open={canOpenReopen && action === "reopen"}
-                                    onOpenChange={(open) =>
-                                        open ? openAction("reopen") : closeAction("reopen")
-                                    }
-                                />
-                                <SkillsModule_ApproveSession_Dialog
-                                    session={session}
-                                    includedCheckIds={includedCheckIds}
-                                    excludedCount={excludedCount}
-                                    open={canOpenApprove && action === "approve"}
-                                    onOpenChange={(open) =>
-                                        open ? openAction("approve") : closeAction("approve")
-                                    }
-                                />
-                            </Protect>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon">
-                                        <DropdownMenuTriggerIcon />
-                                        <span className="sr-only">View options</span>
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent size="lg" align="end">
-                                    <DropdownMenuLabel>Include</DropdownMenuLabel>
-                                    <DropdownMenuCheckboxItem
-                                        checked={includeUnassessedPeople}
-                                        onCheckedChange={(checked) =>
-                                            void setIncludeUnassessedPeople(checked)
-                                        }
-                                    >
-                                        Unassessed personnel
-                                    </DropdownMenuCheckboxItem>
-                                    <DropdownMenuCheckboxItem
-                                        checked={includeUnassessedSkills}
-                                        onCheckedChange={(checked) =>
-                                            void setIncludeUnassessedSkills(checked)
-                                        }
-                                    >
-                                        Unassessed skills
-                                    </DropdownMenuCheckboxItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuLabel>Show</DropdownMenuLabel>
-                                    <DropdownMenuRadioGroup
-                                        value={show}
-                                        onValueChange={(value) =>
-                                            void setShow(value as SessionReviewShow)
-                                        }
-                                    >
-                                        {SESSION_REVIEW_SHOW_OPTIONS.map((option) => (
-                                            <DropdownMenuRadioItem key={option} value={option}>
-                                                {SHOW_LABELS[option]}
-                                            </DropdownMenuRadioItem>
-                                        ))}
-                                    </DropdownMenuRadioGroup>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </Saratoga.Actions>
-                    </Saratoga.Header>
-                    {/* The same gap between cards as the session page's columns. */}
-                    <div className="flex flex-col gap-4">
-                        <Show when={isApproved}>
-                            <Alert>
-                                <AlertTitle>Approved</AlertTitle>
-                                <AlertDescription>
-                                    <p>
-                                        This session has been approved and is locked.{" "}
-                                        <Protect permissions={{ skillCheckSession: ["approve"] }}>
-                                            To change what&apos;s included, reopen it with Reopen at
-                                            the top of the page.
-                                        </Protect>
-                                    </p>
-                                </AlertDescription>
-                            </Alert>
-                        </Show>
-
-                        <Show
-                            when={skillChecks.length > 0}
-                            fallback={
-                                <Empty>
-                                    <EmptyMedia>
-                                        <ClipboardCheckIcon className="size-12 text-muted-foreground" />
-                                    </EmptyMedia>
-                                    <EmptyDescription>
-                                        No skill checks have been recorded for this session yet.
-                                    </EmptyDescription>
-                                </Empty>
+                                    <span tabIndex={0}>
+                                        <Button disabled>Approve</Button>
+                                    </span>
+                                </TooltipTrigger>
+                                <TooltipContent>{approveBlockedReason}</TooltipContent>
+                            </Tooltip>
+                        ) : (
+                            <Button onClick={() => openAction("approve")}>Approve</Button>
+                        )}
+                        <SkillsModule_ReopenSession_Dialog
+                            session={session}
+                            open={canOpenReopen && action === "reopen"}
+                            onOpenChange={(open) =>
+                                open ? openAction("reopen") : closeAction("reopen")
                             }
-                        >
-                            <SkillTrack_SessionReview_Summary
-                                uniqueCheckCount={uniqueCheckCount}
-                                personnelCount={assessedPeople.size}
-                                skillCount={assessedSkills.size}
-                                coveragePercent={coveragePercent}
-                            />
-                            <Show when={conflicts.length > 0}>
-                                <SkillTrack_SessionReview_Conflicts
-                                    id="conflicts"
-                                    conflicts={conflicts}
-                                    onResolve={openResolve}
-                                    assesseeById={assesseeById}
-                                    skillById={skillById}
-                                    assessorById={assessorById}
-                                    isApproved={isApproved}
-                                />
-                            </Show>
-                            <SkillTrack_SessionReview_Coverage
-                                id="coverage"
-                                people={peopleCoverage}
-                                skills={skillsCoverage}
-                                peopleCount={assessees.length}
-                                skillsCount={sessionSkills.length}
-                                assesseeById={assesseeById}
-                                skillById={skillById}
-                                conflictCheckIds={conflictCheckIds}
-                                show={show}
-                                showsCheck={showsCheck}
-                                onOpen={openReview}
-                            />
-                        </Show>
-                        {review && (
-                            <SkillsModule_ReviewChecks_Dialog
-                                sessionId={sessionId}
-                                subject={review.subject}
-                                title={review.title}
-                                description={
-                                    show === "all"
-                                        ? review.description
-                                        : `${review.description} · Showing ${SHOW_LABELS[show].toLowerCase()} only`
+                        />
+                        <SkillsModule_ApproveSession_Dialog
+                            session={session}
+                            includedCheckIds={includedCheckIds}
+                            excludedCount={excludedCount}
+                            open={canOpenApprove && action === "approve"}
+                            onOpenChange={(open) =>
+                                open ? openAction("approve") : closeAction("approve")
+                            }
+                        />
+                    </Protect>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                                <DropdownMenuTriggerIcon />
+                                <span className="sr-only">View options</span>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent size="lg" align="end">
+                            <DropdownMenuLabel>Include</DropdownMenuLabel>
+                            <DropdownMenuCheckboxItem
+                                checked={includeUnassessedPeople}
+                                onCheckedChange={(checked) =>
+                                    void setIncludeUnassessedPeople(checked)
                                 }
-                                rows={reviewRows}
-                                assessorById={assessorById}
-                                conflictCheckIds={conflictCheckIds}
-                                readOnly={reviewReadOnly}
-                                open={action === review.action}
-                                onOpenChange={(open) =>
-                                    open ? undefined : closeAction(review.action)
+                            >
+                                Unassessed personnel
+                            </DropdownMenuCheckboxItem>
+                            <DropdownMenuCheckboxItem
+                                checked={includeUnassessedSkills}
+                                onCheckedChange={(checked) =>
+                                    void setIncludeUnassessedSkills(checked)
                                 }
-                                onSaved={closeReviewedChecks}
-                            />
-                        )}
-                        {resolvingConflict && (
-                            <SkillsModule_ResolveConflict_Dialog
-                                sessionId={sessionId}
-                                conflict={resolvingConflict}
-                                assesseeName={
-                                    assesseeById.get(resolvingConflict.checks[0].assesseeId)
-                                        ?.name ?? resolvingConflict.assesseeId
-                                }
-                                skillName={
-                                    skillById.get(resolvingConflict.checks[0].skillId)?.name ??
-                                    resolvingConflict.skillId
-                                }
-                                assessorById={assessorById}
-                                open={canOpenResolve && action === "resolve"}
-                                onOpenChange={(open) => (open ? undefined : closeAction("resolve"))}
-                                onResolved={closeResolvedConflict}
-                            />
-                        )}
-                    </div>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+                            >
+                                Unassessed skills
+                            </DropdownMenuCheckboxItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuLabel>Show</DropdownMenuLabel>
+                            <DropdownMenuRadioGroup
+                                value={show}
+                                onValueChange={(value) => void setShow(value as SessionReviewShow)}
+                            >
+                                {SESSION_REVIEW_SHOW_OPTIONS.map((option) => (
+                                    <DropdownMenuRadioItem key={option} value={option}>
+                                        {SHOW_LABELS[option]}
+                                    </DropdownMenuRadioItem>
+                                ))}
+                            </DropdownMenuRadioGroup>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </Saratoga.Actions>
+            </Saratoga.Header>
+            {/* The same gap between cards as the session page's columns. */}
+            <div className="flex flex-col gap-4">
+                <Show when={isApproved}>
+                    <Alert>
+                        <AlertTitle>Approved</AlertTitle>
+                        <AlertDescription>
+                            <p>
+                                This session has been approved and is locked.{" "}
+                                <Protect permissions={{ skillCheckSession: ["approve"] }}>
+                                    To change what&apos;s included, reopen it with Reopen at the top
+                                    of the page.
+                                </Protect>
+                            </p>
+                        </AlertDescription>
+                    </Alert>
+                </Show>
+
+                <Show
+                    when={skillChecks.length > 0}
+                    fallback={
+                        <Empty>
+                            <EmptyMedia>
+                                <ClipboardCheckIcon className="size-12 text-muted-foreground" />
+                            </EmptyMedia>
+                            <EmptyDescription>
+                                No skill checks have been recorded for this session yet.
+                            </EmptyDescription>
+                        </Empty>
+                    }
+                >
+                    <SkillTrack_SessionReview_Summary
+                        uniqueCheckCount={uniqueCheckCount}
+                        personnelCount={assessedPeople.size}
+                        skillCount={assessedSkills.size}
+                        coveragePercent={coveragePercent}
+                    />
+                    <Show when={conflicts.length > 0}>
+                        <SkillTrack_SessionReview_Conflicts
+                            id="conflicts"
+                            conflicts={conflicts}
+                            onResolve={openResolve}
+                            assesseeById={assesseeById}
+                            skillById={skillById}
+                            assessorById={assessorById}
+                            isApproved={isApproved}
+                        />
+                    </Show>
+                    <SkillTrack_SessionReview_Coverage
+                        id="coverage"
+                        people={peopleCoverage}
+                        skills={skillsCoverage}
+                        peopleCount={assessees.length}
+                        skillsCount={sessionSkills.length}
+                        assesseeById={assesseeById}
+                        skillById={skillById}
+                        conflictCheckIds={conflictCheckIds}
+                        show={show}
+                        showsCheck={showsCheck}
+                        onOpen={openReview}
+                    />
+                </Show>
+                {review && (
+                    <SkillsModule_ReviewChecks_Dialog
+                        sessionId={sessionId}
+                        subject={review.subject}
+                        title={review.title}
+                        description={
+                            show === "all"
+                                ? review.description
+                                : `${review.description} · Showing ${SHOW_LABELS[show].toLowerCase()} only`
+                        }
+                        rows={reviewRows}
+                        assessorById={assessorById}
+                        conflictCheckIds={conflictCheckIds}
+                        readOnly={reviewReadOnly}
+                        open={action === review.action}
+                        onOpenChange={(open) => (open ? undefined : closeAction(review.action))}
+                        onSaved={closeReviewedChecks}
+                    />
+                )}
+                {resolvingConflict && (
+                    <SkillsModule_ResolveConflict_Dialog
+                        sessionId={sessionId}
+                        conflict={resolvingConflict}
+                        assesseeName={
+                            assesseeById.get(resolvingConflict.checks[0].assesseeId)?.name ??
+                            resolvingConflict.assesseeId
+                        }
+                        skillName={
+                            skillById.get(resolvingConflict.checks[0].skillId)?.name ??
+                            resolvingConflict.skillId
+                        }
+                        assessorById={assessorById}
+                        open={canOpenResolve && action === "resolve"}
+                        onOpenChange={(open) => (open ? undefined : closeAction("resolve"))}
+                        onResolved={closeResolvedConflict}
+                    />
+                )}
+            </div>
+        </Saratoga.Root>
     );
 }

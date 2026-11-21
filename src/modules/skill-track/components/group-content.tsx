@@ -7,7 +7,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { SkillPackageLink } from "@/components/entity-links/skill-package-link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -47,13 +46,9 @@ export function SkillTrack_SkillGroup_Content({
     });
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    {
-                        label: "Skill Track",
-                        href: route("/orgs/[slug]/skill-track", { slug: organization.slug }),
-                    },
+        <Saratoga.Root>
+            <Saratoga.Breadcrumbs
+                items={[
                     {
                         label: "Packages",
                         href: route("/orgs/[slug]/skill-track/packages", {
@@ -61,91 +56,80 @@ export function SkillTrack_SkillGroup_Content({
                         }),
                     },
                     { label: group.skillPackage.name, href: packageHref },
-                    group.name,
                 ]}
             />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title
-                            badges={
-                                group.status !== "Active" && (
-                                    <Badge variant="outline">Archived</Badge>
-                                )
-                            }
-                        >
-                            {group.name}
-                        </Saratoga.Title>
-                    </Saratoga.Header>
-                    {withdrawn && (
-                        <Alert variant="warning">
-                            <AlertTitle>
-                                {group.skillPackage.status === "Deleted"
-                                    ? "Its author has deleted this group's package"
-                                    : "Its author has withdrawn this group's package"}
-                            </AlertTitle>
-                            <AlertDescription>
-                                {group.skillPackage.status === "Deleted"
-                                    ? "Its skills are out of your sessions and reports. Checks already recorded are kept."
-                                    : "Its skills are out of your sessions and reports until it's published again. Checks already recorded are kept."}
-                            </AlertDescription>
-                        </Alert>
-                    )}
-                    <Saratoga.Columns>
-                        <Saratoga.Column slot="main">
-                            <RecordCard label="Skill Group" updatedAt={group.updatedAt}>
-                                <CardContent>
-                                    <DataList>
-                                        <RecordCardId label="Group ID" id={group.id} />
-                                        <DataItem>
-                                            <DataItemTitle>Name</DataItemTitle>
-                                            <DataItemValue>{group.name}</DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Description</DataItemTitle>
-                                            <DataItemValue>{group.description}</DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Package</DataItemTitle>
-                                            <DataItemValue>
-                                                <SkillPackageLink
-                                                    skillPackage={group.skillPackage}
-                                                />
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Tags</DataItemTitle>
-                                            <DataItemValue>
-                                                {group.tags.length > 0 ? (
-                                                    <span className="flex flex-wrap gap-1">
-                                                        {group.tags.map((tag) => (
-                                                            <Badge key={tag} variant="secondary">
-                                                                {tag}
-                                                            </Badge>
-                                                        ))}
-                                                    </span>
-                                                ) : (
-                                                    "None"
-                                                )}
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Included</DataItemTitle>
-                                            <DataItemValue>
-                                                {group.defaultInclude ? "Yes" : "No"}
-                                            </DataItemValue>
-                                        </DataItem>
-                                    </DataList>
-                                </CardContent>
-                            </RecordCard>
-                            <section className="space-y-3 pt-4">
-                                <h2 className="text-lg font-semibold tracking-tight">Skills</h2>
-                                <SkillTrack_SkillList skills={group.skills} />
-                            </section>
-                        </Saratoga.Column>
-                    </Saratoga.Columns>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+            <Saratoga.Header>
+                <Saratoga.Title
+                    badges={group.status !== "Active" && <Badge variant="outline">Archived</Badge>}
+                >
+                    {group.name}
+                </Saratoga.Title>
+            </Saratoga.Header>
+            {withdrawn && (
+                <Alert variant="warning">
+                    <AlertTitle>
+                        {group.skillPackage.status === "Deleted"
+                            ? "Its author has deleted this group's package"
+                            : "Its author has withdrawn this group's package"}
+                    </AlertTitle>
+                    <AlertDescription>
+                        {group.skillPackage.status === "Deleted"
+                            ? "Its skills are out of your sessions and reports. Checks already recorded are kept."
+                            : "Its skills are out of your sessions and reports until it's published again. Checks already recorded are kept."}
+                    </AlertDescription>
+                </Alert>
+            )}
+            <Saratoga.Columns>
+                <Saratoga.Column slot="main">
+                    <RecordCard label="Skill Group" updatedAt={group.updatedAt}>
+                        <CardContent>
+                            <DataList>
+                                <RecordCardId label="Group ID" id={group.id} />
+                                <DataItem>
+                                    <DataItemTitle>Name</DataItemTitle>
+                                    <DataItemValue>{group.name}</DataItemValue>
+                                </DataItem>
+                                <DataItem>
+                                    <DataItemTitle>Description</DataItemTitle>
+                                    <DataItemValue>{group.description}</DataItemValue>
+                                </DataItem>
+                                <DataItem>
+                                    <DataItemTitle>Package</DataItemTitle>
+                                    <DataItemValue>
+                                        <SkillPackageLink skillPackage={group.skillPackage} />
+                                    </DataItemValue>
+                                </DataItem>
+                                <DataItem>
+                                    <DataItemTitle>Tags</DataItemTitle>
+                                    <DataItemValue>
+                                        {group.tags.length > 0 ? (
+                                            <span className="flex flex-wrap gap-1">
+                                                {group.tags.map((tag) => (
+                                                    <Badge key={tag} variant="secondary">
+                                                        {tag}
+                                                    </Badge>
+                                                ))}
+                                            </span>
+                                        ) : (
+                                            "None"
+                                        )}
+                                    </DataItemValue>
+                                </DataItem>
+                                <DataItem>
+                                    <DataItemTitle>Included</DataItemTitle>
+                                    <DataItemValue>
+                                        {group.defaultInclude ? "Yes" : "No"}
+                                    </DataItemValue>
+                                </DataItem>
+                            </DataList>
+                        </CardContent>
+                    </RecordCard>
+                    <section className="space-y-3 pt-4">
+                        <h2 className="text-lg font-semibold tracking-tight">Skills</h2>
+                        <SkillTrack_SkillList skills={group.skills} />
+                    </section>
+                </Saratoga.Column>
+            </Saratoga.Columns>
+        </Saratoga.Root>
     );
 }

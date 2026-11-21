@@ -9,7 +9,6 @@ import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { SkillGroupLink } from "@/components/entity-links/skill-group-link";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
@@ -63,159 +62,143 @@ export function SkillTrack_Package_Content({ skillPackageId }: { skillPackageId:
 
     return (
         <>
-            <Std.Navbar
-                breadcrumbs={[
-                    {
-                        label: "Skill Track",
-                        href: route("/orgs/[slug]/skill-track", { slug: organization.slug }),
-                    },
-                    {
-                        label: "Packages",
-                        href: route("/orgs/[slug]/skill-track/packages", {
-                            slug: organization.slug,
-                        }),
-                    },
-                    skillPackage.name,
-                ]}
-            />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title
-                            badges={
-                                withdrawn && (
-                                    <Badge variant="outline">
-                                        {skillPackage.status === "Deleted"
-                                            ? "Deleted"
-                                            : "Withdrawn"}
-                                    </Badge>
-                                )
-                            }
-                        >
-                            {skillPackage.name}
-                        </Saratoga.Title>
-                        <Saratoga.Actions>
-                            {!skillPackage.subscription && !withdrawn && (
-                                <Protect permissions={{ skillPackageSubscription: ["subscribe"] }}>
-                                    <Button
-                                        variant="outline"
-                                        onClick={() =>
-                                            void setAction("subscribe", { history: "push" })
-                                        }
-                                    >
-                                        Subscribe
-                                    </Button>
-                                </Protect>
-                            )}
-                            {skillPackage.subscription && (
-                                <EntityActionMenu
-                                    category="Packages"
-                                    actions={[
-                                        {
-                                            verb: "unsubscribe",
-                                            label: "Unsubscribe",
-                                            icon: <ObjectIcons.Unsubscribe />,
-                                            onSelect: () =>
-                                                void setAction("unsubscribe", { history: "push" }),
-                                            disabled: !canSubscribe,
-                                            destructive: true,
-                                        },
-                                    ]}
-                                />
-                            )}
-                        </Saratoga.Actions>
-                    </Saratoga.Header>
-                    {withdrawn && (
-                        <Alert variant="warning">
-                            <AlertTitle>
-                                {skillPackage.status === "Deleted"
-                                    ? "Its author has deleted this package"
-                                    : "Its author has withdrawn this package"}
-                            </AlertTitle>
-                            <AlertDescription>
-                                {skillPackage.status === "Deleted"
-                                    ? "Its skills are out of your sessions and reports. Checks already recorded are kept."
-                                    : "Its skills are out of your sessions and reports until it's published again. Checks already recorded are kept."}
-                            </AlertDescription>
-                        </Alert>
-                    )}
-                    <Saratoga.Columns>
-                        <Saratoga.Column slot="main">
-                            <RecordCard label="Skill Package" updatedAt={skillPackage.updatedAt}>
+            <Saratoga.Root>
+                <Saratoga.Breadcrumbs
+                    items={[
+                        {
+                            label: "Packages",
+                            href: route("/orgs/[slug]/skill-track/packages", {
+                                slug: organization.slug,
+                            }),
+                        },
+                    ]}
+                />
+                <Saratoga.Header>
+                    <Saratoga.Title
+                        badges={
+                            withdrawn && (
+                                <Badge variant="outline">
+                                    {skillPackage.status === "Deleted" ? "Deleted" : "Withdrawn"}
+                                </Badge>
+                            )
+                        }
+                    >
+                        {skillPackage.name}
+                    </Saratoga.Title>
+                    <Saratoga.Actions>
+                        {!skillPackage.subscription && !withdrawn && (
+                            <Protect permissions={{ skillPackageSubscription: ["subscribe"] }}>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => void setAction("subscribe", { history: "push" })}
+                                >
+                                    Subscribe
+                                </Button>
+                            </Protect>
+                        )}
+                        {skillPackage.subscription && (
+                            <EntityActionMenu
+                                category="Packages"
+                                actions={[
+                                    {
+                                        verb: "unsubscribe",
+                                        label: "Unsubscribe",
+                                        icon: <ObjectIcons.Unsubscribe />,
+                                        onSelect: () =>
+                                            void setAction("unsubscribe", { history: "push" }),
+                                        disabled: !canSubscribe,
+                                        destructive: true,
+                                    },
+                                ]}
+                            />
+                        )}
+                    </Saratoga.Actions>
+                </Saratoga.Header>
+                {withdrawn && (
+                    <Alert variant="warning">
+                        <AlertTitle>
+                            {skillPackage.status === "Deleted"
+                                ? "Its author has deleted this package"
+                                : "Its author has withdrawn this package"}
+                        </AlertTitle>
+                        <AlertDescription>
+                            {skillPackage.status === "Deleted"
+                                ? "Its skills are out of your sessions and reports. Checks already recorded are kept."
+                                : "Its skills are out of your sessions and reports until it's published again. Checks already recorded are kept."}
+                        </AlertDescription>
+                    </Alert>
+                )}
+                <Saratoga.Columns>
+                    <Saratoga.Column slot="main">
+                        <RecordCard label="Skill Package" updatedAt={skillPackage.updatedAt}>
+                            <CardContent>
+                                <DataList>
+                                    <RecordCardId label="Package ID" id={skillPackage.id} />
+                                    <DataItem>
+                                        <DataItemTitle>Name</DataItemTitle>
+                                        <DataItemValue>{skillPackage.name}</DataItemValue>
+                                    </DataItem>
+                                    <DataItem>
+                                        <DataItemTitle>Description</DataItemTitle>
+                                        <DataItemValue>{skillPackage.description}</DataItemValue>
+                                    </DataItem>
+                                    <DataItem>
+                                        <DataItemTitle>Publisher</DataItemTitle>
+                                        <DataItemValue>
+                                            {skillPackage.organization.name}
+                                        </DataItemValue>
+                                    </DataItem>
+                                </DataList>
+                            </CardContent>
+                        </RecordCard>
+                        {skillPackage.subscription && (
+                            <RecordCard
+                                label="Subscription"
+                                updatedAt={skillPackage.subscription.updatedAt}
+                            >
                                 <CardContent>
                                     <DataList>
-                                        <RecordCardId label="Package ID" id={skillPackage.id} />
+                                        <RecordCardId
+                                            label="Subscription ID"
+                                            id={skillPackage.subscription.id}
+                                        />
                                         <DataItem>
-                                            <DataItemTitle>Name</DataItemTitle>
-                                            <DataItemValue>{skillPackage.name}</DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Description</DataItemTitle>
-                                            <DataItemValue>
-                                                {skillPackage.description}
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Publisher</DataItemTitle>
-                                            <DataItemValue>
-                                                {skillPackage.organization.name}
-                                            </DataItemValue>
+                                            <DataItemTitle>Subscribed</DataItemTitle>
+                                            <DataItemDateValue
+                                                date={skillPackage.subscription.createdAt}
+                                            />
                                         </DataItem>
                                     </DataList>
                                 </CardContent>
                             </RecordCard>
-                            {skillPackage.subscription && (
-                                <RecordCard
-                                    label="Subscription"
-                                    updatedAt={skillPackage.subscription.updatedAt}
-                                >
-                                    <CardContent>
-                                        <DataList>
-                                            <RecordCardId
-                                                label="Subscription ID"
-                                                id={skillPackage.subscription.id}
-                                            />
-                                            <DataItem>
-                                                <DataItemTitle>Subscribed</DataItemTitle>
-                                                <DataItemDateValue
-                                                    date={skillPackage.subscription.createdAt}
-                                                />
-                                            </DataItem>
-                                        </DataList>
-                                    </CardContent>
-                                </RecordCard>
+                        )}
+                        <section className="space-y-4 pt-4">
+                            <h2 className="text-lg font-semibold tracking-tight">Contents</h2>
+                            {skillPackage.groups.length === 0 ? (
+                                <p className="text-muted-foreground text-sm">
+                                    This package has no groups or skills yet.
+                                </p>
+                            ) : (
+                                <div className="space-y-8">
+                                    {skillPackage.groups.map((group) => (
+                                        <PackageGroup
+                                            key={group.id}
+                                            group={group}
+                                            skillPackageId={skillPackage.id}
+                                        />
+                                    ))}
+                                </div>
                             )}
-                            <section className="space-y-4 pt-4">
-                                <h2 className="text-lg font-semibold tracking-tight">Contents</h2>
-                                {skillPackage.groups.length === 0 ? (
-                                    <p className="text-muted-foreground text-sm">
-                                        This package has no groups or skills yet.
-                                    </p>
-                                ) : (
-                                    <div className="space-y-8">
-                                        {skillPackage.groups.map((group) => (
-                                            <PackageGroup
-                                                key={group.id}
-                                                group={group}
-                                                skillPackageId={skillPackage.id}
-                                            />
-                                        ))}
-                                    </div>
-                                )}
-                            </section>
-                        </Saratoga.Column>
-                        <Saratoga.Column slot="secondary">
-                            <div className="grid grid-cols-2 gap-2">
-                                <Metric label="Skills" value={skillPackage.skillCount} />
-                                <Metric
-                                    label="Subscribers"
-                                    value={skillPackage.subscriptionCount}
-                                />
-                            </div>
-                        </Saratoga.Column>
-                    </Saratoga.Columns>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
+                        </section>
+                    </Saratoga.Column>
+                    <Saratoga.Column slot="secondary">
+                        <div className="grid grid-cols-2 gap-2">
+                            <Metric label="Skills" value={skillPackage.skillCount} />
+                            <Metric label="Subscribers" value={skillPackage.subscriptionCount} />
+                        </div>
+                    </Saratoga.Column>
+                </Saratoga.Columns>
+            </Saratoga.Root>
 
             <SkillTrack_SubscribeToPackage_Dialog
                 skillPackage={skillPackage}

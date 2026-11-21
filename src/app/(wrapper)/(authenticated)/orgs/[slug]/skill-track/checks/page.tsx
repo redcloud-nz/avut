@@ -6,7 +6,6 @@
  */
 
 import { Std } from "@/components/blocks/std";
-import { route } from "@/lib/routes";
 import SkillTrack_ChecksList from "@/modules/skill-track/components/checks-list";
 import {
     checkSearchInput,
@@ -30,20 +29,9 @@ export default async function SkillTrack_Checks_Page(
 
     return (
         <HydrateClient>
-            <>
-                <Std.Navbar
-                    breadcrumbs={[
-                        { label: "Skill Track", href: route("/orgs/[slug]/skill-track", { slug }) },
-                        {
-                            label: "Checks",
-                            href: route("/orgs/[slug]/skill-track/checks", { slug }),
-                        },
-                    ]}
-                />
-                <Std.ScrollContainer>
-                    <SkillTrack_ChecksList />
-                </Std.ScrollContainer>
-            </>
+            <Std.ScrollContainer>
+                <SkillTrack_ChecksList />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

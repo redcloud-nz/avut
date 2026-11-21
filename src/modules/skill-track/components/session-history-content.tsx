@@ -6,7 +6,6 @@
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { Std } from "@/components/blocks/std";
 import { ObjectHistory } from "@/components/history/object-history";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -30,36 +29,23 @@ export function SkillTrack_SessionHistory_Content({
     const sessionName = session.name || session.id;
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    {
-                        label: "Skill Track",
-                        href: route("/orgs/[slug]/skill-track", { slug: organization.slug }),
-                    },
-                    {
-                        label: "Sessions",
-                        href: route("/orgs/[slug]/skill-track/sessions", {
-                            slug: organization.slug,
-                        }),
-                    },
-                    {
-                        label: sessionName,
-                        href: route("/orgs/[slug]/skill-track/sessions/[session_id]", {
-                            slug: organization.slug,
-                            session_id: sessionId,
-                        }),
-                    },
-                    "History",
-                ]}
-            />
-            <Std.ScrollContainer>
-                <ObjectHistory
-                    objectType="SkillCheckSession"
-                    objectId={sessionId}
-                    title={`${sessionName} — History`}
-                />
-            </Std.ScrollContainer>
-        </>
+        <ObjectHistory
+            objectType="SkillCheckSession"
+            objectId={sessionId}
+            title="Session History"
+            breadcrumbs={[
+                {
+                    label: "Sessions",
+                    href: route("/orgs/[slug]/skill-track/sessions", { slug: organization.slug }),
+                },
+                {
+                    label: sessionName,
+                    href: route("/orgs/[slug]/skill-track/sessions/[session_id]", {
+                        slug: organization.slug,
+                        session_id: sessionId,
+                    }),
+                },
+            ]}
+        />
     );
 }
