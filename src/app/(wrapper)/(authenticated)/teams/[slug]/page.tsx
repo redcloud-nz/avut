@@ -5,6 +5,7 @@
  * Path: /teams/[slug]
  */
 
+import { Std } from "@/components/blocks/std";
 import { Team_Dashboard_Content } from "@/components/team/dashboard-content";
 import { hasAnyRoleWithPermissions } from "@/lib/permissions";
 import { requireTeam } from "@/server/team-access";
@@ -30,7 +31,9 @@ export default async function Team_Index_Page(props: PageProps<"/teams/[slug]">)
 
     return (
         <HydrateClient>
-            <Team_Dashboard_Content />
+            <Std.ScrollContainer>
+                <Team_Dashboard_Content />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

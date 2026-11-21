@@ -7,6 +7,7 @@
 
 import { Metadata } from "next";
 
+import { Std } from "@/components/blocks/std";
 import { hasAnyRoleWithPermissions } from "@/lib/permissions";
 import { TeamAdmin_Overview_Content } from "@/modules/team-admin/components/team-admin-content";
 import { requireTeam } from "@/server/team-access";
@@ -32,7 +33,9 @@ export default async function TeamAdmin_Overview_Page(props: PageProps<"/teams/[
 
     return (
         <HydrateClient>
-            <TeamAdmin_Overview_Content />
+            <Std.ScrollContainer>
+                <TeamAdmin_Overview_Content />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

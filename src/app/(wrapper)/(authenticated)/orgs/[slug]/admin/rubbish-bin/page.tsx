@@ -6,7 +6,6 @@
  */
 
 import { Std } from "@/components/blocks/std";
-import { route } from "@/lib/routes";
 import { AdminModule_Trash_List } from "@/modules/org-admin/components/trash/trash-list";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
@@ -25,20 +24,9 @@ export default async function AdminModule_Trash_Page(
 
     return (
         <HydrateClient>
-            <>
-                <Std.Navbar
-                    breadcrumbs={[
-                        { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
-                        {
-                            label: "Rubbish",
-                            href: route("/orgs/[slug]/admin/rubbish-bin", { slug }),
-                        },
-                    ]}
-                />
-                <Std.ScrollContainer>
-                    <AdminModule_Trash_List />
-                </Std.ScrollContainer>
-            </>
+            <Std.ScrollContainer>
+                <AdminModule_Trash_List />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

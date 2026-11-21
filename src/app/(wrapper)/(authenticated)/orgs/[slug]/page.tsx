@@ -5,6 +5,7 @@
  * Path: /orgs/[slug]
  */
 
+import { Std } from "@/components/blocks/std";
 import { GlyphPage } from "@/components/glyph-page";
 import { Organization_Dashboard_Content } from "@/components/organization/dashboard-content";
 import { enabledInSettings, isModuleUsable } from "@/lib/module-flags";
@@ -50,7 +51,9 @@ export default async function Organization_Index_Page(props: PageProps<"/orgs/[s
     return (
         <HydrateClient>
             <GlyphPage />
-            <Organization_Dashboard_Content />
+            <Std.ScrollContainer>
+                <Organization_Dashboard_Content />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

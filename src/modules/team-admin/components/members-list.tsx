@@ -10,7 +10,6 @@ import { useCallback } from "react";
 import { useSuspenseQueries } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Teams_AddTeamMembership_Dialog } from "@/components/teams/add-team-membership";
@@ -21,8 +20,7 @@ import {
 } from "@/components/teams/team-members-table";
 import { Button } from "@/components/ui/button";
 import { useOrganization } from "@/hooks/use-organization";
-import { useTeam, useTeamSlug } from "@/hooks/use-team";
-import { route } from "@/lib/routes";
+import { useTeam } from "@/hooks/use-team";
 import { trpc } from "@/trpc/client";
 
 /**
@@ -32,7 +30,6 @@ import { trpc } from "@/trpc/client";
  */
 export function TeamAdmin_Members_List() {
     const organization = useOrganization();
-    const teamSlug = useTeamSlug();
     const { id: teamId } = useTeam();
 
     const [action, setAction] = useQueryState(
@@ -79,41 +76,30 @@ export function TeamAdmin_Members_List() {
 
     return (
         <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: team.name, href: route("/teams/[slug]", { slug: teamSlug }) },
-                    { label: "Admin", href: route("/teams/[slug]/admin", { slug: teamSlug }) },
-                    "Members",
-                ]}
-            />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>Members</Saratoga.Title>
-                        <Saratoga.Actions>
-                            {team.status === "Active" && (
-                                <Protect permissions={{ team: ["update"] }}>
-                                    <Button
-                                        variant="outline"
-                                        onClick={() =>
-                                            setAction("add-membership", { history: "push" })
-                                        }
-                                    >
-                                        <ObjectIcons.Create />{" "}
-                                        <span className="sr-only md:not-sr-only">New Member</span>
-                                    </Button>
-                                </Protect>
-                            )}
-                        </Saratoga.Actions>
-                    </Saratoga.Header>
-                    <Teams_Members_Table
-                        team={team}
-                        memberships={memberships}
-                        rowAction={rowAction}
-                        linkPeople={false}
-                    />
-                </Saratoga.Root>
-            </Std.ScrollContainer>
+            <Saratoga.Root>
+                <Saratoga.Header>
+                    <Saratoga.Title>Members</Saratoga.Title>
+                    <Saratoga.Actions>
+                        {team.status === "Active" && (
+                            <Protect permissions={{ team: ["update"] }}>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setAction("add-membership", { history: "push" })}
+                                >
+                                    <ObjectIcons.Create />{" "}
+                                    <span className="sr-only md:not-sr-only">New Member</span>
+                                </Button>
+                            </Protect>
+                        )}
+                    </Saratoga.Actions>
+                </Saratoga.Header>
+                <Teams_Members_Table
+                    team={team}
+                    memberships={memberships}
+                    rowAction={rowAction}
+                    linkPeople={false}
+                />
+            </Saratoga.Root>
 
             <Teams_AddTeamMembership_Dialog
                 team={team}

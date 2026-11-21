@@ -6,7 +6,6 @@
  */
 
 import { Std } from "@/components/blocks/std";
-import { route } from "@/lib/routes";
 import { AdminModule_Users_List } from "@/modules/org-admin/components/users/users-list";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
@@ -24,12 +23,6 @@ export default async function AdminModule_Users_Page(props: PageProps<"/orgs/[sl
 
     return (
         <HydrateClient>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
-                    { label: "Users", href: route("/orgs/[slug]/admin/users", { slug }) },
-                ]}
-            />
             <Std.ScrollContainer>
                 <AdminModule_Users_List />
             </Std.ScrollContainer>

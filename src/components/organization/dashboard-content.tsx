@@ -5,7 +5,6 @@
 "use client";
 
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { Organization_Dashboard_AdminStats } from "@/components/organization/dashboard-admin-stats";
 import { Organization_Dashboard_SkillTrackStats } from "@/components/organization/dashboard-skill-track-stats";
 import { Heading } from "@/components/ui/typography";
@@ -16,29 +15,24 @@ export function Organization_Dashboard_Content() {
     const skillTrackEnabled = organization.isModuleEnabled("skill-track");
 
     return (
-        <>
-            <Std.Navbar breadcrumbs={[organization.name]} />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>{organization.name}</Saratoga.Title>
-                    </Saratoga.Header>
+        <Saratoga.Root>
+            <Saratoga.Header>
+                <Saratoga.Title>{organization.name}</Saratoga.Title>
+            </Saratoga.Header>
 
-                    <div className="space-y-8 mt-4">
-                        <section className="space-y-4">
-                            <Heading level={2}>Admin</Heading>
-                            <Organization_Dashboard_AdminStats />
-                        </section>
+            <div className="space-y-8 mt-4">
+                <section className="space-y-4">
+                    <Heading level={2}>Admin</Heading>
+                    <Organization_Dashboard_AdminStats />
+                </section>
 
-                        {skillTrackEnabled && (
-                            <section className="space-y-4">
-                                <Heading level={2}>Skill Track</Heading>
-                                <Organization_Dashboard_SkillTrackStats />
-                            </section>
-                        )}
-                    </div>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+                {skillTrackEnabled && (
+                    <section className="space-y-4">
+                        <Heading level={2}>Skill Track</Heading>
+                        <Organization_Dashboard_SkillTrackStats />
+                    </section>
+                )}
+            </div>
+        </Saratoga.Root>
     );
 }

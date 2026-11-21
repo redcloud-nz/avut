@@ -12,7 +12,6 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { useSession } from "@/client/auth-queries";
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
@@ -48,109 +47,101 @@ export function AdminModule_User_Content({ userId }: { userId: UserId }) {
 
     return (
         <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
-                    { label: "Users", href: route("/orgs/[slug]/admin/users", { slug }) },
-                    { label: member.user.name },
-                ]}
-            />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>{member.user.name}</Saratoga.Title>
-                        <Saratoga.Actions>
-                            <AdminModule_User_Menu
-                                userId={userId}
-                                member={member}
-                                linkedPerson={linkedPerson}
-                                currentUserId={session?.user.id}
-                            />
-                        </Saratoga.Actions>
-                    </Saratoga.Header>
-                    <Saratoga.Columns>
-                        <Saratoga.Column slot="main">
+            <Saratoga.Root>
+                <Saratoga.Breadcrumbs
+                    items={[{ label: "Users", href: route("/orgs/[slug]/admin/users", { slug }) }]}
+                />
+                <Saratoga.Header>
+                    <Saratoga.Title>{member.user.name}</Saratoga.Title>
+                    <Saratoga.Actions>
+                        <AdminModule_User_Menu
+                            userId={userId}
+                            member={member}
+                            linkedPerson={linkedPerson}
+                            currentUserId={session?.user.id}
+                        />
+                    </Saratoga.Actions>
+                </Saratoga.Header>
+                <Saratoga.Columns>
+                    <Saratoga.Column slot="main">
+                        <RecordCard
+                            label="User"
+                            action={
+                                <Protect permissions={{ member: ["update"] }}>
+                                    <AdminModule_UpdateUser_Dialog organizationUser={member} />
+                                </Protect>
+                            }
+                        >
+                            <CardContent>
+                                <DataList>
+                                    <RecordCardId label="User ID" id={member.user.id} />
+                                    <DataItem>
+                                        <DataItemTitle>Name</DataItemTitle>
+                                        <DataItemValue>{member.user.name}</DataItemValue>
+                                    </DataItem>
+                                    <DataItem>
+                                        <DataItemTitle>Email</DataItemTitle>
+                                        <DataItemValue>{member.user.email}</DataItemValue>
+                                    </DataItem>
+                                    <DataItem>
+                                        <DataItemTitle>Roles</DataItemTitle>
+                                        <DataItemValue>
+                                            {OrganizationRole.formatList(member.role)}
+                                        </DataItemValue>
+                                    </DataItem>
+                                </DataList>
+                            </CardContent>
+                        </RecordCard>
+                        {linkedPerson && (
                             <RecordCard
-                                label="User"
+                                label="Linked Person"
+                                updatedAt={linkedPerson.updatedAt}
+                                historyHref={route(
+                                    "/orgs/[slug]/admin/personnel/[person_id]/history",
+                                    { slug, person_id: linkedPerson.id },
+                                )}
                                 action={
-                                    <Protect permissions={{ member: ["update"] }}>
-                                        <AdminModule_UpdateUser_Dialog organizationUser={member} />
-                                    </Protect>
+                                    <Button variant="ghost" size="icon" asChild>
+                                        <Link
+                                            href={route(
+                                                "/orgs/[slug]/admin/personnel/[person_id]",
+                                                { slug, person_id: linkedPerson.id },
+                                            )}
+                                            aria-label="Open person"
+                                            title="Open person"
+                                        >
+                                            <ArrowUpRightIcon />
+                                        </Link>
+                                    </Button>
                                 }
                             >
                                 <CardContent>
                                     <DataList>
-                                        <RecordCardId label="User ID" id={member.user.id} />
+                                        <RecordCardId label="Person ID" id={linkedPerson.id} />
                                         <DataItem>
                                             <DataItemTitle>Name</DataItemTitle>
-                                            <DataItemValue>{member.user.name}</DataItemValue>
+                                            <DataItemValue>{linkedPerson.name}</DataItemValue>
                                         </DataItem>
                                         <DataItem>
                                             <DataItemTitle>Email</DataItemTitle>
-                                            <DataItemValue>{member.user.email}</DataItemValue>
+                                            <DataItemValue>{linkedPerson.email}</DataItemValue>
                                         </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Roles</DataItemTitle>
-                                            <DataItemValue>
-                                                {OrganizationRole.formatList(member.role)}
-                                            </DataItemValue>
-                                        </DataItem>
+                                        {linkedPerson.status !== "Active" && (
+                                            <DataItem>
+                                                <DataItemTitle>Status</DataItemTitle>
+                                                <DataItemValue>{linkedPerson.status}</DataItemValue>
+                                            </DataItem>
+                                        )}
                                     </DataList>
                                 </CardContent>
                             </RecordCard>
-                            {linkedPerson && (
-                                <RecordCard
-                                    label="Linked Person"
-                                    updatedAt={linkedPerson.updatedAt}
-                                    historyHref={route(
-                                        "/orgs/[slug]/admin/personnel/[person_id]/history",
-                                        { slug, person_id: linkedPerson.id },
-                                    )}
-                                    action={
-                                        <Button variant="ghost" size="icon" asChild>
-                                            <Link
-                                                href={route(
-                                                    "/orgs/[slug]/admin/personnel/[person_id]",
-                                                    { slug, person_id: linkedPerson.id },
-                                                )}
-                                                aria-label="Open person"
-                                                title="Open person"
-                                            >
-                                                <ArrowUpRightIcon />
-                                            </Link>
-                                        </Button>
-                                    }
-                                >
-                                    <CardContent>
-                                        <DataList>
-                                            <RecordCardId label="Person ID" id={linkedPerson.id} />
-                                            <DataItem>
-                                                <DataItemTitle>Name</DataItemTitle>
-                                                <DataItemValue>{linkedPerson.name}</DataItemValue>
-                                            </DataItem>
-                                            <DataItem>
-                                                <DataItemTitle>Email</DataItemTitle>
-                                                <DataItemValue>{linkedPerson.email}</DataItemValue>
-                                            </DataItem>
-                                            {linkedPerson.status !== "Active" && (
-                                                <DataItem>
-                                                    <DataItemTitle>Status</DataItemTitle>
-                                                    <DataItemValue>
-                                                        {linkedPerson.status}
-                                                    </DataItemValue>
-                                                </DataItem>
-                                            )}
-                                        </DataList>
-                                    </CardContent>
-                                </RecordCard>
-                            )}
-                        </Saratoga.Column>
-                        <Saratoga.Column slot="secondary">
-                            <AdminModule_UserTeams_Card userId={userId} />
-                        </Saratoga.Column>
-                    </Saratoga.Columns>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
+                        )}
+                    </Saratoga.Column>
+                    <Saratoga.Column slot="secondary">
+                        <AdminModule_UserTeams_Card userId={userId} />
+                    </Saratoga.Column>
+                </Saratoga.Columns>
+            </Saratoga.Root>
         </>
     );
 }

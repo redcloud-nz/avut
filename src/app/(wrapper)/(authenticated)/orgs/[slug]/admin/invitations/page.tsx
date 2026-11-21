@@ -6,7 +6,6 @@
  */
 
 import { Std } from "@/components/blocks/std";
-import { route } from "@/lib/routes";
 import { AdminModule_Invitations_List } from "@/modules/org-admin/components/invitations/invitations-list";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
@@ -25,15 +24,6 @@ export default async function AdminModule_Invitations_Page(
 
     return (
         <HydrateClient>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
-                    {
-                        label: "Invitations",
-                        href: route("/orgs/[slug]/admin/invitations", { slug }),
-                    },
-                ]}
-            />
             <Std.ScrollContainer>
                 <AdminModule_Invitations_List />
             </Std.ScrollContainer>

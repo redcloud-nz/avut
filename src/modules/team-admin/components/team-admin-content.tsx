@@ -10,7 +10,6 @@ import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
 import { Teams_D4HCard } from "@/components/teams/d4h-link-card";
 import { Teams_TeamAccess_Card } from "@/components/teams/team-access-card";
@@ -59,49 +58,39 @@ export function TeamAdmin_Overview_Content() {
     }
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: team.name, href: route("/teams/[slug]", { slug: teamSlug }) },
-                    "Admin",
-                ]}
-            />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>Team Admin</Saratoga.Title>
-                        <Saratoga.Actions>
-                            <TeamAdmin_Team_Menu team={team} />
-                        </Saratoga.Actions>
-                    </Saratoga.Header>
+        <Saratoga.Root>
+            <Saratoga.Header>
+                <Saratoga.Title>Team Admin</Saratoga.Title>
+                <Saratoga.Actions>
+                    <TeamAdmin_Team_Menu team={team} />
+                </Saratoga.Actions>
+            </Saratoga.Header>
 
-                    <Saratoga.Columns>
-                        <Saratoga.Column slot="main">
-                            <Teams_Details_Card
-                                team={team}
-                                requireSlug
-                                onUpdated={(updated) => void handleUpdated(updated)}
-                            />
+            <Saratoga.Columns>
+                <Saratoga.Column slot="main">
+                    <Teams_Details_Card
+                        team={team}
+                        requireSlug
+                        onUpdated={(updated) => void handleUpdated(updated)}
+                    />
 
-                            <Protect permissions={{ member: ["view"] }}>
-                                <Teams_TeamAccess_Card
-                                    team={team}
-                                    linkPeople={false}
-                                    // Replaces only the dialog's `?action=` entry, so Back
-                                    // still reaches this (now not-found) page. Accepted.
-                                    onSelfRevoked={() => router.replace("/user")}
-                                />
-                            </Protect>
+                    <Protect permissions={{ member: ["view"] }}>
+                        <Teams_TeamAccess_Card
+                            team={team}
+                            linkPeople={false}
+                            // Replaces only the dialog's `?action=` entry, so Back
+                            // still reaches this (now not-found) page. Accepted.
+                            onSelfRevoked={() => router.replace("/user")}
+                        />
+                    </Protect>
 
-                            <Teams_D4HCard team={team} onChanged={() => router.refresh()} />
-                        </Saratoga.Column>
+                    <Teams_D4HCard team={team} onChanged={() => router.refresh()} />
+                </Saratoga.Column>
 
-                        <Saratoga.Column slot="secondary">
-                            <TeamAdmin_MembersLink_Card teamId={team.id} />
-                        </Saratoga.Column>
-                    </Saratoga.Columns>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+                <Saratoga.Column slot="secondary">
+                    <TeamAdmin_MembersLink_Card teamId={team.id} />
+                </Saratoga.Column>
+            </Saratoga.Columns>
+        </Saratoga.Root>
     );
 }
