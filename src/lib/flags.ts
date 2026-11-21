@@ -60,6 +60,15 @@ export const playgroundFlag = flag<boolean>({
     options: booleanOptions,
 });
 
+export const scratchFlag = flag<boolean>({
+    key: "scratch",
+    adapter: vercelAdapter(),
+    defaultValue: false,
+    description:
+        "Are the throwaway scratch pages under orgs/[slug]/system/scratch served (dev tooling; keep off in production).",
+    options: booleanOptions,
+});
+
 export const syntheticChecksFlag = flag<boolean>({
     key: "synthetic-checks",
     adapter: vercelAdapter(),
