@@ -12,6 +12,8 @@ import { route } from "@/lib/routes";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { trpc } from "@/trpc/client";
 
+import { packageBreadcrumbs } from "../lib/breadcrumbs";
+
 export function SkillPackageBuilder_GroupHistory_Content({
     skillGroupId,
 }: {
@@ -32,13 +34,11 @@ export function SkillPackageBuilder_GroupHistory_Content({
             objectId={skillGroupId}
             title="Group History"
             breadcrumbs={[
-                {
-                    label: skillGroup.skillPackage.name,
-                    href: route("/orgs/[slug]/skill-package-builder/packages/[package_id]", {
-                        slug: organization.slug,
-                        package_id: skillGroup.skillPackageId,
-                    }),
-                },
+                ...packageBreadcrumbs(
+                    organization.slug,
+                    { id: skillGroup.skillPackageId, name: skillGroup.skillPackage.name },
+                    "Groups",
+                ),
                 {
                     label: skillGroup.name,
                     href: route(

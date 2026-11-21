@@ -8,9 +8,10 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { ObjectHistory } from "@/components/history/object-history";
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { trpc } from "@/trpc/client";
+
+import { packageBreadcrumbs } from "../lib/breadcrumbs";
 
 export function SkillPackageBuilder_PackageHistory_Content({
     skillPackageId,
@@ -32,13 +33,10 @@ export function SkillPackageBuilder_PackageHistory_Content({
             objectId={skillPackageId}
             title="Package History"
             breadcrumbs={[
-                {
-                    label: skillPackage.name,
-                    href: route("/orgs/[slug]/skill-package-builder/packages/[package_id]", {
-                        slug: organization.slug,
-                        package_id: skillPackageId,
-                    }),
-                },
+                ...packageBreadcrumbs(organization.slug, {
+                    id: skillPackageId,
+                    name: skillPackage.name,
+                }),
             ]}
         />
     );

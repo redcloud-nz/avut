@@ -19,6 +19,8 @@ import { route } from "@/lib/routes";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { trpc } from "@/trpc/client";
 
+import { packageBreadcrumbs } from "../lib/breadcrumbs";
+
 import { SkillPackageBuilder_Group_Contents_List } from "./group-contents";
 import { SkillPackageBuilder_Group_Menu } from "./group-menu";
 import { SkillPackageBuilder_UpdateGroup_Dialog } from "./update-group";
@@ -37,13 +39,11 @@ export function SkillPackageBuilder_Group_Content({ groupId }: { groupId: SkillG
         <Saratoga.Root>
             <Saratoga.Breadcrumbs
                 items={[
-                    {
-                        label: skillGroup.skillPackage.name,
-                        href: route("/orgs/[slug]/skill-package-builder/packages/[package_id]", {
-                            slug: organization.slug,
-                            package_id: skillGroup.skillPackageId,
-                        }),
-                    },
+                    ...packageBreadcrumbs(
+                        organization.slug,
+                        { id: skillGroup.skillPackageId, name: skillGroup.skillPackage.name },
+                        "Groups",
+                    ),
                 ]}
             />
             <Saratoga.Header>

@@ -19,6 +19,8 @@ import { route } from "@/lib/routes";
 import { SkillId } from "@/lib/schemas/skill";
 import { trpc } from "@/trpc/client";
 
+import { packageBreadcrumbs } from "../lib/breadcrumbs";
+
 import { SkillPackageBuilder_Skill_Menu } from "./skill-menu";
 import { SkillPackageBuilder_UpdateSkill_Dialog } from "./update-skill";
 
@@ -36,13 +38,11 @@ export function SkillPackageBuilder_Skill_Content({ skillId }: { skillId: SkillI
         <Saratoga.Root>
             <Saratoga.Breadcrumbs
                 items={[
-                    {
-                        label: skill.skillPackage.name,
-                        href: route("/orgs/[slug]/skill-package-builder/packages/[package_id]", {
-                            slug: organization.slug,
-                            package_id: skill.skillPackageId,
-                        }),
-                    },
+                    ...packageBreadcrumbs(
+                        organization.slug,
+                        { id: skill.skillPackageId, name: skill.skillPackage.name },
+                        "Skills",
+                    ),
                 ]}
             />
             <Saratoga.Header>

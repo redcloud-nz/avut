@@ -12,6 +12,8 @@ import { route } from "@/lib/routes";
 import { SkillId } from "@/lib/schemas/skill";
 import { trpc } from "@/trpc/client";
 
+import { packageBreadcrumbs } from "../lib/breadcrumbs";
+
 export function SkillPackageBuilder_SkillHistory_Content({ skillId }: { skillId: SkillId }) {
     const organization = useOrganization();
 
@@ -28,13 +30,11 @@ export function SkillPackageBuilder_SkillHistory_Content({ skillId }: { skillId:
             objectId={skillId}
             title="Skill History"
             breadcrumbs={[
-                {
-                    label: skill.skillPackage.name,
-                    href: route("/orgs/[slug]/skill-package-builder/packages/[package_id]", {
-                        slug: organization.slug,
-                        package_id: skill.skillPackageId,
-                    }),
-                },
+                ...packageBreadcrumbs(
+                    organization.slug,
+                    { id: skill.skillPackageId, name: skill.skillPackage.name },
+                    "Skills",
+                ),
                 {
                     label: skill.name,
                     href: route(

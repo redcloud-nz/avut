@@ -17,6 +17,8 @@ import { route } from "@/lib/routes";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { trpc } from "@/trpc/client";
 
+import { packageBreadcrumbs } from "../lib/breadcrumbs";
+
 import { SkillPackageBuilder_Package_Contents_List } from "./package-contents";
 import { SkillPackageBuilder_Package_Menu } from "./package-menu";
 import { SkillPackageBuilder_UpdatePackage_Dialog } from "./update-package";
@@ -37,6 +39,7 @@ export function SkillPackageBuilder_Package_Content({
 
     return (
         <Saratoga.Root>
+            <Saratoga.Breadcrumbs items={packageBreadcrumbs(organization.slug, null)} />
             <Saratoga.Header>
                 <Saratoga.Title
                     badges={
