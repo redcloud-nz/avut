@@ -36,10 +36,6 @@ export function AdminModule_Person_Content({ personId }: { personId: PersonId })
             <Saratoga.Breadcrumbs
                 items={[
                     {
-                        label: "Admin",
-                        href: route("/orgs/[slug]/admin", { slug: organization.slug }),
-                    },
-                    {
                         label: "Personnel",
                         href: route("/orgs/[slug]/admin/personnel", {
                             slug: organization.slug,

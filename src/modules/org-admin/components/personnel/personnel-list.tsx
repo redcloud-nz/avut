@@ -16,7 +16,7 @@ import {
 } from "@tanstack/react-table";
 
 import { Kaga } from "@/components/blocks/kaga";
-import { Saratoga, type SaratogaBreadcrumb } from "@/components/blocks/saratoga";
+import { Saratoga } from "@/components/blocks/saratoga";
 import { TablePseudoQuery } from "@/components/blocks/table-pseudo-query";
 import { PersonLink } from "@/components/entity-links/person-link";
 import { Protect } from "@/components/protect";
@@ -28,17 +28,12 @@ import { AdminModule_CreatePerson_Dialog } from "./create-person";
 
 interface AdminModule_PersonnelListProps {
     organization: OrganizationData;
-    /** The page's ancestors, shown above the title. */
-    breadcrumbs?: SaratogaBreadcrumb[];
 }
 
 /**
  * List of personnel in the organization.
  */
-export function AdminModule_Personnel_List({
-    organization,
-    breadcrumbs,
-}: AdminModule_PersonnelListProps) {
+export function AdminModule_Personnel_List({ organization }: AdminModule_PersonnelListProps) {
     const { data: personnel } = useSuspenseQuery(
         trpc.personnel.listPersonnel.queryOptions({
             organizationId: organization.id,
@@ -99,7 +94,6 @@ export function AdminModule_Personnel_List({
 
     return (
         <Saratoga.Root>
-            {breadcrumbs && <Saratoga.Breadcrumbs items={breadcrumbs} />}
             <Saratoga.Header>
                 <Saratoga.Title>Personnel</Saratoga.Title>
                 <Saratoga.Actions>

@@ -60,7 +60,6 @@ export default async function SkillTrack_ReportsSkillMatrix_Page(
                 <SkillTrack_SkillMatrixReport
                     syntheticChecksEnabled={syntheticChecksEnabled}
                     breadcrumbs={[
-                        { label: "Skill Track", href: route("/orgs/[slug]/skill-track", { slug }) },
                         {
                             label: "Reports",
                             href: route("/orgs/[slug]/skill-track/reports", { slug }),

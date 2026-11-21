@@ -55,10 +55,6 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                 <Saratoga.Breadcrumbs
                     items={[
                         {
-                            label: "Skill Track",
-                            href: route("/orgs/[slug]/skill-track", { slug: organization.slug }),
-                        },
-                        {
                             label: "Sessions",
                             href: route("/orgs/[slug]/skill-track/sessions", {
                                 slug: organization.slug,

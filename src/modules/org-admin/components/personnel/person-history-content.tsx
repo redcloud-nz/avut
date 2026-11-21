@@ -26,10 +26,6 @@ export function AdminModule_PersonHistory_Content({ personId }: { personId: Pers
             title={`${person.name} — History`}
             breadcrumbs={[
                 {
-                    label: "Admin",
-                    href: route("/orgs/[slug]/admin", { slug: organization.slug }),
-                },
-                {
                     label: "Personnel",
                     href: route("/orgs/[slug]/admin/personnel", { slug: organization.slug }),
                 },
