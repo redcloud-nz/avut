@@ -61,7 +61,7 @@ export default async function SkillTrack_ReportsTeamCompetency_Page(
                     syntheticChecksEnabled={syntheticChecksEnabled}
                     breadcrumbs={[
                         {
-                            label: "Reports",
+                            label: "Skills Reports",
                             href: route("/orgs/[slug]/skill-track/reports", { slug }),
                         },
                     ]}

@@ -46,7 +46,9 @@ export function D4HI3Module_Bundle_Content({ bundleId }: { bundleId: I3BundleId 
     return (
         <Saratoga.Root>
             <Saratoga.Breadcrumbs
-                items={[{ label: "Bundles", href: route("/orgs/[slug]/d4h-i3/bundles", { slug }) }]}
+                items={[
+                    { label: "I3 Bundles", href: route("/orgs/[slug]/d4h-i3/bundles", { slug }) },
+                ]}
             />
             <Saratoga.Header>
                 <Saratoga.Title badges={<RecordStatusBadge status={bundle.status} />}>

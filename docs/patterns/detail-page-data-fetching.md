@@ -125,7 +125,7 @@ full-height fallback; keep it where it's already there.
     <SkillTrack_SkillMatrixReport
       syntheticChecksEnabled={syntheticChecksEnabled}
       breadcrumbs={[
-        { label: "Reports", href: route("/orgs/[slug]/skill-track/reports", { slug }) },
+        { label: "Skills Reports", href: route("/orgs/[slug]/skill-track/reports", { slug }) },
       ]}
     />
   </Suspense>
@@ -201,7 +201,7 @@ Apply it to the page **and** to the content, list and Glorious components it ren
    "Admin", "Skill Track", "D4H" or "System Admin", which the sidebar already shows)
    **and minus the last** (the page itself, which its `<h1>` already names). So a person
    shows `Personnel`, a person's History `Personnel › Aaron Gray`, a session's By Person
-   page `Sessions › Session #2`. Every crumb is a link, so for each remaining entry that
+   page `Skill Check Sessions › Session #2`. Every crumb is a link, labelled with the `<h1>` of the page it links to (the list page's heading, e.g. "Skill Check Sessions", "I3 Bundles"), so for each remaining entry that
    is a bare string or has no `href`:
    - "User Settings" (`d4h-access-token-content.tsx`, `organization-content.tsx`): drop
      it. There's no `/user/settings` page.
@@ -463,7 +463,7 @@ Before (`skill-track/reports/matrix/page.tsx`):
 </HydrateClient>
 ```
 
-After: the trail keeps only "Reports" ("Skill Track" is the module, and the report is
+After: the trail keeps only "Reports", relabelled "Skills Reports" after the reports index heading ("Skill Track" is the module, and the report is
 the page). `page.tsx` is the one shown under
 [full-height pages](#variant-full-height-pages-glorious-reports-and-matrices) (a
 `breadcrumbs` prop, still no `ScrollContainer`), and the report renders the trail in both

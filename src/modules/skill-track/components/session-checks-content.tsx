@@ -184,7 +184,7 @@ export function SkillTrack_SessionChecks_Content({
             <Saratoga.Breadcrumbs
                 items={[
                     {
-                        label: "Sessions",
+                        label: "Skill Check Sessions",
                         href: route("/orgs/[slug]/skill-track/sessions", {
                             slug: organization.slug,
                         }),

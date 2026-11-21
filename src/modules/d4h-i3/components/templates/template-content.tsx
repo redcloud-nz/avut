@@ -56,7 +56,10 @@ export function D4HI3Module_Template_Content({ templateId }: { templateId: I3Tem
         <Saratoga.Root>
             <Saratoga.Breadcrumbs
                 items={[
-                    { label: "Templates", href: route("/orgs/[slug]/d4h-i3/templates", { slug }) },
+                    {
+                        label: "I3 Templates",
+                        href: route("/orgs/[slug]/d4h-i3/templates", { slug }),
+                    },
                 ]}
             />
             <Saratoga.Header>

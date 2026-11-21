@@ -104,7 +104,7 @@ export function D4HI3Module_BundleMemberComparison({
         <Saratoga.Root>
             <Saratoga.Breadcrumbs
                 items={[
-                    { label: "Bundles", href: route("/orgs/[slug]/d4h-i3/bundles", { slug }) },
+                    { label: "I3 Bundles", href: route("/orgs/[slug]/d4h-i3/bundles", { slug }) },
                     {
                         label: bundle.name,
                         href: route("/orgs/[slug]/d4h-i3/bundles/[bundle_id]", {

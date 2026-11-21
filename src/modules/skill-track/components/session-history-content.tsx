@@ -35,7 +35,7 @@ export function SkillTrack_SessionHistory_Content({
             title="Session History"
             breadcrumbs={[
                 {
-                    label: "Sessions",
+                    label: "Skill Check Sessions",
                     href: route("/orgs/[slug]/skill-track/sessions", { slug: organization.slug }),
                 },
                 {
