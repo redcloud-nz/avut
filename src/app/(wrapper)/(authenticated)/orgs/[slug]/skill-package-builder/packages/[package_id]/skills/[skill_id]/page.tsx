@@ -7,6 +7,7 @@
 
 import { Metadata } from "next";
 
+import { Std } from "@/components/blocks/std";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { SkillId } from "@/lib/schemas/skill";
 import { SkillPackageBuilder_Skill_Content } from "@/modules/skill-package-builder/components/skill-content";
@@ -49,7 +50,9 @@ export default async function SkillPackageBuilder_Skill_Page(props: Props) {
 
     return (
         <HydrateClient>
-            <SkillPackageBuilder_Skill_Content skillId={skillId} />
+            <Std.ScrollContainer>
+                <SkillPackageBuilder_Skill_Content skillId={skillId} />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

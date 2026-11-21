@@ -7,6 +7,7 @@
 
 import { Metadata } from "next";
 
+import { Std } from "@/components/blocks/std";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackageBuilder_GroupHistory_Content } from "@/modules/skill-package-builder/components/group-history-content";
@@ -60,7 +61,9 @@ export default async function SkillPackageBuilder_GroupHistory_Page(props: Props
 
     return (
         <HydrateClient>
-            <SkillPackageBuilder_GroupHistory_Content skillGroupId={skillGroupId} />
+            <Std.ScrollContainer>
+                <SkillPackageBuilder_GroupHistory_Content skillGroupId={skillGroupId} />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }
