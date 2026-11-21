@@ -11,7 +11,6 @@ import { useId } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { Badge } from "@/components/ui/badge";
 import { CardContent } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
@@ -35,107 +34,87 @@ export function SystemAdmin_User_Content({ userId }: { userId: UserId }) {
     const organizationsHeadingId = useId();
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "System Admin", href: "/system/admin" },
-                    { label: "Users", href: "/system/admin/users" },
-                    { label: user.name },
-                ]}
-            />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title
-                            badges={user.banned && <Badge variant="outline">Banned</Badge>}
-                        >
-                            {user.name}
-                        </Saratoga.Title>
-                        <Saratoga.Actions>
-                            <SystemAdmin_UserActions_Menu user={user} />
-                        </Saratoga.Actions>
-                    </Saratoga.Header>
+        <Saratoga.Root>
+            <Saratoga.Breadcrumbs items={[{ label: "Users", href: "/system/admin/users" }]} />
+            <Saratoga.Header>
+                <Saratoga.Title badges={user.banned && <Badge variant="outline">Banned</Badge>}>
+                    {user.name}
+                </Saratoga.Title>
+                <Saratoga.Actions>
+                    <SystemAdmin_UserActions_Menu user={user} />
+                </Saratoga.Actions>
+            </Saratoga.Header>
 
-                    <Saratoga.Columns>
-                        <Saratoga.Column slot="main">
-                            <RecordCard label="User">
-                                <CardContent>
-                                    <DataList>
-                                        <RecordCardId label="User ID" id={user.id} />
-                                        <DataItem>
-                                            <DataItemTitle>Name</DataItemTitle>
-                                            <DataItemValue>{user.name}</DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Email</DataItemTitle>
-                                            <DataItemValue>{user.email}</DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Email verified</DataItemTitle>
-                                            <DataItemValue>
-                                                {user.emailVerified ? "Yes" : "No"}
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>System role</DataItemTitle>
-                                            <DataItemValue>{user.role}</DataItemValue>
-                                        </DataItem>
-                                    </DataList>
-                                </CardContent>
-                            </RecordCard>
-                        </Saratoga.Column>
+            <Saratoga.Columns>
+                <Saratoga.Column slot="main">
+                    <RecordCard label="User">
+                        <CardContent>
+                            <DataList>
+                                <RecordCardId label="User ID" id={user.id} />
+                                <DataItem>
+                                    <DataItemTitle>Name</DataItemTitle>
+                                    <DataItemValue>{user.name}</DataItemValue>
+                                </DataItem>
+                                <DataItem>
+                                    <DataItemTitle>Email</DataItemTitle>
+                                    <DataItemValue>{user.email}</DataItemValue>
+                                </DataItem>
+                                <DataItem>
+                                    <DataItemTitle>Email verified</DataItemTitle>
+                                    <DataItemValue>
+                                        {user.emailVerified ? "Yes" : "No"}
+                                    </DataItemValue>
+                                </DataItem>
+                                <DataItem>
+                                    <DataItemTitle>System role</DataItemTitle>
+                                    <DataItemValue>{user.role}</DataItemValue>
+                                </DataItem>
+                            </DataList>
+                        </CardContent>
+                    </RecordCard>
+                </Saratoga.Column>
 
-                        <Saratoga.Column slot="secondary">
-                            <section aria-labelledby={organizationsHeadingId} className="space-y-2">
-                                <div className="flex min-h-8 items-center justify-between gap-2 pl-1">
-                                    <h2
-                                        id={organizationsHeadingId}
-                                        className="text-base font-medium"
-                                    >
-                                        Organisations
-                                    </h2>
-                                </div>
-                                {user.organizations.length === 0 ? (
-                                    <p className="pl-1 text-sm text-muted-foreground">
-                                        No organisation memberships.
-                                    </p>
-                                ) : (
-                                    <ItemGroup className="gap-2">
-                                        {user.organizations.map((org) => (
-                                            <Item
-                                                key={org.id}
-                                                variant="outline"
-                                                role="listitem"
-                                                asChild
-                                            >
-                                                <Link
-                                                    href={route(
-                                                        "/system/admin/organizations/[organizationId]",
-                                                        { organizationId: org.id },
-                                                    )}
-                                                >
-                                                    <ItemContent>
-                                                        <ItemTitle>{org.name}</ItemTitle>
-                                                        <ItemDescription>
-                                                            {OrganizationRole.formatList(org.role)}
-                                                        </ItemDescription>
-                                                    </ItemContent>
-                                                    <ItemActions>
-                                                        <ChevronRightIcon
-                                                            aria-hidden
-                                                            className="size-4 text-muted-foreground"
-                                                        />
-                                                    </ItemActions>
-                                                </Link>
-                                            </Item>
-                                        ))}
-                                    </ItemGroup>
-                                )}
-                            </section>
-                        </Saratoga.Column>
-                    </Saratoga.Columns>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+                <Saratoga.Column slot="secondary">
+                    <section aria-labelledby={organizationsHeadingId} className="space-y-2">
+                        <div className="flex min-h-8 items-center justify-between gap-2 pl-1">
+                            <h2 id={organizationsHeadingId} className="text-base font-medium">
+                                Organisations
+                            </h2>
+                        </div>
+                        {user.organizations.length === 0 ? (
+                            <p className="pl-1 text-sm text-muted-foreground">
+                                No organisation memberships.
+                            </p>
+                        ) : (
+                            <ItemGroup className="gap-2">
+                                {user.organizations.map((org) => (
+                                    <Item key={org.id} variant="outline" role="listitem" asChild>
+                                        <Link
+                                            href={route(
+                                                "/system/admin/organizations/[organizationId]",
+                                                { organizationId: org.id },
+                                            )}
+                                        >
+                                            <ItemContent>
+                                                <ItemTitle>{org.name}</ItemTitle>
+                                                <ItemDescription>
+                                                    {OrganizationRole.formatList(org.role)}
+                                                </ItemDescription>
+                                            </ItemContent>
+                                            <ItemActions>
+                                                <ChevronRightIcon
+                                                    aria-hidden
+                                                    className="size-4 text-muted-foreground"
+                                                />
+                                            </ItemActions>
+                                        </Link>
+                                    </Item>
+                                ))}
+                            </ItemGroup>
+                        )}
+                    </section>
+                </Saratoga.Column>
+            </Saratoga.Columns>
+        </Saratoga.Root>
     );
 }

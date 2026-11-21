@@ -7,7 +7,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import {
     getOrganizationSettingsFormSections,
     OrganizationSettingsForm,
@@ -39,10 +38,9 @@ export function SystemAdmin_OrganizationSettings_Content({
     );
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "System Admin", href: "/system/admin" },
+        <Saratoga.Root>
+            <Saratoga.Breadcrumbs
+                items={[
                     { label: "Organizations", href: "/system/admin/organizations" },
                     {
                         label: organization.name,
@@ -50,34 +48,27 @@ export function SystemAdmin_OrganizationSettings_Content({
                             organizationId,
                         }),
                     },
-                    { label: "Settings" },
                 ]}
             />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>{organization.name} Settings</Saratoga.Title>
-                    </Saratoga.Header>
+            <Saratoga.Header>
+                <Saratoga.Title>Settings</Saratoga.Title>
+            </Saratoga.Header>
 
-                    <Saratoga.Columns>
-                        <Saratoga.Column slot="main">
-                            <OrganizationSettingsForm
-                                organizationId={organizationId}
-                                moduleFlags={moduleFlags}
-                                settings={settings}
-                                canEdit
-                                systemAdmin
-                            />
-                            <Saratoga.ContentsSpacer />
-                        </Saratoga.Column>
-                        <Saratoga.Column slot="secondary">
-                            <Saratoga.Contents
-                                items={getOrganizationSettingsFormSections(moduleFlags)}
-                            />
-                        </Saratoga.Column>
-                    </Saratoga.Columns>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+            <Saratoga.Columns>
+                <Saratoga.Column slot="main">
+                    <OrganizationSettingsForm
+                        organizationId={organizationId}
+                        moduleFlags={moduleFlags}
+                        settings={settings}
+                        canEdit
+                        systemAdmin
+                    />
+                    <Saratoga.ContentsSpacer />
+                </Saratoga.Column>
+                <Saratoga.Column slot="secondary">
+                    <Saratoga.Contents items={getOrganizationSettingsFormSections(moduleFlags)} />
+                </Saratoga.Column>
+            </Saratoga.Columns>
+        </Saratoga.Root>
     );
 }

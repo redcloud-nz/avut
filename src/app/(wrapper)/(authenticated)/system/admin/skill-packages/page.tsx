@@ -21,17 +21,9 @@ export default async function SystemAdmin_SkillPackages_Page() {
 
     return (
         <HydrateClient>
-            <>
-                <Std.Navbar
-                    breadcrumbs={[
-                        { label: "System Admin", href: "/system/admin" },
-                        { label: "Skill Packages", href: "/system/admin/skill-packages" },
-                    ]}
-                />
-                <Std.ScrollContainer>
-                    <SystemAdmin_SkillPackageImport_Content />
-                </Std.ScrollContainer>
-            </>
+            <Std.ScrollContainer>
+                <SystemAdmin_SkillPackageImport_Content />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

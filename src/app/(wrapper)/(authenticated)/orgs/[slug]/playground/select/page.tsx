@@ -11,11 +11,8 @@ import { Select_Sandbox } from "./sandbox";
 
 export default async function Playground_Select_Page() {
     return (
-        <Std.SidebarInset>
-            <Std.Navbar breadcrumbs={["Playground", "Select"]} />
-            <Std.ScrollContainer>
-                <Select_Sandbox />
-            </Std.ScrollContainer>
-        </Std.SidebarInset>
+        <Std.ScrollContainer>
+            <Select_Sandbox />
+        </Std.ScrollContainer>
     );
 }

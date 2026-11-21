@@ -21,17 +21,9 @@ export default async function SystemAdmin_Users_Page() {
 
     return (
         <HydrateClient>
-            <>
-                <Std.Navbar
-                    breadcrumbs={[
-                        { label: "System Admin", href: "/system/admin" },
-                        { label: "Users", href: "/system/admin/users" },
-                    ]}
-                />
-                <Std.ScrollContainer>
-                    <SystemAdmin_Users_List />
-                </Std.ScrollContainer>
-            </>
+            <Std.ScrollContainer>
+                <SystemAdmin_Users_List />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

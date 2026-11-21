@@ -11,7 +11,6 @@ import { useId } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { UserLink } from "@/components/entity-links/user-link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -79,289 +78,245 @@ export function SystemAdmin_Organization_Content({
     const recordCountsHeadingId = useId();
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "System Admin", href: "/system/admin" },
-                    { label: "Organizations", href: "/system/admin/organizations" },
-                    { label: organization.name },
-                ]}
+        <Saratoga.Root>
+            <Saratoga.Breadcrumbs
+                items={[{ label: "Organizations", href: "/system/admin/organizations" }]}
             />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>{organization.name}</Saratoga.Title>
-                        <Saratoga.Actions>
-                            <Button asChild variant="outline">
-                                <Link
-                                    href={route(
-                                        "/system/admin/organizations/[organizationId]/settings",
-                                        { organizationId },
-                                    )}
-                                >
-                                    Settings
-                                </Link>
-                            </Button>
-                            <Button asChild variant="outline" size="icon" title="Open in-org admin">
-                                <Link
-                                    href={route("/orgs/[slug]/admin", { slug: organization.slug })}
-                                >
-                                    <ExternalLinkIcon />
-                                    <span className="sr-only">Open in-org admin</span>
-                                </Link>
-                            </Button>
-                        </Saratoga.Actions>
-                    </Saratoga.Header>
+            <Saratoga.Header>
+                <Saratoga.Title>{organization.name}</Saratoga.Title>
+                <Saratoga.Actions>
+                    <Button asChild variant="outline">
+                        <Link
+                            href={route("/system/admin/organizations/[organizationId]/settings", {
+                                organizationId,
+                            })}
+                        >
+                            Settings
+                        </Link>
+                    </Button>
+                    <Button asChild variant="outline" size="icon" title="Open in-org admin">
+                        <Link href={route("/orgs/[slug]/admin", { slug: organization.slug })}>
+                            <ExternalLinkIcon />
+                            <span className="sr-only">Open in-org admin</span>
+                        </Link>
+                    </Button>
+                </Saratoga.Actions>
+            </Saratoga.Header>
 
-                    <Saratoga.Columns>
-                        <Saratoga.Column slot="main">
-                            <RecordCard label="Organisation">
-                                <CardContent>
-                                    <DataList>
-                                        <RecordCardId
-                                            label="Organisation ID"
-                                            id={organization.id}
-                                        />
-                                        <DataItem>
-                                            <DataItemTitle>Name</DataItemTitle>
-                                            <DataItemValue>{organization.name}</DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Slug</DataItemTitle>
-                                            <DataItemValue className="font-mono">
-                                                {organization.slug}
-                                            </DataItemValue>
-                                        </DataItem>
-                                    </DataList>
-                                </CardContent>
-                            </RecordCard>
+            <Saratoga.Columns>
+                <Saratoga.Column slot="main">
+                    <RecordCard label="Organisation">
+                        <CardContent>
+                            <DataList>
+                                <RecordCardId label="Organisation ID" id={organization.id} />
+                                <DataItem>
+                                    <DataItemTitle>Name</DataItemTitle>
+                                    <DataItemValue>{organization.name}</DataItemValue>
+                                </DataItem>
+                                <DataItem>
+                                    <DataItemTitle>Slug</DataItemTitle>
+                                    <DataItemValue className="font-mono">
+                                        {organization.slug}
+                                    </DataItemValue>
+                                </DataItem>
+                            </DataList>
+                        </CardContent>
+                    </RecordCard>
 
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Members</CardTitle>
-                                    <div className="ml-auto">
-                                        <SystemAdmin_AddMember_Dialog
-                                            organizationId={organizationId}
-                                            memberUserIds={organization.members.map(
-                                                (m) => m.userId,
-                                            )}
-                                            moduleGatedRoles={moduleGatedRoles}
-                                        />
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    {ownerCount === 0 && (
-                                        <Alert variant="warning">
-                                            <AlertTitle>No owner</AlertTitle>
-                                            <AlertDescription>
-                                                Nobody in this organisation can manage its owners.
-                                                Use &ldquo;Make owner&rdquo; on a member to appoint
-                                                one.
-                                            </AlertDescription>
-                                        </Alert>
-                                    )}
-                                    {organization.members.length === 0 ? (
-                                        <p className="text-sm text-muted-foreground">No members.</p>
-                                    ) : (
-                                        <table className="w-full text-sm">
-                                            <thead>
-                                                <tr className="text-left text-muted-foreground">
-                                                    <th className="py-1 pr-4 font-medium">Name</th>
-                                                    <th className="py-1 pr-4 font-medium">Email</th>
-                                                    <th className="py-1 font-medium">Role</th>
-                                                    <th className="py-1" />
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {organization.members.map((member) => (
-                                                    <tr key={member.userId} className="border-t">
-                                                        <td className="py-1 pr-4">
-                                                            <UserLink
-                                                                user={{
-                                                                    id: UserId.schema.parse(
-                                                                        member.userId,
-                                                                    ),
-                                                                    name: member.name,
-                                                                    email: member.email,
-                                                                }}
-                                                            />
-                                                        </td>
-                                                        <td className="py-1 pr-4">
-                                                            {member.email}
-                                                        </td>
-                                                        <td className="py-1">
-                                                            <div className="flex flex-wrap gap-1">
-                                                                {member.role
-                                                                    .split(",")
-                                                                    .map((role) => (
-                                                                        <Badge
-                                                                            key={role}
-                                                                            variant="secondary"
-                                                                        >
-                                                                            {OrganizationRole.formatList(
-                                                                                role,
-                                                                            )}
-                                                                        </Badge>
-                                                                    ))}
-                                                            </div>
-                                                        </td>
-                                                        <td className="py-1 text-right">
-                                                            <SystemAdmin_MemberActionsMenu
-                                                                organizationId={organizationId}
-                                                                member={member}
-                                                                isLastOwner={
-                                                                    ownerCount === 1 &&
-                                                                    hasOwnerRole(member.role)
-                                                                }
-                                                                moduleGatedRoles={moduleGatedRoles}
-                                                            />
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    )}
-                                </CardContent>
-                            </Card>
-
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Teams</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    {organization.teams.length === 0 ? (
-                                        <p className="text-sm text-muted-foreground">No teams.</p>
-                                    ) : (
-                                        <table className="w-full text-sm">
-                                            <thead>
-                                                <tr className="text-left text-muted-foreground">
-                                                    <th className="py-1 pr-4 font-medium">Name</th>
-                                                    <th className="py-1 text-center font-medium">
-                                                        Members
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {organization.teams.map((team) => (
-                                                    <tr key={team.id} className="border-t">
-                                                        <td className="py-1 pr-4">{team.name}</td>
-                                                        <td className="py-1 text-center tabular-nums">
-                                                            {team.memberCount}
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </Saratoga.Column>
-
-                        <Saratoga.Column slot="secondary">
-                            <section aria-labelledby={groupsHeadingId} className="space-y-2">
-                                <div className="flex min-h-8 items-center justify-between gap-2 pl-1">
-                                    <h2 id={groupsHeadingId} className="text-base font-medium">
-                                        Groups
-                                    </h2>
-                                </div>
-                                {groupMemberships.length === 0 ? (
-                                    <p className="pl-1 text-sm text-muted-foreground">
-                                        Not in any group.
-                                    </p>
-                                ) : (
-                                    <ItemGroup className="gap-2">
-                                        {groupMemberships.map((membership) => (
-                                            <Item
-                                                key={membership.id}
-                                                variant="outline"
-                                                role="listitem"
-                                                asChild
-                                            >
-                                                <Link
-                                                    href={route("/system/admin/groups/[groupId]", {
-                                                        groupId: membership.group.id,
-                                                    })}
-                                                >
-                                                    <ItemContent>
-                                                        <ItemTitle>
-                                                            {membership.group.name}
-                                                        </ItemTitle>
-                                                        <ItemDescription>
-                                                            {
-                                                                OrganizationGroupRole.displayNames[
-                                                                    membership.role
-                                                                ]
-                                                            }
-                                                            {membership.status !== "Active" &&
-                                                                ` · ${OrganizationGroupMembershipStatus.displayNames[membership.status]}`}
-                                                        </ItemDescription>
-                                                    </ItemContent>
-                                                    <ItemActions>
-                                                        <ChevronRightIcon
-                                                            aria-hidden
-                                                            className="size-4 text-muted-foreground"
-                                                        />
-                                                    </ItemActions>
-                                                </Link>
-                                            </Item>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Members</CardTitle>
+                            <div className="ml-auto">
+                                <SystemAdmin_AddMember_Dialog
+                                    organizationId={organizationId}
+                                    memberUserIds={organization.members.map((m) => m.userId)}
+                                    moduleGatedRoles={moduleGatedRoles}
+                                />
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {ownerCount === 0 && (
+                                <Alert variant="warning">
+                                    <AlertTitle>No owner</AlertTitle>
+                                    <AlertDescription>
+                                        Nobody in this organisation can manage its owners. Use
+                                        &ldquo;Make owner&rdquo; on a member to appoint one.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+                            {organization.members.length === 0 ? (
+                                <p className="text-sm text-muted-foreground">No members.</p>
+                            ) : (
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr className="text-left text-muted-foreground">
+                                            <th className="py-1 pr-4 font-medium">Name</th>
+                                            <th className="py-1 pr-4 font-medium">Email</th>
+                                            <th className="py-1 font-medium">Role</th>
+                                            <th className="py-1" />
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {organization.members.map((member) => (
+                                            <tr key={member.userId} className="border-t">
+                                                <td className="py-1 pr-4">
+                                                    <UserLink
+                                                        user={{
+                                                            id: UserId.schema.parse(member.userId),
+                                                            name: member.name,
+                                                            email: member.email,
+                                                        }}
+                                                    />
+                                                </td>
+                                                <td className="py-1 pr-4">{member.email}</td>
+                                                <td className="py-1">
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {member.role.split(",").map((role) => (
+                                                            <Badge key={role} variant="secondary">
+                                                                {OrganizationRole.formatList(role)}
+                                                            </Badge>
+                                                        ))}
+                                                    </div>
+                                                </td>
+                                                <td className="py-1 text-right">
+                                                    <SystemAdmin_MemberActionsMenu
+                                                        organizationId={organizationId}
+                                                        member={member}
+                                                        isLastOwner={
+                                                            ownerCount === 1 &&
+                                                            hasOwnerRole(member.role)
+                                                        }
+                                                        moduleGatedRoles={moduleGatedRoles}
+                                                    />
+                                                </td>
+                                            </tr>
                                         ))}
-                                    </ItemGroup>
-                                )}
-                            </section>
+                                    </tbody>
+                                </table>
+                            )}
+                        </CardContent>
+                    </Card>
 
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Enabled Modules</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    {organization.enabledModules.length === 0 ? (
-                                        <p className="text-sm text-muted-foreground">
-                                            No modules enabled.
-                                        </p>
-                                    ) : (
-                                        <div className="flex flex-wrap gap-1">
-                                            {organization.enabledModules.map(
-                                                (moduleId: ModuleId) => (
-                                                    <Badge key={moduleId} variant="secondary">
-                                                        {Modules[moduleId].label}
-                                                    </Badge>
-                                                ),
-                                            )}
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Teams</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {organization.teams.length === 0 ? (
+                                <p className="text-sm text-muted-foreground">No teams.</p>
+                            ) : (
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr className="text-left text-muted-foreground">
+                                            <th className="py-1 pr-4 font-medium">Name</th>
+                                            <th className="py-1 text-center font-medium">
+                                                Members
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {organization.teams.map((team) => (
+                                            <tr key={team.id} className="border-t">
+                                                <td className="py-1 pr-4">{team.name}</td>
+                                                <td className="py-1 text-center tabular-nums">
+                                                    {team.memberCount}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+                        </CardContent>
+                    </Card>
+                </Saratoga.Column>
 
-                            <section aria-labelledby={recordCountsHeadingId} className="space-y-2">
-                                <div className="flex min-h-8 items-center pl-1">
-                                    <h2
-                                        id={recordCountsHeadingId}
-                                        className="text-base font-medium"
+                <Saratoga.Column slot="secondary">
+                    <section aria-labelledby={groupsHeadingId} className="space-y-2">
+                        <div className="flex min-h-8 items-center justify-between gap-2 pl-1">
+                            <h2 id={groupsHeadingId} className="text-base font-medium">
+                                Groups
+                            </h2>
+                        </div>
+                        {groupMemberships.length === 0 ? (
+                            <p className="pl-1 text-sm text-muted-foreground">Not in any group.</p>
+                        ) : (
+                            <ItemGroup className="gap-2">
+                                {groupMemberships.map((membership) => (
+                                    <Item
+                                        key={membership.id}
+                                        variant="outline"
+                                        role="listitem"
+                                        asChild
                                     >
-                                        Record Counts
-                                    </h2>
+                                        <Link
+                                            href={route("/system/admin/groups/[groupId]", {
+                                                groupId: membership.group.id,
+                                            })}
+                                        >
+                                            <ItemContent>
+                                                <ItemTitle>{membership.group.name}</ItemTitle>
+                                                <ItemDescription>
+                                                    {
+                                                        OrganizationGroupRole.displayNames[
+                                                            membership.role
+                                                        ]
+                                                    }
+                                                    {membership.status !== "Active" &&
+                                                        ` · ${OrganizationGroupMembershipStatus.displayNames[membership.status]}`}
+                                                </ItemDescription>
+                                            </ItemContent>
+                                            <ItemActions>
+                                                <ChevronRightIcon
+                                                    aria-hidden
+                                                    className="size-4 text-muted-foreground"
+                                                />
+                                            </ItemActions>
+                                        </Link>
+                                    </Item>
+                                ))}
+                            </ItemGroup>
+                        )}
+                    </section>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Enabled Modules</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {organization.enabledModules.length === 0 ? (
+                                <p className="text-sm text-muted-foreground">No modules enabled.</p>
+                            ) : (
+                                <div className="flex flex-wrap gap-1">
+                                    {organization.enabledModules.map((moduleId: ModuleId) => (
+                                        <Badge key={moduleId} variant="secondary">
+                                            {Modules[moduleId].label}
+                                        </Badge>
+                                    ))}
                                 </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                    {Object.entries(organization.recordCounts).map(
-                                        ([key, count]) => (
-                                            <Metric
-                                                key={key}
-                                                label={RECORD_COUNT_LABELS[key] ?? key}
-                                                value={count}
-                                            />
-                                        ),
-                                    )}
-                                    <Metric
-                                        label="D4H access tokens"
-                                        value={organization.d4hTokenCount}
-                                    />
-                                </div>
-                            </section>
-                        </Saratoga.Column>
-                    </Saratoga.Columns>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <section aria-labelledby={recordCountsHeadingId} className="space-y-2">
+                        <div className="flex min-h-8 items-center pl-1">
+                            <h2 id={recordCountsHeadingId} className="text-base font-medium">
+                                Record Counts
+                            </h2>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                            {Object.entries(organization.recordCounts).map(([key, count]) => (
+                                <Metric
+                                    key={key}
+                                    label={RECORD_COUNT_LABELS[key] ?? key}
+                                    value={count}
+                                />
+                            ))}
+                            <Metric label="D4H access tokens" value={organization.d4hTokenCount} />
+                        </div>
+                    </section>
+                </Saratoga.Column>
+            </Saratoga.Columns>
+        </Saratoga.Root>
     );
 }
 
