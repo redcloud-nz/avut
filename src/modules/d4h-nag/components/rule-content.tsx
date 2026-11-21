@@ -15,7 +15,6 @@ import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import { d4hNagEffects } from "@/client/d4h-nag-effects";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { HelpButton } from "@/components/docs/help-button";
 import { TeamLink } from "@/components/entity-links/team-link";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
@@ -72,7 +71,6 @@ export function D4HNag_Rule_Content({ ruleId }: { ruleId: D4HNagRuleId }) {
                     },
                     { label: title },
                 ]}
-                actions={<HelpButton id="d4h-nag" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

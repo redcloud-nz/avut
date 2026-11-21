@@ -15,7 +15,6 @@ import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import { newFormInstanceMutation } from "@/client/form-queries";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { HelpButton } from "@/components/docs/help-button";
 import { ItemLinkActionIcon, ObjectIcons } from "@/components/icons";
 import { Show } from "@/components/show";
 import { Button } from "@/components/ui/button";
@@ -112,7 +111,6 @@ export function D4HI3Module_ReturnItems_FormInstanceList() {
                     { label: "Forms" },
                     { label: "Return Items" },
                 ]}
-                actions={<HelpButton id="d4h-i3/return" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

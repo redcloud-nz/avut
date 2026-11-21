@@ -6,7 +6,6 @@
 "use client";
 
 import { useRouter, useSelectedLayoutSegment } from "next/navigation";
-import { ReactNode } from "react";
 
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
@@ -59,15 +58,8 @@ export function UserNotes_List() {
 }
 
 /** The navbar for the personal notes layout; names the selected note from the list query. */
-export function UserNotes_Breadcrumbs({ actions }: { actions?: ReactNode }) {
+export function UserNotes_Breadcrumbs() {
     const notes = useUserNotes();
 
-    return (
-        <NotesBreadcrumbs
-            notes={notes}
-            listHref="/user/notes"
-            noteHref={noteHref}
-            actions={actions}
-        />
-    );
+    return <NotesBreadcrumbs notes={notes} listHref="/user/notes" noteHref={noteHref} />;
 }

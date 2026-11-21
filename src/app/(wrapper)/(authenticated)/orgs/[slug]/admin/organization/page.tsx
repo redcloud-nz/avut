@@ -9,7 +9,6 @@ import Link from "next/link";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { HelpButton } from "@/components/docs/help-button";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
@@ -34,7 +33,6 @@ export default async function AdminModule_Organization_Page(
                     { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
                     "Organization",
                 ]}
-                actions={<HelpButton id="admin/organization" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

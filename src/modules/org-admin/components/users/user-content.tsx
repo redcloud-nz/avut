@@ -13,7 +13,6 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { useSession } from "@/client/auth-queries";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
@@ -55,7 +54,6 @@ export function AdminModule_User_Content({ userId }: { userId: UserId }) {
                     { label: "Users", href: route("/orgs/[slug]/admin/users", { slug }) },
                     { label: member.user.name },
                 ]}
-                actions={<HelpButton id="admin/users" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

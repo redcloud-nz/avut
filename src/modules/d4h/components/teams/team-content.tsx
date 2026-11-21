@@ -13,7 +13,6 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { D4HTeamPickerDialog } from "@/components/d4h/team-picker-dialog";
-import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
 import { CardContent } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
@@ -51,7 +50,6 @@ export function D4HModule_Team_Content({ teamId }: { teamId: number }) {
                     { label: "Teams", href: route("/orgs/[slug]/d4h/teams", { slug }) },
                     { label: team.title },
                 ]}
-                actions={<HelpButton id="d4h" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

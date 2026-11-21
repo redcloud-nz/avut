@@ -9,7 +9,6 @@ import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 
 import { Std } from "@/components/blocks/std";
-import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
 import {
     Item,
@@ -29,7 +28,6 @@ export default async function SkillTrack_Index_Page(props: PageProps<`/orgs/[slu
                 breadcrumbs={[
                     { label: "Skill Track", href: route("/orgs/[slug]/skill-track", { slug }) },
                 ]}
-                actions={<HelpButton id="skill-track/dashboard" />}
             />
             <Std.ScrollContainer>
                 <Std.IndexPage title="Skill Track">

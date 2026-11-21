@@ -7,7 +7,6 @@
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
 import { route } from "@/lib/routes";
 import { D4HI3Module_BundleList } from "@/modules/d4h-i3/components/bundles/bundles-list";
@@ -36,7 +35,6 @@ export default async function D4HI3Module_BundleList_Page(
                     { label: "D4H I3", href: route("/orgs/[slug]/d4h-i3", { slug }) },
                     "Bundles",
                 ]}
-                actions={<HelpButton id="d4h-i3/bundles" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

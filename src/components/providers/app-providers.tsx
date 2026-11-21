@@ -17,7 +17,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 /**
  * App-shell providers — mounted once in `(wrapper)/layout.tsx`, above both the authenticated and
  * any future public-scope trees. Everything here has no consumers outside that shell: nuqs-driven
- * dialogs/params, hotkeys, tooltips (used by `HelpButton`), the sidebar context, and the `?help=`
+ * dialogs/params, hotkeys, tooltips (used by `PageHelpButton`), the sidebar context, and the `?help=`
  * sheet itself.
  */
 export function AppProviders({ children }: Readonly<{ children: ReactNode }>) {

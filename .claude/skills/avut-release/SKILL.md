@@ -41,8 +41,11 @@ Work happens in the main checkout, not a worktree.
 > `git push` goes out under the user's own SSH key either way. If
 > `gh pr create` returns 401, check `gh auth status`. An expired `claude-avut`
 > token shows as "The token in keyring is invalid". Ask the user to
-> re-authenticate, which is interactive and theirs to run, or to open the PR
-> under their own account. Don't fall back to their account without asking.
+> re-authenticate, which is interactive and theirs to run (`! gh auth login -h
+> github.com`, signing in as `claude-avut`), or to open the PR under their own
+> account. Don't fall back to their account without asking. Logging in makes
+> `claude-avut` the active account: check `gh auth status` afterwards and, if it
+> is, switch back with `gh auth switch -u <their account>` before going on.
 
 ## Step 0 — Preflight
 

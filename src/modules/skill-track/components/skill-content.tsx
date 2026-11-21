@@ -11,7 +11,6 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { HelpButton } from "@/components/docs/help-button";
 import { SkillGroupLink } from "@/components/entity-links/skill-group-link";
 import { SkillPackageLink } from "@/components/entity-links/skill-package-link";
 import { Protect } from "@/components/protect";
@@ -72,7 +71,6 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
                     },
                     skill.name,
                 ]}
-                actions={<HelpButton id="skill-track/skills" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

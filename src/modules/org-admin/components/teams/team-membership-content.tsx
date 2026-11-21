@@ -8,7 +8,6 @@ import { useSuspenseQueries } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { HelpButton } from "@/components/docs/help-button";
 import { PersonLink } from "@/components/entity-links/person-link";
 import { TeamLink } from "@/components/entity-links/team-link";
 import { D4HMemberStatusBadge } from "@/components/teams/d4h-member-status-badge";
@@ -78,7 +77,6 @@ export function AdminModule_TeamMembership_Content({
                     },
                     membership.person.name,
                 ]}
-                actions={<HelpButton id="admin/teams" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

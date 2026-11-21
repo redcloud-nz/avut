@@ -11,7 +11,6 @@ import { useSuspenseQueries } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { HelpButton } from "@/components/docs/help-button";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Teams_AddTeamMembership_Dialog } from "@/components/teams/add-team-membership";
@@ -86,7 +85,6 @@ export function TeamAdmin_Members_List() {
                     { label: "Admin", href: route("/teams/[slug]/admin", { slug: teamSlug }) },
                     "Members",
                 ]}
-                actions={<HelpButton id="team-admin" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

@@ -10,6 +10,7 @@ import { ReactNode, Suspense } from "react";
 
 import { SessionWatcher } from "@/components/auth/session-watcher";
 import { Std } from "@/components/blocks/std";
+import { HelpRoutesProvider } from "@/components/docs/help-routes-context";
 import { ModeToggle } from "@/components/nav/mode-toggle";
 import { NotificationsMenu } from "@/components/nav/notifications-menu";
 import { ScopeSidebar_Modules } from "@/components/nav/scope-sidebar-modules";
@@ -31,6 +32,7 @@ import {
 } from "@/components/whats-new/whats-new-dialog";
 import { ImpersonationBanner } from "@/modules/system-admin/components/impersonation-banner";
 import { TimeZoneAutoDetect } from "@/modules/user-settings/components/timezone-auto-detect";
+import { helpCardRoutes } from "@/server/docs";
 import { resolveUserModuleFlags } from "@/server/module-flags";
 import { requireSession } from "@/server/session";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
@@ -143,7 +145,9 @@ export default async function AuthenticatedLayout(props: {
                     <WhatsNewBoundary>
                         <WhatsNewDialog />
                     </WhatsNewBoundary>
-                    <Std.SidebarInset>{props.children}</Std.SidebarInset>
+                    <HelpRoutesProvider cards={helpCardRoutes()}>
+                        <Std.SidebarInset>{props.children}</Std.SidebarInset>
+                    </HelpRoutesProvider>
                 </WhatsNewProvider>
             </SidebarPortalProvider>
         </HydrateClient>

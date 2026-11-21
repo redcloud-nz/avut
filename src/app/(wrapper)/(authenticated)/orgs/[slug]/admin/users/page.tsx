@@ -6,7 +6,6 @@
  */
 
 import { Std } from "@/components/blocks/std";
-import { HelpButton } from "@/components/docs/help-button";
 import { route } from "@/lib/routes";
 import { AdminModule_Users_List } from "@/modules/org-admin/components/users/users-list";
 import { getOrganizationBySlug } from "@/server/cache/organization";
@@ -30,7 +29,6 @@ export default async function AdminModule_Users_Page(props: PageProps<"/orgs/[sl
                     { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
                     { label: "Users", href: route("/orgs/[slug]/admin/users", { slug }) },
                 ]}
-                actions={<HelpButton id="admin/users" />}
             />
             <Std.ScrollContainer>
                 <AdminModule_Users_List />

@@ -12,7 +12,6 @@ import { useSuspenseQueries } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { HelpButton } from "@/components/docs/help-button";
 import { Show } from "@/components/show";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
@@ -222,33 +221,28 @@ export function SkillTrack_SessionBySkill_Content({
     );
 
     const navbar = (
-        <Std.Navbar>
-            <Std.Breadcrumbs
-                breadcrumbs={[
-                    {
-                        label: "Skill Track",
-                        href: route("/orgs/[slug]/skill-track", { slug: organization.slug }),
-                    },
-                    {
-                        label: "Sessions",
-                        href: route("/orgs/[slug]/skill-track/sessions", {
-                            slug: organization.slug,
-                        }),
-                    },
-                    {
-                        label: session.name || session.id,
-                        href: route("/orgs/[slug]/skill-track/sessions/[session_id]", {
-                            slug: organization.slug,
-                            session_id: sessionId,
-                        }),
-                    },
-                    "By Skill",
-                ]}
-            />
-            <div className="flex items-center justify-end gap-1 grow">
-                <HelpButton id="skill-track/session-recording" />
-            </div>
-        </Std.Navbar>
+        <Std.Navbar
+            breadcrumbs={[
+                {
+                    label: "Skill Track",
+                    href: route("/orgs/[slug]/skill-track", { slug: organization.slug }),
+                },
+                {
+                    label: "Sessions",
+                    href: route("/orgs/[slug]/skill-track/sessions", {
+                        slug: organization.slug,
+                    }),
+                },
+                {
+                    label: session.name || session.id,
+                    href: route("/orgs/[slug]/skill-track/sessions/[session_id]", {
+                        slug: organization.slug,
+                        session_id: sessionId,
+                    }),
+                },
+                "By Skill",
+            ]}
+        />
     );
 
     if (isApproved) {

@@ -11,7 +11,6 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { D4HTeamPickerDialog } from "@/components/d4h/team-picker-dialog";
-import { HelpButton } from "@/components/docs/help-button";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -53,7 +52,6 @@ export function D4HI3Module_Bundle_Content({ bundleId }: { bundleId: I3BundleId 
                     { label: "Bundles", href: route("/orgs/[slug]/d4h-i3/bundles", { slug }) },
                     bundle.name,
                 ]}
-                actions={<HelpButton id="d4h-i3/bundles" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

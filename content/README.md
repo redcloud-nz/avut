@@ -32,6 +32,10 @@ guide's only on `/docs`. Cards rarely need one.
 ---
 title: Personnel
 guide: admin/user-vs-person#person
+routes:
+  - "/orgs/[slug]/admin/personnel"
+  - "/orgs/[slug]/admin/personnel/[person_id]"
+  - "/orgs/[slug]/admin/personnel/[person_id]/history"
 keyTerms: ["person", "user", "team"]
 ---
 
@@ -42,6 +46,7 @@ keyTerms: ["person", "user", "team"]
 | ---------- | -------- | ---------------------------------------------------------------------------------- |
 | `title`    | yes      | The sheet title. Don't repeat it as a `#` heading                                  |
 | `guide`    | yes      | A doc slug, optionally with a heading `#anchor`. Not `""` (the docs home)          |
+| `routes`   | yes      | The pages the card covers, as route patterns (see below)                           |
 | `keyTerms` | no       | Glossary slugs (`src/lib/glossary.ts`) for the `<KeyTerms>` callout after the body |
 
 There's no `description`: the sheet's subtitle is always "Quick Guide".
@@ -60,11 +65,21 @@ views of the same record or task share one: a list and its detail page (`admin/t
 covers the teams list, a team, its members and its history), or the by-skill
 and by-person recording pages (`skill-track/session-recording`).
 
-Point the screen at the card with a literal id, so call sites stay greppable:
+A card lists every page it covers in `routes`. Each entry is a typed-route
+pattern: the page's folder under `src/app/` with route groups `(…)` and parallel
+slots `@…` left out, the same pattern `route()` takes
+(`/orgs/[slug]/admin/teams/[team_id]`). There are no wildcards, so list each page,
+in both org and team scope where a screen is used in both.
 
-```tsx
-<HelpButton id="admin/personnel" />
-```
+The navbar's help button (`PageHelpButton`) picks the card from the current
+path. It matches patterns segment by segment, `[param]` matching any one
+segment, and the most specific pattern wins: a static segment beats a `[param]`
+at the first difference, so `/admin/teams/new` doesn't fall to
+`/admin/teams/[team_id]`. A page no card lists shows no help button.
+
+A page that shouldn't have a card goes on `OPT_OUT_ROUTES` in
+`src/components/docs/help-cards.test.ts`, with a short reason comment where it
+isn't obvious.
 
 ## Checks
 
@@ -75,12 +90,16 @@ Point the screen at the card with a literal id, so call sites stay greppable:
   `npx content-collections build` and production builds. Under `npm run dev` the
   bad card is just dropped with a logged error, so run the build command after
   changing a `guide`.
-- **Tests.** `src/components/docs/help-cards.test.ts` fails if a `<HelpButton>`
-  has no literal `id="…"`, names a missing card, or a card isn't used by any
-  `<HelpButton>`. `src/lib/glossary.test.ts` fails on an unknown `keyTerms` slug.
+- **Tests.** `src/components/docs/help-cards.test.ts` fails if a page under
+  `src/app/(wrapper)/(authenticated)` is listed by no card and isn't on
+  `OPT_OUT_ROUTES`, or by more than one card; if a card's route isn't a real
+  page; if an `OPT_OUT_ROUTES` entry is a card's route or not a page; or if a
+  page doesn't resolve to the card that lists it. `src/lib/glossary.test.ts`
+  fails on an unknown `keyTerms` slug.
 
 ## Keeping them current
 
-A PR that changes what a user sees updates that screen's card in the same PR,
-and adds or removes cards with the `HelpButton`s that use them. Guide changes
-can wait: note them on the milestone's docs issue and update the guides there.
+A PR that changes what a user sees updates that screen's card in the same PR.
+A PR that adds a page lists it on a card's `routes` or on `OPT_OUT_ROUTES`, and
+one that removes or moves a page updates them to match. Guide changes can wait:
+note them on the milestone's docs issue and update the guides there.

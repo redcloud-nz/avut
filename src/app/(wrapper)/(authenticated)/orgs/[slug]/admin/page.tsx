@@ -9,7 +9,6 @@ import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 
 import { Std } from "@/components/blocks/std";
-import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
 import {
     Item,
@@ -27,7 +26,7 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
 
     return (
         <>
-            <Std.Navbar breadcrumbs={["Admin"]} actions={<HelpButton id="admin/dashboard" />} />
+            <Std.Navbar breadcrumbs={["Admin"]} />
             <Std.ScrollContainer>
                 <Std.IndexPage title="Admin Module">
                     <ItemGroup>
