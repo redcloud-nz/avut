@@ -6,7 +6,6 @@
  */
 
 import { Std } from "@/components/blocks/std";
-import { route } from "@/lib/routes";
 import { AdminModule_D4HAccessTokensList } from "@/modules/org-admin/components/d4h-access-tokens/d4h-access-tokens-list";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
@@ -29,17 +28,9 @@ export default async function AdminModule_D4HAccessTokens_Page(
 
     return (
         <HydrateClient>
-            <>
-                <Std.Navbar
-                    breadcrumbs={[
-                        { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
-                        "D4H Access Tokens",
-                    ]}
-                />
-                <Std.ScrollContainer>
-                    <AdminModule_D4HAccessTokensList organization={organization} />
-                </Std.ScrollContainer>
-            </>
+            <Std.ScrollContainer>
+                <AdminModule_D4HAccessTokensList organization={organization} />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

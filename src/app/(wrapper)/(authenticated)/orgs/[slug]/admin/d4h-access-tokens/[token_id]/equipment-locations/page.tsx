@@ -83,59 +83,51 @@ export default async function Admin_D4HAccessToken_EquipmentLocations_Page(
     const successCount = locations.filter((i) => i.parsed.success).length;
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
-                    {
-                        label: "D4H Access Tokens",
-                        href: route("/orgs/[slug]/admin/d4h-access-tokens", { slug }),
-                    },
-                    {
-                        label: accessToken.label || accessToken.id,
-                        href: route("/orgs/[slug]/admin/d4h-access-tokens/[token_id]/members", {
-                            slug,
-                            token_id,
-                        }),
-                    },
-                    "Equipment Locations",
-                ]}
-            />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>
-                            Equipment Locations ({successCount} of {locations.length})
-                        </Saratoga.Title>
-                    </Saratoga.Header>
-                    {locations.map((item) => (
-                        <div key={item.raw.id} className="grid grid-cols-2 border-b py-2">
-                            <div className="col-span-full py-2 font-semibold text-center">
-                                {item.raw.id}
-                            </div>
-                            <div className="px-2 max-h-[50vh] overflow-y-auto">
-                                <pre className="text-xs">{JSON.stringify(item.raw, null, 2)}</pre>
-                            </div>
-                            <div className="px-2 max-h-[50vh] overflow-y-auto">
-                                {item.parsed.success ? (
-                                    <pre className="text-xs">
-                                        {JSON.stringify(item.parsed.data, null, 2)}
-                                    </pre>
-                                ) : (
-                                    <Alert>
-                                        <AlertTitle>
-                                            Failed to parse equipment category data
-                                        </AlertTitle>
-                                        <AlertDescription>
-                                            {item.parsed.error.message}
-                                        </AlertDescription>
-                                    </Alert>
-                                )}
-                            </div>
+        <Std.ScrollContainer>
+            <Saratoga.Root>
+                <Saratoga.Breadcrumbs
+                    items={[
+                        {
+                            label: "D4H Access Tokens",
+                            href: route("/orgs/[slug]/admin/d4h-access-tokens", { slug }),
+                        },
+                        {
+                            label: accessToken.label || accessToken.id,
+                            href: route("/orgs/[slug]/admin/d4h-access-tokens/[token_id]", {
+                                slug,
+                                token_id,
+                            }),
+                        },
+                    ]}
+                />
+                <Saratoga.Header>
+                    <Saratoga.Title>
+                        Equipment Locations ({successCount} of {locations.length})
+                    </Saratoga.Title>
+                </Saratoga.Header>
+                {locations.map((item) => (
+                    <div key={item.raw.id} className="grid grid-cols-2 border-b py-2">
+                        <div className="col-span-full py-2 font-semibold text-center">
+                            {item.raw.id}
                         </div>
-                    ))}
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+                        <div className="px-2 max-h-[50vh] overflow-y-auto">
+                            <pre className="text-xs">{JSON.stringify(item.raw, null, 2)}</pre>
+                        </div>
+                        <div className="px-2 max-h-[50vh] overflow-y-auto">
+                            {item.parsed.success ? (
+                                <pre className="text-xs">
+                                    {JSON.stringify(item.parsed.data, null, 2)}
+                                </pre>
+                            ) : (
+                                <Alert>
+                                    <AlertTitle>Failed to parse equipment category data</AlertTitle>
+                                    <AlertDescription>{item.parsed.error.message}</AlertDescription>
+                                </Alert>
+                            )}
+                        </div>
+                    </div>
+                ))}
+            </Saratoga.Root>
+        </Std.ScrollContainer>
     );
 }

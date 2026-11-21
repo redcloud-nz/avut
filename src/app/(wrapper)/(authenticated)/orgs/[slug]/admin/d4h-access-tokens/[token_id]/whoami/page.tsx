@@ -53,34 +53,30 @@ export default async function Admin_D4HAccessToken_Whoami_Page(
     };
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
-                    {
-                        label: "D4H Access Tokens",
-                        href: route("/orgs/[slug]/admin/d4h-access-tokens", { slug }),
-                    },
-                    {
-                        label: accessToken.label || accessToken.id,
-                        href: route("/orgs/[slug]/admin/d4h-access-tokens/[token_id]/members", {
-                            slug,
-                            token_id,
-                        }),
-                    },
-                    "Whoami",
-                ]}
-            />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>Whoami</Saratoga.Title>
-                    </Saratoga.Header>
-                    <Eagle.Section>
-                        <Eagle.Content raw={whoami.raw} parsed={whoami.parsed} />
-                    </Eagle.Section>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+        <Std.ScrollContainer>
+            <Saratoga.Root>
+                <Saratoga.Breadcrumbs
+                    items={[
+                        {
+                            label: "D4H Access Tokens",
+                            href: route("/orgs/[slug]/admin/d4h-access-tokens", { slug }),
+                        },
+                        {
+                            label: accessToken.label || accessToken.id,
+                            href: route("/orgs/[slug]/admin/d4h-access-tokens/[token_id]", {
+                                slug,
+                                token_id,
+                            }),
+                        },
+                    ]}
+                />
+                <Saratoga.Header>
+                    <Saratoga.Title>Whoami</Saratoga.Title>
+                </Saratoga.Header>
+                <Eagle.Section>
+                    <Eagle.Content raw={whoami.raw} parsed={whoami.parsed} />
+                </Eagle.Section>
+            </Saratoga.Root>
+        </Std.ScrollContainer>
     );
 }

@@ -8,6 +8,7 @@
 
 import { use } from "react";
 
+import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useOrganization } from "@/hooks/use-organization";
@@ -22,27 +23,24 @@ export default function AdminModule_OrganizationUpdate_Page(
     const organization = useOrganization();
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
+        <Std.ScrollContainer>
+            <Saratoga.Breadcrumbs
+                items={[
                     {
-                        label: "Organization",
+                        label: "Organisation",
                         href: route("/orgs/[slug]/admin/organization", { slug }),
                     },
-                    "Update",
                 ]}
+                className="mb-2"
             />
-            <Std.ScrollContainer>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Update Organisation</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <AdminModule_UpdateOrganization_Form organizationId={organization.id} />
-                    </CardContent>
-                </Card>
-            </Std.ScrollContainer>
-        </>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Update Organisation</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <AdminModule_UpdateOrganization_Form organizationId={organization.id} />
+                </CardContent>
+            </Card>
+        </Std.ScrollContainer>
     );
 }

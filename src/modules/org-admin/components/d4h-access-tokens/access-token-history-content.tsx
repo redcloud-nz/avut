@@ -6,7 +6,6 @@
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { Std } from "@/components/blocks/std";
 import { ObjectHistory } from "@/components/history/object-history";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -30,36 +29,25 @@ export function AdminModule_D4HAccessTokenHistory_Content({
     const tokenLabel = accessToken.label || `Access Token: ${accessToken.id}`;
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    {
-                        label: "Admin",
-                        href: route("/orgs/[slug]/admin", { slug: organization.slug }),
-                    },
-                    {
-                        label: "D4H Access Tokens",
-                        href: route("/orgs/[slug]/admin/d4h-access-tokens", {
-                            slug: organization.slug,
-                        }),
-                    },
-                    {
-                        label: tokenLabel,
-                        href: route("/orgs/[slug]/admin/d4h-access-tokens/[token_id]", {
-                            slug: organization.slug,
-                            token_id: tokenId,
-                        }),
-                    },
-                    "History",
-                ]}
-            />
-            <Std.ScrollContainer>
-                <ObjectHistory
-                    objectType="D4HAccessToken"
-                    objectId={tokenId}
-                    title={`${tokenLabel} — History`}
-                />
-            </Std.ScrollContainer>
-        </>
+        <ObjectHistory
+            objectType="D4HAccessToken"
+            objectId={tokenId}
+            title="D4H Access Token History"
+            breadcrumbs={[
+                {
+                    label: "D4H Access Tokens",
+                    href: route("/orgs/[slug]/admin/d4h-access-tokens", {
+                        slug: organization.slug,
+                    }),
+                },
+                {
+                    label: tokenLabel,
+                    href: route("/orgs/[slug]/admin/d4h-access-tokens/[token_id]", {
+                        slug: organization.slug,
+                        token_id: tokenId,
+                    }),
+                },
+            ]}
+        />
     );
 }
