@@ -13,11 +13,11 @@ import { D4HTeamPickerDialog } from "@/components/d4h/team-picker-dialog";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import { RecordCard, RecordCardId } from "@/components/ui/record-card";
+import { RecordStatusBadge } from "@/components/ui/status-badge";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { I3BundleId } from "@/lib/schemas/i3-bundle";
@@ -49,13 +49,7 @@ export function D4HI3Module_Bundle_Content({ bundleId }: { bundleId: I3BundleId 
                 items={[{ label: "Bundles", href: route("/orgs/[slug]/d4h-i3/bundles", { slug }) }]}
             />
             <Saratoga.Header>
-                <Saratoga.Title
-                    badges={
-                        bundle.status !== "Active" && (
-                            <Badge variant="outline">{bundle.status}</Badge>
-                        )
-                    }
-                >
+                <Saratoga.Title badges={<RecordStatusBadge status={bundle.status} />}>
                     {bundle.name}
                 </Saratoga.Title>
                 <Saratoga.Actions>

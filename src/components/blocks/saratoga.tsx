@@ -116,7 +116,7 @@ function SaratogaTitle({
             className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1"
         >
             {title}
-            <div className="flex shrink-0 items-center gap-2">{badges}</div>
+            <div className="flex shrink-0 items-center gap-2 empty:hidden">{badges}</div>
         </div>
     );
 }

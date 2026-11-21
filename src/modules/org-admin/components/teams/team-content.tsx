@@ -11,7 +11,7 @@ import { Protect } from "@/components/protect";
 import { Teams_D4HCard } from "@/components/teams/d4h-link-card";
 import { Teams_TeamAccess_Card } from "@/components/teams/team-access-card";
 import { Teams_Details_Card } from "@/components/teams/team-details-card";
-import { Badge } from "@/components/ui/badge";
+import { RecordStatusBadge } from "@/components/ui/status-badge";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { TeamId } from "@/lib/schemas/team";
@@ -38,11 +38,7 @@ export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
                 ]}
             />
             <Saratoga.Header>
-                <Saratoga.Title
-                    badges={
-                        team.status !== "Active" && <Badge variant="outline">{team.status}</Badge>
-                    }
-                >
+                <Saratoga.Title badges={<RecordStatusBadge status={team.status} />}>
                     {team.name}
                 </Saratoga.Title>
                 <Saratoga.Actions>

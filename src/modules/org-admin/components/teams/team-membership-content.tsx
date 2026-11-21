@@ -10,7 +10,6 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { PersonLink } from "@/components/entity-links/person-link";
 import { TeamLink } from "@/components/entity-links/team-link";
 import { D4HMemberStatusBadge } from "@/components/teams/d4h-member-status-badge";
-import { Badge } from "@/components/ui/badge";
 import { CardContent } from "@/components/ui/card";
 import {
     DataItem,
@@ -20,6 +19,7 @@ import {
     DataList,
 } from "@/components/ui/data-item";
 import { RecordCard, RecordCardId } from "@/components/ui/record-card";
+import { RecordStatusBadge } from "@/components/ui/status-badge";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonId } from "@/lib/schemas/person";
@@ -73,13 +73,7 @@ export function AdminModule_TeamMembership_Content({
                 ]}
             />
             <Saratoga.Header>
-                <Saratoga.Title
-                    badges={
-                        membership.status !== "Active" && (
-                            <Badge variant="outline">{membership.status}</Badge>
-                        )
-                    }
-                >
+                <Saratoga.Title badges={<RecordStatusBadge status={membership.status} />}>
                     {membership.person.name}
                 </Saratoga.Title>
                 <Saratoga.Actions>

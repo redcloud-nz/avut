@@ -17,9 +17,9 @@ import {
 } from "@/client/form-queries";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Alert, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Field, FieldTitle } from "@/components/ui/field";
 import { Skeleton } from "@/components/ui/skeleton";
+import { I3FormStatusBadge } from "@/components/ui/status-badge";
 import { usePreferences } from "@/hooks/use-preferences";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { OrganizationId } from "@/lib/schemas/organization";
@@ -59,9 +59,7 @@ export function UserNameFieldValue({ className }: { className?: string }) {
 export function SubmittedFormHeader({ title }: { title: string }) {
     return (
         <Saratoga.Header>
-            <Saratoga.Title badges={<Badge variant="outline">Submitted</Badge>}>
-                {title}
-            </Saratoga.Title>
+            <Saratoga.Title badges={<I3FormStatusBadge submitted />}>{title}</Saratoga.Title>
         </Saratoga.Header>
     );
 }

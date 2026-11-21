@@ -10,10 +10,10 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { D4HEquipmentCategoryLink } from "@/components/entity-links/d4h-equipment-category-link";
 import { D4HEquipmentTypeLink } from "@/components/entity-links/d4h-equipment-type-link";
 import { Protect } from "@/components/protect";
-import { Badge } from "@/components/ui/badge";
 import { CardContent } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import { RecordCard, RecordCardId } from "@/components/ui/record-card";
+import { RecordStatusBadge } from "@/components/ui/status-badge";
 import { useOrganization } from "@/hooks/use-organization";
 import { usesOtherRecords } from "@/lib/i3-template-fit";
 import { route } from "@/lib/routes";
@@ -62,14 +62,10 @@ export function D4HI3Module_Template_Content({ templateId }: { templateId: I3Tem
             <Saratoga.Header>
                 <Saratoga.Title
                     badges={
-                        (template.status !== "Active" || flagged) && (
-                            <>
-                                {template.status !== "Active" && (
-                                    <Badge variant="outline">{template.status}</Badge>
-                                )}
-                                {flagged && <D4HI3Module_OtherRecords_Badge />}
-                            </>
-                        )
+                        <>
+                            <RecordStatusBadge status={template.status} />
+                            {flagged && <D4HI3Module_OtherRecords_Badge />}
+                        </>
                     }
                 >
                     {template.name}

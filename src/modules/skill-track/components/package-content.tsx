@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/data-item";
 import { EntityActionMenu } from "@/components/ui/menu-action";
 import { RecordCard, RecordCardId } from "@/components/ui/record-card";
+import { SkillPackageAvailabilityBadge } from "@/components/ui/status-badge";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -75,13 +76,7 @@ export function SkillTrack_Package_Content({ skillPackageId }: { skillPackageId:
                 />
                 <Saratoga.Header>
                     <Saratoga.Title
-                        badges={
-                            withdrawn && (
-                                <Badge variant="outline">
-                                    {skillPackage.status === "Deleted" ? "Deleted" : "Withdrawn"}
-                                </Badge>
-                            )
-                        }
+                        badges={<SkillPackageAvailabilityBadge skillPackage={skillPackage} />}
                     >
                         {skillPackage.name}
                     </Saratoga.Title>

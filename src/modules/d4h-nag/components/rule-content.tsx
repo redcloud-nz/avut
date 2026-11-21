@@ -18,7 +18,6 @@ import { TeamLink } from "@/components/entity-links/team-link";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
@@ -32,6 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
 import { RecordCard, RecordCardId } from "@/components/ui/record-card";
+import { D4HNagRuleStatusBadge } from "@/components/ui/status-badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
@@ -68,13 +68,7 @@ export function D4HNag_Rule_Content({ ruleId }: { ruleId: D4HNagRuleId }) {
             />
             <Saratoga.Header>
                 <Saratoga.Title
-                    badges={
-                        // A disabled rule is paused too ("disabled" is a paused reason),
-                        // but the badge names the rule's own state when it's that.
-                        paused && (
-                            <Badge variant="outline">{rule.enabled ? "Paused" : "Disabled"}</Badge>
-                        )
-                    }
+                    badges={<D4HNagRuleStatusBadge enabled={rule.enabled} paused={!!paused} />}
                 >
                     {title}
                 </Saratoga.Title>

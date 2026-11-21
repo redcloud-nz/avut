@@ -15,11 +15,11 @@ import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import { d4hAccessTokensEffects } from "@/client/d4h-access-tokens-effects";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { ObjectIcons } from "@/components/icons";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import { RecordCard, RecordCardId } from "@/components/ui/record-card";
+import { D4HAccessTokenStatusBadge } from "@/components/ui/status-badge";
 import {
     Table,
     TableBody,
@@ -31,7 +31,6 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { getD4HServer } from "@/lib/d4h-servers";
 import { route } from "@/lib/routes";
-import { D4HAccessToken } from "@/lib/schemas/d4h-access-token";
 import { ProviderCredentialAccess, ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { trpc } from "@/trpc/client";
 
@@ -73,13 +72,7 @@ export function UserSettings_D4HAccessTokenContent({ tokenId }: { tokenId: Provi
         <Saratoga.Root>
             <Saratoga.Breadcrumbs items={[{ label: "D4H", href: "/user/settings/d4h" }]} />
             <Saratoga.Header>
-                <Saratoga.Title
-                    badges={
-                        !D4HAccessToken.isStatusOk(token.status) && (
-                            <Badge variant="outline">{token.status}</Badge>
-                        )
-                    }
-                >
+                <Saratoga.Title badges={<D4HAccessTokenStatusBadge status={token.status} />}>
                     D4H Personal Access Token
                 </Saratoga.Title>
                 <Saratoga.Actions>

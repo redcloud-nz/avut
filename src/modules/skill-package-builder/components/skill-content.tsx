@@ -10,10 +10,10 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Protect } from "@/components/protect";
-import { Badge } from "@/components/ui/badge";
 import { CardContent } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import { RecordCard, RecordCardId } from "@/components/ui/record-card";
+import { RecordStatusBadge } from "@/components/ui/status-badge";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillId } from "@/lib/schemas/skill";
@@ -46,11 +46,7 @@ export function SkillPackageBuilder_Skill_Content({ skillId }: { skillId: SkillI
                 ]}
             />
             <Saratoga.Header>
-                <Saratoga.Title
-                    badges={
-                        skill.status !== "Active" && <Badge variant="outline">{skill.status}</Badge>
-                    }
-                >
+                <Saratoga.Title badges={<RecordStatusBadge status={skill.status} />}>
                     {skill.name}
                 </Saratoga.Title>
                 <Saratoga.Actions>

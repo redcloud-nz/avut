@@ -10,10 +10,10 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Protect } from "@/components/protect";
-import { Badge } from "@/components/ui/badge";
 import { CardContent, CardLoadingFallback } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import { RecordCard, RecordCardId } from "@/components/ui/record-card";
+import { RecordStatusBadge } from "@/components/ui/status-badge";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonId } from "@/lib/schemas/person";
@@ -44,13 +44,7 @@ export function AdminModule_Person_Content({ personId }: { personId: PersonId })
                 ]}
             />
             <Saratoga.Header>
-                <Saratoga.Title
-                    badges={
-                        person.status !== "Active" && (
-                            <Badge variant="outline">{person.status}</Badge>
-                        )
-                    }
-                >
+                <Saratoga.Title badges={<RecordStatusBadge status={person.status} />}>
                     {person.name}
                 </Saratoga.Title>
                 <Saratoga.Actions>

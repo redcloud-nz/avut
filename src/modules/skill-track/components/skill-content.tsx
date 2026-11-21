@@ -26,6 +26,7 @@ import {
     ItemTitle,
 } from "@/components/ui/item";
 import { RecordCard, RecordCardId } from "@/components/ui/record-card";
+import { RecordStatusBadge } from "@/components/ui/status-badge";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillId } from "@/lib/schemas/skill";
@@ -65,7 +66,13 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
                 ]}
             />
             <Saratoga.Header>
-                <Saratoga.Title badges={archived && <Badge variant="outline">Archived</Badge>}>
+                <Saratoga.Title
+                    badges={
+                        <RecordStatusBadge
+                            status={skill.status !== "Active" ? skill.status : skill.group.status}
+                        />
+                    }
+                >
                     {skill.name}
                 </Saratoga.Title>
             </Saratoga.Header>

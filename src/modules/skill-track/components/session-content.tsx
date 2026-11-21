@@ -13,7 +13,6 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { TeamLink } from "@/components/entity-links/team-link";
 import { Protect } from "@/components/protect";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CardContent, CardLoadingFallback } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
@@ -26,9 +25,9 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { RecordCard, RecordCardId } from "@/components/ui/record-card";
+import { SkillCheckSessionStatusBadge } from "@/components/ui/status-badge";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-import { SKILL_CHECK_STATUS_LABELS } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { SkillTrack_SessionConfigDialogs } from "@/modules/skill-track/components/session-config-dialogs";
 import { SkillsModule_Session_Contents_Card } from "@/modules/skill-track/components/session-contents";
@@ -64,13 +63,7 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                 />
                 <Saratoga.Header>
                     <Saratoga.Title
-                        badges={
-                            session.status !== "Draft" && (
-                                <Badge variant="outline">
-                                    {SKILL_CHECK_STATUS_LABELS[session.status] ?? session.status}
-                                </Badge>
-                            )
-                        }
+                        badges={<SkillCheckSessionStatusBadge status={session.status} />}
                     >
                         {session.name || session.id}
                     </Saratoga.Title>

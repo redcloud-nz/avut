@@ -11,7 +11,6 @@ import { useId } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Badge } from "@/components/ui/badge";
 import { CardContent } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import {
@@ -23,6 +22,7 @@ import {
     ItemTitle,
 } from "@/components/ui/item";
 import { RecordCard, RecordCardId } from "@/components/ui/record-card";
+import { UserBanStatusBadge } from "@/components/ui/status-badge";
 import { route } from "@/lib/routes";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { UserId } from "@/lib/schemas/user";
@@ -37,7 +37,7 @@ export function SystemAdmin_User_Content({ userId }: { userId: UserId }) {
         <Saratoga.Root>
             <Saratoga.Breadcrumbs items={[{ label: "Users", href: "/system/admin/users" }]} />
             <Saratoga.Header>
-                <Saratoga.Title badges={user.banned && <Badge variant="outline">Banned</Badge>}>
+                <Saratoga.Title badges={<UserBanStatusBadge banned={user.banned} />}>
                     {user.name}
                 </Saratoga.Title>
                 <Saratoga.Actions>
