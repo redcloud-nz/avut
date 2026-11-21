@@ -9,7 +9,6 @@ import { notFound } from "next/navigation";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { D4HEquipmentItemLink } from "@/components/entity-links/d4h-equipment-item-link";
 import { D4HMemberLink } from "@/components/entity-links/d4h-member-link";
 import { I3BundleLink } from "@/components/entity-links/i3-bundle-link";
@@ -102,10 +101,9 @@ export function D4HI3Module_BundleMemberComparison({
     }));
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "D4H I3", href: route("/orgs/[slug]/d4h-i3", { slug }) },
+        <Saratoga.Root>
+            <Saratoga.Breadcrumbs
+                items={[
                     { label: "Bundles", href: route("/orgs/[slug]/d4h-i3/bundles", { slug }) },
                     {
                         label: bundle.name,
@@ -122,73 +120,65 @@ export function D4HI3Module_BundleMemberComparison({
                             d4h_team_id: String(teamId),
                         }),
                     },
-                    { label: member.name },
                 ]}
             />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>{member.name}</Saratoga.Title>
-                    </Saratoga.Header>
-                    <p className="text-sm text-muted-foreground">
-                        {row.heldCount} of {columns.length} held · Bundle:{" "}
-                        <I3BundleLink bundle={bundle} /> · D4H Member:{" "}
-                        <D4HMemberLink member={member} />
-                    </p>
+            <Saratoga.Header>
+                <Saratoga.Title>{member.name}</Saratoga.Title>
+            </Saratoga.Header>
+            <p className="text-sm text-muted-foreground">
+                {row.heldCount} of {columns.length} held · Bundle: <I3BundleLink bundle={bundle} />{" "}
+                · D4H Member: <D4HMemberLink member={member} />
+            </p>
 
-                    {columns.length === 0 ? (
-                        <Empty>
-                            <EmptyHeader>
-                                <EmptyTitle>Nothing to compare</EmptyTitle>
-                                <EmptyDescription>
-                                    {lines.length === 0
-                                        ? "Add templates to this bundle to compare it."
-                                        : `None of this bundle's templates can be compared with ${team.title}.`}
-                                </EmptyDescription>
-                            </EmptyHeader>
-                        </Empty>
-                    ) : (
-                        categoryGroups.map((group) => (
-                            <Card key={group.key}>
-                                <CardHeader>
-                                    <CardTitle>{group.title}</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHeadCell>Template</TableHeadCell>
-                                                <TableHeadCell>Status</TableHeadCell>
-                                                <TableHeadCell>Items</TableHeadCell>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {group.entries.map(({ column, cell }) => (
-                                                <TableRow key={column.template.id}>
-                                                    <TableCell className="align-top">
-                                                        <I3TemplateLink
-                                                            template={column.template}
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell className="align-top">
-                                                        <CellStatus cell={cell} />
-                                                    </TableCell>
-                                                    <TableCell className="align-top whitespace-normal">
-                                                        <CellItems cell={cell} member={member} />
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </CardContent>
-                            </Card>
-                        ))
-                    )}
+            {columns.length === 0 ? (
+                <Empty>
+                    <EmptyHeader>
+                        <EmptyTitle>Nothing to compare</EmptyTitle>
+                        <EmptyDescription>
+                            {lines.length === 0
+                                ? "Add templates to this bundle to compare it."
+                                : `None of this bundle's templates can be compared with ${team.title}.`}
+                        </EmptyDescription>
+                    </EmptyHeader>
+                </Empty>
+            ) : (
+                categoryGroups.map((group) => (
+                    <Card key={group.key}>
+                        <CardHeader>
+                            <CardTitle>{group.title}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHeadCell>Template</TableHeadCell>
+                                        <TableHeadCell>Status</TableHeadCell>
+                                        <TableHeadCell>Items</TableHeadCell>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {group.entries.map(({ column, cell }) => (
+                                        <TableRow key={column.template.id}>
+                                            <TableCell className="align-top">
+                                                <I3TemplateLink template={column.template} />
+                                            </TableCell>
+                                            <TableCell className="align-top">
+                                                <CellStatus cell={cell} />
+                                            </TableCell>
+                                            <TableCell className="align-top whitespace-normal">
+                                                <CellItems cell={cell} member={member} />
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                ))
+            )}
 
-                    {excluded.length > 0 && <D4HI3Module_BundleExcludedLines excluded={excluded} />}
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+            {excluded.length > 0 && <D4HI3Module_BundleExcludedLines excluded={excluded} />}
+        </Saratoga.Root>
     );
 }
 

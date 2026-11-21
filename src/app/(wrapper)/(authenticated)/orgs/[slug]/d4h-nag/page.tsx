@@ -7,7 +7,6 @@
 
 import { Std } from "@/components/blocks/std";
 import { TITLE_SEPARATOR } from "@/lib/constants";
-import { route } from "@/lib/routes";
 import { D4HNag_Rules_List } from "@/modules/d4h-nag/components/rules-list";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { isOrganizationModuleUsable } from "@/server/module-flags";
@@ -29,15 +28,6 @@ export default async function D4HNag_Rules_Page(props: PageProps<"/orgs/[slug]/d
 
     return (
         <HydrateClient>
-            <Std.Navbar
-                breadcrumbs={[
-                    {
-                        label: "D4H Attendance Reminders",
-                        href: route("/orgs/[slug]/d4h-nag", { slug }),
-                    },
-                    { label: "Rules" },
-                ]}
-            />
             <Std.ScrollContainer>
                 <D4HNag_Rules_List />
             </Std.ScrollContainer>

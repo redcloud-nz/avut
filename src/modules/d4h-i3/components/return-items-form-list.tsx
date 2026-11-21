@@ -14,7 +14,6 @@ import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
 import { newFormInstanceMutation } from "@/client/form-queries";
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { ItemLinkActionIcon, ObjectIcons } from "@/components/icons";
 import { Show } from "@/components/show";
 import { Button } from "@/components/ui/button";
@@ -101,126 +100,108 @@ export function D4HI3Module_ReturnItems_FormInstanceList() {
     }
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    {
-                        label: "D4H I3",
-                        href: route("/orgs/[slug]/d4h-i3", { slug: organization.slug }),
-                    },
-                    { label: "Forms" },
-                    { label: "Return Items" },
-                ]}
-            />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>Return Items</Saratoga.Title>
-                        <Saratoga.Actions>
-                            <Button
-                                onClick={handleNewForm}
-                                variant="outline"
-                                disabled={newFormMutation.isPending || isOpening}
-                            >
-                                {newFormMutation.isPending || isOpening ? (
-                                    <Spinner />
-                                ) : (
-                                    <ObjectIcons.Create />
-                                )}{" "}
-                                New
-                            </Button>
-                        </Saratoga.Actions>
-                    </Saratoga.Header>
-                    <Tabs
-                        value={tab}
-                        onValueChange={(value) =>
-                            void setTab(value === "submitted" ? "submitted" : "drafts")
+        <Saratoga.Root>
+            <Saratoga.Header>
+                <Saratoga.Title>Return Items</Saratoga.Title>
+                <Saratoga.Actions>
+                    <Button
+                        onClick={handleNewForm}
+                        variant="outline"
+                        disabled={newFormMutation.isPending || isOpening}
+                    >
+                        {newFormMutation.isPending || isOpening ? (
+                            <Spinner />
+                        ) : (
+                            <ObjectIcons.Create />
+                        )}{" "}
+                        New
+                    </Button>
+                </Saratoga.Actions>
+            </Saratoga.Header>
+            <Tabs
+                value={tab}
+                onValueChange={(value) =>
+                    void setTab(value === "submitted" ? "submitted" : "drafts")
+                }
+            >
+                <TabsList variant="line">
+                    <TabsTrigger value="drafts">Drafts</TabsTrigger>
+                    <TabsTrigger value="submitted">Submitted</TabsTrigger>
+                </TabsList>
+                <TabsContent value="drafts" className="space-y-2">
+                    <Show
+                        when={sortedInstances.length > 0}
+                        fallback={
+                            <Empty>
+                                <EmptyHeader>
+                                    <EmptyTitle>No Draft Forms</EmptyTitle>
+                                    <EmptyDescription>Click New to start a form.</EmptyDescription>
+                                </EmptyHeader>
+                            </Empty>
                         }
                     >
-                        <TabsList variant="line">
-                            <TabsTrigger value="drafts">Drafts</TabsTrigger>
-                            <TabsTrigger value="submitted">Submitted</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="drafts" className="space-y-2">
-                            <Show
-                                when={sortedInstances.length > 0}
-                                fallback={
-                                    <Empty>
-                                        <EmptyHeader>
-                                            <EmptyTitle>No Draft Forms</EmptyTitle>
-                                            <EmptyDescription>
-                                                Click New to start a form.
-                                            </EmptyDescription>
-                                        </EmptyHeader>
-                                    </Empty>
-                                }
-                            >
-                                <p className="text-sm text-muted-foreground">
-                                    Your draft forms are listed below. Click a form to continue
-                                    editing, or New to start another.
-                                </p>
-                                <ItemGroup>
-                                    {sortedInstances.map((instance) => {
-                                        const itemCount = (
-                                            instance.formData as I3ReturnItemsFormData
-                                        ).items.length;
-                                        return (
-                                            <Item key={instance.id} variant="outline" asChild>
-                                                <Link
-                                                    href={route(
-                                                        "/orgs/[slug]/d4h-i3/forms/return-items/[instance_id]",
+                        <p className="text-sm text-muted-foreground">
+                            Your draft forms are listed below. Click a form to continue editing, or
+                            New to start another.
+                        </p>
+                        <ItemGroup>
+                            {sortedInstances.map((instance) => {
+                                const itemCount = (instance.formData as I3ReturnItemsFormData).items
+                                    .length;
+                                return (
+                                    <Item key={instance.id} variant="outline" asChild>
+                                        <Link
+                                            href={route(
+                                                "/orgs/[slug]/d4h-i3/forms/return-items/[instance_id]",
+                                                {
+                                                    slug: organization.slug,
+                                                    instance_id: instance.id,
+                                                },
+                                            )}
+                                        >
+                                            <ItemContent>
+                                                <ItemTitle>
+                                                    {(instance.formData as I3ReturnItemsFormData)
+                                                        .recipient?.name || "No one selected"}
+                                                </ItemTitle>
+                                                {/* The relative time can tick over between SSR and hydration. */}
+                                                <ItemDescription suppressHydrationWarning>
+                                                    {formatItemCount(itemCount)}
+                                                    {", updated "}
+                                                    {formatDistanceToNow(
+                                                        new Date(instance.updatedAt),
                                                         {
-                                                            slug: organization.slug,
-                                                            instance_id: instance.id,
+                                                            addSuffix: true,
                                                         },
                                                     )}
-                                                >
-                                                    <ItemContent>
-                                                        <ItemTitle>
-                                                            {(
-                                                                instance.formData as I3ReturnItemsFormData
-                                                            ).recipient?.name || "No one selected"}
-                                                        </ItemTitle>
-                                                        {/* The relative time can tick over between SSR and hydration. */}
-                                                        <ItemDescription suppressHydrationWarning>
-                                                            {formatItemCount(itemCount)}
-                                                            {", updated "}
-                                                            {formatDistanceToNow(
-                                                                new Date(instance.updatedAt),
-                                                                {
-                                                                    addSuffix: true,
-                                                                },
-                                                            )}
-                                                        </ItemDescription>
-                                                    </ItemContent>
-                                                    <ItemActions>
-                                                        <ItemLinkActionIcon />
-                                                    </ItemActions>
-                                                </Link>
-                                            </Item>
-                                        );
-                                    })}
-                                </ItemGroup>
-                            </Show>
-                        </TabsContent>
-                        <TabsContent value="submitted" className="space-y-2">
-                            <D4HI3Module_SubmittedFormList
-                                formKey={I3ReturnItemsForm.formKey}
-                                instanceHref={(instanceId) =>
-                                    route("/orgs/[slug]/d4h-i3/forms/return-items/[instance_id]", {
-                                        slug: organization.slug,
-                                        instance_id: instanceId,
-                                    })
-                                }
-                                empty={{
-                                    title: "No submitted forms",
-                                    description: "Forms you submit are listed here.",
-                                }}
-                            />
-                        </TabsContent>
-                    </Tabs>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+                                                </ItemDescription>
+                                            </ItemContent>
+                                            <ItemActions>
+                                                <ItemLinkActionIcon />
+                                            </ItemActions>
+                                        </Link>
+                                    </Item>
+                                );
+                            })}
+                        </ItemGroup>
+                    </Show>
+                </TabsContent>
+                <TabsContent value="submitted" className="space-y-2">
+                    <D4HI3Module_SubmittedFormList
+                        formKey={I3ReturnItemsForm.formKey}
+                        instanceHref={(instanceId) =>
+                            route("/orgs/[slug]/d4h-i3/forms/return-items/[instance_id]", {
+                                slug: organization.slug,
+                                instance_id: instanceId,
+                            })
+                        }
+                        empty={{
+                            title: "No submitted forms",
+                            description: "Forms you submit are listed here.",
+                        }}
+                    />
+                </TabsContent>
+            </Tabs>
+        </Saratoga.Root>
     );
 }

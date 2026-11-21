@@ -35,12 +35,9 @@ export default async function D4HToday_Page(props: PageProps<"/orgs/[slug]/d4h-t
 
     return (
         <HydrateClient>
-            <>
-                <Std.Navbar breadcrumbs={["Today"]} />
-                <Std.ScrollContainer>
-                    <D4HToday_Content availability={availability} />
-                </Std.ScrollContainer>
-            </>
+            <Std.ScrollContainer>
+                <D4HToday_Content availability={availability} />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

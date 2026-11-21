@@ -7,6 +7,7 @@
 
 import { Metadata } from "next";
 
+import { Std } from "@/components/blocks/std";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { I3BundleId } from "@/lib/schemas/i3-bundle";
 import { D4HI3Module_Bundle_Content } from "@/modules/d4h-i3/components/bundles/bundle-content";
@@ -42,7 +43,9 @@ export default async function D4HI3Module_Bundle_Page(props: Props) {
 
     return (
         <HydrateClient>
-            <D4HI3Module_Bundle_Content bundleId={bundleId} />
+            <Std.ScrollContainer>
+                <D4HI3Module_Bundle_Content bundleId={bundleId} />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

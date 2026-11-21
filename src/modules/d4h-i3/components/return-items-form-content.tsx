@@ -15,7 +15,6 @@ import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
 import { i3Effects } from "@/client/i3-effects";
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { D4HTeamMemberSelect } from "@/components/controls/d4h-team-member-select";
 import { D4HItemRef } from "@/components/d4h/d4h-item-ref";
 import { ObjectIcons } from "@/components/icons";
@@ -134,171 +133,148 @@ export function D4HI3Module_ReturnItems_FormInstance_Content({
     );
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    {
-                        label: "D4H I3",
-                        href: route("/orgs/[slug]/d4h-i3", { slug: organization.slug }),
-                    },
-                    { label: "Forms" },
-                    { label: "Return Items", href: listHref },
-                    { label: recipient.name || "No one selected" },
-                ]}
-            />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>Return Items</Saratoga.Title>
-                    </Saratoga.Header>
-                    <Card>
-                        <CardHeader>
-                            <CardDescription>
-                                Use this form to record items being returned by an individual.
-                            </CardDescription>
-                            <CardAction>
-                                <SaveStatusIndicator status={saveStatus} />
-                            </CardAction>
-                        </CardHeader>
-                        <CardContent>
-                            <form
-                                id="item-return-form"
-                                onSubmit={handleSubmit}
-                                onChange={handleChange}
-                            >
-                                <FieldGroup>
-                                    <div className="grid gap-5 sm:grid-cols-2">
-                                        <Controller
-                                            control={form.control}
-                                            name="recipient"
-                                            render={({ field, fieldState }) => (
-                                                <Field data-invalid={fieldState.invalid}>
-                                                    <FieldLabel htmlFor={`${idPrefix}-recipient`}>
-                                                        Returned by
-                                                    </FieldLabel>
-                                                    <D4HTeamMemberSelect
-                                                        value={field.value}
-                                                        onChange={(value) => {
-                                                            field.onChange(value);
-                                                            // The checklist is the chosen person's items.
-                                                            form.setValue("items", []);
-                                                            handleChange();
-                                                        }}
-                                                        organizationId={organization.id}
-                                                        id={`${idPrefix}-recipient`}
-                                                        aria-invalid={fieldState.invalid}
-                                                    />
-                                                    {fieldState.error && (
-                                                        <FieldError errors={[fieldState.error]} />
-                                                    )}
-                                                </Field>
+        <Saratoga.Root>
+            <Saratoga.Breadcrumbs items={[{ label: "Return Items", href: listHref }]} />
+            <Saratoga.Header>
+                <Saratoga.Title>Return Items</Saratoga.Title>
+            </Saratoga.Header>
+            <Card>
+                <CardHeader>
+                    <CardDescription>
+                        Use this form to record items being returned by an individual.
+                    </CardDescription>
+                    <CardAction>
+                        <SaveStatusIndicator status={saveStatus} />
+                    </CardAction>
+                </CardHeader>
+                <CardContent>
+                    <form id="item-return-form" onSubmit={handleSubmit} onChange={handleChange}>
+                        <FieldGroup>
+                            <div className="grid gap-5 sm:grid-cols-2">
+                                <Controller
+                                    control={form.control}
+                                    name="recipient"
+                                    render={({ field, fieldState }) => (
+                                        <Field data-invalid={fieldState.invalid}>
+                                            <FieldLabel htmlFor={`${idPrefix}-recipient`}>
+                                                Returned by
+                                            </FieldLabel>
+                                            <D4HTeamMemberSelect
+                                                value={field.value}
+                                                onChange={(value) => {
+                                                    field.onChange(value);
+                                                    // The checklist is the chosen person's items.
+                                                    form.setValue("items", []);
+                                                    handleChange();
+                                                }}
+                                                organizationId={organization.id}
+                                                id={`${idPrefix}-recipient`}
+                                                aria-invalid={fieldState.invalid}
+                                            />
+                                            {fieldState.error && (
+                                                <FieldError errors={[fieldState.error]} />
                                             )}
-                                        />
-                                        <Field>
-                                            <FieldLabel>Recorded by</FieldLabel>
-                                            {/* Matches the height of the person select it sits beside. */}
-                                            <UserNameFieldValue className="flex h-8 items-center text-sm" />
                                         </Field>
-                                    </div>
-
-                                    {lacksUpdatePermission && (
-                                        <Alert variant="warning">
-                                            <AlertTitle>
-                                                Can&apos;t return items for this team
-                                            </AlertTitle>
-                                            <AlertDescription>
-                                                Your D4H account doesn&apos;t have permission to
-                                                update equipment in{" "}
-                                                {recipientTeam?.title ?? "this person's team"}.
-                                            </AlertDescription>
-                                        </Alert>
                                     )}
+                                />
+                                <Field>
+                                    <FieldLabel>Recorded by</FieldLabel>
+                                    {/* Matches the height of the person select it sits beside. */}
+                                    <UserNameFieldValue className="flex h-8 items-center text-sm" />
+                                </Field>
+                            </div>
 
-                                    <FieldSeparator />
+                            {lacksUpdatePermission && (
+                                <Alert variant="warning">
+                                    <AlertTitle>Can&apos;t return items for this team</AlertTitle>
+                                    <AlertDescription>
+                                        Your D4H account doesn&apos;t have permission to update
+                                        equipment in {recipientTeam?.title ?? "this person's team"}.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
 
-                                    <Controller
-                                        control={form.control}
-                                        name="items"
-                                        render={({ field, fieldState }) => (
-                                            <Field data-invalid={fieldState.invalid}>
-                                                <FieldLabel>Returned Items</FieldLabel>
-                                                {recipient.id > 0 ? (
-                                                    <Suspense
-                                                        fallback={<Skeleton className="h-16" />}
-                                                    >
-                                                        <D4HI3_Return_ItemChecklist
-                                                            organizationId={organization.id}
-                                                            teamId={recipient.teamId}
-                                                            memberId={recipient.id}
-                                                            value={field.value}
-                                                            onChange={(items) => {
-                                                                field.onChange(items);
-                                                                handleChange();
-                                                            }}
-                                                        />
-                                                    </Suspense>
-                                                ) : (
-                                                    <p className="text-sm text-muted-foreground">
-                                                        Choose who is returning to see their items.
-                                                    </p>
-                                                )}
-                                                {fieldState.error && (
-                                                    <FieldError errors={[fieldState.error]} />
-                                                )}
-                                            </Field>
-                                        )}
-                                    />
+                            <FieldSeparator />
 
-                                    <FieldSeparator />
-
-                                    <Controller
-                                        control={form.control}
-                                        name="comments"
-                                        render={({ field, fieldState }) => (
-                                            <Field data-invalid={fieldState.invalid}>
-                                                <FieldLabel htmlFor={`${idPrefix}-comments`}>
-                                                    Comments
-                                                </FieldLabel>
-                                                <Textarea
-                                                    id={`${idPrefix}-comments`}
-                                                    {...field}
-                                                    aria-invalid={fieldState.invalid}
+                            <Controller
+                                control={form.control}
+                                name="items"
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel>Returned Items</FieldLabel>
+                                        {recipient.id > 0 ? (
+                                            <Suspense fallback={<Skeleton className="h-16" />}>
+                                                <D4HI3_Return_ItemChecklist
+                                                    organizationId={organization.id}
+                                                    teamId={recipient.teamId}
+                                                    memberId={recipient.id}
+                                                    value={field.value}
+                                                    onChange={(items) => {
+                                                        field.onChange(items);
+                                                        handleChange();
+                                                    }}
                                                 />
-                                                {fieldState.error && (
-                                                    <FieldError errors={[fieldState.error]} />
-                                                )}
-                                            </Field>
+                                            </Suspense>
+                                        ) : (
+                                            <p className="text-sm text-muted-foreground">
+                                                Choose who is returning to see their items.
+                                            </p>
                                         )}
-                                    />
-
-                                    <Field orientation="horizontal" className="justify-between">
-                                        <MutationButton
-                                            type="submit"
-                                            status={submitMutation.status}
-                                            disabled={lacksUpdatePermission}
-                                            text={{
-                                                idle: "Submit",
-                                                pending: "Submitting",
-                                                success: "Submitted",
-                                            }}
-                                        />
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            onClick={handleDelete}
-                                            className="text-destructive"
-                                            aria-label="Delete draft"
-                                        >
-                                            <ObjectIcons.Delete />
-                                        </Button>
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
                                     </Field>
-                                </FieldGroup>
-                            </form>
-                        </CardContent>
-                    </Card>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+                                )}
+                            />
+
+                            <FieldSeparator />
+
+                            <Controller
+                                control={form.control}
+                                name="comments"
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor={`${idPrefix}-comments`}>
+                                            Comments
+                                        </FieldLabel>
+                                        <Textarea
+                                            id={`${idPrefix}-comments`}
+                                            {...field}
+                                            aria-invalid={fieldState.invalid}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+
+                            <Field orientation="horizontal" className="justify-between">
+                                <MutationButton
+                                    type="submit"
+                                    status={submitMutation.status}
+                                    disabled={lacksUpdatePermission}
+                                    text={{
+                                        idle: "Submit",
+                                        pending: "Submitting",
+                                        success: "Submitted",
+                                    }}
+                                />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={handleDelete}
+                                    className="text-destructive"
+                                    aria-label="Delete draft"
+                                >
+                                    <ObjectIcons.Delete />
+                                </Button>
+                            </Field>
+                        </FieldGroup>
+                    </form>
+                </CardContent>
+            </Card>
+        </Saratoga.Root>
     );
 }
 

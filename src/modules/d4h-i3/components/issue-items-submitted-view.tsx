@@ -8,7 +8,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { Card, CardContent } from "@/components/ui/card";
 import { FieldGroup, FieldSeparator } from "@/components/ui/field";
 import { Item, ItemContent, ItemDescription, ItemGroup, ItemTitle } from "@/components/ui/item";
@@ -50,75 +49,66 @@ export function D4HI3Module_IssueItems_SubmittedView({
     const items = formData.items ?? [];
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "D4H I3", href: route("/orgs/[slug]/d4h-i3", { slug }) },
-                    { label: "Forms" },
+        <Saratoga.Root>
+            <Saratoga.Breadcrumbs
+                items={[
                     {
                         label: "Issue Items",
                         href: `${route("/orgs/[slug]/d4h-i3/forms/issue-items", { slug })}?tab=submitted`,
                     },
-                    { label: recipientName },
                 ]}
             />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <SubmittedFormHeader title="Issue Items" />
-                    <Card>
-                        <CardContent>
-                            <FieldGroup>
-                                <div className="grid gap-5 sm:grid-cols-2">
-                                    <SubmittedFormField label="Issued to">
-                                        {recipientName}
-                                    </SubmittedFormField>
-                                    <SubmittedFormField label="Recorded by">
-                                        <UserNameFieldValue />
-                                    </SubmittedFormField>
-                                    <SubmittedFormField label="Submitted">
-                                        <SubmittedAtFieldValue date={instance.updatedAt} />
-                                    </SubmittedFormField>
-                                </div>
+            <SubmittedFormHeader title="Issue Items" />
+            <Card>
+                <CardContent>
+                    <FieldGroup>
+                        <div className="grid gap-5 sm:grid-cols-2">
+                            <SubmittedFormField label="Issued to">
+                                {recipientName}
+                            </SubmittedFormField>
+                            <SubmittedFormField label="Recorded by">
+                                <UserNameFieldValue />
+                            </SubmittedFormField>
+                            <SubmittedFormField label="Submitted">
+                                <SubmittedAtFieldValue date={instance.updatedAt} />
+                            </SubmittedFormField>
+                        </div>
 
+                        <FieldSeparator />
+
+                        <SubmittedFormField label="Issued Items">
+                            <ItemGroup>
+                                {items.map((item, index) => (
+                                    <Item size="sm" key={index}>
+                                        <ItemContent>
+                                            <ItemTitle>{item.template.name}</ItemTitle>
+                                            <ItemDescription>
+                                                {[
+                                                    item.variant?.name,
+                                                    item.serialNumber
+                                                        ? `S/N: ${item.serialNumber}`
+                                                        : null,
+                                                ]
+                                                    .filter(Boolean)
+                                                    .join(" - ") || "—"}
+                                            </ItemDescription>
+                                        </ItemContent>
+                                    </Item>
+                                ))}
+                            </ItemGroup>
+                        </SubmittedFormField>
+
+                        {formData.comments && (
+                            <>
                                 <FieldSeparator />
-
-                                <SubmittedFormField label="Issued Items">
-                                    <ItemGroup>
-                                        {items.map((item, index) => (
-                                            <Item size="sm" key={index}>
-                                                <ItemContent>
-                                                    <ItemTitle>{item.template.name}</ItemTitle>
-                                                    <ItemDescription>
-                                                        {[
-                                                            item.variant?.name,
-                                                            item.serialNumber
-                                                                ? `S/N: ${item.serialNumber}`
-                                                                : null,
-                                                        ]
-                                                            .filter(Boolean)
-                                                            .join(" - ") || "—"}
-                                                    </ItemDescription>
-                                                </ItemContent>
-                                            </Item>
-                                        ))}
-                                    </ItemGroup>
+                                <SubmittedFormField label="Comments">
+                                    <p className="whitespace-pre-wrap">{formData.comments}</p>
                                 </SubmittedFormField>
-
-                                {formData.comments && (
-                                    <>
-                                        <FieldSeparator />
-                                        <SubmittedFormField label="Comments">
-                                            <p className="whitespace-pre-wrap">
-                                                {formData.comments}
-                                            </p>
-                                        </SubmittedFormField>
-                                    </>
-                                )}
-                            </FieldGroup>
-                        </CardContent>
-                    </Card>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+                            </>
+                        )}
+                    </FieldGroup>
+                </CardContent>
+            </Card>
+        </Saratoga.Root>
     );
 }

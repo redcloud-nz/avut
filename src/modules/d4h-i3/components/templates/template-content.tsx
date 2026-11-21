@@ -7,7 +7,6 @@
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { D4HEquipmentCategoryLink } from "@/components/entity-links/d4h-equipment-category-link";
 import { D4HEquipmentTypeLink } from "@/components/entity-links/d4h-equipment-type-link";
 import { Protect } from "@/components/protect";
@@ -54,118 +53,108 @@ export function D4HI3Module_Template_Content({ templateId }: { templateId: I3Tem
         usesOtherRecords(template.d4h, { categories, kinds }, organisationOnlyId);
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "D4H I3", href: route("/orgs/[slug]/d4h-i3", { slug }) },
+        <Saratoga.Root>
+            <Saratoga.Breadcrumbs
+                items={[
                     { label: "Templates", href: route("/orgs/[slug]/d4h-i3/templates", { slug }) },
-                    template.name,
                 ]}
             />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title
-                            badges={
-                                (template.status !== "Active" || flagged) && (
-                                    <>
-                                        {template.status !== "Active" && (
-                                            <Badge variant="outline">{template.status}</Badge>
-                                        )}
-                                        {flagged && <D4HI3Module_OtherRecords_Badge />}
-                                    </>
-                                )
-                            }
-                        >
-                            {template.name}
-                        </Saratoga.Title>
-                        <Saratoga.Actions>
-                            <D4HI3Module_Template_Menu template={template} />
-                        </Saratoga.Actions>
-                    </Saratoga.Header>
+            <Saratoga.Header>
+                <Saratoga.Title
+                    badges={
+                        (template.status !== "Active" || flagged) && (
+                            <>
+                                {template.status !== "Active" && (
+                                    <Badge variant="outline">{template.status}</Badge>
+                                )}
+                                {flagged && <D4HI3Module_OtherRecords_Badge />}
+                            </>
+                        )
+                    }
+                >
+                    {template.name}
+                </Saratoga.Title>
+                <Saratoga.Actions>
+                    <D4HI3Module_Template_Menu template={template} />
+                </Saratoga.Actions>
+            </Saratoga.Header>
 
-                    <Saratoga.Columns>
-                        <Saratoga.Column slot="main">
-                            <RecordCard
-                                label="I3 Template"
-                                updatedAt={template.updatedAt}
-                                action={
-                                    <Protect permissions={{ i3Template: ["update"] }}>
-                                        <D4HI3Module_UpdateTemplate_Dialog template={template} />
-                                    </Protect>
-                                }
-                            >
-                                <CardContent>
-                                    <DataList>
-                                        <RecordCardId label="Template ID" id={template.id} />
-                                        <DataItem>
-                                            <DataItemTitle>Name</DataItemTitle>
-                                            <DataItemValue>{template.name}</DataItemValue>
-                                        </DataItem>
-                                        {template.description && (
-                                            <DataItem>
-                                                <DataItemTitle>Description</DataItemTitle>
-                                                <DataItemValue>
-                                                    {template.description}
-                                                </DataItemValue>
-                                            </DataItem>
+            <Saratoga.Columns>
+                <Saratoga.Column slot="main">
+                    <RecordCard
+                        label="I3 Template"
+                        updatedAt={template.updatedAt}
+                        action={
+                            <Protect permissions={{ i3Template: ["update"] }}>
+                                <D4HI3Module_UpdateTemplate_Dialog template={template} />
+                            </Protect>
+                        }
+                    >
+                        <CardContent>
+                            <DataList>
+                                <RecordCardId label="Template ID" id={template.id} />
+                                <DataItem>
+                                    <DataItemTitle>Name</DataItemTitle>
+                                    <DataItemValue>{template.name}</DataItemValue>
+                                </DataItem>
+                                {template.description && (
+                                    <DataItem>
+                                        <DataItemTitle>Description</DataItemTitle>
+                                        <DataItemValue>{template.description}</DataItemValue>
+                                    </DataItem>
+                                )}
+                                <DataItem>
+                                    <DataItemTitle>D4H Category</DataItemTitle>
+                                    <DataItemValue>
+                                        {template.d4h ? (
+                                            <D4HEquipmentCategoryLink
+                                                category={{
+                                                    id: template.d4h.categoryId,
+                                                    title: template.d4h.categoryTitle,
+                                                    owner: categoryOwner,
+                                                }}
+                                            />
+                                        ) : (
+                                            "—"
                                         )}
-                                        <DataItem>
-                                            <DataItemTitle>D4H Category</DataItemTitle>
-                                            <DataItemValue>
-                                                {template.d4h ? (
-                                                    <D4HEquipmentCategoryLink
-                                                        category={{
-                                                            id: template.d4h.categoryId,
-                                                            title: template.d4h.categoryTitle,
-                                                            owner: categoryOwner,
-                                                        }}
-                                                    />
-                                                ) : (
-                                                    "—"
-                                                )}
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>D4H Type</DataItemTitle>
-                                            <DataItemValue>
-                                                {template.d4h ? (
-                                                    <D4HEquipmentTypeLink
-                                                        type={{
-                                                            id: template.d4h.kindId,
-                                                            title: template.d4h.kindTitle,
-                                                            owner: kindOwner,
-                                                        }}
-                                                    />
-                                                ) : (
-                                                    "—"
-                                                )}
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Require Serial Number</DataItemTitle>
-                                            <DataItemValue>
-                                                {template.d4h?.requireSN ? "Yes" : "No"}
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Brand &amp; Model</DataItemTitle>
-                                            <DataItemValue>
-                                                {template.d4h
-                                                    ? I3BrandModelRule.label[
-                                                          template.d4h.brandModelRule
-                                                      ]
-                                                    : "—"}
-                                            </DataItemValue>
-                                        </DataItem>
-                                    </DataList>
-                                </CardContent>
-                            </RecordCard>
-                            <D4HI3Module_Template_Variants_List template={template} />
-                        </Saratoga.Column>
-                    </Saratoga.Columns>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+                                    </DataItemValue>
+                                </DataItem>
+                                <DataItem>
+                                    <DataItemTitle>D4H Type</DataItemTitle>
+                                    <DataItemValue>
+                                        {template.d4h ? (
+                                            <D4HEquipmentTypeLink
+                                                type={{
+                                                    id: template.d4h.kindId,
+                                                    title: template.d4h.kindTitle,
+                                                    owner: kindOwner,
+                                                }}
+                                            />
+                                        ) : (
+                                            "—"
+                                        )}
+                                    </DataItemValue>
+                                </DataItem>
+                                <DataItem>
+                                    <DataItemTitle>Require Serial Number</DataItemTitle>
+                                    <DataItemValue>
+                                        {template.d4h?.requireSN ? "Yes" : "No"}
+                                    </DataItemValue>
+                                </DataItem>
+                                <DataItem>
+                                    <DataItemTitle>Brand &amp; Model</DataItemTitle>
+                                    <DataItemValue>
+                                        {template.d4h
+                                            ? I3BrandModelRule.label[template.d4h.brandModelRule]
+                                            : "—"}
+                                    </DataItemValue>
+                                </DataItem>
+                            </DataList>
+                        </CardContent>
+                    </RecordCard>
+                    <D4HI3Module_Template_Variants_List template={template} />
+                </Saratoga.Column>
+            </Saratoga.Columns>
+        </Saratoga.Root>
     );
 }

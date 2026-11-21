@@ -8,7 +8,6 @@
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
-import { route } from "@/lib/routes";
 import { D4HI3Module_CreateTemplate_Dialog } from "@/modules/d4h-i3/components/templates/create-template";
 import { D4HI3Module_TemplateList } from "@/modules/d4h-i3/components/templates/templates-list";
 import { getOrganizationBySlug } from "@/server/cache/organization";
@@ -30,12 +29,6 @@ export default async function D4HI3Module_TemplateList_Page(
 
     return (
         <HydrateClient>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "D4H I3", href: route("/orgs/[slug]/d4h-i3", { slug }) },
-                    "Templates",
-                ]}
-            />
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>

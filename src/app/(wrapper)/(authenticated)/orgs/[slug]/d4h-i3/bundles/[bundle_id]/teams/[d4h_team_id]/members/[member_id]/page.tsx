@@ -8,6 +8,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { Std } from "@/components/blocks/std";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { I3BundleId } from "@/lib/schemas/i3-bundle";
 import { D4HI3Module_BundleMemberComparison } from "@/modules/d4h-i3/components/bundles/bundle-member-comparison";
@@ -46,11 +47,13 @@ export default async function D4HI3Module_BundleMemberComparison_Page(
 
     return (
         <HydrateClient>
-            <D4HI3Module_BundleMemberComparison
-                bundleId={bundleId}
-                teamId={teamId}
-                memberId={memberId}
-            />
+            <Std.ScrollContainer>
+                <D4HI3Module_BundleMemberComparison
+                    bundleId={bundleId}
+                    teamId={teamId}
+                    memberId={memberId}
+                />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

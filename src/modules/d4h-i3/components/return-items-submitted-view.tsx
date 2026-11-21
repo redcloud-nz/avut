@@ -10,7 +10,6 @@ import { Suspense } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { D4HItemRef } from "@/components/d4h/d4h-item-ref";
 import { Protect } from "@/components/protect";
 import { Badge } from "@/components/ui/badge";
@@ -65,98 +64,88 @@ export function D4HI3Module_ReturnItems_SubmittedView({
     const items = formData.items ?? [];
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "D4H I3", href: route("/orgs/[slug]/d4h-i3", { slug }) },
-                    { label: "Forms" },
+        <Saratoga.Root>
+            <Saratoga.Breadcrumbs
+                items={[
                     {
                         label: "Return Items",
                         href: `${route("/orgs/[slug]/d4h-i3/forms/return-items", { slug })}?tab=submitted`,
                     },
-                    { label: recipientName },
                 ]}
             />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <SubmittedFormHeader title="Return Items" />
-                    <Card>
-                        <CardContent>
-                            <FieldGroup>
-                                <div className="grid gap-5 sm:grid-cols-2">
-                                    <SubmittedFormField label="Returned by">
-                                        {recipientName}
-                                    </SubmittedFormField>
-                                    <SubmittedFormField label="Recorded by">
-                                        <UserNameFieldValue />
-                                    </SubmittedFormField>
-                                    <SubmittedFormField label="Submitted">
-                                        <SubmittedAtFieldValue date={instance.updatedAt} />
-                                    </SubmittedFormField>
-                                </div>
+            <SubmittedFormHeader title="Return Items" />
+            <Card>
+                <CardContent>
+                    <FieldGroup>
+                        <div className="grid gap-5 sm:grid-cols-2">
+                            <SubmittedFormField label="Returned by">
+                                {recipientName}
+                            </SubmittedFormField>
+                            <SubmittedFormField label="Recorded by">
+                                <UserNameFieldValue />
+                            </SubmittedFormField>
+                            <SubmittedFormField label="Submitted">
+                                <SubmittedAtFieldValue date={instance.updatedAt} />
+                            </SubmittedFormField>
+                        </div>
 
+                        <FieldSeparator />
+
+                        <SubmittedFormField label="Returned Items">
+                            <ItemGroup>
+                                {items.map((item) => (
+                                    <Item size="sm" key={item.itemId}>
+                                        <ItemContent>
+                                            <ItemTitle>
+                                                <D4HItemRef value={item.ref} /> {item.kindTitle}
+                                            </ItemTitle>
+                                        </ItemContent>
+                                        {/* Only a processed Return has queued its tasks. */}
+                                        {instance.formStatus === "Processed" && (
+                                            <Protect permissions={{ d4hTask: ["view"] }}>
+                                                {/* Only the mark waits on the tasks, not the item. */}
+                                                <Suspense fallback={null}>
+                                                    <NotReturnedMark
+                                                        organizationId={organization.id}
+                                                        instanceId={instanceId}
+                                                        itemId={item.itemId}
+                                                    />
+                                                </Suspense>
+                                            </Protect>
+                                        )}
+                                    </Item>
+                                ))}
+                            </ItemGroup>
+                        </SubmittedFormField>
+
+                        {formData.comments && (
+                            <>
                                 <FieldSeparator />
-
-                                <SubmittedFormField label="Returned Items">
-                                    <ItemGroup>
-                                        {items.map((item) => (
-                                            <Item size="sm" key={item.itemId}>
-                                                <ItemContent>
-                                                    <ItemTitle>
-                                                        <D4HItemRef value={item.ref} />{" "}
-                                                        {item.kindTitle}
-                                                    </ItemTitle>
-                                                </ItemContent>
-                                                {/* Only a processed Return has queued its tasks. */}
-                                                {instance.formStatus === "Processed" && (
-                                                    <Protect permissions={{ d4hTask: ["view"] }}>
-                                                        {/* Only the mark waits on the tasks, not the item. */}
-                                                        <Suspense fallback={null}>
-                                                            <NotReturnedMark
-                                                                organizationId={organization.id}
-                                                                instanceId={instanceId}
-                                                                itemId={item.itemId}
-                                                            />
-                                                        </Suspense>
-                                                    </Protect>
-                                                )}
-                                            </Item>
-                                        ))}
-                                    </ItemGroup>
+                                <SubmittedFormField label="Comments">
+                                    <p className="whitespace-pre-wrap">{formData.comments}</p>
                                 </SubmittedFormField>
+                            </>
+                        )}
+                    </FieldGroup>
+                </CardContent>
+            </Card>
 
-                                {formData.comments && (
-                                    <>
-                                        <FieldSeparator />
-                                        <SubmittedFormField label="Comments">
-                                            <p className="whitespace-pre-wrap">
-                                                {formData.comments}
-                                            </p>
-                                        </SubmittedFormField>
-                                    </>
-                                )}
-                            </FieldGroup>
-                        </CardContent>
-                    </Card>
-
-                    <Protect permissions={{ d4hTask: ["view"] }}>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>D4H Tasks</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <Suspense fallback={<Skeleton className="h-16 w-full" />}>
-                                    <FormInstanceTasks
-                                        organizationId={organization.id}
-                                        instanceId={instanceId}
-                                    />
-                                </Suspense>
-                            </CardContent>
-                        </Card>
-                    </Protect>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+            <Protect permissions={{ d4hTask: ["view"] }}>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>D4H Tasks</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Suspense fallback={<Skeleton className="h-16 w-full" />}>
+                            <FormInstanceTasks
+                                organizationId={organization.id}
+                                instanceId={instanceId}
+                            />
+                        </Suspense>
+                    </CardContent>
+                </Card>
+            </Protect>
+        </Saratoga.Root>
     );
 }
 

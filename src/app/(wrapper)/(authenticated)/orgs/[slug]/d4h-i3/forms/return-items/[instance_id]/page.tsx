@@ -7,6 +7,7 @@
 
 import { notFound } from "next/navigation";
 
+import { Std } from "@/components/blocks/std";
 import { I3ReturnItemsFormData } from "@/forms/i3-return-items/schema";
 import { I3ReturnItemsForm } from "@/lib/forms";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
@@ -43,7 +44,9 @@ export default async function D4HI3Module_Return_FormInstance_Page(
 
         return (
             <HydrateClient>
-                <D4HI3Module_ReturnItems_SubmittedView instanceId={instanceId} />
+                <Std.ScrollContainer>
+                    <D4HI3Module_ReturnItems_SubmittedView instanceId={instanceId} />
+                </Std.ScrollContainer>
             </HydrateClient>
         );
     }
@@ -77,7 +80,9 @@ export default async function D4HI3Module_Return_FormInstance_Page(
 
     return (
         <HydrateClient>
-            <D4HI3Module_ReturnItems_FormInstance_Content instanceId={instanceId} />
+            <Std.ScrollContainer>
+                <D4HI3Module_ReturnItems_FormInstance_Content instanceId={instanceId} />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

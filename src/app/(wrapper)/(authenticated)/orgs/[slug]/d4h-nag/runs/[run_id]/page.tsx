@@ -7,6 +7,7 @@
 
 import { Metadata } from "next";
 
+import { Std } from "@/components/blocks/std";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { D4HNagRunId } from "@/lib/schemas/d4h-nag";
 import { D4HNag_Run_Content } from "@/modules/d4h-nag/components/run-content";
@@ -48,7 +49,9 @@ export default async function D4HNag_Run_Page(props: Props) {
 
     return (
         <HydrateClient>
-            <D4HNag_Run_Content runId={runId} />
+            <Std.ScrollContainer>
+                <D4HNag_Run_Content runId={runId} />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

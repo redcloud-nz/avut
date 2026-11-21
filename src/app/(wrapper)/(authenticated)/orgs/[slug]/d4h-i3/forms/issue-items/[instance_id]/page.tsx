@@ -7,6 +7,7 @@
 
 import { notFound } from "next/navigation";
 
+import { Std } from "@/components/blocks/std";
 import { I3IssueItemsForm } from "@/lib/forms";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { D4HI3Module_IssueItems_FormInstance_Content } from "@/modules/d4h-i3/components/issue-items-form-content";
@@ -39,7 +40,9 @@ export default async function D4HI3Module_Issue_FormInstance_Page(
 
         return (
             <HydrateClient>
-                <D4HI3Module_IssueItems_SubmittedView instanceId={instanceId} />
+                <Std.ScrollContainer>
+                    <D4HI3Module_IssueItems_SubmittedView instanceId={instanceId} />
+                </Std.ScrollContainer>
             </HydrateClient>
         );
     }
@@ -58,7 +61,9 @@ export default async function D4HI3Module_Issue_FormInstance_Page(
 
     return (
         <HydrateClient>
-            <D4HI3Module_IssueItems_FormInstance_Content instanceId={instanceId} />
+            <Std.ScrollContainer>
+                <D4HI3Module_IssueItems_FormInstance_Content instanceId={instanceId} />
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }
