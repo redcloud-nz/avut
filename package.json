@@ -5,7 +5,7 @@
   "nz.avut": {
     "displayName": "AVUT",
     "repositoryUrl": "https://github.com/redcloud-nz/avut",
-    "version": "0.13",
+    "version": "0.13.1",
     "versionName": "Nucula"
   },
   "scripts": {
@@ -32,7 +32,8 @@
     "test:coverage": "vitest --coverage",
     "test:run": "vitest run",
     "test:tz": "TZ=Asia/Kolkata vitest run",
-    "prepare": "husky"
+    "prepare": "husky",
+    "kit-check:export": "dotenv -e .env.local -- tsx scripts/kit-check-demo-export.ts"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"

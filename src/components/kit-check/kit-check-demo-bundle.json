@@ -1,0 +1,512 @@
+{
+  "bundleName": "Responder",
+  "templates": [
+    {
+      "id": "t1",
+      "category": "Medical",
+      "name": "First Aid Kit (Personal)",
+      "variants": [],
+      "requireSN": false,
+      "optional": false
+    },
+    {
+      "id": "t2",
+      "category": "PPE",
+      "name": "Ear Muffs",
+      "variants": [],
+      "requireSN": false,
+      "optional": true
+    },
+    {
+      "id": "t3",
+      "category": "PPE",
+      "name": "Gloves",
+      "variants": [
+        {
+          "id": "t3-v1",
+          "label": "Generic (S)"
+        },
+        {
+          "id": "t3-v2",
+          "label": "Generic (M)"
+        },
+        {
+          "id": "t3-v3",
+          "label": "Generic (L)"
+        }
+      ],
+      "requireSN": false,
+      "optional": false
+    },
+    {
+      "id": "t4",
+      "category": "PPE",
+      "name": "Head lamp",
+      "variants": [],
+      "requireSN": false,
+      "optional": false
+    },
+    {
+      "id": "t5",
+      "category": "PPE",
+      "name": "Hi Vis Traffic Vest",
+      "variants": [
+        {
+          "id": "t5-v1",
+          "label": "Generic (XS)"
+        },
+        {
+          "id": "t5-v2",
+          "label": "Generic (S)"
+        },
+        {
+          "id": "t5-v3",
+          "label": "Generic (M)"
+        },
+        {
+          "id": "t5-v4",
+          "label": "Generic (L)"
+        },
+        {
+          "id": "t5-v5",
+          "label": "Generic (XL)"
+        },
+        {
+          "id": "t5-v6",
+          "label": "Generic 2 XL"
+        },
+        {
+          "id": "t5-v7",
+          "label": "Generic 3 XL"
+        },
+        {
+          "id": "t5-v8",
+          "label": "Generic 4 XL"
+        }
+      ],
+      "requireSN": false,
+      "optional": false
+    },
+    {
+      "id": "t6",
+      "category": "PPE",
+      "name": "Knee Pads",
+      "variants": [],
+      "requireSN": false,
+      "optional": false
+    },
+    {
+      "id": "t7",
+      "category": "PPE",
+      "name": "NZRT Branded Polo Shirt",
+      "variants": [
+        {
+          "id": "t7-v1",
+          "label": "Biz Collection Branded Polo Shirt XS"
+        },
+        {
+          "id": "t7-v2",
+          "label": "Biz Collection Branded Polo Shirt S"
+        },
+        {
+          "id": "t7-v3",
+          "label": "Biz Collection Branded Polo Shirt M"
+        },
+        {
+          "id": "t7-v4",
+          "label": "Biz Collection Branded Polo Shirt L"
+        },
+        {
+          "id": "t7-v5",
+          "label": "Biz Collection Branded Polo Shirt XL"
+        },
+        {
+          "id": "t7-v6",
+          "label": "Biz Collection Branded Polo Shirt 2 XL"
+        },
+        {
+          "id": "t7-v7",
+          "label": "Biz Collection Branded Polo Shirt 3 XL"
+        },
+        {
+          "id": "t7-v8",
+          "label": "Biz Collection Branded Polo Shirt 4 XL"
+        }
+      ],
+      "requireSN": false,
+      "optional": false
+    },
+    {
+      "id": "t8",
+      "category": "PPE",
+      "name": "NZRT Jacket",
+      "variants": [
+        {
+          "id": "t8-v1",
+          "label": "Protex NZRT Jacket - S"
+        },
+        {
+          "id": "t8-v2",
+          "label": "Protex NZRT Jacket - M"
+        },
+        {
+          "id": "t8-v3",
+          "label": "Protex NZRT Jacket - L"
+        },
+        {
+          "id": "t8-v4",
+          "label": "Protex NZRT Jacket - XL"
+        },
+        {
+          "id": "t8-v5",
+          "label": "Protex NZRT Jacket - 2XL"
+        },
+        {
+          "id": "t8-v6",
+          "label": "Protex NZRT Jacket - 3XL"
+        }
+      ],
+      "requireSN": false,
+      "optional": false
+    },
+    {
+      "id": "t9",
+      "category": "PPE",
+      "name": "NZRT Overalls",
+      "variants": [
+        {
+          "id": "t9-v1",
+          "label": "Protex NZRT Overall 4"
+        },
+        {
+          "id": "t9-v2",
+          "label": "Protex NZRT Overall 5"
+        },
+        {
+          "id": "t9-v3",
+          "label": "Protex NZRT Overall 6"
+        },
+        {
+          "id": "t9-v4",
+          "label": "Protex NZRT Overall 7"
+        },
+        {
+          "id": "t9-v5",
+          "label": "Protex NZRT Overall 8"
+        },
+        {
+          "id": "t9-v6",
+          "label": "Protex NZRT Overall 9"
+        },
+        {
+          "id": "t9-v7",
+          "label": "Protex NZRT Overall 10"
+        },
+        {
+          "id": "t9-v8",
+          "label": "Protex NZRT Overall 11"
+        },
+        {
+          "id": "t9-v9",
+          "label": "Protex NZRT Overall 12"
+        }
+      ],
+      "requireSN": false,
+      "optional": false
+    },
+    {
+      "id": "t10",
+      "category": "PPE",
+      "name": "NZRT Pants",
+      "variants": [
+        {
+          "id": "t10-v1",
+          "label": "Protex NZRT Pants - 82"
+        },
+        {
+          "id": "t10-v2",
+          "label": "Protex NZRT Pants - 87"
+        },
+        {
+          "id": "t10-v3",
+          "label": "Protex NZRT Pants - 92"
+        },
+        {
+          "id": "t10-v4",
+          "label": "Protex NZRT Pants - 97"
+        },
+        {
+          "id": "t10-v5",
+          "label": "Protex NZRT Pants - 102"
+        },
+        {
+          "id": "t10-v6",
+          "label": "Protex NZRT Pants - 107"
+        },
+        {
+          "id": "t10-v7",
+          "label": "Protex NZRT Pants - 112"
+        },
+        {
+          "id": "t10-v8",
+          "label": "Protex NZRT Pants - 117"
+        }
+      ],
+      "requireSN": false,
+      "optional": false
+    },
+    {
+      "id": "t11",
+      "category": "PPE",
+      "name": "PPE Kit Bag",
+      "variants": [],
+      "requireSN": false,
+      "optional": false
+    },
+    {
+      "id": "t12",
+      "category": "PPE",
+      "name": "Recruit Overalls",
+      "variants": [],
+      "requireSN": false,
+      "optional": true
+    },
+    {
+      "id": "t13",
+      "category": "PPE",
+      "name": "Respirator",
+      "variants": [
+        {
+          "id": "t13-v1",
+          "label": "3-M 6100 Half Face Respirator - Small"
+        },
+        {
+          "id": "t13-v2",
+          "label": "3-M 6200 Half Face Respirator - Medium"
+        },
+        {
+          "id": "t13-v3",
+          "label": "3-M 6300 Half Face Respirator - Large"
+        },
+        {
+          "id": "t13-v4",
+          "label": "3-M 7501 Half Face Respirator - Small"
+        },
+        {
+          "id": "t13-v5",
+          "label": "3-M 7502 Half Face Respirator - Medium"
+        },
+        {
+          "id": "t13-v6",
+          "label": "3-M 7503 Half Face Respirator - Large"
+        }
+      ],
+      "requireSN": false,
+      "optional": false
+    },
+    {
+      "id": "t14",
+      "category": "PPE",
+      "name": "RT Boots",
+      "variants": [
+        {
+          "id": "t14-v1",
+          "label": "Blundstone 991 LACE UP SAFETY BOOT Sz 04"
+        },
+        {
+          "id": "t14-v2",
+          "label": "Blundstone 991 LACE UP SAFETY BOOT Sz 05"
+        },
+        {
+          "id": "t14-v3",
+          "label": "Blundstone 991 LACE UP SAFETY BOOT Sz 06"
+        },
+        {
+          "id": "t14-v4",
+          "label": "Blundstone 991 LACE UP SAFETY BOOT Sz 07"
+        },
+        {
+          "id": "t14-v5",
+          "label": "Blundstone 991 LACE UP SAFETY BOOT Sz 08"
+        },
+        {
+          "id": "t14-v6",
+          "label": "Blundstone 991 LACE UP SAFETY BOOT Sz 09"
+        },
+        {
+          "id": "t14-v7",
+          "label": "Blundstone 991 LACE UP SAFETY BOOT Sz 10"
+        },
+        {
+          "id": "t14-v8",
+          "label": "Blundstone 991 LACE UP SAFETY BOOT Sz 11"
+        },
+        {
+          "id": "t14-v9",
+          "label": "Blundstone 991 LACE UP SAFETY BOOT Sz 12"
+        },
+        {
+          "id": "t14-v10",
+          "label": "Blundstone 991 LACE UP SAFETY BOOT Sz 13"
+        },
+        {
+          "id": "t14-v11",
+          "label": "Blundstone 991 LACE UP SAFETY BOOT Sz 14"
+        }
+      ],
+      "requireSN": false,
+      "optional": false
+    },
+    {
+      "id": "t15",
+      "category": "PPE",
+      "name": "Safety Goggle",
+      "variants": [],
+      "requireSN": false,
+      "optional": false
+    },
+    {
+      "id": "t16",
+      "category": "PPE",
+      "name": "Standard Helmet",
+      "variants": [
+        {
+          "id": "t16-v1",
+          "label": "Petzl Vertex Vent"
+        }
+      ],
+      "requireSN": true,
+      "optional": false
+    },
+    {
+      "id": "t17",
+      "category": "PPE",
+      "name": "Sun Hat",
+      "variants": [],
+      "requireSN": false,
+      "optional": true
+    },
+    {
+      "id": "t18",
+      "category": "PPE",
+      "name": "Wet Weather Jacket",
+      "variants": [
+        {
+          "id": "t18-v1",
+          "label": "Bison Extreme Jacket Sherpa - S"
+        },
+        {
+          "id": "t18-v2",
+          "label": "Bison Extreme Jacket Sherpa - M"
+        },
+        {
+          "id": "t18-v3",
+          "label": "Bison Extreme Jacket Sherpa - L"
+        },
+        {
+          "id": "t18-v4",
+          "label": "Bison Extreme Jacket Sherpa - XL"
+        },
+        {
+          "id": "t18-v5",
+          "label": "Bison Extreme Jacket Sherpa - 2XL"
+        },
+        {
+          "id": "t18-v6",
+          "label": "Bison Extreme Jacket Sherpa - 3XL"
+        }
+      ],
+      "requireSN": false,
+      "optional": false
+    },
+    {
+      "id": "t19",
+      "category": "PPE",
+      "name": "Wet Weather Pants",
+      "variants": [
+        {
+          "id": "t19-v1",
+          "label": "Generic (XS)"
+        },
+        {
+          "id": "t19-v2",
+          "label": "Generic (S)"
+        },
+        {
+          "id": "t19-v3",
+          "label": "Generic (M)"
+        },
+        {
+          "id": "t19-v4",
+          "label": "Generic (L)"
+        },
+        {
+          "id": "t19-v5",
+          "label": "Generic (XL)"
+        },
+        {
+          "id": "t19-v6",
+          "label": "Generic 2 XL"
+        },
+        {
+          "id": "t19-v7",
+          "label": "Generic 3 XL"
+        },
+        {
+          "id": "t19-v8",
+          "label": "Generic 4 XL"
+        }
+      ],
+      "requireSN": false,
+      "optional": false
+    },
+    {
+      "id": "t20",
+      "category": "PPE",
+      "name": "Whistle",
+      "variants": [],
+      "requireSN": false,
+      "optional": false
+    },
+    {
+      "id": "t21",
+      "category": "Rope",
+      "name": "Personal line",
+      "variants": [],
+      "requireSN": false,
+      "optional": false
+    },
+    {
+      "id": "t22",
+      "category": "Security",
+      "name": "Access Card",
+      "variants": [],
+      "requireSN": true,
+      "optional": true
+    },
+    {
+      "id": "t23",
+      "category": "Security",
+      "name": "DCQ Key",
+      "variants": [],
+      "requireSN": true,
+      "optional": true
+    },
+    {
+      "id": "t24",
+      "category": "Security",
+      "name": "EGK Key",
+      "variants": [],
+      "requireSN": true,
+      "optional": true
+    },
+    {
+      "id": "t25",
+      "category": "Security",
+      "name": "Trailer Key",
+      "variants": [],
+      "requireSN": false,
+      "optional": false
+    }
+  ]
+}
