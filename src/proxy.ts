@@ -26,6 +26,9 @@ export async function proxy(request: NextRequest) {
         pathname.startsWith("/auth") ||
         pathname.startsWith("/docs") ||
         pathname.startsWith("/invitations") ||
+        // Forms opened from an emailed link (e.g. kit checks) by people who may have no account.
+        pathname === "/forms" ||
+        pathname.startsWith("/forms/") ||
         pathname.startsWith("/policies") ||
         pathname.startsWith("/tools") ||
         pathname.startsWith("/public")
