@@ -117,6 +117,7 @@ describe("Operations", () => {
             "invitation-accept",
             "invitation-reject",
             "organization-leave",
+            "public-form-submission",
             "rubbish-purge",
             "skill-package-import",
         ]);

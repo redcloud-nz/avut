@@ -3,6 +3,8 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import { J307_JACKET } from "@/lib/j307-jacket";
+
 import demoBundle from "./kit-check-demo-bundle.json";
 import type {
     KitCheckHeldItem,
@@ -39,41 +41,13 @@ const DEMO_ALLOW_OWN = new Set([
     "Whistle",
 ]);
 
-/**
- * Items the team is considering buying, to gauge interest. Mocked: not I3 templates yet. Sizes
- * and half-chest measurements are from the Biz Collection J307 style sheet.
- */
+/** Items the team is considering buying, to gauge interest. Mocked: not I3 templates yet. */
 export const demoProposals: KitCheckProposal[] = [
     {
         id: "soft-shell-jacket",
-        name: "Soft shell jacket (Biz Collection Geneva J307)",
-        description:
-            "A light, stretchy softshell with a fleece lining: water repellent and breathable, warm without overheating, and not bulky, so it's fine indoors or driving.",
-        fits: [
-            {
-                id: "mens",
-                label: "Men's",
-                sizes: [
-                    { size: "S", halfChestCm: 57 },
-                    { size: "M", halfChestCm: 59 },
-                    { size: "L", halfChestCm: 61 },
-                    { size: "XL", halfChestCm: 63 },
-                    { size: "2XL", halfChestCm: 65 },
-                    { size: "3XL", halfChestCm: 70 },
-                ],
-            },
-            {
-                id: "ladies",
-                label: "Ladies'",
-                sizes: [
-                    { size: "S", halfChestCm: 49 },
-                    { size: "M", halfChestCm: 52.5 },
-                    { size: "L", halfChestCm: 56 },
-                    { size: "XL", halfChestCm: 59.5 },
-                    { size: "2XL", halfChestCm: 63 },
-                ],
-            },
-        ],
+        name: `${J307_JACKET.name} (${J307_JACKET.maker} ${J307_JACKET.model})`,
+        description: J307_JACKET.summary,
+        fits: J307_JACKET.fits.map(({ id, label, sizes }) => ({ id, label, sizes })),
     },
 ];
 
