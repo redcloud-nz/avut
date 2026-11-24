@@ -4,6 +4,7 @@
  */
 import { execSync } from "node:child_process";
 import { networkInterfaces } from "node:os";
+import { withBotId } from "botid/next/config";
 import type { NextConfig } from "next";
 
 import { withContentCollections } from "@content-collections/next";
@@ -173,4 +174,5 @@ const nextConfig: NextConfig = {
     typedRoutes: true,
 };
 
-export default withContentCollections(nextConfig);
+// BotID adds the rewrites its challenge script needs (loaded on /forms pages only).
+export default withContentCollections(withBotId(nextConfig));

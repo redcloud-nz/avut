@@ -123,6 +123,7 @@ const logObjectTypeValues = [
     "D4HNagOptOut",
     "D4HNagRule",
     "D4HTask",
+    "FormInstance",
     "I3Bundle",
     "I3Template",
     "I3TemplateVariant",
@@ -220,6 +221,9 @@ const moduleByObjectType: Record<LogObjectType, ModuleId | null> = {
     D4HNagOptOut: "d4h-nag",
     D4HNagRule: "d4h-nag",
     D4HTask: "d4h-i3",
+    // Public form answers (`src/lib/public-forms.ts`) are org admin business. I3 forms also use
+    // FormInstance but don't log it; if they start to, this mapping needs a closer look.
+    FormInstance: "org-admin",
     I3Bundle: "d4h-i3",
     I3Template: "d4h-i3",
     I3TemplateVariant: "d4h-i3",

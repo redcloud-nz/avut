@@ -7,6 +7,8 @@
 import { PlusIcon, RefreshCwIcon, Trash2Icon, XIcon } from "lucide-react";
 import { useId, useRef, useState } from "react";
 
+import { ChoiceChips, TextField } from "@/components/forms/form-fields";
+import { SizeChart } from "@/components/forms/size-chart";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -360,76 +362,6 @@ function KitCheck_Section({
     );
 }
 
-/** A single-choice row of chips, e.g. Yes/No or a template's variants. */
-function ChoiceChips({
-    label,
-    options,
-    value,
-    onChange,
-    error,
-}: {
-    label: string;
-    options: { value: string; label: string }[];
-    value: string;
-    onChange: (value: string) => void;
-    error?: string;
-}) {
-    return (
-        <div className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium">{label}</span>
-            <ToggleGroup
-                type="single"
-                variant="outline"
-                value={value}
-                onValueChange={onChange}
-                aria-label={label}
-                aria-invalid={error ? true : undefined}
-                className={cn("flex-wrap", error && "rounded-lg ring-2 ring-destructive/60")}
-            >
-                {options.map((option) => (
-                    <ToggleGroupItem key={option.value} value={option.value} className="px-3">
-                        {option.label}
-                    </ToggleGroupItem>
-                ))}
-            </ToggleGroup>
-            {error && <span className="text-sm text-destructive-foreground">{error}</span>}
-        </div>
-    );
-}
-
-function TextField({
-    id,
-    label,
-    value,
-    onChange,
-    placeholder,
-    error,
-    className,
-}: {
-    id: string;
-    label: string;
-    value: string;
-    onChange: (value: string) => void;
-    placeholder?: string;
-    error?: string;
-    className?: string;
-}) {
-    return (
-        <div className="flex flex-col gap-1.5">
-            <Label htmlFor={id}>{label}</Label>
-            <Input
-                id={id}
-                value={value}
-                onChange={(event) => onChange(event.target.value)}
-                placeholder={placeholder}
-                aria-invalid={error ? true : undefined}
-                className={className}
-            />
-            {error && <span className="text-sm text-destructive-foreground">{error}</span>}
-        </div>
-    );
-}
-
 /**
  * The words every variant label starts with, when there are several and each has more after them:
  * "Protex NZRT Overall" for "Protex NZRT Overall 4" … "Protex NZRT Overall 12". The chips then
@@ -750,8 +682,8 @@ function KitCheck_ProposalCard({
                         <p className="text-sm text-muted-foreground">{proposal.description}</p>
                     )}
                 </div>
-                <KitCheck_SizeChart
-                    proposal={proposal}
+                <SizeChart
+                    fits={proposal.fits}
                     selected={fit && answer.size ? { fitId: fit.id, size: answer.size } : null}
                 />
                 <ChoiceChips
@@ -809,76 +741,6 @@ function KitCheck_ProposalCard({
                 />
             </CardContent>
         </Card>
-    );
-}
-
-/**
- * The maker's size chart for a proposal: one small table per fit (size, garment half-chest, and
- * roughly the body chest it fits), side by side so it reads on a phone. The member's chosen size
- * is highlighted. Shown only when the chart has measurements.
- */
-function KitCheck_SizeChart({
-    proposal,
-    selected,
-}: {
-    proposal: KitCheckProposal;
-    selected: { fitId: string; size: string } | null;
-}) {
-    const fits = proposal.fits.filter((fit) =>
-        fit.sizes.some((size) => size.halfChestCm !== undefined),
-    );
-    if (fits.length === 0) return null;
-    return (
-        <details className="group rounded-lg border">
-            <summary className="cursor-pointer px-3 py-2 text-sm font-medium select-none">
-                Size chart
-            </summary>
-            <div className="grid grid-cols-1 gap-4 px-3 pb-3 min-[360px]:grid-cols-2">
-                {fits.map((fit) => (
-                    <table key={fit.id} className="w-full self-start text-sm">
-                        <caption className="pb-1 text-left font-medium">{fit.label}</caption>
-                        <thead>
-                            <tr className="border-b text-left text-xs text-muted-foreground">
-                                <th className="py-1 pr-2 font-medium">Size</th>
-                                <th className="py-1 pr-2 text-right font-medium">½ chest</th>
-                                <th className="py-1 text-right font-medium">Chest</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {fit.sizes.map(({ size, halfChestCm }) => {
-                                const isSelected =
-                                    selected?.fitId === fit.id && selected.size === size;
-                                return (
-                                    <tr
-                                        key={size}
-                                        aria-current={isSelected || undefined}
-                                        className={cn(
-                                            "border-b last:border-0",
-                                            isSelected &&
-                                                "bg-selected font-semibold text-selected-foreground",
-                                        )}
-                                    >
-                                        <td className="py-1 pr-2">{size}</td>
-                                        <td className="py-1 pr-2 text-right tabular-nums">
-                                            {halfChestCm ?? "—"}
-                                        </td>
-                                        <td className="py-1 text-right text-muted-foreground tabular-nums">
-                                            {halfChestCm === undefined
-                                                ? "—"
-                                                : `~${halfChestCm * 2}`}
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                ))}
-            </div>
-            <p className="px-3 pb-3 text-xs text-muted-foreground">
-                Garment measurements in cm, from the maker&apos;s size chart. Chest is the garment
-                all the way round.
-            </p>
-        </details>
     );
 }
 

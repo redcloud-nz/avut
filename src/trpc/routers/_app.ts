@@ -21,6 +21,7 @@ import { organizationGroupsRouter } from "./organization-groups-router";
 import { organizationNotesRouter } from "./organization-notes-router";
 import { organizationsRouter } from "./organizations-router";
 import { personnelRouter } from "./personnel-router";
+import { publicFormsRouter } from "./public-forms-router";
 import { settingsRouter } from "./settings-router";
 import { skillCheckSessionsRouter } from "./skill-check-sessions-router";
 import { skillChecksRouter } from "./skill-checks-router";
@@ -49,6 +50,7 @@ export const appRouter = createTrpcRouter({
     organizationNotes: organizationNotesRouter,
     organizations: organizationsRouter,
     personnel: personnelRouter,
+    publicForms: publicFormsRouter,
     settings: settingsRouter,
     skillCheckSessions: skillCheckSessionsRouter,
     skillChecks: skillChecksRouter,
