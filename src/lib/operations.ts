@@ -31,6 +31,9 @@ export const Operations = {
     "invitation-accept": { label: "Invitation accepted" },
     "invitation-reject": { label: "Invitation rejected" },
     "organization-leave": { label: "Left organisation" },
+    // Single-entry batch for provenance: a no-login form answer has no actor; its batch carries the
+    // name the person typed as `actorLabel`.
+    "public-form-submission": { label: "Public form submission" },
     "rubbish-purge": { label: "Rubbish bin auto-purge" },
     "skill-package-import": { label: "Skill package import" },
 } as const;

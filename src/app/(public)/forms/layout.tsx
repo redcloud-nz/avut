@@ -2,7 +2,7 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Shared shell for `/forms/kit-check/*`. Whoever opens a kit-check link may have no AVUT
+ * Shared shell for `/forms/*`, the forms opened from an emailed or shared link. Whoever opens one may have no AVUT
  * account, and most open it on a phone: a slim header that scrolls away (not the sticky public
  * header), so the form keeps the screen. The footer sits after the form, as on other public pages.
  */
@@ -13,7 +13,7 @@ import type { ReactNode } from "react";
 import { ModeToggle } from "@/components/nav/mode-toggle";
 import { PublicFooter } from "@/components/nav/public-footer";
 
-export default function KitCheckPublicLayout({ children }: { children: ReactNode }) {
+export default function FormsPublicLayout({ children }: { children: ReactNode }) {
     return (
         <div className="flex min-h-svh w-full flex-col bg-background text-foreground">
             <header className="border-b border-border">

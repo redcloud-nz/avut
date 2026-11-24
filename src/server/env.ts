@@ -55,6 +55,14 @@ export const serverEnv = {
     get EMAIL_DELIVERY() {
         return text(process.env.EMAIL_DELIVERY);
     },
+    /**
+     * The organisation slug public forms (`/forms/*`) store answers in, in place of the
+     * production slug in `PUBLIC_FORMS` (`src/lib/public-forms.ts`). For dev and preview
+     * databases, where the organisation has another slug. Unset in production.
+     */
+    get PUBLIC_FORMS_ORGANIZATION_SLUG() {
+        return text(process.env.PUBLIC_FORMS_ORGANIZATION_SLUG);
+    },
 
     /**
      * Shared secret Vercel Cron sends as `Authorization: Bearer …` to `/api/cron/*`. Unset means
