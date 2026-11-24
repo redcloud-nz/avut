@@ -21,7 +21,7 @@ export type PublicFormKey = keyof typeof PUBLIC_FORMS;
 
 /**
  * The submit endpoints BotID guards: every `publicForms` tRPC call is a POST to
- * `/trpc/publicForms.<procedure>`. Shared by `PublicForms_BotProtection` (which tags the
+ * `/trpc/publicForms.<procedure>`. Shared by `src/instrumentation-client.ts` (which tags the
  * requests) and the procedures (which check them).
  *
  * The match is on the request path, so a submit must go out on its own: tRPC's batch link sends

@@ -10,7 +10,6 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
 
-import { PublicForms_BotProtection } from "@/components/forms/public-forms-bot-protection";
 import { ModeToggle } from "@/components/nav/mode-toggle";
 import { PublicFooter } from "@/components/nav/public-footer";
 
@@ -30,7 +29,6 @@ export default function FormsPublicLayout({ children }: { children: ReactNode })
                     <ModeToggle />
                 </div>
             </header>
-            <PublicForms_BotProtection />
             <main className="flex-1">{children}</main>
             <PublicFooter />
         </div>

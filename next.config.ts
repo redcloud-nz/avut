@@ -174,5 +174,5 @@ const nextConfig: NextConfig = {
     typedRoutes: true,
 };
 
-// BotID adds the rewrites its challenge script needs (loaded on /forms pages only).
+// BotID adds the rewrites its challenge script needs (`src/instrumentation-client.ts`).
 export default withContentCollections(withBotId(nextConfig));

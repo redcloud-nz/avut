@@ -17,7 +17,7 @@ import { createTrpcRouter, organizationProcedure, publicProcedure } from "../ini
  * Forms anyone with the link can answer without an account (`/forms/*`, `src/lib/public-forms.ts`).
  * Answers are stored as Submitted `FormInstance`s in the form's organisation; its admins read
  * them back. Submits are checked with Vercel BotID: the paths are tagged on the client in
- * `PublicForms_BotProtection` in the `/forms` layout (`PUBLIC_FORM_BOT_PROTECTED_PATHS`).
+ * `src/instrumentation-client.ts` (`PUBLIC_FORM_BOT_PROTECTED_PATHS`).
  */
 export const publicFormsRouter = createTrpcRouter({
     /**
