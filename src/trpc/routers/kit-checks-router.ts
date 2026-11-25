@@ -200,4 +200,24 @@ export const kitChecksRouter = createTrpcRouter({
             const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
             return KitChecks.previewRecipients(ctx, { accessToken, bundleId, d4hTeamIds });
         }),
+
+    /**
+     * Email a member their link again, with a new token and a fresh expiry; the old link stops
+     * working. Their draft, submitted answers and progress are kept. Allowed for any delivery but
+     * NoEmail, a stuck Pending included.
+     *
+     * @throws TRPCError(NOT_FOUND) if the request isn't in the organization.
+     * @throws TRPCError(BAD_REQUEST) if the member has no email.
+     */
+    resendRequest: kitCheckProcedure
+        .input(z.object({ requestId: KitCheckRequestId.schema }))
+        .output(
+            z.object({
+                kitCheckId: KitCheckId.schema,
+                deliveryStatus: z.enum(["Sent", "Failed"]),
+            }),
+        )
+        .mutation(async ({ ctx, input: { requestId } }) => {
+            return KitChecks.resendRequest(ctx, requestId);
+        }),
 });

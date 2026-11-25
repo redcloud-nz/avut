@@ -679,4 +679,59 @@ describe("kitChecksRouter", () => {
             expect(sendEmail).not.toHaveBeenCalled();
         });
     });
+
+    describe("resendRequest", () => {
+        /** A sent check's requests, by member name. */
+        async function sentRequests() {
+            const { kitCheckId } = await admin().createKitCheck(preview);
+            const check = await admin().getKitCheck({ organizationId: T.org, kitCheckId });
+            vi.mocked(sendEmail).mockClear();
+            const byName = Object.fromEntries(
+                check.requests.map((request) => [request.memberName, request]),
+            );
+            return { kitCheckId, john: byName["John Smith"]!, ana: byName["Ana Lee"]! };
+        }
+
+        it("resends the link and returns the outcome with its kit check", async () => {
+            const { kitCheckId, john } = await sentRequests();
+
+            const result = await admin().resendRequest({
+                organizationId: T.org,
+                requestId: john.id,
+            });
+
+            expect(result).toEqual({ kitCheckId, deliveryStatus: "Sent" });
+            expect(sendEmail).toHaveBeenCalledTimes(1);
+            expect(sendEmail).toHaveBeenCalledWith(
+                expect.objectContaining({ to: "john@example.com" }),
+            );
+        });
+
+        it("is BAD_REQUEST for a member with no email", async () => {
+            const { ana } = await sentRequests();
+
+            await expect(
+                admin().resendRequest({ organizationId: T.org, requestId: ana.id }),
+            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+            expect(sendEmail).not.toHaveBeenCalled();
+        });
+
+        it("is NOT_FOUND for a request outside the org", async () => {
+            await expect(
+                admin().resendRequest({
+                    organizationId: T.org,
+                    requestId: KitCheckRequestId.create(),
+                }),
+            ).rejects.toMatchObject({ code: "NOT_FOUND" });
+        });
+
+        it("refuses an org owner without the system admin role", async () => {
+            const { john } = await sentRequests();
+
+            await expect(
+                owner().resendRequest({ organizationId: T.org, requestId: john.id }),
+            ).rejects.toMatchObject({ code: "FORBIDDEN" });
+            expect(sendEmail).not.toHaveBeenCalled();
+        });
+    });
 });

@@ -8,13 +8,18 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { render } from "@react-email/components";
 
+import { ValidationError } from "@/lib/errors";
 import { compareBundle } from "@/lib/i3-bundle-compare";
 import { EMPTY_ANSWER } from "@/lib/kit-check-validate";
 import type { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import type { D4HEquipmentListItem } from "@/lib/schemas/d4h/equipment-item";
 import { I3BundleId, type I3BundleLine } from "@/lib/schemas/i3-bundle";
 import { I3TemplateId } from "@/lib/schemas/i3-template";
-import { KIT_CHECK_TOKEN_DAYS, KitCheckResponseData } from "@/lib/schemas/kit-check";
+import {
+    KIT_CHECK_TOKEN_DAYS,
+    KitCheckRequestId,
+    KitCheckResponseData,
+} from "@/lib/schemas/kit-check";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
 import { fetchD4HTeamEquipmentItems } from "@/server/d4h-api/equipment";
@@ -25,6 +30,7 @@ import { createOrganizationMockContext } from "@/test/trpc-helpers";
 import {
     buildKitCheckSnapshot,
     createKitCheck,
+    resendRequest,
     SEND_SPACING_MS,
     type KitCheckIssuedItem,
     type KitCheckSendDeps,
@@ -509,5 +515,137 @@ describe("createKitCheck", () => {
             "Kit check sent to John Smith (john@example.com)",
             "Kit check failed to send to Kim Tan (kim@example.com)",
         ]);
+    });
+
+    // Shares the fixtures above: each test creates a check, then resends one of its requests.
+    describe("resendRequest", () => {
+        /** A fresh check, and John's request (sent, as `hash-1`) and Ana's (NoEmail). */
+        async function sentCheck() {
+            const { kitCheckId } = await createKitCheck(ctx(), input, makeDeps());
+            const john = await db.kitCheckRequest.findFirstOrThrow({
+                where: { kitCheckId, d4hMemberId: 42 },
+                include: { formInstance: true },
+            });
+            const ana = await db.kitCheckRequest.findFirstOrThrow({
+                where: { kitCheckId, d4hMemberId: 43 },
+            });
+            return {
+                kitCheckId,
+                john: { ...john, id: KitCheckRequestId.schema.parse(john.id) },
+                ana: { ...ana, id: KitCheckRequestId.schema.parse(ana.id) },
+            };
+        }
+
+        /** Deps whose sends succeed (or all fail), issuing `resent-token`/`resent-hash`. */
+        function resendDeps(fail = false) {
+            const deps = makeDeps(fail ? ["john@example.com"] : []);
+            deps.createLinkToken.mockReturnValue({ token: "resent-token", hash: "resent-hash" });
+            return deps;
+        }
+
+        it("replaces the token, so the old one no longer resolves, and restarts expiry", async () => {
+            const { kitCheckId, john } = await sentCheck();
+            const staleExpiry = new Date("2026-01-01T00:00:00Z");
+            await db.kitCheckRequest.update({
+                where: { id: john.id },
+                data: { expiresAt: staleExpiry, sentAt: staleExpiry },
+            });
+
+            const deps = resendDeps();
+            const before = Date.now();
+            const result = await resendRequest(ctx(), john.id, deps);
+
+            expect(result).toEqual({ kitCheckId, deliveryStatus: "Sent" });
+            const after = await db.kitCheckRequest.findUniqueOrThrow({ where: { id: john.id } });
+            expect(after).toMatchObject({ deliveryStatus: "Sent", tokenHash: "resent-hash" });
+            // Every check's tokens are numbered from 1, so look only at this request.
+            expect(
+                await db.kitCheckRequest.findFirst({
+                    where: { id: john.id, tokenHash: john.tokenHash },
+                }),
+            ).toBeNull();
+            const days = KIT_CHECK_TOKEN_DAYS * 24 * 60 * 60 * 1000;
+            expect(after.expiresAt!.getTime()).toBeGreaterThanOrEqual(before + days);
+            expect(after.sentAt!.getTime()).toBeGreaterThanOrEqual(before);
+
+            expect(deps.sendEmail).toHaveBeenCalledTimes(1);
+            const html = await render(deps.sendEmail.mock.calls[0][0].react as ReactElement);
+            expect(html).toMatch(/href="[^"]*\/forms\/kit-check\/resent-token"/);
+
+            const entries = await db.logEntry.findMany({
+                where: { objectId: john.id, action: "Update" },
+                orderBy: { sequence: "asc" },
+            });
+            const resent = entries.at(-1)!;
+            expect(resent.description).toBe("Kit check sent to John Smith (john@example.com)");
+            const batch = await db.logBatch.findUniqueOrThrow({ where: { id: resent.batchId! } });
+            expect(batch).toMatchObject({ operationKey: "kit-check-send", userId: S.admin });
+            expect(resent.batchId).not.toBe(entries[0]!.batchId);
+        });
+
+        it("leaves a submitted request's answers and progress alone when the resend fails", async () => {
+            const { john } = await sentCheck();
+            const openedAt = new Date("2026-11-21T09:00:00Z");
+            const submittedAt = new Date("2026-11-22T09:00:00Z");
+            const answer = john.formInstance.formData as KitCheckResponseData;
+            await db.kitCheckRequest.update({
+                where: { id: john.id },
+                data: { openedAt, submittedAt, submittedData: answer },
+            });
+            await db.formInstance.update({
+                where: { id: john.formInstanceId },
+                data: { formStatus: "Submitted" },
+            });
+
+            const result = await resendRequest(ctx(), john.id, resendDeps(true));
+
+            expect(result.deliveryStatus).toBe("Failed");
+            const after = await db.kitCheckRequest.findUniqueOrThrow({
+                where: { id: john.id },
+                include: { formInstance: true },
+            });
+            expect(after).toMatchObject({
+                deliveryStatus: "Failed",
+                tokenHash: null,
+                expiresAt: null,
+                sentAt: john.sentAt,
+                openedAt,
+                submittedAt,
+                submittedData: answer,
+                formInstanceId: john.formInstanceId,
+            });
+            expect(after.formInstance).toMatchObject({
+                formStatus: "Submitted",
+                formData: answer,
+            });
+        });
+
+        it("resends a request stuck in Pending", async () => {
+            const { john } = await sentCheck();
+            await db.kitCheckRequest.update({
+                where: { id: john.id },
+                data: { deliveryStatus: "Pending" },
+            });
+
+            const result = await resendRequest(ctx(), john.id, resendDeps());
+
+            expect(result.deliveryStatus).toBe("Sent");
+            expect(
+                await db.kitCheckRequest.findUniqueOrThrow({ where: { id: john.id } }),
+            ).toMatchObject({ deliveryStatus: "Sent", tokenHash: "resent-hash" });
+        });
+
+        it("refuses a NoEmail request, sending nothing", async () => {
+            const { ana } = await sentCheck();
+            const deps = resendDeps();
+
+            await expect(resendRequest(ctx(), ana.id, deps)).rejects.toBeInstanceOf(
+                ValidationError,
+            );
+            expect(deps.sendEmail).not.toHaveBeenCalled();
+            expect(
+                await db.kitCheckRequest.findUniqueOrThrow({ where: { id: ana.id } }),
+            ).toMatchObject({ deliveryStatus: "NoEmail", tokenHash: null });
+        });
     });
 });

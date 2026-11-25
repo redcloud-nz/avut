@@ -819,3 +819,66 @@ export async function createKitCheck(
     }
     return result;
 }
+
+// Resend
+
+/** How a resend went, and the kit check it belongs to. */
+export type KitCheckResendResult = {
+    kitCheckId: KitCheckId;
+    deliveryStatus: "Sent" | "Failed";
+};
+
+/**
+ * Send a request's link again: a new token with a fresh `KIT_CHECK_TOKEN_DAYS`, replacing the old
+ * one, so the old link stops working (decision 1). Allowed for any delivery but `NoEmail`,
+ * `Pending` included, for a send that never finished.
+ *
+ * Resend keeps the draft (decision 13): the form instance, its answers, `submittedData` and the
+ * progress timestamps are left alone, so the member picks up where they left off. A failed resend
+ * only marks the request `Failed` and clears its token. The outcome is logged under its own
+ * `kit-check-send` batch (decision 11).
+ *
+ * @throws NotFoundError if the request isn't in the organization.
+ * @throws ValidationError if the request has no email (`NoEmail`).
+ */
+export async function resendRequest(
+    ctx: OrgServiceContext,
+    requestId: KitCheckRequestId,
+    deps: KitCheckSendDeps = defaultKitCheckSendDeps,
+): Promise<KitCheckResendResult> {
+    const request = await ctx.prisma.kitCheckRequest.findFirst({
+        where: { id: requestId, organizationId: ctx.organizationId },
+        select: {
+            kitCheckId: true,
+            email: true,
+            memberName: true,
+            d4hTeamTitle: true,
+            deliveryStatus: true,
+            kitCheck: { select: { bundleName: true } },
+        },
+    });
+    if (!request) throw new NotFoundError(`KitCheckRequest(id=${requestId}) not found.`);
+    if (request.deliveryStatus === "NoEmail" || request.email === null) {
+        throw new ValidationError(
+            `${request.memberName} has no email in D4H, so their kit check can't be sent.`,
+        );
+    }
+
+    const batch = await createLogBatch(
+        { operationKey: "kit-check-send", userId: ctx.userId },
+        ctx.prisma,
+    );
+    const send = await loadSendContext(ctx, request.kitCheck.bundleName);
+    const deliveryStatus = await sendRequest(
+        withBatch(ctx, batch.id),
+        {
+            id: requestId,
+            email: request.email,
+            memberName: request.memberName,
+            d4hTeamTitle: request.d4hTeamTitle,
+        },
+        send,
+        deps,
+    );
+    return { kitCheckId: KitCheckId.schema.parse(request.kitCheckId), deliveryStatus };
+}

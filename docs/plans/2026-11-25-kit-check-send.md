@@ -107,7 +107,7 @@ From reading the code:
     - Mutation effects in `src/client/kit-checks-effects.ts` for `listKitChecks` and `getKitCheck`.
   - **Done when:** tests cover: requests and drafts created per member; `NoEmail` for blank emails; a failed send leaves `Failed` with no hash while the rest send; sends are spaced; the email test renders the link and expiry; `npm run check` passes.
 
-- [ ] **6. Resend**
+- [x] **6. Resend** (feat(kit-check): resend a kit check request)
   - **Files:** `src/server/services/kit-checks.ts` + test, `src/trpc/routers/kit-checks-router.ts` + test, `src/client/kit-checks-effects.ts`.
   - **Do:** `resendRequest({ requestId })` refuses `NoEmail` with a domain error that maps to BAD_REQUEST. Otherwise, whatever the delivery (`Pending` included), it runs the send step, which replaces the old hash (decision 1). Progress and answers are untouched (decision 13). Effects as for create.
   - **Done when:** tests cover: resend replaces the hash, so the old token no longer resolves, and restarts expiry; a failed resend of a submitted request leaves `submittedAt`, `submittedData` and the instance alone; a stuck `Pending` request can be resent; `NoEmail` is refused; `npm run check` passes.

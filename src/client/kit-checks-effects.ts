@@ -18,4 +18,9 @@ export const kitChecksEffects = createEffects<"kitChecks">()({
         invalidate(trpc.kitChecks.listKitChecks.queryFilter({ organizationId })),
         invalidate(trpc.kitChecks.getKitCheck.queryFilter({ organizationId, kitCheckId })),
     ],
+    // The request's delivery changes, and with it the check's counts.
+    resendRequest: ({ organizationId }, { kitCheckId }) => [
+        invalidate(trpc.kitChecks.listKitChecks.queryFilter({ organizationId })),
+        invalidate(trpc.kitChecks.getKitCheck.queryFilter({ organizationId, kitCheckId })),
+    ],
 });
