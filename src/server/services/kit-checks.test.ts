@@ -23,10 +23,12 @@ import {
 import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
 import { fetchD4HTeamEquipmentItems } from "@/server/d4h-api/equipment";
+import { createLinkToken } from "@/server/link-token";
 import { listFitsForD4HTeam } from "@/server/services/i3-templates";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createOrganizationMockContext } from "@/test/trpc-helpers";
 
+import { getKitCheckByToken } from "./kit-check-public";
 import {
     buildKitCheckSnapshot,
     createKitCheck,
@@ -581,6 +583,39 @@ describe("createKitCheck", () => {
             const batch = await db.logBatch.findUniqueOrThrow({ where: { id: resent.batchId! } });
             expect(batch).toMatchObject({ operationKey: "kit-check-send", userId: S.admin });
             expect(resent.batchId).not.toBe(entries[0]!.batchId);
+        });
+
+        it("turns the old link not-found on the public form, and the new one opens it", async () => {
+            /** Deps issuing real tokens, so the public lookup can hash them. */
+            const issued: string[] = [];
+            function realTokenDeps() {
+                const deps = makeDeps();
+                deps.createLinkToken.mockImplementation(() => {
+                    const link = createLinkToken();
+                    issued.push(link.token);
+                    return link;
+                });
+                return deps;
+            }
+            const { kitCheckId } = await createKitCheck(ctx(), input, realTokenDeps());
+            // John is sent first.
+            const oldToken = issued[0]!;
+            const john = await db.kitCheckRequest.findFirstOrThrow({
+                where: { kitCheckId, d4hMemberId: 42 },
+            });
+            expect(await getKitCheckByToken({ prisma: db }, oldToken)).toMatchObject({
+                state: "ok",
+            });
+
+            await resendRequest(ctx(), KitCheckRequestId.schema.parse(john.id), realTokenDeps());
+
+            expect(await getKitCheckByToken({ prisma: db }, oldToken)).toEqual({
+                state: "not-found",
+            });
+            expect(await getKitCheckByToken({ prisma: db }, issued.at(-1)!)).toMatchObject({
+                state: "ok",
+                subject: { memberName: "John Smith" },
+            });
         });
 
         it("leaves a submitted request's answers and progress alone when the resend fails", async () => {

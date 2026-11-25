@@ -34,4 +34,5 @@ export type PublicFormKey = keyof typeof PUBLIC_FORMS;
  */
 export const PUBLIC_FORM_BOT_PROTECTED_PATHS = [
     { path: "/trpc/publicForms.submitJacketInterest", method: "POST" },
+    { path: "/trpc/publicForms.submitKitCheckByToken", method: "POST" },
 ] as const;

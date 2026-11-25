@@ -112,7 +112,7 @@ From reading the code:
   - **Do:** `resendRequest({ requestId })` refuses `NoEmail` with a domain error that maps to BAD_REQUEST. Otherwise, whatever the delivery (`Pending` included), it runs the send step, which replaces the old hash (decision 1). Progress and answers are untouched (decision 13). Effects as for create.
   - **Done when:** tests cover: resend replaces the hash, so the old token no longer resolves, and restarts expiry; a failed resend of a submitted request leaves `submittedAt`, `submittedData` and the instance alone; a stuck `Pending` request can be resent; `NoEmail` is refused; `npm run check` passes.
 
-- [ ] **7. Public token procedures**
+- [x] **7. Public token procedures** (feat(kit-check): add public kit check token procedures)
   - **Files:** `src/server/services/kit-checks.ts` (or `kit-check-public.ts` beside it) + test, `src/trpc/routers/public-forms-router.ts` + a new test, `src/lib/public-forms.ts`, `src/client/public-forms-effects.ts` (new, or beside the jacket form's queries if a file exists), `src/server/services/forms.ts` (comment only, decision 10).
   - **Do:** `publicProcedure`s taking the capped token schema, kept alphabetical in the router, sharing one lookup (decision 8).
     - `getKitCheckByToken` returns `{ state: "not-found" }` or `{ state: "ok", … }`. The ok state carries the subject (member name, team title, bundle name, requested by: the sender's name, or "the team equipment officer" when the sender is gone), the templates, the held items, the instance's `formData` and `formStatus`, `submittedData`, `submittedAt` and `expiresAt`. Nothing else about the org or other members.
