@@ -175,7 +175,7 @@ The admin pages come before the member form, so the member form's checkpoint has
   - **Do:** move the debouncer, `handleChange` (reset a settled mutation, then `maybeExecute`) and `cancel()` out of `useDraftFormAutosave` into `useDebouncedAutosave`, which takes the save function and the mutation's status/reset (wait defaults to 2000 ms). `useDraftFormAutosave` keeps its signature and calls it. No behaviour change for the I3 forms.
   - **Done when:** `npm run check` passes; the I3 Issue Items form still autosaves (shown at checkpoint 2).
 
-- [ ] **11. Make the member form controllable** `visual`
+- [x] **11. Make the member form controllable** `visual` (feat(kit-check): make the member form controllable)
   - **Files:** `src/components/kit-check/kit-check-form.tsx`, `kit-check-summary.tsx`, `src/lib/kit-check-validate.ts` + test.
   - **Do:**
     - Add `initialResponse?: KitCheckResponse` (state starts from it) and `onChange?: (response: KitCheckResponse) => void`, called with the whole response after every edit.

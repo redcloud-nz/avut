@@ -53,32 +53,70 @@ const PROBLEM_LABELS = {
  * bundle's items D4H has nothing for. Each asks Have it (Y/N). Yes asks for whatever the record
  * lacks (serial, which variant) and offers a replacement; No asks which variant they want. Then
  * free rows for anything not on the list. Every visible question must be answered to submit.
+ *
+ * Uncontrolled, but seedable and observable: `initialResponse` sets where it starts (a saved
+ * draft), and `onChange` hears the whole response after every edit (to autosave it).
  */
 export function KitCheck_Form({
     subject,
     templates,
     heldItems,
     proposals = [],
+    initialResponse,
+    onChange,
     onSubmit,
+    submitting = false,
+    footer,
 }: {
     subject: KitCheckSubject;
     templates: KitCheckTemplate[];
     heldItems: KitCheckHeldItem[];
     /** Items the team is considering, to gauge interest. */
     proposals?: KitCheckProposal[];
+    /** The answers to start from. Read once, on mount. */
+    initialResponse?: KitCheckResponse;
+    /** Called with the whole response after every edit. */
+    onChange?: (response: KitCheckResponse) => void;
     onSubmit: (response: KitCheckResponse) => void;
+    /** Disables the submit button while a submit is in flight. */
+    submitting?: boolean;
+    /** Shown in the sticky bar beside the submit button (e.g. the save status). */
+    footer?: React.ReactNode;
 }) {
-    const [held, setHeld] = useState<Record<string, KitCheckAnswer>>({});
-    const [proposalAnswers, setProposalAnswers] = useState<Record<string, KitCheckProposalAnswer>>(
-        {},
+    const [response, setResponse] = useState<KitCheckResponse>(
+        () => initialResponse ?? { held: {}, missing: {}, extras: [], comments: "", proposals: {} },
     );
-    const [missing, setMissing] = useState<Record<string, KitCheckAnswer>>({});
-    const [extras, setExtras] = useState<KitCheckExtraItem[]>([]);
-    const [comments, setComments] = useState("");
+    const { held, missing, extras, comments } = response;
+    const proposalAnswers = response.proposals ?? {};
     const [showErrors, setShowErrors] = useState(false);
     const formId = useId();
-    // Extra rows are form-local, never records: a counter is enough to key them.
-    const nextExtraId = useRef(0);
+    // Extra rows are form-local, never records: a counter is enough to key them. It starts past
+    // any numeric ids a saved draft already holds.
+    const [firstExtraId] = useState(() => {
+        const used = extras.map((extra) => Number(extra.id)).filter(Number.isInteger);
+        return Math.max(-1, ...used) + 1;
+    });
+    const nextExtraId = useRef(firstExtraId);
+
+    const update = (change: (prev: KitCheckResponse) => KitCheckResponse) => {
+        const next = change(response);
+        setResponse(next);
+        onChange?.(next);
+    };
+    const setHeld = (
+        change: (prev: Record<string, KitCheckAnswer>) => Record<string, KitCheckAnswer>,
+    ) => update((prev) => ({ ...prev, held: change(prev.held) }));
+    const setMissing = (
+        change: (prev: Record<string, KitCheckAnswer>) => Record<string, KitCheckAnswer>,
+    ) => update((prev) => ({ ...prev, missing: change(prev.missing) }));
+    const setProposalAnswers = (
+        change: (
+            prev: Record<string, KitCheckProposalAnswer>,
+        ) => Record<string, KitCheckProposalAnswer>,
+    ) => update((prev) => ({ ...prev, proposals: change(prev.proposals ?? {}) }));
+    const setExtras = (change: (prev: KitCheckExtraItem[]) => KitCheckExtraItem[]) =>
+        update((prev) => ({ ...prev, extras: change(prev.extras) }));
+    const setComments = (value: string) => update((prev) => ({ ...prev, comments: value }));
 
     const templateById = new Map(templates.map((template) => [template.id, template]));
     const heldRows = heldItems.flatMap((item) => {
@@ -172,8 +210,8 @@ export function KitCheck_Form({
                     <p>
                         We&apos;re updating our equipment records before buying new gear. Please go
                         through each part below: what our records (D4H) say you have, the items
-                        everyone should have, things only some members hold, and anything else. Tell
-                        us what you need as you go.
+                        everyone should have, {hasOptional && "things only some members hold, "}
+                        and anything else. Tell us what you need as you go.
                     </p>
                     <p className="text-muted-foreground">
                         It takes about 5 minutes. No login is needed: this link is just for you.
@@ -313,9 +351,12 @@ export function KitCheck_Form({
                 <span className="text-xs text-muted-foreground">
                     {answeredCount} of {rows.length} answered
                 </span>
-                <Button type="submit" size="sm">
-                    Send my answers
-                </Button>
+                <div className="flex items-center gap-3">
+                    {footer}
+                    <Button type="submit" size="sm" disabled={submitting}>
+                        {submitting ? "Sending…" : "Send my answers"}
+                    </Button>
+                </div>
             </div>
         </form>
     );
@@ -632,11 +673,12 @@ function SizeField({
     onChange: (value: string) => void;
     error?: string;
 }) {
+    const label = template.sizeOptional ? "Size (optional)" : "Size";
     if (template.sizeOptions.length === 0) {
         return (
             <TextField
                 id={id}
-                label="Size"
+                label={label}
                 value={value}
                 onChange={onChange}
                 placeholder={template.sizeHint ?? "Your size"}
@@ -647,7 +689,7 @@ function SizeField({
     }
     return (
         <ChoiceChips
-            label="Size"
+            label={label}
             options={template.sizeOptions.map((size) => ({ value: size, label: size }))}
             value={value}
             onChange={onChange}

@@ -10,9 +10,11 @@ import { NOT_NEEDED } from "@/lib/kit-check-types";
 
 import {
     answerErrors,
+    ANY_VARIANT,
     EMPTY_ANSWER,
     EMPTY_PROPOSAL_ANSWER,
     proposalErrors,
+    visibleFields,
     wantsOne,
 } from "./kit-check-validate";
 
@@ -100,6 +102,44 @@ describe("a template with no variants", () => {
 
     it("doesn't ask which one they hold, even when the record lacks a brand/model", () => {
         expect(answerErrors({ ...EMPTY_ANSWER, has: "yes" }, lamp, heldLamp)).toEqual({});
+    });
+});
+
+describe("a sized template with no variants", () => {
+    // How a sent kit check offers a template with no variants: a free-text size, optional.
+    const overall = {
+        ...harness,
+        id: "overall",
+        variants: [],
+        requireSN: false,
+        sized: true,
+        sizeOptional: true,
+        sizeOptions: [],
+    };
+
+    it("asks a No that needs one for a size, but doesn't require it", () => {
+        const wants = { ...EMPTY_ANSWER, has: "no" as const, wantVariantId: ANY_VARIANT };
+        expect(visibleFields(wants, overall, null).has("size")).toBe(true);
+        expect(answerErrors(wants, overall, null)).toEqual({});
+        expect(wantsOne(wants)).toBe(true);
+    });
+
+    it("asks a replacement for a size straight away: there's no variant to pick first", () => {
+        const replace = { ...EMPTY_ANSWER, has: "yes" as const, replace: true };
+        expect(visibleFields(replace, overall, null).has("size")).toBe(true);
+        expect(answerErrors(replace, overall, null)).toEqual({});
+    });
+
+    it("still needs the No answered with whether they want one", () => {
+        expect(answerErrors({ ...EMPTY_ANSWER, has: "no" }, overall, null)).toEqual({
+            wantVariantId: "Please pick one, or say you don't need one.",
+        });
+    });
+
+    it("requires the size when it isn't optional", () => {
+        const required = { ...overall, sizeOptional: false };
+        const wants = { ...EMPTY_ANSWER, has: "no" as const, wantVariantId: ANY_VARIANT };
+        expect(answerErrors(wants, required, null)).toEqual({ size: "Please give your size." });
     });
 });
 
