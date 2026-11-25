@@ -148,7 +148,7 @@ The admin pages come before the member form, so the member form's checkpoint has
     - Unlinked: no sidebar, index or dashboard entry.
   - **Done when:** a system admin can preview and send on the branch DB (mail lands in the Resend sink); an org admin without the system role is refused; `npm run check` passes.
 
-- [ ] **9. Track page: progress, answers, resend** `visual`
+- [x] **9. Track page: progress, answers, resend** `visual` (feat(kit-check): add kit check track page with answers and resend)
   - **Files:** `src/app/(wrapper)/(authenticated)/orgs/[slug]/d4h-i3/kit-checks/[kit_check_id]/page.tsx`, `src/modules/d4h-i3/components/kit-checks/kit-check-content.tsx`, `kit-check-answers-dialog.tsx`, `kit-check-resend-dialog.tsx` (new), `OPT_OUT_ROUTES`.
   - **Do:** a detail page with the trail `Kit Checks`.
     - Header: bundle, teams, sent by and when, and counts.

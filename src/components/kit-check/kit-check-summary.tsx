@@ -32,12 +32,15 @@ export function KitCheck_Summary({
     heldItems,
     proposals = [],
     response,
+    intro = true,
     onRestart,
 }: {
     templates: KitCheckTemplate[];
     heldItems: KitCheckHeldItem[];
     proposals?: KitCheckProposal[];
     response: KitCheckResponse;
+    /** Opens with the member's "Thanks, that's everything" card. Off where an admin reads it. */
+    intro?: boolean;
     onRestart?: () => void;
 }) {
     const templateById = new Map(templates.map((template) => [template.id, template]));
@@ -108,14 +111,16 @@ export function KitCheck_Summary({
 
     return (
         <div className="flex flex-col gap-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-xl">Thanks, that&apos;s everything</CardTitle>
-                    <CardDescription>
-                        Below is what the equipment officer receives from your answers.
-                    </CardDescription>
-                </CardHeader>
-            </Card>
+            {intro && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-xl">Thanks, that&apos;s everything</CardTitle>
+                        <CardDescription>
+                            Below is what the equipment officer receives from your answers.
+                        </CardDescription>
+                    </CardHeader>
+                </Card>
+            )}
 
             <SummaryTable
                 title="Needs"

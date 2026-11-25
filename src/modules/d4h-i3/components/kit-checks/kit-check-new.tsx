@@ -395,7 +395,7 @@ function KitCheckNew_SendDialog({
                 logger.error("Failed to send kit check", error);
                 toast.error(`Failed to send kit check: ${error.message}`);
             },
-            onSuccess({ sent, failed, noEmail }) {
+            onSuccess({ kitCheckId, sent, failed, noEmail }) {
                 const summary = [
                     `${sent} sent`,
                     ...(failed > 0 ? [`${failed} failed`] : []),
@@ -403,8 +403,12 @@ function KitCheckNew_SendDialog({
                 ].join(", ");
                 if (failed > 0) toast.warning(`Kit check created: ${summary}.`);
                 else toast.success(`Kit check sent: ${summary}.`);
-                // To the list: the check has no page of its own yet.
-                router.push(route("/orgs/[slug]/d4h-i3/kit-checks", { slug: organization.slug }));
+                router.push(
+                    route("/orgs/[slug]/d4h-i3/kit-checks/[kit_check_id]", {
+                        slug: organization.slug,
+                        kit_check_id: kitCheckId,
+                    }),
+                );
             },
         }),
     );

@@ -25,11 +25,7 @@ import { usePreferences } from "@/hooks/use-preferences";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
-/** Joins the non-zero counts as "3 sent, 1 failed", or "—" when every count is zero. */
-function describeCounts(parts: [count: number, label: string][]): string {
-    const shown = parts.filter(([count]) => count > 0).map(([count, label]) => `${count} ${label}`);
-    return shown.length > 0 ? shown.join(", ") : "—";
-}
+import { describeDeliveryCounts, describeProgressCounts } from "./kit-check-labels";
 
 /** The organization's kit checks, newest first. A top-level page of the module, so no trail. */
 export function D4HI3Module_KitCheckList() {
@@ -47,6 +43,17 @@ export function D4HI3Module_KitCheckList() {
             Kaga.defineColumns<RowData>((col) => [
                 col.accessor("bundleName", {
                     header: "Bundle",
+                    cell: (ctx) => (
+                        <Link
+                            href={route("/orgs/[slug]/d4h-i3/kit-checks/[kit_check_id]", {
+                                slug: organization.slug,
+                                kit_check_id: ctx.row.original.id,
+                            })}
+                            className="hover:underline"
+                        >
+                            {ctx.getValue()}
+                        </Link>
+                    ),
                     enableColumnFilter: false,
                 }),
                 col.accessor((row) => row.d4hTeams.map((team) => team.title).join(", "), {
@@ -73,32 +80,15 @@ export function D4HI3Module_KitCheckList() {
                 col.display({
                     id: "delivery",
                     header: "Delivery",
-                    cell: (ctx) => {
-                        const { Sent, Failed, NoEmail, Pending } = ctx.row.original.counts.delivery;
-                        return describeCounts([
-                            [Sent, "sent"],
-                            [Failed, "failed"],
-                            [NoEmail, "no email"],
-                            [Pending, "sending"],
-                        ]);
-                    },
+                    cell: (ctx) => describeDeliveryCounts(ctx.row.original.counts.delivery),
                 }),
                 col.display({
                     id: "progress",
                     header: "Progress",
-                    cell: (ctx) => {
-                        const { Submitted, Editing, Opened, NotOpened } =
-                            ctx.row.original.counts.progress;
-                        return describeCounts([
-                            [Submitted, "submitted"],
-                            [Editing, "editing"],
-                            [Opened, "opened"],
-                            [NotOpened, "not opened"],
-                        ]);
-                    },
+                    cell: (ctx) => describeProgressCounts(ctx.row.original.counts.progress),
                 }),
             ]),
-        [formatDateTime],
+        [formatDateTime, organization.slug],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
