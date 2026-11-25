@@ -14,6 +14,8 @@
 
 import "server-only";
 
+import * as z from "zod";
+
 import { NotFoundError, ValidationError } from "@/lib/errors";
 import {
     compareBundle,
@@ -27,13 +29,17 @@ import type { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import type { D4HEquipmentListItem } from "@/lib/schemas/d4h/equipment-item";
 import type { D4HTeamRef } from "@/lib/schemas/d4h/team";
 import type { I3Bundle, I3BundleId, I3BundleLine, I3BundleSummary } from "@/lib/schemas/i3-bundle";
-import type {
-    KitCheckAnswerData,
+import {
     KitCheckD4HTeam,
     KitCheckHeldItem,
-    KitCheckProblem,
+    KitCheckId,
+    KitCheckRequestId,
     KitCheckResponseData,
-    KitCheckTemplate,
+    KitCheckTemplatesByTeam,
+    type KitCheckAnswerData,
+    type KitCheckDeliveryStatus,
+    type KitCheckProblem,
+    type KitCheckTemplate,
 } from "@/lib/schemas/kit-check";
 import { toD4HCredentialRef } from "@/server/d4h-access-token";
 import { getD4HTeamMembers, getD4HTokenMetadata } from "@/server/d4h-api/client";
@@ -334,4 +340,212 @@ export async function previewRecipients(
         members: members.map(({ member, heldCount }) => ({ ...member, heldCount })),
         excluded,
     }));
+}
+
+// Admin reads
+
+/**
+ * A request's progress, derived from its timestamps and its instance's `formStatus`, never from
+ * its delivery (decision 13). `Editing`: submitted, then reopened (decision 10).
+ */
+export type KitCheckProgress = "NotOpened" | "Opened" | "Submitted" | "Editing";
+
+export function progressOf(request: {
+    openedAt: Date | null;
+    submittedAt: Date | null;
+    formStatus: string;
+}): KitCheckProgress {
+    if (request.formStatus === "Submitted") return "Submitted";
+    if (request.submittedAt !== null) return "Editing";
+    if (request.openedAt !== null) return "Opened";
+    return "NotOpened";
+}
+
+/** How many of a kit check's requests are in each delivery status and each progress state. */
+export type KitCheckCounts = {
+    delivery: Record<KitCheckDeliveryStatus, number>;
+    progress: Record<KitCheckProgress, number>;
+};
+
+function countRequests(requests: readonly KitCheckRequestSummary[]): KitCheckCounts {
+    const counts: KitCheckCounts = {
+        delivery: { Pending: 0, Sent: 0, Failed: 0, NoEmail: 0 },
+        progress: { NotOpened: 0, Opened: 0, Submitted: 0, Editing: 0 },
+    };
+    for (const request of requests) {
+        counts.delivery[request.deliveryStatus]++;
+        counts.progress[request.progress]++;
+    }
+    return counts;
+}
+
+/** A kit check, as its list row and its page header show it. */
+export type KitCheckSummary = {
+    id: KitCheckId;
+    bundleName: string;
+    d4hTeams: KitCheckD4HTeam[];
+    /** Null once the sender's account is purged. */
+    sentByName: string | null;
+    createdAt: Date;
+    counts: KitCheckCounts;
+};
+
+/** One member's request, as a kit check's page shows it. Never carries the token hash. */
+export type KitCheckRequestSummary = {
+    id: KitCheckRequestId;
+    d4hTeamId: number;
+    d4hTeamTitle: string;
+    d4hMemberId: number;
+    memberName: string;
+    email: string | null;
+    deliveryStatus: KitCheckDeliveryStatus;
+    sentAt: Date | null;
+    openedAt: Date | null;
+    submittedAt: Date | null;
+    expiresAt: Date | null;
+    /** The instance's: `Submitted`, or `Draft` (never opened, being answered, or reopened). */
+    formStatus: string;
+    progress: KitCheckProgress;
+};
+
+/** A request as the admin pages read it: everything but the token hash and the answers. */
+const requestSelect = {
+    id: true,
+    d4hTeamId: true,
+    d4hTeamTitle: true,
+    d4hMemberId: true,
+    memberName: true,
+    email: true,
+    deliveryStatus: true,
+    sentAt: true,
+    openedAt: true,
+    submittedAt: true,
+    expiresAt: true,
+    formInstance: { select: { formStatus: true } },
+} as const;
+
+/** What `requestSelect` reads. */
+type RequestRecord = Omit<KitCheckRequestSummary, "id" | "formStatus" | "progress"> & {
+    id: string;
+    formInstance: { formStatus: string };
+};
+
+function toRequestSummary({ formInstance, ...request }: RequestRecord): KitCheckRequestSummary {
+    const { formStatus } = formInstance;
+    return {
+        ...request,
+        id: KitCheckRequestId.schema.parse(request.id),
+        formStatus,
+        progress: progressOf({ ...request, formStatus }),
+    };
+}
+
+function toKitCheckSummary(
+    check: {
+        id: string;
+        bundleName: string;
+        d4hTeams: unknown;
+        createdAt: Date;
+        sentBy: { name: string } | null;
+    },
+    requests: readonly KitCheckRequestSummary[],
+): KitCheckSummary {
+    return {
+        id: KitCheckId.schema.parse(check.id),
+        bundleName: check.bundleName,
+        d4hTeams: z.array(KitCheckD4HTeam).parse(check.d4hTeams),
+        sentByName: check.sentBy?.name ?? null,
+        createdAt: check.createdAt,
+        counts: countRequests(requests),
+    };
+}
+
+/** The organization's kit checks, newest first, each with its counts by delivery and progress. */
+export async function listKitChecks(ctx: OrgServiceContext): Promise<KitCheckSummary[]> {
+    const checks = await ctx.prisma.kitCheck.findMany({
+        where: { organizationId: ctx.organizationId },
+        include: {
+            sentBy: { select: { name: true } },
+            requests: { select: requestSelect },
+        },
+        orderBy: { createdAt: "desc" },
+    });
+
+    return checks.map(({ requests, ...check }) =>
+        toKitCheckSummary(check, requests.map(toRequestSummary)),
+    );
+}
+
+/**
+ * A kit check with its requests, by team and then member name.
+ *
+ * @throws NotFoundError if the kit check isn't in the organization.
+ */
+export async function requireKitCheckById(
+    ctx: OrgServiceContext,
+    kitCheckId: KitCheckId,
+): Promise<KitCheckSummary & { requests: KitCheckRequestSummary[] }> {
+    const check = await ctx.prisma.kitCheck.findFirst({
+        where: { id: kitCheckId, organizationId: ctx.organizationId },
+        include: {
+            sentBy: { select: { name: true } },
+            requests: { select: requestSelect },
+        },
+    });
+    if (!check) throw new NotFoundError(`KitCheck(id=${kitCheckId}) not found.`);
+
+    const requests = check.requests
+        .map(toRequestSummary)
+        .toSorted(
+            (a, b) =>
+                a.d4hTeamTitle.localeCompare(b.d4hTeamTitle) ||
+                a.memberName.localeCompare(b.memberName),
+        );
+    return { ...toKitCheckSummary(check, requests), requests };
+}
+
+/** What a member was asked, and what they've answered. */
+export type KitCheckAnswers = {
+    /** The request's team's templates, as snapshotted at send (decision 6a). */
+    templates: KitCheckTemplate[];
+    heldItems: KitCheckHeldItem[];
+    /** The last submitted answer (decision 10); null until the first submit. */
+    submittedData: KitCheckResponseData | null;
+    /** The working copy. */
+    formData: KitCheckResponseData;
+    formStatus: string;
+};
+
+/**
+ * A request's snapshot and answers: what the track page's answers dialog shows.
+ *
+ * @throws NotFoundError if the request isn't in the organization.
+ */
+export async function getKitCheckAnswers(
+    ctx: OrgServiceContext,
+    requestId: KitCheckRequestId,
+): Promise<KitCheckAnswers> {
+    const request = await ctx.prisma.kitCheckRequest.findFirst({
+        where: { id: requestId, organizationId: ctx.organizationId },
+        select: {
+            d4hTeamId: true,
+            heldItems: true,
+            submittedData: true,
+            kitCheck: { select: { templates: true } },
+            formInstance: { select: { formData: true, formStatus: true } },
+        },
+    });
+    if (!request) throw new NotFoundError(`KitCheckRequest(id=${requestId}) not found.`);
+
+    const templatesByTeam = KitCheckTemplatesByTeam.parse(request.kitCheck.templates);
+    return {
+        templates: templatesByTeam[String(request.d4hTeamId)] ?? [],
+        heldItems: z.array(KitCheckHeldItem).parse(request.heldItems),
+        submittedData:
+            request.submittedData === null
+                ? null
+                : KitCheckResponseData.parse(request.submittedData),
+        formData: KitCheckResponseData.parse(request.formInstance.formData),
+        formStatus: request.formInstance.formStatus,
+    };
 }

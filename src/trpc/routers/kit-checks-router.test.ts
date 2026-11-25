@@ -6,10 +6,19 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { NotConfiguredError, NotFoundError } from "@/lib/errors";
+import { EMPTY_ANSWER } from "@/lib/kit-check-validate";
 import type { D4HEquipmentListItem } from "@/lib/schemas/d4h/equipment-item";
+import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { I3BundleId } from "@/lib/schemas/i3-bundle";
 import { I3TemplateId } from "@/lib/schemas/i3-template";
 import { I3TemplateVariantId } from "@/lib/schemas/i3-template-variant";
+import {
+    KitCheckId,
+    KitCheckRequestId,
+    type KitCheckHeldItem,
+    type KitCheckResponseData,
+    type KitCheckTemplate,
+} from "@/lib/schemas/kit-check";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
@@ -248,6 +257,331 @@ describe("kitChecksRouter", () => {
                 { id: TEAM_ID, resourceType: "Team", title: "Rescue Team" },
                 { id: OTHER_TEAM_ID, resourceType: "Team", title: "Alpine Team" },
             ]);
+        });
+    });
+
+    describe("admin reads", () => {
+        const R = {
+            check: KitCheckId.create(),
+            otherCheck: KitCheckId.create(),
+            notOpened: KitCheckRequestId.create(),
+            opened: KitCheckRequestId.create(),
+            submitted: KitCheckRequestId.create(),
+            editing: KitCheckRequestId.create(),
+            noEmail: KitCheckRequestId.create(),
+            otherRequest: KitCheckRequestId.create(),
+        };
+        const otherOrg = OrganizationId.create();
+        const sentAt = new Date("2026-11-20T09:00:00Z");
+        const expiresAt = new Date("2026-12-04T09:00:00Z");
+        const openedAt = new Date("2026-11-21T09:00:00Z");
+        const submittedAt = new Date("2026-11-22T09:00:00Z");
+
+        const template: KitCheckTemplate = {
+            id: T.helmet,
+            category: "PPE",
+            name: "Helmet",
+            variants: [{ id: T.helmetVariant, label: "Petzl Vertex" }],
+            requireSN: false,
+            sized: false,
+            sizeOptional: true,
+            sizeOptions: [],
+        };
+        const otherTeamTemplate: KitCheckTemplate = { ...template, variants: [] };
+        const heldItem: KitCheckHeldItem = {
+            id: "1",
+            templateId: T.helmet,
+            description: "Petzl Vertex",
+            serial: null,
+            variantId: T.helmetVariant,
+            problems: [],
+        };
+        const draft: KitCheckResponseData = {
+            held: { "1": { ...EMPTY_ANSWER, has: "yes" } },
+            missing: {},
+            extras: [],
+            comments: "",
+        };
+        const submitted: KitCheckResponseData = { ...draft, comments: "All good" };
+
+        beforeAll(async () => {
+            await db.user.create({
+                data: { id: T.admin, name: "Sam Admin", email: "sam@example.com" },
+            });
+            await db.organization.create({
+                data: { id: otherOrg, name: "Other", slug: "other", createdAt: new Date() },
+            });
+            await db.kitCheck.create({
+                data: {
+                    id: R.check,
+                    organizationId: T.org,
+                    bundleId: T.bundle,
+                    bundleName: "Responder",
+                    d4hTeams: [
+                        { id: TEAM_ID, title: "Rescue Team" },
+                        { id: OTHER_TEAM_ID, title: "Alpine Team" },
+                    ],
+                    templates: {
+                        [String(TEAM_ID)]: [template],
+                        [String(OTHER_TEAM_ID)]: [otherTeamTemplate],
+                    },
+                    sentById: T.admin,
+                    createdAt: sentAt,
+                },
+            });
+            await db.kitCheck.create({
+                data: {
+                    id: R.otherCheck,
+                    organizationId: otherOrg,
+                    bundleName: "Elsewhere",
+                    d4hTeams: [],
+                    templates: {},
+                },
+            });
+
+            const requests: {
+                id: KitCheckRequestId;
+                organizationId: OrganizationId;
+                kitCheckId: KitCheckId;
+                d4hTeamId: number;
+                d4hTeamTitle: string;
+                memberId: number;
+                memberName: string;
+                email: string | null;
+                deliveryStatus: "Sent" | "NoEmail" | "Failed";
+                openedAt?: Date;
+                submittedAt?: Date;
+                submittedData?: KitCheckResponseData;
+                formStatus: "Draft" | "Submitted";
+            }[] = [
+                {
+                    id: R.notOpened,
+                    organizationId: T.org,
+                    kitCheckId: R.check,
+                    d4hTeamId: TEAM_ID,
+                    d4hTeamTitle: "Rescue Team",
+                    memberId: 1,
+                    memberName: "Zoe North",
+                    email: "zoe@example.com",
+                    deliveryStatus: "Sent",
+                    formStatus: "Draft",
+                },
+                {
+                    id: R.opened,
+                    organizationId: T.org,
+                    kitCheckId: R.check,
+                    d4hTeamId: TEAM_ID,
+                    d4hTeamTitle: "Rescue Team",
+                    memberId: 2,
+                    memberName: "Ana Lee",
+                    email: "ana@example.com",
+                    deliveryStatus: "Failed",
+                    openedAt,
+                    formStatus: "Draft",
+                },
+                {
+                    id: R.submitted,
+                    organizationId: T.org,
+                    kitCheckId: R.check,
+                    d4hTeamId: OTHER_TEAM_ID,
+                    d4hTeamTitle: "Alpine Team",
+                    memberId: 3,
+                    memberName: "Bo Hill",
+                    email: "bo@example.com",
+                    deliveryStatus: "Sent",
+                    openedAt,
+                    submittedAt,
+                    submittedData: submitted,
+                    formStatus: "Submitted",
+                },
+                {
+                    id: R.editing,
+                    organizationId: T.org,
+                    kitCheckId: R.check,
+                    d4hTeamId: TEAM_ID,
+                    d4hTeamTitle: "Rescue Team",
+                    memberId: 4,
+                    memberName: "John Smith",
+                    email: "john@example.com",
+                    deliveryStatus: "Sent",
+                    openedAt,
+                    submittedAt,
+                    submittedData: submitted,
+                    formStatus: "Draft",
+                },
+                {
+                    id: R.noEmail,
+                    organizationId: T.org,
+                    kitCheckId: R.check,
+                    d4hTeamId: TEAM_ID,
+                    d4hTeamTitle: "Rescue Team",
+                    memberId: 5,
+                    memberName: "Kim Park",
+                    email: null,
+                    deliveryStatus: "NoEmail",
+                    formStatus: "Draft",
+                },
+                {
+                    id: R.otherRequest,
+                    organizationId: otherOrg,
+                    kitCheckId: R.otherCheck,
+                    d4hTeamId: TEAM_ID,
+                    d4hTeamTitle: "Rescue Team",
+                    memberId: 1,
+                    memberName: "Elsewhere Member",
+                    email: "else@example.com",
+                    deliveryStatus: "Sent",
+                    formStatus: "Draft",
+                },
+            ];
+
+            for (const request of requests) {
+                const formInstanceId = FormInstanceId.create();
+                await db.formInstance.create({
+                    data: {
+                        id: formInstanceId,
+                        formKey: "kit-check",
+                        organizationId: request.organizationId,
+                        formData: draft,
+                        formStatus: request.formStatus,
+                    },
+                });
+                const sent = request.deliveryStatus === "Sent";
+                await db.kitCheckRequest.create({
+                    data: {
+                        id: request.id,
+                        organizationId: request.organizationId,
+                        kitCheckId: request.kitCheckId,
+                        d4hTeamId: request.d4hTeamId,
+                        d4hTeamTitle: request.d4hTeamTitle,
+                        d4hMemberId: request.memberId,
+                        memberName: request.memberName,
+                        email: request.email,
+                        heldItems: [heldItem],
+                        tokenHash: sent ? `hash-${request.id}` : null,
+                        expiresAt: sent ? expiresAt : null,
+                        deliveryStatus: request.deliveryStatus,
+                        sentAt: sent ? sentAt : null,
+                        openedAt: request.openedAt ?? null,
+                        submittedAt: request.submittedAt ?? null,
+                        submittedData: request.submittedData,
+                        formInstanceId,
+                    },
+                });
+            }
+        });
+
+        it("refuses an org owner without the system admin role", async () => {
+            await expect(owner().listKitChecks({ organizationId: T.org })).rejects.toMatchObject({
+                code: "FORBIDDEN",
+            });
+            await expect(
+                owner().getKitCheck({ organizationId: T.org, kitCheckId: R.check }),
+            ).rejects.toMatchObject({ code: "FORBIDDEN" });
+            await expect(
+                owner().getKitCheckAnswers({ organizationId: T.org, requestId: R.submitted }),
+            ).rejects.toMatchObject({ code: "FORBIDDEN" });
+        });
+
+        const counts = {
+            delivery: { Pending: 0, Sent: 3, Failed: 1, NoEmail: 1 },
+            progress: { NotOpened: 2, Opened: 1, Submitted: 1, Editing: 1 },
+        };
+
+        it("lists the org's kit checks with their counts", async () => {
+            const checks = await admin().listKitChecks({ organizationId: T.org });
+
+            expect(checks).toEqual([
+                {
+                    id: R.check,
+                    bundleName: "Responder",
+                    d4hTeams: [
+                        { id: TEAM_ID, title: "Rescue Team" },
+                        { id: OTHER_TEAM_ID, title: "Alpine Team" },
+                    ],
+                    sentByName: "Sam Admin",
+                    createdAt: sentAt,
+                    counts,
+                },
+            ]);
+        });
+
+        it("gets a kit check with its requests by team and member, and their progress", async () => {
+            const check = await admin().getKitCheck({ organizationId: T.org, kitCheckId: R.check });
+
+            expect(check).toMatchObject({ id: R.check, sentByName: "Sam Admin", counts });
+            expect(check.requests.map((request) => [request.memberName, request.progress])).toEqual(
+                [
+                    ["Bo Hill", "Submitted"],
+                    ["Ana Lee", "Opened"],
+                    ["John Smith", "Editing"],
+                    ["Kim Park", "NotOpened"],
+                    ["Zoe North", "NotOpened"],
+                ],
+            );
+            expect(check.requests.find((request) => request.id === R.editing)).toEqual({
+                id: R.editing,
+                d4hTeamId: TEAM_ID,
+                d4hTeamTitle: "Rescue Team",
+                d4hMemberId: 4,
+                memberName: "John Smith",
+                email: "john@example.com",
+                deliveryStatus: "Sent",
+                sentAt,
+                openedAt,
+                submittedAt,
+                expiresAt,
+                formStatus: "Draft",
+                progress: "Editing",
+            });
+        });
+
+        it("gets a request's snapshot for its own team, and its answers", async () => {
+            const answers = await admin().getKitCheckAnswers({
+                organizationId: T.org,
+                requestId: R.submitted,
+            });
+
+            expect(answers).toEqual({
+                templates: [otherTeamTemplate],
+                heldItems: [heldItem],
+                submittedData: submitted,
+                formData: draft,
+                formStatus: "Submitted",
+            });
+
+            const unsubmitted = await admin().getKitCheckAnswers({
+                organizationId: T.org,
+                requestId: R.opened,
+            });
+            expect(unsubmitted).toMatchObject({
+                templates: [template],
+                submittedData: null,
+                formData: draft,
+                formStatus: "Draft",
+            });
+        });
+
+        it("is NOT_FOUND for another org's kit check or request", async () => {
+            await expect(
+                admin().getKitCheck({ organizationId: T.org, kitCheckId: R.otherCheck }),
+            ).rejects.toMatchObject({ code: "NOT_FOUND" });
+            await expect(
+                admin().getKitCheckAnswers({ organizationId: T.org, requestId: R.otherRequest }),
+            ).rejects.toMatchObject({ code: "NOT_FOUND" });
+        });
+
+        it("never returns a token hash", async () => {
+            const outputs = [
+                await admin().listKitChecks({ organizationId: T.org }),
+                await admin().getKitCheck({ organizationId: T.org, kitCheckId: R.check }),
+                await admin().getKitCheckAnswers({ organizationId: T.org, requestId: R.editing }),
+            ];
+            for (const output of outputs) {
+                const json = JSON.stringify(output);
+                expect(json).not.toContain("tokenHash");
+                expect(json).not.toContain("hash-");
+            }
         });
     });
 

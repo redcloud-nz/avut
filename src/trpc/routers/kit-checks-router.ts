@@ -8,7 +8,15 @@ import * as z from "zod";
 import { ForbiddenError } from "@/lib/errors";
 import { D4HTeamRef } from "@/lib/schemas/d4h/team";
 import { I3BundleId, I3BundleSummary } from "@/lib/schemas/i3-bundle";
-import { KitCheckD4HTeam } from "@/lib/schemas/kit-check";
+import {
+    KitCheckD4HTeam,
+    KitCheckDeliveryStatus,
+    KitCheckHeldItem,
+    KitCheckId,
+    KitCheckRequestId,
+    KitCheckResponseData,
+    KitCheckTemplate,
+} from "@/lib/schemas/kit-check";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import * as KitChecks from "@/server/services/kit-checks";
 
@@ -34,7 +42,71 @@ const KitCheckExcludedLine = z.object({
     reason: z.enum(["deleted", "no-d4h-type", "not-in-team"]),
 });
 
+const KitCheckProgress = z.enum(["NotOpened", "Opened", "Submitted", "Editing"]);
+
+const KitCheckSummary = z.object({
+    id: KitCheckId.schema,
+    bundleName: z.string(),
+    d4hTeams: z.array(KitCheckD4HTeam),
+    sentByName: z.string().nullable(),
+    createdAt: z.date(),
+    counts: z.object({
+        delivery: z.record(KitCheckDeliveryStatus, z.number()),
+        progress: z.record(KitCheckProgress, z.number()),
+    }),
+});
+
+/** A request as the admin pages see it. Deliberately has no token hash. */
+const KitCheckRequestSummary = z.object({
+    id: KitCheckRequestId.schema,
+    d4hTeamId: z.number(),
+    d4hTeamTitle: z.string(),
+    d4hMemberId: z.number(),
+    memberName: z.string(),
+    email: z.string().nullable(),
+    deliveryStatus: KitCheckDeliveryStatus,
+    sentAt: z.date().nullable(),
+    openedAt: z.date().nullable(),
+    submittedAt: z.date().nullable(),
+    expiresAt: z.date().nullable(),
+    formStatus: z.string(),
+    progress: KitCheckProgress,
+});
+
 export const kitChecksRouter = createTrpcRouter({
+    /**
+     * A kit check with every member's request: delivery, progress and times.
+     *
+     * @throws TRPCError(NOT_FOUND) if the kit check isn't in the organization.
+     */
+    getKitCheck: kitCheckProcedure
+        .input(z.object({ kitCheckId: KitCheckId.schema }))
+        .output(KitCheckSummary.extend({ requests: z.array(KitCheckRequestSummary) }))
+        .query(async ({ ctx, input: { kitCheckId } }) => {
+            return KitChecks.requireKitCheckById(ctx, kitCheckId);
+        }),
+
+    /**
+     * What one member was asked (their team's templates and their held items, as snapshotted at
+     * send) and their answers: the last submitted one and the working copy.
+     *
+     * @throws TRPCError(NOT_FOUND) if the request isn't in the organization.
+     */
+    getKitCheckAnswers: kitCheckProcedure
+        .input(z.object({ requestId: KitCheckRequestId.schema }))
+        .output(
+            z.object({
+                templates: z.array(KitCheckTemplate),
+                heldItems: z.array(KitCheckHeldItem),
+                submittedData: KitCheckResponseData.nullable(),
+                formData: KitCheckResponseData,
+                formStatus: z.string(),
+            }),
+        )
+        .query(async ({ ctx, input: { requestId } }) => {
+            return KitChecks.getKitCheckAnswers(ctx, requestId);
+        }),
+
     /**
      * The organization's Active I3 bundles, to pick one to send.
      */
@@ -52,6 +124,13 @@ export const kitChecksRouter = createTrpcRouter({
     listD4HTeams: kitCheckProcedure.output(z.array(D4HTeamRef.schema)).query(async ({ ctx }) => {
         const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
         return KitChecks.listD4HTeams(ctx, accessToken);
+    }),
+
+    /**
+     * The organization's kit checks, newest first, with counts by delivery and progress.
+     */
+    listKitChecks: kitCheckProcedure.output(z.array(KitCheckSummary)).query(async ({ ctx }) => {
+        return KitChecks.listKitChecks(ctx);
     }),
 
     /**

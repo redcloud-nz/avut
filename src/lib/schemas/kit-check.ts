@@ -5,6 +5,8 @@
 
 import * as z from "zod";
 
+import type { KitCheckDeliveryStatus as KitCheckDeliveryStatusRecord } from "@/generated/prisma/client";
+
 import { nanoId16 } from "../id";
 import { zodNanoId16 } from "../validation";
 
@@ -25,6 +27,16 @@ export const KitCheckRequestId = {
 } as const;
 
 export type KitCheckRequestId = string & z.BRAND<"KitCheckRequestId">;
+
+/** How a request's last send went (decision 13). `Pending`: claimed, send not confirmed. */
+export const KitCheckDeliveryStatus = z.enum([
+    "Pending",
+    "Sent",
+    "Failed",
+    "NoEmail",
+]) satisfies z.ZodType<KitCheckDeliveryStatusRecord>;
+
+export type KitCheckDeliveryStatus = z.infer<typeof KitCheckDeliveryStatus>;
 
 /** How long a kit-check link works, from its send (or resend). */
 export const KIT_CHECK_TOKEN_DAYS = 14;

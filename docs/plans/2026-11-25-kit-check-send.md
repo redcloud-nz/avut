@@ -83,7 +83,7 @@ From reading the code:
     - `previewRecipients({ bundleId, d4hTeamIds })`: per team, its members with name, email (trimmed, `null` when blank, as the nag runner reads it) and how many bundle lines they hold; plus the lines the comparison excludes and why. It uses the caller's D4H token, `getD4HTokenMetadata` (a team the token can't reach is NOT_FOUND), `fetchD4HTeamEquipmentItems` plus the extracted filter, `getD4HTeamMembers`, `I3Templates.listFitsForD4HTeam`, `I3Bundles.getWithLines` and `compareBundle()`. Task 5 reuses the same computation.
   - **Done when:** router tests cover FORBIDDEN for an org owner without the admin role, PRECONDITION_FAILED with no D4H token, and NOT_FOUND for a team the token can't reach; snapshot tests cover variants, no variants, serials and items with problems; `d4hApi.listTeamIssuedEquipment`'s tests still pass; `npm run check` passes.
 
-- [ ] **4. Admin reads**
+- [x] **4. Admin reads** (feat(kit-check): add kit check admin reads)
   - **Files:** `src/server/services/kit-checks.ts` + test, `src/trpc/routers/kit-checks-router.ts` + test.
   - **Do:**
     - `listKitChecks`: each check's bundle name, teams, sent by and when, and counts by delivery and progress.
