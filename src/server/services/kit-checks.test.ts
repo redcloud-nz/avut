@@ -3,20 +3,78 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { describe, expect, it } from "vitest";
+import type { ReactElement } from "react";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { render } from "@react-email/components";
 
 import { compareBundle } from "@/lib/i3-bundle-compare";
 import { EMPTY_ANSWER } from "@/lib/kit-check-validate";
+import type { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import type { D4HEquipmentListItem } from "@/lib/schemas/d4h/equipment-item";
-import type { I3BundleLine } from "@/lib/schemas/i3-bundle";
+import { I3BundleId, type I3BundleLine } from "@/lib/schemas/i3-bundle";
 import { I3TemplateId } from "@/lib/schemas/i3-template";
-import { KitCheckResponseData } from "@/lib/schemas/kit-check";
+import { KIT_CHECK_TOKEN_DAYS, KitCheckResponseData } from "@/lib/schemas/kit-check";
+import { OrganizationId } from "@/lib/schemas/organization";
+import { UserId } from "@/lib/schemas/user";
+import { fetchD4HTeamEquipmentItems } from "@/server/d4h-api/equipment";
+import { listFitsForD4HTeam } from "@/server/services/i3-templates";
+import { createMockPrisma } from "@/test/create-prisma-mock";
+import { createOrganizationMockContext } from "@/test/trpc-helpers";
 
 import {
     buildKitCheckSnapshot,
+    createKitCheck,
+    SEND_SPACING_MS,
     type KitCheckIssuedItem,
+    type KitCheckSendDeps,
     type KitCheckVariantSource,
 } from "./kit-checks";
+
+vi.mock("@/server/d4h-access-token", () => ({
+    toD4HCredentialRef: vi.fn((token: { id: string }) => ({
+        credentialId: token.id,
+        organizationId: null,
+        userId: null,
+    })),
+}));
+
+vi.mock("@/server/d4h-api/client", () => ({
+    getD4HTokenMetadata: vi.fn(async () => ({
+        d4HTeams: [{ id: TEAM_ID, resourceType: "Team", title: "Rescue Team", permissions: {} }],
+        d4HOrganisations: [],
+    })),
+    getD4HTeamMembers: vi.fn(async () => [
+        d4hMember(42, "John Smith", " john@example.com "),
+        d4hMember(43, "Ana Lee", "  "),
+        d4hMember(44, "Kim Tan", "kim@example.com"),
+    ]),
+}));
+
+vi.mock("@/server/d4h-api/equipment", async (importOriginal) => ({
+    // Pure, so it runs for real.
+    filterTeamIssuedItems: (await importOriginal<typeof import("@/server/d4h-api/equipment")>())
+        .filterTeamIssuedItems,
+    fetchD4HTeamEquipmentItems: vi.fn(),
+}));
+
+vi.mock("@/server/services/i3-templates", () => ({
+    listFitsForD4HTeam: vi.fn(),
+}));
+
+function d4hMember(id: number, name: string, email: string) {
+    return {
+        id,
+        resourceType: "Member",
+        email: { value: email, verified: true },
+        name,
+        owner: { id: TEAM_ID, resourceType: "Team" },
+        position: null,
+        ref: null,
+        role: { id: null, resourceType: "Role" },
+        status: "OPERATIONAL",
+    };
+}
 
 const TEAM_ID = 7;
 const HARNESS_KIND = 100;
@@ -235,5 +293,221 @@ describe("buildKitCheckSnapshot", () => {
             comments: "",
         });
         expect(KitCheckResponseData.parse(response)).toEqual(response);
+    });
+});
+
+describe("createKitCheck", () => {
+    const HELMET_KIND = 50;
+    const S = {
+        org: OrganizationId.create(),
+        admin: UserId.create(),
+        bundle: I3BundleId.create(),
+        helmet: I3TemplateId.create(),
+    };
+    const db = createMockPrisma();
+    const accessToken = { id: "d4h-token-fixture-id" } as unknown as D4HAccessToken_ServerOnly;
+    const input = { accessToken, bundleId: S.bundle, d4hTeamIds: [TEAM_ID] };
+
+    const ctx = () =>
+        createOrganizationMockContext({
+            organizationId: S.org,
+            user: { id: S.admin, name: "Ana Admin", role: "admin" },
+            prisma: db,
+        });
+
+    /** Deps whose sends succeed, unless `failFor` names the recipient, with numbered tokens. */
+    function makeDeps(failFor: string[] = []) {
+        let tokens = 0;
+        return {
+            sendEmail: vi.fn<KitCheckSendDeps["sendEmail"]>(async ({ to }) =>
+                failFor.includes(String(to))
+                    ? { ok: false as const, error: new Error("Resend said no") }
+                    : { ok: true as const },
+            ),
+            sleep: vi.fn(async () => {}),
+            createLinkToken: vi.fn(() => {
+                tokens++;
+                return { token: `token-${tokens}`, hash: `hash-${tokens}` };
+            }),
+        } satisfies KitCheckSendDeps;
+    }
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: S.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.user.create({
+            data: {
+                id: S.admin,
+                name: "Ana Admin",
+                email: "ana.admin@example.com",
+                emailVerified: true,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+        });
+        await db.i3Template.create({
+            data: {
+                id: S.helmet,
+                organizationId: S.org,
+                name: "Helmet",
+                description: "",
+                d4h: {
+                    create: {
+                        categoryId: 1,
+                        categoryTitle: "PPE",
+                        kindId: HELMET_KIND,
+                        kindTitle: "Helmet",
+                        outputRefFormat: "",
+                        requireSN: false,
+                    },
+                },
+            },
+        });
+        await db.i3Bundle.create({
+            data: { id: S.bundle, organizationId: S.org, name: "Responder", description: "" },
+        });
+        await db.i3BundleItem.create({ data: { bundleId: S.bundle, templateId: S.helmet } });
+    });
+
+    beforeEach(() => {
+        vi.mocked(fetchD4HTeamEquipmentItems).mockResolvedValue([item(1, 42, HELMET_KIND)]);
+        vi.mocked(listFitsForD4HTeam).mockResolvedValue({
+            templateIds: [S.helmet],
+            variantIds: [],
+        });
+    });
+
+    it("creates the check and, per member, a pre-filled draft and a request", async () => {
+        const result = await createKitCheck(ctx(), input, makeDeps());
+
+        expect(result).toEqual({ kitCheckId: result.kitCheckId, sent: 2, failed: 0, noEmail: 1 });
+
+        const check = await db.kitCheck.findUniqueOrThrow({ where: { id: result.kitCheckId } });
+        expect(check).toMatchObject({
+            organizationId: S.org,
+            bundleId: S.bundle,
+            bundleName: "Responder",
+            d4hTeams: [{ id: TEAM_ID, title: "Rescue Team" }],
+            sentById: S.admin,
+        });
+        expect(Object.keys(check.templates as object)).toEqual([String(TEAM_ID)]);
+
+        const requests = await db.kitCheckRequest.findMany({
+            where: { kitCheckId: result.kitCheckId },
+            include: { formInstance: true },
+            orderBy: { d4hMemberId: "asc" },
+        });
+        expect(requests.map((request) => [request.memberName, request.email])).toEqual([
+            ["John Smith", "john@example.com"],
+            ["Ana Lee", null],
+            ["Kim Tan", "kim@example.com"],
+        ]);
+        for (const request of requests) {
+            expect(request.formInstance).toMatchObject({
+                formKey: "kit-check",
+                organizationId: S.org,
+                userId: null,
+                formStatus: "Draft",
+            });
+        }
+        expect(requests[0].formInstance.formData).toMatchObject({
+            held: { "1": { ...EMPTY_ANSWER, has: "yes" } },
+        });
+        expect(requests[0].heldItems).toEqual([
+            expect.objectContaining({ id: "1", templateId: S.helmet }),
+        ]);
+        expect(requests[1].heldItems).toEqual([]);
+    });
+
+    it("marks a member with no email NoEmail, and sends the rest their own link", async () => {
+        const deps = makeDeps();
+        const before = Date.now();
+        const { kitCheckId } = await createKitCheck(ctx(), input, deps);
+
+        const requests = await db.kitCheckRequest.findMany({
+            where: { kitCheckId },
+            orderBy: { d4hMemberId: "asc" },
+        });
+        expect(requests.map((request) => request.deliveryStatus)).toEqual([
+            "Sent",
+            "NoEmail",
+            "Sent",
+        ]);
+        expect(requests.map((request) => request.tokenHash)).toEqual(["hash-1", null, "hash-2"]);
+        expect(requests[1]).toMatchObject({ sentAt: null, expiresAt: null });
+
+        const days = KIT_CHECK_TOKEN_DAYS * 24 * 60 * 60 * 1000;
+        expect(requests[0].sentAt).not.toBeNull();
+        expect(requests[0].expiresAt!.getTime()).toBeGreaterThanOrEqual(before + days);
+        expect(requests[0].expiresAt!.getTime()).toBeLessThanOrEqual(Date.now() + days);
+
+        expect(deps.sendEmail).toHaveBeenCalledTimes(2);
+        expect(deps.sendEmail).toHaveBeenCalledWith(
+            expect.objectContaining({ to: "john@example.com", subject: "Kit check: Responder" }),
+        );
+        expect(deps.sendEmail).toHaveBeenCalledWith(
+            expect.objectContaining({ to: "kim@example.com" }),
+        );
+        const html = await render(deps.sendEmail.mock.calls[0][0].react as ReactElement);
+        expect(html).toMatch(/href="[^"]*\/forms\/kit-check\/token-1"/);
+        expect(html).toContain("Ana Admin");
+    });
+
+    it("marks a failed send Failed with no token, and sends the rest", async () => {
+        const result = await createKitCheck(ctx(), input, makeDeps(["john@example.com"]));
+
+        expect(result).toMatchObject({ sent: 1, failed: 1, noEmail: 1 });
+        const requests = await db.kitCheckRequest.findMany({
+            where: { kitCheckId: result.kitCheckId },
+            orderBy: { d4hMemberId: "asc" },
+        });
+        expect(requests[0]).toMatchObject({
+            deliveryStatus: "Failed",
+            tokenHash: null,
+            expiresAt: null,
+            sentAt: null,
+        });
+        expect(requests[2]).toMatchObject({ deliveryStatus: "Sent", tokenHash: "hash-2" });
+    });
+
+    it("spaces the sends, not before the first", async () => {
+        const deps = makeDeps();
+        await createKitCheck(ctx(), input, deps);
+
+        expect(deps.sleep).toHaveBeenCalledTimes(1);
+        expect(deps.sleep).toHaveBeenCalledWith(SEND_SPACING_MS);
+        const [firstSend, secondSend] = deps.sendEmail.mock.invocationCallOrder;
+        expect(deps.sleep.mock.invocationCallOrder[0]).toBeGreaterThan(firstSend);
+        expect(deps.sleep.mock.invocationCallOrder[0]).toBeLessThan(secondSend);
+    });
+
+    it("logs the check, each request and each send's outcome in one kit-check-send batch", async () => {
+        const { kitCheckId } = await createKitCheck(ctx(), input, makeDeps(["kim@example.com"]));
+
+        const requests = await db.kitCheckRequest.findMany({ where: { kitCheckId } });
+        const objectIds = [kitCheckId, ...requests.map((request) => request.id)];
+        const entries = await db.logEntry.findMany({
+            where: { objectId: { in: objectIds } },
+            orderBy: { sequence: "asc" },
+        });
+
+        const batchIds = [...new Set(entries.map((entry) => entry.batchId))];
+        expect(batchIds).toHaveLength(1);
+        const batch = await db.logBatch.findUniqueOrThrow({ where: { id: batchIds[0]! } });
+        expect(batch).toMatchObject({ operationKey: "kit-check-send", userId: S.admin });
+
+        expect(entries.map((entry) => [entry.action, entry.objectType])).toEqual([
+            ["Create", "KitCheck"],
+            ["Create", "KitCheckRequest"],
+            ["Create", "KitCheckRequest"],
+            ["Create", "KitCheckRequest"],
+            ["Update", "KitCheckRequest"],
+            ["Update", "KitCheckRequest"],
+        ]);
+        expect(entries.slice(4).map((entry) => entry.description)).toEqual([
+            "Kit check sent to John Smith (john@example.com)",
+            "Kit check failed to send to Kim Tan (kim@example.com)",
+        ]);
     });
 });

@@ -14,9 +14,13 @@
 
 import "server-only";
 
+import { addDays } from "date-fns";
 import * as z from "zod";
 
+import { baseUrl } from "@/emails/base-url";
+import KitCheckRequestEmail, { kitCheckRequestSubject } from "@/emails/kit-check-request";
 import { NotFoundError, ValidationError } from "@/lib/errors";
+import { KitCheckForm } from "@/lib/forms";
 import {
     compareBundle,
     type BundleRow,
@@ -28,8 +32,10 @@ import { EMPTY_ANSWER } from "@/lib/kit-check-validate";
 import type { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import type { D4HEquipmentListItem } from "@/lib/schemas/d4h/equipment-item";
 import type { D4HTeamRef } from "@/lib/schemas/d4h/team";
+import { FormInstanceId } from "@/lib/schemas/form-instance";
 import type { I3Bundle, I3BundleId, I3BundleLine, I3BundleSummary } from "@/lib/schemas/i3-bundle";
 import {
+    KIT_CHECK_TOKEN_DAYS,
     KitCheckD4HTeam,
     KitCheckHeldItem,
     KitCheckId,
@@ -44,10 +50,14 @@ import {
 import { toD4HCredentialRef } from "@/server/d4h-access-token";
 import { getD4HTeamMembers, getD4HTokenMetadata } from "@/server/d4h-api/client";
 import { fetchD4HTeamEquipmentItems, filterTeamIssuedItems } from "@/server/d4h-api/equipment";
+import { NoReplyEmailAddress, orgReplyTo, sendEmail } from "@/server/email";
+import { createLinkToken } from "@/server/link-token";
+import { createLogBatch } from "@/server/log-entry";
 
 import * as I3Bundles from "./i3-bundles";
 import * as I3Templates from "./i3-templates";
-import type { OrgServiceContext } from "./service-context";
+import * as OrgSettings from "./organization-settings";
+import { withBatch, type OrgServiceContext } from "./service-context";
 
 // Snapshot (pure)
 
@@ -548,4 +558,264 @@ export async function getKitCheckAnswers(
         formData: KitCheckResponseData.parse(request.formInstance.formData),
         formStatus: request.formInstance.formStatus,
     };
+}
+
+// Create and send
+
+/** The pause between two sends, so one kit check doesn't burst Resend (decision 14). */
+export const SEND_SPACING_MS = 500;
+
+/** The fallback for who's asking, when the sender's account is gone. */
+const UNKNOWN_SENDER = "The team equipment officer";
+
+/** What a send reaches outside the database, injected so tests can stand in for it. */
+export interface KitCheckSendDeps {
+    sendEmail: typeof sendEmail;
+    sleep: (ms: number) => Promise<void>;
+    createLinkToken: typeof createLinkToken;
+}
+
+export const defaultKitCheckSendDeps: KitCheckSendDeps = {
+    sendEmail,
+    sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+    createLinkToken,
+};
+
+/** What every email of one kit check shares. */
+type KitCheckSendContext = {
+    organizationName: string;
+    bundleName: string;
+    requestedBy: string;
+    timeZone: string;
+    replyTo: string | undefined;
+};
+
+/** A request, as the send step reads it. */
+type SendableRequest = {
+    id: KitCheckRequestId;
+    email: string;
+    memberName: string;
+    d4hTeamTitle: string;
+};
+
+/** The organization's name, time zone and Reply-To, and the caller's name as the sender. */
+async function loadSendContext(
+    ctx: OrgServiceContext,
+    bundleName: string,
+): Promise<KitCheckSendContext> {
+    const [organization, sender, settings] = await Promise.all([
+        ctx.prisma.organization.findUniqueOrThrow({
+            where: { id: ctx.organizationId },
+            select: { name: true },
+        }),
+        ctx.prisma.user.findUnique({ where: { id: ctx.userId }, select: { name: true } }),
+        OrgSettings.read(ctx.prisma, ctx.organizationId),
+    ]);
+    return {
+        organizationName: organization.name,
+        bundleName,
+        requestedBy: sender?.name || UNKNOWN_SENDER,
+        timeZone: settings.general.timeZone,
+        replyTo: orgReplyTo(settings),
+    };
+}
+
+/**
+ * Send one request's link: a fresh token, valid for `KIT_CHECK_TOKEN_DAYS`, replacing any earlier
+ * one (decision 1). Shared by create and resend.
+ *
+ * The hash and expiry go on (`Pending`) just before the send, as in the nag runner, so the link
+ * works even if the `Sent` write is lost. On success the request is `Sent` with a new `sentAt`; on
+ * failure it's `Failed` with no token. Either way the outcome is logged with its write. Progress
+ * and answers are never touched (decision 13).
+ */
+async function sendRequest(
+    ctx: OrgServiceContext,
+    request: SendableRequest,
+    send: KitCheckSendContext,
+    deps: KitCheckSendDeps,
+): Promise<"Sent" | "Failed"> {
+    const link = deps.createLinkToken();
+    const expiresAt = addDays(new Date(), KIT_CHECK_TOKEN_DAYS);
+    await ctx.prisma.kitCheckRequest.update({
+        where: { id: request.id, organizationId: ctx.organizationId },
+        data: { tokenHash: link.hash, expiresAt, deliveryStatus: "Pending" },
+    });
+
+    const result = await deps.sendEmail({
+        from: NoReplyEmailAddress,
+        to: request.email,
+        ...(send.replyTo !== undefined && { replyTo: send.replyTo }),
+        subject: kitCheckRequestSubject({ name: send.bundleName }),
+        react: KitCheckRequestEmail({
+            organization: { name: send.organizationName },
+            member: { name: request.memberName },
+            team: { name: request.d4hTeamTitle },
+            bundle: { name: send.bundleName },
+            requestedBy: send.requestedBy,
+            formUrl: `${baseUrl}/forms/kit-check/${link.token}`,
+            expiresAt,
+            timeZone: send.timeZone,
+            recipientEmail: request.email,
+        }),
+    });
+
+    if (result.ok) {
+        await ctx.prisma.$transaction([
+            ctx.prisma.kitCheckRequest.update({
+                where: { id: request.id, organizationId: ctx.organizationId },
+                data: { deliveryStatus: "Sent", sentAt: new Date() },
+            }),
+            ctx.logEvent({
+                action: "Update",
+                objectType: "KitCheckRequest",
+                objectId: request.id,
+                description: `Kit check sent to ${request.memberName} (${request.email})`,
+            }),
+        ]);
+        return "Sent";
+    }
+
+    await ctx.prisma.$transaction([
+        ctx.prisma.kitCheckRequest.update({
+            where: { id: request.id, organizationId: ctx.organizationId },
+            data: { deliveryStatus: "Failed", tokenHash: null, expiresAt: null },
+        }),
+        ctx.logEvent({
+            action: "Update",
+            objectType: "KitCheckRequest",
+            objectId: request.id,
+            description: `Kit check failed to send to ${request.memberName} (${request.email})`,
+        }),
+    ]);
+    return "Failed";
+}
+
+/** How a kit check's sends went. */
+export type KitCheckSendResult = {
+    kitCheckId: KitCheckId;
+    sent: number;
+    failed: number;
+    noEmail: number;
+};
+
+/**
+ * Create a kit check of the bundle for every D4H member of the chosen teams, and email each of
+ * them their link.
+ *
+ * Computes as the preview does, as the caller's D4H token sees it, and snapshots it (decision 6).
+ * One transaction creates the `KitCheck` and, per member, a Draft `FormInstance` holding the
+ * pre-filled answer and a `KitCheckRequest`: `Pending`, or `NoEmail` when D4H has no email for
+ * them (decision 12). Then each `Pending` request is sent in turn, `SEND_SPACING_MS` apart; one
+ * failure marks that request `Failed` and the rest carry on (decision 14). Every entry joins one
+ * `kit-check-send` batch (decision 11).
+ *
+ * @throws NotFoundError if the bundle isn't in the organization, or the token doesn't reach a team.
+ * @throws ValidationError if the bundle is Deleted.
+ */
+export async function createKitCheck(
+    ctx: OrgServiceContext,
+    input: { accessToken: D4HAccessToken_ServerOnly; bundleId: I3BundleId; d4hTeamIds: number[] },
+    deps: KitCheckSendDeps = defaultKitCheckSendDeps,
+): Promise<KitCheckSendResult> {
+    const { bundle, teams } = await computeTeamSnapshots(ctx, input);
+
+    const kitCheckId = KitCheckId.create();
+    const templates: KitCheckTemplatesByTeam = Object.fromEntries(
+        teams.map(({ team, templates }) => [String(team.id), templates]),
+    );
+    const requests = teams.flatMap(({ team, members }) =>
+        members.map(({ member, heldItems, response }) => ({
+            id: KitCheckRequestId.create(),
+            formInstanceId: FormInstanceId.create(),
+            team,
+            member,
+            heldItems,
+            response,
+        })),
+    );
+
+    const batch = await createLogBatch(
+        { operationKey: "kit-check-send", userId: ctx.userId },
+        ctx.prisma,
+    );
+    const batchCtx = withBatch(ctx, batch.id);
+    const teamTitles = teams.map(({ team }) => team.title).join(", ");
+
+    await ctx.prisma.$transaction([
+        ctx.prisma.kitCheck.create({
+            data: {
+                id: kitCheckId,
+                organizationId: ctx.organizationId,
+                bundleId: bundle.id,
+                bundleName: bundle.name,
+                d4hTeams: teams.map(({ team }) => team),
+                templates,
+                sentById: ctx.userId,
+            },
+        }),
+        batchCtx.logEvent({
+            action: "Create",
+            objectType: "KitCheck",
+            objectId: kitCheckId,
+            description: `Kit check of ${bundle.name} for ${teamTitles}`,
+            refs: [{ objectType: "I3Bundle", objectId: bundle.id, role: "context" }],
+        }),
+        ...requests.flatMap(({ id, formInstanceId, team, member, heldItems, response }) => [
+            ctx.prisma.formInstance.create({
+                data: {
+                    id: formInstanceId,
+                    formKey: KitCheckForm.formKey,
+                    organizationId: ctx.organizationId,
+                    userId: null,
+                    formData: response,
+                    formStatus: "Draft",
+                },
+            }),
+            ctx.prisma.kitCheckRequest.create({
+                data: {
+                    id,
+                    organizationId: ctx.organizationId,
+                    kitCheckId,
+                    d4hTeamId: team.id,
+                    d4hTeamTitle: team.title,
+                    d4hMemberId: member.id,
+                    memberName: member.name,
+                    email: member.email,
+                    heldItems,
+                    deliveryStatus: member.email === null ? "NoEmail" : "Pending",
+                    formInstanceId,
+                },
+            }),
+            batchCtx.logEvent({
+                action: "Create",
+                objectType: "KitCheckRequest",
+                objectId: id,
+                description: `Kit check for ${member.name} (${team.title})${member.email === null ? ": no email in D4H" : ""}`,
+                refs: [{ objectType: "KitCheck", objectId: kitCheckId, role: "context" }],
+            }),
+        ]),
+    ]);
+
+    const send = await loadSendContext(ctx, bundle.name);
+    const result: KitCheckSendResult = { kitCheckId, sent: 0, failed: 0, noEmail: 0 };
+    let sendAttempted = false;
+    for (const { id, team, member } of requests) {
+        if (member.email === null) {
+            result.noEmail++;
+            continue;
+        }
+        // Spacing goes between sends, not before the first.
+        if (sendAttempted) await deps.sleep(SEND_SPACING_MS);
+        sendAttempted = true;
+        const outcome = await sendRequest(
+            batchCtx,
+            { id, email: member.email, memberName: member.name, d4hTeamTitle: team.title },
+            send,
+            deps,
+        );
+        if (outcome === "Sent") result.sent++;
+        else result.failed++;
+    }
+    return result;
 }

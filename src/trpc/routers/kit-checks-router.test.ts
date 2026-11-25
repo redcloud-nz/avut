@@ -23,6 +23,7 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import { fetchD4HTeamEquipmentItems } from "@/server/d4h-api/equipment";
+import { sendEmail } from "@/server/email";
 import { listFitsForD4HTeam } from "@/server/services/i3-templates";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
@@ -63,6 +64,11 @@ vi.mock("@/server/d4h-api/equipment", async (importOriginal) => ({
     filterTeamIssuedItems: (await importOriginal<typeof import("@/server/d4h-api/equipment")>())
         .filterTeamIssuedItems,
     fetchD4HTeamEquipmentItems: vi.fn(),
+}));
+
+vi.mock("@/server/email", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/server/email")>()),
+    sendEmail: vi.fn(async () => ({ ok: true as const })),
 }));
 
 vi.mock("@/server/services/i3-templates", () => ({
@@ -626,6 +632,51 @@ describe("kitChecksRouter", () => {
             await expect(
                 admin().previewRecipients({ ...preview, bundleId: T.deletedBundle }),
             ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+        });
+    });
+
+    describe("createKitCheck", () => {
+        it("creates a request per member, sends to those with an email, and returns the counts", async () => {
+            const result = await admin().createKitCheck(preview);
+
+            expect(result).toEqual({
+                kitCheckId: expect.any(String),
+                sent: 1,
+                failed: 0,
+                noEmail: 1,
+            });
+            expect(sendEmail).toHaveBeenCalledTimes(1);
+            expect(sendEmail).toHaveBeenCalledWith(
+                expect.objectContaining({ to: "john@example.com" }),
+            );
+
+            const check = await admin().getKitCheck({
+                organizationId: T.org,
+                kitCheckId: result.kitCheckId,
+            });
+            expect(
+                check.requests.map((request) => [request.memberName, request.deliveryStatus]),
+            ).toEqual([
+                ["Ana Lee", "NoEmail"],
+                ["John Smith", "Sent"],
+            ]);
+        });
+
+        it("refuses an org owner without the system admin role", async () => {
+            await expect(owner().createKitCheck(preview)).rejects.toMatchObject({
+                code: "FORBIDDEN",
+            });
+            expect(sendEmail).not.toHaveBeenCalled();
+        });
+
+        it("is PRECONDITION_FAILED without a personal D4H token", async () => {
+            vi.mocked(getConfiguredD4HAccessToken).mockRejectedValue(
+                new NotConfiguredError("No personal D4H access token."),
+            );
+            await expect(admin().createKitCheck(preview)).rejects.toMatchObject({
+                code: "PRECONDITION_FAILED",
+            });
+            expect(sendEmail).not.toHaveBeenCalled();
         });
     });
 });

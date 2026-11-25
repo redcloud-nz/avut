@@ -75,6 +75,36 @@ const KitCheckRequestSummary = z.object({
 
 export const kitChecksRouter = createTrpcRouter({
     /**
+     * Create a kit check of the bundle for every D4H member of the chosen teams, snapshotting
+     * what each is asked, and email each member with an address their own link, one at a time.
+     * Returns how many were sent, failed, or had no email.
+     *
+     * @throws TRPCError(PRECONDITION_FAILED) if the caller has no personal D4H token here.
+     * @throws TRPCError(NOT_FOUND) if the bundle isn't in the organization, or the token doesn't
+     * reach a team.
+     * @throws TRPCError(BAD_REQUEST) if the bundle is Deleted.
+     */
+    createKitCheck: kitCheckProcedure
+        .input(
+            z.object({
+                bundleId: I3BundleId.schema,
+                d4hTeamIds: z.array(z.number().int()).min(1).max(D4H_TEAMS_MAX),
+            }),
+        )
+        .output(
+            z.object({
+                kitCheckId: KitCheckId.schema,
+                sent: z.number(),
+                failed: z.number(),
+                noEmail: z.number(),
+            }),
+        )
+        .mutation(async ({ ctx, input: { bundleId, d4hTeamIds } }) => {
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
+            return KitChecks.createKitCheck(ctx, { accessToken, bundleId, d4hTeamIds });
+        }),
+
+    /**
      * A kit check with every member's request: delivery, progress and times.
      *
      * @throws TRPCError(NOT_FOUND) if the kit check isn't in the organization.

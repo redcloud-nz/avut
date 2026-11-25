@@ -94,7 +94,7 @@ From reading the code:
 
 ### Review group A2: data layer (send, public procedures)
 
-- [ ] **5. Create and send**
+- [x] **5. Create and send** (feat(kit-check): create and send kit checks)
   - **Files:** `src/server/services/kit-checks.ts` + test, `src/trpc/routers/kit-checks-router.ts` + test, `src/emails/kit-check-request.tsx` (new) + test, `src/client/kit-checks-effects.ts` (new).
   - **Do:**
     - The email, `KitCheckRequestEmail` (React Email, following `d4h-attendance-reminder.tsx`): greeting with the member's name, who's asking, the bundle and team, the link (`${baseUrl}/forms/kit-check/<token>`) and when it expires. Plain wording.
@@ -220,3 +220,9 @@ Follow-ups to draft at the end (ask before filing):
 - Considered items (proposals) on a kit check, to gauge interest in kit not yet in I3.
 
 ## Review notes
+
+From group A1's review (task 3):
+
+- **Duplicate held items.** `buildKitCheckSnapshot` (`src/server/services/kit-checks.ts`) can emit the same D4H item twice. `compareBundle` matches by `kind.id`, and two templates can share a kind. Answers are keyed by item id, so they'd collide. Fix: emit each item at most once, under the first matching column, and add a snapshot test with two lines on one kind.
+- **Variant matching.** `variantId` is matched only against the variants offered to the team, but `problems` comes from all of the template's D4H variants. An item matching a variant that doesn't fit the team gets `variantId: null` and no `"variant"` problem. Fix: match against every variant of the template that has a D4H record. When the match isn't among the offered variants, add `"variant"`, so the member is asked.
+- **Output enums.** In `src/trpc/routers/kit-checks-router.ts`, add `satisfies z.ZodType<…>` to the `KitCheckExcludedLine.reason` and `KitCheckProgress` enums, against `ExcludedReason` and the service's `KitCheckProgress`.
