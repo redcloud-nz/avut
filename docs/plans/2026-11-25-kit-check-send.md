@@ -137,7 +137,7 @@ From reading the code:
 
 The admin pages come before the member form, so the member form's checkpoint has real tokens, sent from the UI.
 
-- [ ] **8. Kit checks list and send page** `visual`
+- [x] **8. Kit checks list and send page** `visual` (feat(kit-check): add kit checks list and send page)
   - **Files:** `src/app/(wrapper)/(authenticated)/orgs/[slug]/d4h-i3/kit-checks/page.tsx`, `…/kit-checks/new/page.tsx`, `src/modules/d4h-i3/components/kit-checks/kit-check-list.tsx`, `kit-check-new.tsx` (new), `OPT_OUT_ROUTES` in `src/components/docs/help-cards.test.ts`.
   - **Do:** follow `docs/patterns/detail-page-data-fetching.md` (page shell, prefetch + `HydrateClient`, `useSuspenseQuery`). Run `npx next typegen` after adding the pages.
     - The list is top-level, so it has no trail. It's a `Kaga` table of checks (bundle, teams, sent, counts) with a New button.
@@ -226,3 +226,17 @@ From group A1's review (task 3):
 - **Duplicate held items.** `buildKitCheckSnapshot` (`src/server/services/kit-checks.ts`) can emit the same D4H item twice. `compareBundle` matches by `kind.id`, and two templates can share a kind. Answers are keyed by item id, so they'd collide. Fix: emit each item at most once, under the first matching column, and add a snapshot test with two lines on one kind.
 - **Variant matching.** `variantId` is matched only against the variants offered to the team, but `problems` comes from all of the template's D4H variants. An item matching a variant that doesn't fit the team gets `variantId: null` and no `"variant"` problem. Fix: match against every variant of the template that has a D4H record. When the match isn't among the offered variants, add `"variant"`, so the member is asked.
 - **Output enums.** In `src/trpc/routers/kit-checks-router.ts`, add `satisfies z.ZodType<…>` to the `KitCheckExcludedLine.reason` and `KitCheckProgress` enums, against `ExcludedReason` and the service's `KitCheckProgress`.
+
+From group A2's review (tasks 5–7):
+
+- **Send loop survives errors.** In `createKitCheck`'s send loop (`src/server/services/kit-checks.ts`), wrap each `sendRequest` call in try/catch. On a throw, count the request as failed and make a best-effort attempt to mark it `Failed` (hash and expiry cleared). Retry the `Sent` write once, as the nag runner's `markSent` does. Add a test where the `Sent` write rejects and the rest still send. Without this, one DB error stops the loop and leaves members `Pending`, and pressing Send again emails everyone twice.
+- **Prune what's submitted.** In `submitKitCheckByToken` (`src/server/services/kit-check-public.ts`), before the transaction:
+  - keep only the `held` keys that are in the request's `heldItems`;
+  - keep only the `missing` keys among the templates the member holds none of;
+  - keep only extra rows with a non-blank `item`.
+
+  So `submittedData` holds only answers to what the member was asked.
+
+- **Status before completeness.** In submit, check the `Draft` status before completeness, so a repeat submit is CONFLICT, not BAD_REQUEST.
+- **Output schema for the public read.** Add an `.output()` discriminated-union schema to `publicForms.getKitCheckByToken`, so later changes can't leak fields to anonymous callers.
+- **Refuse an empty send.** `createKitCheck` refuses a recipient set with no members with a `ValidationError`.
