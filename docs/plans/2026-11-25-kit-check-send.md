@@ -185,7 +185,7 @@ The admin pages come before the member form, so the member form's checkpoint has
     - A template with no variants and `sized: true, sizeOptional: true` shows the free-text size field.
   - **Done when:** the demo at `/forms/kit-check/demo` behaves as before; a test covers validation with a no-variant sized template; `npm run check` passes.
 
-- [ ] **12. Public page `/forms/kit-check/[token]`** `visual`
+- [x] **12. Public page `/forms/kit-check/[token]`** `visual` (feat(kit-check): add the member form page behind the emailed link)
   - **Files:** `src/app/(public)/forms/kit-check/[token]/page.tsx`, `src/components/kit-check/kit-check-member.tsx` (new). No `OPT_OUT_ROUTES` entry: that list covers only authenticated pages.
   - **Do:** follow the D4H nag opt-out page: `robots` noindex and `referrer: "no-referrer"`. A token that fails the input schema gets the invalid card without a call. Otherwise `prefetch(trpc.publicForms.getKitCheckByToken…)` and `HydrateClient`. Nothing changes on GET (decision 7). Run `npx next typegen`. The client component:
     - **`not-found`:** a plain card, "This link has expired or isn't valid. Ask whoever sent it for a new one.", and nothing else.
