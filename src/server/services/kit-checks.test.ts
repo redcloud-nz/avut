@@ -314,7 +314,11 @@ describe("createKitCheck", () => {
     };
     const db = createMockPrisma();
     const accessToken = { id: "d4h-token-fixture-id" } as unknown as D4HAccessToken_ServerOnly;
-    const input = { accessToken, bundleId: S.bundle, d4hTeamIds: [TEAM_ID] };
+    const input = {
+        accessToken,
+        bundleId: S.bundle,
+        teams: [{ d4hTeamId: TEAM_ID, d4hMemberIds: [42, 43, 44] }],
+    };
 
     const ctx = () =>
         createOrganizationMockContext({
@@ -488,6 +492,61 @@ describe("createKitCheck", () => {
         const [firstSend, secondSend] = deps.sendEmail.mock.invocationCallOrder;
         expect(deps.sleep.mock.invocationCallOrder[0]).toBeGreaterThan(firstSend);
         expect(deps.sleep.mock.invocationCallOrder[0]).toBeLessThan(secondSend);
+    });
+
+    it("creates requests for the chosen members only, and sends only to them", async () => {
+        const deps = makeDeps();
+        const result = await createKitCheck(
+            ctx(),
+            { ...input, teams: [{ d4hTeamId: TEAM_ID, d4hMemberIds: [43, 44] }] },
+            deps,
+        );
+
+        expect(result).toMatchObject({ sent: 1, failed: 0, noEmail: 1 });
+        const requests = await db.kitCheckRequest.findMany({
+            where: { kitCheckId: result.kitCheckId },
+            orderBy: { d4hMemberId: "asc" },
+        });
+        expect(requests.map((request) => [request.memberName, request.deliveryStatus])).toEqual([
+            ["Ana Lee", "NoEmail"],
+            ["Kim Tan", "Sent"],
+        ]);
+        expect(deps.sendEmail).toHaveBeenCalledTimes(1);
+        expect(deps.sendEmail).toHaveBeenCalledWith(
+            expect.objectContaining({ to: "kim@example.com" }),
+        );
+    });
+
+    it("refuses a chosen member who isn't in the team, creating and sending nothing", async () => {
+        const deps = makeDeps();
+        const checksBefore = await db.kitCheck.count();
+
+        await expect(
+            createKitCheck(
+                ctx(),
+                { ...input, teams: [{ d4hTeamId: TEAM_ID, d4hMemberIds: [42, 999] }] },
+                deps,
+            ),
+        ).rejects.toBeInstanceOf(ValidationError);
+        expect(await db.kitCheck.count()).toBe(checksBefore);
+        expect(deps.sendEmail).not.toHaveBeenCalled();
+    });
+
+    it("refuses a send with no members chosen, before reading D4H", async () => {
+        const deps = makeDeps();
+        const checksBefore = await db.kitCheck.count();
+        vi.mocked(fetchD4HTeamEquipmentItems).mockClear();
+
+        await expect(
+            createKitCheck(
+                ctx(),
+                { ...input, teams: [{ d4hTeamId: TEAM_ID, d4hMemberIds: [] }] },
+                deps,
+            ),
+        ).rejects.toBeInstanceOf(ValidationError);
+        expect(await db.kitCheck.count()).toBe(checksBefore);
+        expect(fetchD4HTeamEquipmentItems).not.toHaveBeenCalled();
+        expect(deps.sendEmail).not.toHaveBeenCalled();
     });
 
     it("logs the check, each request and each send's outcome in one kit-check-send batch", async () => {

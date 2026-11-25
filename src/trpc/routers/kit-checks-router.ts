@@ -15,6 +15,7 @@ import {
     KitCheckId,
     KitCheckRequestId,
     KitCheckResponseData,
+    KitCheckTeamChoice,
     KitCheckTemplate,
 } from "@/lib/schemas/kit-check";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
@@ -75,20 +76,21 @@ const KitCheckRequestSummary = z.object({
 
 export const kitChecksRouter = createTrpcRouter({
     /**
-     * Create a kit check of the bundle for every D4H member of the chosen teams, snapshotting
-     * what each is asked, and email each member with an address their own link, one at a time.
-     * Returns how many were sent, failed, or had no email.
+     * Create a kit check of the bundle for the chosen D4H members of the chosen teams,
+     * snapshotting what each is asked, and email each member with an address their own link, one
+     * at a time. Returns how many were sent, failed, or had no email.
      *
      * @throws TRPCError(PRECONDITION_FAILED) if the caller has no personal D4H token here.
      * @throws TRPCError(NOT_FOUND) if the bundle isn't in the organization, or the token doesn't
      * reach a team.
-     * @throws TRPCError(BAD_REQUEST) if the bundle is Deleted.
+     * @throws TRPCError(BAD_REQUEST) if the bundle is Deleted, no member is chosen, or a chosen
+     * member isn't in the team they're chosen under.
      */
     createKitCheck: kitCheckProcedure
         .input(
             z.object({
                 bundleId: I3BundleId.schema,
-                d4hTeamIds: z.array(z.number().int()).min(1).max(D4H_TEAMS_MAX),
+                teams: z.array(KitCheckTeamChoice).min(1).max(D4H_TEAMS_MAX),
             }),
         )
         .output(
@@ -99,9 +101,9 @@ export const kitChecksRouter = createTrpcRouter({
                 noEmail: z.number(),
             }),
         )
-        .mutation(async ({ ctx, input: { bundleId, d4hTeamIds } }) => {
+        .mutation(async ({ ctx, input: { bundleId, teams } }) => {
             const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
-            return KitChecks.createKitCheck(ctx, { accessToken, bundleId, d4hTeamIds });
+            return KitChecks.createKitCheck(ctx, { accessToken, bundleId, teams });
         }),
 
     /**

@@ -45,6 +45,7 @@ import {
     type KitCheckAnswerData,
     type KitCheckDeliveryStatus,
     type KitCheckProblem,
+    type KitCheckTeamChoice,
     type KitCheckTemplate,
 } from "@/lib/schemas/kit-check";
 import { toD4HCredentialRef } from "@/server/d4h-access-token";
@@ -700,25 +701,65 @@ export type KitCheckSendResult = {
 };
 
 /**
- * Create a kit check of the bundle for every D4H member of the chosen teams, and email each of
- * them their link.
+ * Create a kit check of the bundle for the chosen D4H members of the chosen teams, and email each
+ * of them their link.
  *
- * Computes as the preview does, as the caller's D4H token sees it, and snapshots it (decision 6).
- * One transaction creates the `KitCheck` and, per member, a Draft `FormInstance` holding the
+ * Computes as the preview does, as the caller's D4H token sees it, and snapshots it (decision 6),
+ * then keeps only the chosen members of each team; the rest get no request. A team listed twice
+ * gets the members chosen under either listing.
+ * One transaction creates the `KitCheck` and, per chosen member, a Draft `FormInstance` holding the
  * pre-filled answer and a `KitCheckRequest`: `Pending`, or `NoEmail` when D4H has no email for
  * them (decision 12). Then each `Pending` request is sent in turn, `SEND_SPACING_MS` apart; one
  * failure marks that request `Failed` and the rest carry on (decision 14). Every entry joins one
  * `kit-check-send` batch (decision 11).
  *
  * @throws NotFoundError if the bundle isn't in the organization, or the token doesn't reach a team.
- * @throws ValidationError if the bundle is Deleted.
+ * @throws ValidationError if the bundle is Deleted, no member is chosen, or a chosen member isn't
+ * in the team they're chosen under.
  */
 export async function createKitCheck(
     ctx: OrgServiceContext,
-    input: { accessToken: D4HAccessToken_ServerOnly; bundleId: I3BundleId; d4hTeamIds: number[] },
+    {
+        accessToken,
+        bundleId,
+        teams: choices,
+    }: {
+        accessToken: D4HAccessToken_ServerOnly;
+        bundleId: I3BundleId;
+        teams: KitCheckTeamChoice[];
+    },
     deps: KitCheckSendDeps = defaultKitCheckSendDeps,
 ): Promise<KitCheckSendResult> {
-    const { bundle, teams } = await computeTeamSnapshots(ctx, input);
+    const chosen = new Map<number, Set<number>>();
+    for (const { d4hTeamId, d4hMemberIds } of choices) {
+        const memberIds = chosen.get(d4hTeamId) ?? new Set<number>();
+        for (const memberId of d4hMemberIds) memberIds.add(memberId);
+        chosen.set(d4hTeamId, memberIds);
+    }
+    if ([...chosen.values()].every((memberIds) => memberIds.size === 0)) {
+        throw new ValidationError("Choose at least one member to send the kit check to.");
+    }
+
+    const { bundle, teams: computed } = await computeTeamSnapshots(ctx, {
+        accessToken,
+        bundleId,
+        d4hTeamIds: [...chosen.keys()],
+    });
+
+    const teams = computed.map((snapshot) => {
+        const memberIds = chosen.get(snapshot.team.id) ?? new Set<number>();
+        const known = new Set(snapshot.members.map(({ member }) => member.id));
+        const foreign = [...memberIds].filter((memberId) => !known.has(memberId));
+        if (foreign.length > 0) {
+            throw new ValidationError(
+                `D4H member ${foreign.join(", ")} isn't in ${snapshot.team.title}.`,
+            );
+        }
+        return {
+            ...snapshot,
+            members: snapshot.members.filter(({ member }) => memberIds.has(member.id)),
+        };
+    });
 
     const kitCheckId = KitCheckId.create();
     const templates: KitCheckTemplatesByTeam = Object.fromEntries(

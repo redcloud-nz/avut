@@ -77,6 +77,17 @@ export const KitCheckD4HTeam = z.object({
 
 export type KitCheckD4HTeam = z.infer<typeof KitCheckD4HTeam>;
 
+/** The most members of one D4H team a kit check can be sent to. */
+export const KIT_CHECK_TEAM_MEMBERS_MAX = 1000;
+
+/** A D4H team a kit check goes to, and which of its members are sent one. */
+export const KitCheckTeamChoice = z.object({
+    d4hTeamId: z.number().int(),
+    d4hMemberIds: z.array(z.number().int()).max(KIT_CHECK_TEAM_MEMBERS_MAX),
+});
+
+export type KitCheckTeamChoice = z.infer<typeof KitCheckTeamChoice>;
+
 /** A brand/model a template allows: one of its I3 variants. */
 export const KitCheckVariant = z.object({
     id: z.string(),

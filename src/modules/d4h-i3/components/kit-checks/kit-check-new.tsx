@@ -13,7 +13,7 @@ import {
     parseAsStringLiteral,
     useQueryState,
 } from "nuqs";
-import { Suspense, useEffect, useId } from "react";
+import { Suspense, useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
@@ -64,6 +64,7 @@ import { useOrganization } from "@/hooks/use-organization";
 import type { ExcludedReason } from "@/lib/i3-bundle-compare";
 import { route } from "@/lib/routes";
 import { I3BundleId } from "@/lib/schemas/i3-bundle";
+import type { KitCheckTeamChoice } from "@/lib/schemas/kit-check";
 import { trpc } from "@/trpc/client";
 
 /** Whether the viewer can read D4H here: the page needs their personal D4H token. */
@@ -236,6 +237,8 @@ function KitCheckNew_Picker({
             {bundle && d4hTeamIds.length > 0 ? (
                 <Suspense fallback={<CardLoadingFallback />}>
                     <KitCheckNew_Preview
+                        // A new bundle or team set starts a fresh choice, everyone ticked.
+                        key={`${bundle.id}:${d4hTeamIds.join(",")}`}
                         bundleId={bundle.id}
                         bundleName={bundle.name}
                         d4hTeamIds={d4hTeamIds}
@@ -272,86 +275,163 @@ function KitCheckNew_Preview({
         }),
     );
 
-    const members = teams.flatMap((team) => team.members);
-    const emailCount = members.filter((member) => member.email !== null).length;
-    const noEmailCount = members.length - emailCount;
+    // Who's left out, by team: everyone starts ticked, no-email members included (decision 12).
+    const [unchosen, setUnchosen] = useState<ReadonlyMap<number, ReadonlySet<number>>>(
+        () => new Map(),
+    );
+
+    const isChosen = (teamId: number, memberId: number) =>
+        !(unchosen.get(teamId)?.has(memberId) ?? false);
+
+    function setMembersChosen(teamId: number, memberIds: number[], chosen: boolean) {
+        setUnchosen((current) => {
+            const teamUnchosen = new Set(current.get(teamId));
+            for (const memberId of memberIds) {
+                if (chosen) teamUnchosen.delete(memberId);
+                else teamUnchosen.add(memberId);
+            }
+            return new Map(current).set(teamId, teamUnchosen);
+        });
+    }
+
+    const choices = teams.map(({ team, members }) => ({
+        d4hTeamId: team.id,
+        d4hMemberIds: members
+            .filter((member) => isChosen(team.id, member.id))
+            .map((member) => member.id),
+    }));
+    const chosenMembers = teams.flatMap(({ team, members }) =>
+        members.filter((member) => isChosen(team.id, member.id)),
+    );
+    const emailCount = chosenMembers.filter((member) => member.email !== null).length;
+    const noEmailCount = chosenMembers.length - emailCount;
 
     return (
         <div className="flex flex-col gap-4">
-            {teams.map(({ team, templateCount, members, excluded }) => (
-                <Card key={team.id}>
-                    <CardHeader>
-                        <CardTitle>{team.title}</CardTitle>
-                        <CardDescription>
-                            {members.length === 1 ? "1 member" : `${members.length} members`}, asked
-                            about {templateCount === 1 ? "1 line" : `${templateCount} lines`} of the
-                            bundle.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex flex-col gap-4">
-                        {members.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">
-                                No members in this team.
-                            </p>
-                        ) : (
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHeadCell>Name</TableHeadCell>
-                                        <TableHeadCell>Email</TableHeadCell>
-                                        <TableHeadCell className="text-center">Held</TableHeadCell>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {members.map((member) => (
-                                        <TableRow key={member.id}>
-                                            <TableCell>{member.name}</TableCell>
-                                            <TableCell>
-                                                {member.email ?? (
-                                                    <Badge variant="warning-outline">
-                                                        No email
-                                                    </Badge>
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                {member.heldCount} of {templateCount}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        )}
-                        {excluded.length > 0 && (
-                            <div className="text-sm">
-                                <p className="font-medium">Not asked about</p>
-                                <ul className="list-disc pl-5 text-muted-foreground">
-                                    {excluded.map((line) => (
-                                        <li key={line.templateId}>
-                                            {line.name}: {EXCLUDED_LABELS[line.reason]}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-            ))}
+            {teams.map(({ team, templateCount, members, excluded }) => {
+                const memberIds = members.map((member) => member.id);
+                const chosenCount = memberIds.filter((id) => isChosen(team.id, id)).length;
+                return (
+                    <Card key={team.id}>
+                        <CardHeader>
+                            <CardTitle>{team.title}</CardTitle>
+                            <CardDescription>
+                                {members.length === 1 ? "1 member" : `${members.length} members`},
+                                asked about{" "}
+                                {templateCount === 1 ? "1 line" : `${templateCount} lines`} of the
+                                bundle.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex flex-col gap-4">
+                            {members.length === 0 ? (
+                                <p className="text-sm text-muted-foreground">
+                                    No members in this team.
+                                </p>
+                            ) : (
+                                <>
+                                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                                        <span className="text-muted-foreground">
+                                            {chosenCount} of {members.length} chosen
+                                        </span>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={chosenCount === members.length}
+                                            onClick={() =>
+                                                setMembersChosen(team.id, memberIds, true)
+                                            }
+                                        >
+                                            Select all
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={chosenCount === 0}
+                                            onClick={() =>
+                                                setMembersChosen(team.id, memberIds, false)
+                                            }
+                                        >
+                                            Select none
+                                        </Button>
+                                    </div>
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHeadCell className="w-8">
+                                                    <span className="sr-only">Send</span>
+                                                </TableHeadCell>
+                                                <TableHeadCell>Name</TableHeadCell>
+                                                <TableHeadCell>Email</TableHeadCell>
+                                                <TableHeadCell className="text-center">
+                                                    Held
+                                                </TableHeadCell>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {members.map((member) => (
+                                                <TableRow key={member.id}>
+                                                    <TableCell>
+                                                        <Checkbox
+                                                            aria-label={`Send to ${member.name}`}
+                                                            checked={isChosen(team.id, member.id)}
+                                                            onCheckedChange={(checked) =>
+                                                                setMembersChosen(
+                                                                    team.id,
+                                                                    [member.id],
+                                                                    checked === true,
+                                                                )
+                                                            }
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell>{member.name}</TableCell>
+                                                    <TableCell>
+                                                        {member.email ?? (
+                                                            <Badge variant="warning-outline">
+                                                                No email
+                                                            </Badge>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell className="text-center">
+                                                        {member.heldCount} of {templateCount}
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </>
+                            )}
+                            {excluded.length > 0 && (
+                                <div className="text-sm">
+                                    <p className="font-medium">Not asked about</p>
+                                    <ul className="list-disc pl-5 text-muted-foreground">
+                                        {excluded.map((line) => (
+                                            <li key={line.templateId}>
+                                                {line.name}: {EXCLUDED_LABELS[line.reason]}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                );
+            })}
 
             <div className="flex flex-col items-end gap-2">
                 {noEmailCount > 0 && (
                     <p className="text-sm text-muted-foreground">
                         {noEmailCount === 1
-                            ? "1 member has no email in D4H. They're listed on the kit check, but not sent a link."
-                            : `${noEmailCount} members have no email in D4H. They're listed on the kit check, but not sent a link.`}
+                            ? "1 chosen member has no email in D4H. They're listed on the kit check, but not sent a link."
+                            : `${noEmailCount} chosen members have no email in D4H. They're listed on the kit check, but not sent a link.`}
                     </p>
                 )}
                 <KitCheckNew_SendDialog
                     bundleId={bundleId}
                     bundleName={bundleName}
-                    d4hTeamIds={d4hTeamIds}
+                    choices={choices}
                     teamTitles={teams.map(({ team }) => team.title)}
                     emailCount={emailCount}
-                    memberCount={members.length}
+                    noEmailCount={noEmailCount}
                     emailRedirected={emailRedirected}
                 />
             </div>
@@ -363,20 +443,24 @@ function KitCheckNew_Preview({
 function KitCheckNew_SendDialog({
     bundleId,
     bundleName,
-    d4hTeamIds,
+    choices,
     teamTitles,
     emailCount,
-    memberCount,
+    noEmailCount,
     emailRedirected,
 }: {
     bundleId: I3BundleId;
     bundleName: string;
-    d4hTeamIds: number[];
+    /** The chosen members, by team. */
+    choices: KitCheckTeamChoice[];
     teamTitles: string[];
+    /** Chosen members with an email, each sent a link. */
     emailCount: number;
-    memberCount: number;
+    /** Chosen members with no email, recorded but not sent one. */
+    noEmailCount: number;
     emailRedirected: boolean;
 }) {
+    const memberCount = emailCount + noEmailCount;
     const logger = useLogger("I3", "SendKitCheck");
     const organization = useOrganization();
     const router = useRouter();
@@ -436,9 +520,17 @@ function KitCheckNew_SendDialog({
                 </DialogHeader>
                 <DialogBody className="gap-2 text-sm">
                     <p>
-                        This sends {emails}, one to each member with an email address, each with
-                        their own link. The emails go one at a time, so it can take a little while.
+                        This sends {emails}, one to each chosen member with an email address, each
+                        with their own link. The emails go one at a time, so it can take a little
+                        while.
                     </p>
+                    {noEmailCount > 0 && (
+                        <p>
+                            {noEmailCount === 1
+                                ? "1 chosen member has no email in D4H. They're recorded on the kit check, but not sent a link."
+                                : `${noEmailCount} chosen members have no email in D4H. They're recorded on the kit check, but not sent a link.`}
+                        </p>
+                    )}
                     {emailRedirected && (
                         <p className="text-muted-foreground">
                             This isn&rsquo;t production, so every email goes to the Resend sink, not
@@ -456,7 +548,7 @@ function KitCheckNew_SendDialog({
                             mutation.mutate({
                                 organizationId: organization.id,
                                 bundleId,
-                                d4hTeamIds,
+                                teams: choices,
                             })
                         }
                     />

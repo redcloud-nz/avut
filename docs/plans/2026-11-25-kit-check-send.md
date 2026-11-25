@@ -158,6 +158,14 @@ The admin pages come before the member form, so the member form's checkpoint has
       - **Resend** asks for confirmation. It's hidden for `NoEmail`.
   - **Done when:** progress moves as the member form is used; resend sends a new link and the old one stops working; `npm run check` passes.
 
+- [x] **9a. Choose the recipients** `visual` (added at checkpoint 1, at the user's request) (feat(kit-check): choose which members a kit check goes to)
+  - **Files:** `src/server/services/kit-checks.ts` + test, `src/trpc/routers/kit-checks-router.ts` + test, `src/lib/schemas/kit-check.ts`, `src/modules/d4h-i3/components/kit-checks/kit-check-new.tsx`.
+  - **Do:**
+    - **Server:** `createKitCheck`'s input becomes `{ bundleId, teams: { d4hTeamId, d4hMemberIds }[] }`, keeping the team cap. It computes as before, then keeps only the chosen members of each team. A chosen id that isn't a member of that team is a `ValidationError` (BAD_REQUEST). No members chosen at all is a `ValidationError` too, which also covers the A2 note "refuse an empty send". Unchosen members get no request. `previewRecipients` is unchanged.
+    - **Preview:** a checkbox per member, all ticked when the preview loads, including members with no email (ticked ones are recorded as `NoEmail`, decision 12). Each team gets select all / none and an "n of m chosen" count. Selection is client state, not in the URL, and resets when the bundle or teams change.
+    - **Send:** the confirm counts only the chosen members (emails out, and no-email members recorded). Send is disabled when none are chosen.
+  - **Done when:** tests cover sending to a subset only, a foreign member id refused, and an empty choice refused; on the branch DB, unticking members leaves them off the track page; `npm run check` passes.
+
 **Checkpoint 1:** send to a test D4H team on the branch DB, with mail in the Resend sink, and look over the list, new and track pages.
 
 ### Review group C: member form (visual), then checkpoint 2
@@ -239,7 +247,7 @@ From group A2's review (tasks 5–7):
 
 - **Status before completeness.** In submit, check the `Draft` status before completeness, so a repeat submit is CONFLICT, not BAD_REQUEST.
 - **Output schema for the public read.** Add an `.output()` discriminated-union schema to `publicForms.getKitCheckByToken`, so later changes can't leak fields to anonymous callers.
-- **Refuse an empty send.** `createKitCheck` refuses a recipient set with no members with a `ValidationError`.
+- **Refuse an empty send.** `createKitCheck` refuses a recipient set with no members with a `ValidationError`. Covered by task 9a.
 
 From group B's review (tasks 8–9):
 

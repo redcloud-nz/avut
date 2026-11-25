@@ -220,6 +220,11 @@ describe("kitChecksRouter", () => {
         );
 
     const preview = { organizationId: T.org, bundleId: T.bundle, d4hTeamIds: [TEAM_ID] };
+    const send = {
+        organizationId: T.org,
+        bundleId: T.bundle,
+        teams: [{ d4hTeamId: TEAM_ID, d4hMemberIds: [42, 43] }],
+    };
 
     describe("access", () => {
         it("refuses an org owner without the system admin role", async () => {
@@ -637,7 +642,7 @@ describe("kitChecksRouter", () => {
 
     describe("createKitCheck", () => {
         it("creates a request per member, sends to those with an email, and returns the counts", async () => {
-            const result = await admin().createKitCheck(preview);
+            const result = await admin().createKitCheck(send);
 
             expect(result).toEqual({
                 kitCheckId: expect.any(String),
@@ -662,8 +667,38 @@ describe("kitChecksRouter", () => {
             ]);
         });
 
+        it("sends only to the chosen members", async () => {
+            const result = await admin().createKitCheck({
+                ...send,
+                teams: [{ d4hTeamId: TEAM_ID, d4hMemberIds: [42] }],
+            });
+
+            expect(result).toMatchObject({ sent: 1, failed: 0, noEmail: 0 });
+            const check = await admin().getKitCheck({
+                organizationId: T.org,
+                kitCheckId: result.kitCheckId,
+            });
+            expect(check.requests.map((request) => request.memberName)).toEqual(["John Smith"]);
+        });
+
+        it("is BAD_REQUEST for a member outside the team, or no members at all", async () => {
+            await expect(
+                admin().createKitCheck({
+                    ...send,
+                    teams: [{ d4hTeamId: TEAM_ID, d4hMemberIds: [42, 999] }],
+                }),
+            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+            await expect(
+                admin().createKitCheck({
+                    ...send,
+                    teams: [{ d4hTeamId: TEAM_ID, d4hMemberIds: [] }],
+                }),
+            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+            expect(sendEmail).not.toHaveBeenCalled();
+        });
+
         it("refuses an org owner without the system admin role", async () => {
-            await expect(owner().createKitCheck(preview)).rejects.toMatchObject({
+            await expect(owner().createKitCheck(send)).rejects.toMatchObject({
                 code: "FORBIDDEN",
             });
             expect(sendEmail).not.toHaveBeenCalled();
@@ -673,7 +708,7 @@ describe("kitChecksRouter", () => {
             vi.mocked(getConfiguredD4HAccessToken).mockRejectedValue(
                 new NotConfiguredError("No personal D4H access token."),
             );
-            await expect(admin().createKitCheck(preview)).rejects.toMatchObject({
+            await expect(admin().createKitCheck(send)).rejects.toMatchObject({
                 code: "PRECONDITION_FAILED",
             });
             expect(sendEmail).not.toHaveBeenCalled();
@@ -683,7 +718,7 @@ describe("kitChecksRouter", () => {
     describe("resendRequest", () => {
         /** A sent check's requests, by member name. */
         async function sentRequests() {
-            const { kitCheckId } = await admin().createKitCheck(preview);
+            const { kitCheckId } = await admin().createKitCheck(send);
             const check = await admin().getKitCheck({ organizationId: T.org, kitCheckId });
             vi.mocked(sendEmail).mockClear();
             const byName = Object.fromEntries(
