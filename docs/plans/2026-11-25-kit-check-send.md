@@ -170,7 +170,7 @@ The admin pages come before the member form, so the member form's checkpoint has
 
 ### Review group C: member form (visual), then checkpoint 2
 
-- [ ] **10. Shared debounced autosave hook** `mechanical`
+- [x] **10. Shared debounced autosave hook** `mechanical` (refactor(hooks): share the debounced autosave between draft forms)
   - **Files:** `src/hooks/use-debounced-autosave.ts` (new), `src/modules/d4h-i3/components/form-shared.tsx`.
   - **Do:** move the debouncer, `handleChange` (reset a settled mutation, then `maybeExecute`) and `cancel()` out of `useDraftFormAutosave` into `useDebouncedAutosave`, which takes the save function and the mutation's status/reset (wait defaults to 2000 ms). `useDraftFormAutosave` keeps its signature and calls it. No behaviour change for the I3 forms.
   - **Done when:** `npm run check` passes; the I3 Issue Items form still autosaves (shown at checkpoint 2).
@@ -255,3 +255,7 @@ From group B's review (tasks 8–9):
 - **One `KitCheckProgress`.** Move the enum to `src/lib/schemas/kit-check.ts`, beside `KitCheckDeliveryStatus`, and use it in the service, the router and `kit-check-labels.ts`. This also covers A1's `satisfies` note for that enum.
 - **Lint comment.** In `kit-check-content.tsx`, add the `react-hooks/incompatible-library` disable comment above `useReactTable`, as the sibling lists have.
 - **Answers-dialog wording.** When nothing is submitted, word the note by progress: when the member hasn't opened it yet, say "They haven't opened it yet; this is the pre-filled form".
+
+From task 9a:
+
+- **Drop teams with nobody chosen.** `createKitCheck` should leave a picked team with no chosen members out of the check: off `d4hTeams` and off `templates`.
