@@ -16,8 +16,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { cn } from "@/lib/utils";
-
 import {
     NOT_NEEDED,
     OTHER_VARIANT,
@@ -30,7 +28,7 @@ import {
     type KitCheckResponse,
     type KitCheckSubject,
     type KitCheckTemplate,
-} from "./kit-check-types";
+} from "@/lib/kit-check-types";
 import {
     answerErrors,
     ANY_VARIANT,
@@ -40,7 +38,8 @@ import {
     proposalFit,
     visibleFields,
     type KitCheckField,
-} from "./kit-check-validate";
+} from "@/lib/kit-check-validate";
+import { cn } from "@/lib/utils";
 
 type Errors = Partial<Record<KitCheckField, string>>;
 

@@ -19,7 +19,7 @@ import {
     type ItemQualityResult,
     type ItemQualityRules,
     type ItemQualityState,
-} from "./item-quality";
+} from "./i3-item-quality";
 
 /** A bundle line, as far as the comparison reads it (`I3BundleLine` fits). */
 export type BundleCompareLine = {

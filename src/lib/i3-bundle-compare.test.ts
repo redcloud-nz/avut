@@ -10,8 +10,8 @@ import {
     groupColumnsByCategory,
     type BundleCompareItem,
     type BundleCompareLine,
-} from "./bundle-compare";
-import type { ItemQualityResult, ItemQualityRules } from "./item-quality";
+} from "./i3-bundle-compare";
+import type { ItemQualityResult, ItemQualityRules } from "./i3-item-quality";
 
 const KIND_HELMET = 100;
 const KIND_JACKET = 200;

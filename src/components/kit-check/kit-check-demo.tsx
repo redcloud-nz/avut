@@ -7,11 +7,11 @@
 import { useState } from "react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import type { KitCheckResponse } from "@/lib/kit-check-types";
 
 import { demoHeldItems, demoProposals, demoSubject, demoTemplates } from "./kit-check-demo-data";
 import { KitCheck_Form } from "./kit-check-form";
 import { KitCheck_Summary } from "./kit-check-summary";
-import type { KitCheckResponse } from "./kit-check-types";
 
 /** The kit-check member form over sample data: nothing is saved or sent. */
 export function KitCheck_Demo() {

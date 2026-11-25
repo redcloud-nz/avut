@@ -5,7 +5,6 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
 import {
     OTHER_VARIANT,
     type KitCheckAnswer,
@@ -13,8 +12,8 @@ import {
     type KitCheckProposal,
     type KitCheckResponse,
     type KitCheckTemplate,
-} from "./kit-check-types";
-import { ANY_VARIANT, wantsOne } from "./kit-check-validate";
+} from "@/lib/kit-check-types";
+import { ANY_VARIANT, wantsOne } from "@/lib/kit-check-validate";
 
 function variantLabel(template: KitCheckTemplate, variantId: string, notes: string): string {
     if (variantId === OTHER_VARIANT) return notes.trim() ? `Other: ${notes.trim()}` : "Other";

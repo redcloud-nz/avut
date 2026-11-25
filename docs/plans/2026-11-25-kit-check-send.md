@@ -45,15 +45,15 @@ From reading the code:
     - Server: service `src/server/services/kit-checks.ts`, router `src/trpc/routers/kit-checks-router.ts` (`kitChecks`), effects `src/client/kit-checks-effects.ts`. The public procedures go on `publicForms`, kept alphabetical.
     - The member form stays in `src/components/kit-check/`.
     - Moves to the shared layer: `compareBundle()` and the item-quality rules go to flat files, `src/lib/i3-bundle-compare.ts` and `src/lib/i3-item-quality.ts` (beside `src/lib/i3-template-fit.ts`), because `src/server` can't import `src/modules`. The form's completeness rules go to `src/lib/kit-check-validate.ts`, so the server can check a submit.
-    - The answer and snapshot shapes are defined once, as Zod schemas in `src/lib/schemas/kit-check.ts`. `kit-check-types.ts` imports and re-exports the inferred types; the demo-only extras (`allowOwn`, `optional`, proposals) stay as optional fields.
+    - The answer and snapshot shapes are defined once, as Zod schemas in `src/lib/schemas/kit-check.ts`. `src/lib/kit-check-types.ts` (moved from `src/components/kit-check/` in task 1) imports and re-exports the inferred types; the demo-only extras (`allowOwn`, `optional`, proposals) stay as optional fields.
 17. **Public form bot check.** `submitKitCheckByToken` checks BotID and joins `PUBLIC_FORM_BOT_PROTECTED_PATHS`. Save, open and reopen don't: they fire often, and the token already gates them. The kit check isn't added to `PUBLIC_FORMS`, which is for forms whose organisation comes from a slug. Its doc comment is reworded to say so.
 
 ## Tasks
 
 ### Review group A1: data layer (schema, snapshot, reads)
 
-- [ ] **1. Move the bundle comparison and kit-check rules to the shared layer** `mechanical`
-  - **Files:** `src/modules/d4h-i3/lib/bundle-compare.ts` → `src/lib/i3-bundle-compare.ts`, `src/modules/d4h-i3/lib/item-quality.ts` → `src/lib/i3-item-quality.ts`, `src/components/kit-check/kit-check-validate.ts` → `src/lib/kit-check-validate.ts`, their tests, and every importer (`bundle-matrix.tsx`, `bundle-member-comparison.tsx`, `item-quality-badge.tsx`, `issued-type-content.tsx`, the kit-check form and summary, anything else `grep` finds).
+- [x] **1. Move the bundle comparison and kit-check rules to the shared layer** `mechanical` (refactor(kit-check): move bundle comparison and kit-check rules to the shared layer)
+  - **Files:** `src/modules/d4h-i3/lib/bundle-compare.ts` → `src/lib/i3-bundle-compare.ts`, `src/modules/d4h-i3/lib/item-quality.ts` → `src/lib/i3-item-quality.ts`, `src/components/kit-check/kit-check-validate.ts` → `src/lib/kit-check-validate.ts`, `src/components/kit-check/kit-check-types.ts` → `src/lib/kit-check-types.ts` (`src/lib` is the leaf layer and can't import from components, lint), their tests, and every importer (`bundle-matrix.tsx`, `bundle-member-comparison.tsx`, `item-quality-badge.tsx`, `issued-type-content.tsx`, the kit-check form and summary, anything else `grep` finds).
   - **Do:** `git mv` the files and their tests; update imports. No behaviour change. Don't rewrite dated plans in `docs/plans/`.
   - **Done when:** `npm run check` passes; `grep -rn "d4h-i3/lib/bundle-compare\|d4h-i3/lib/item-quality\|kit-check/kit-check-validate" src` finds nothing.
 

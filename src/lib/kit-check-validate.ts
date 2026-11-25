@@ -10,7 +10,7 @@ import {
     type KitCheckProposal,
     type KitCheckProposalAnswer,
     type KitCheckTemplate,
-} from "./kit-check-types";
+} from "@/lib/kit-check-types";
 
 /** The variant id a member picks for a template with no variants: any one of it. */
 export const ANY_VARIANT = "any";

@@ -5,8 +5,9 @@
 
 import { describe, expect, it } from "vitest";
 
-import type { KitCheckHeldItem, KitCheckTemplate } from "./kit-check-types";
-import { NOT_NEEDED } from "./kit-check-types";
+import type { KitCheckHeldItem, KitCheckTemplate } from "@/lib/kit-check-types";
+import { NOT_NEEDED } from "@/lib/kit-check-types";
+
 import {
     answerErrors,
     EMPTY_ANSWER,

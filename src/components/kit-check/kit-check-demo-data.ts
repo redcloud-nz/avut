@@ -4,14 +4,14 @@
  */
 
 import { J307_JACKET } from "@/lib/j307-jacket";
-
-import demoBundle from "./kit-check-demo-bundle.json";
 import type {
     KitCheckHeldItem,
     KitCheckProposal,
     KitCheckSubject,
     KitCheckTemplate,
-} from "./kit-check-types";
+} from "@/lib/kit-check-types";
+
+import demoBundle from "./kit-check-demo-bundle.json";
 
 /**
  * Data for the public kit-check demo. The bundle's items are real: `kit-check-demo-bundle.json`
