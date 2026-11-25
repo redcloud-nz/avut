@@ -23,7 +23,14 @@ export const I3ReturnItemsForm = {
     description: "Form for returning items in the D4H I3 module.",
 } as const satisfies AVUTForm;
 
-export const forms = [I3IssueItemsForm, I3ReturnItemsForm] as const;
+/** A D4H member's kit check, answered over an emailed link with no account. */
+export const KitCheckForm = {
+    formKey: "kit-check",
+    name: "Kit Check Form",
+    description: "Form for a D4H member to check the I3 bundle items they hold and need.",
+} as const satisfies AVUTForm;
+
+export const forms = [I3IssueItemsForm, I3ReturnItemsForm, KitCheckForm] as const;
 
 export type FormKey = (typeof forms)[number]["formKey"];
 

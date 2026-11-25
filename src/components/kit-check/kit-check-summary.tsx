@@ -135,7 +135,7 @@ export function KitCheck_Summary({
                     empty=""
                     headings={["Item", "Would use one", "Size", "Comments"]}
                     rows={proposals.map((proposal) => {
-                        const answer = response.proposals[proposal.id];
+                        const answer = response.proposals?.[proposal.id];
                         return [
                             proposal.name,
                             INTEREST_LABELS[answer?.interest ?? "unsure"],

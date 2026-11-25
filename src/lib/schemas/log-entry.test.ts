@@ -90,6 +90,8 @@ describe("objectTypesForModule", () => {
             "I3Bundle",
             "I3Template",
             "I3TemplateVariant",
+            "KitCheck",
+            "KitCheckRequest",
         ]);
     });
 
@@ -116,6 +118,7 @@ describe("Operations", () => {
             "i3-return-items",
             "invitation-accept",
             "invitation-reject",
+            "kit-check-send",
             "organization-leave",
             "public-form-submission",
             "rubbish-purge",

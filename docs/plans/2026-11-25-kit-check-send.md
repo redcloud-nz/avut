@@ -57,7 +57,7 @@ From reading the code:
   - **Do:** `git mv` the files and their tests; update imports. No behaviour change. Don't rewrite dated plans in `docs/plans/`.
   - **Done when:** `npm run check` passes; `grep -rn "d4h-i3/lib/bundle-compare\|d4h-i3/lib/item-quality\|kit-check/kit-check-validate" src` finds nothing.
 
-- [ ] **2. Schema, migration, IDs, answer schemas, log vocabulary**
+- [x] **2. Schema, migration, IDs, answer schemas, log vocabulary** (feat(kit-check): add kit check schema, migration and answer schemas)
   - **Files:** `prisma/schema.prisma`, `prisma/migrations/<ts>_kit_checks/`, `src/lib/schemas/kit-check.ts` (new) + test, `src/components/kit-check/kit-check-types.ts`, `src/lib/forms.ts`, `src/lib/operations.ts`, `src/lib/schemas/log-entry.ts`, `src/lib/public-forms.ts` (comment only).
   - **Do:**
     - `KitCheck`: `id`, `organizationId` (cascade), `bundleId String?` (FK `I3Bundle`, `onDelete: SetNull`, so a purged bundle doesn't block the Rubbish bin, `src/server/services/trash.ts`), `bundleName` (snapshot), `d4hTeams Json` (`[{ id, title }]`), `templates Json` (snapshot, decision 6), `status RecordStatus @default(Active)`, `sentById String?` (FK `User`, SetNull), `createdAt`, `updatedAt`. Index on `organizationId`. Map `kit_checks`.
