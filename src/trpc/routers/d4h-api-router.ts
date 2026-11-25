@@ -50,6 +50,7 @@ import {
     fetchD4HTeamEquipmentItems,
     fetchD4HTeamEquipmentKinds,
     fetchD4HTeamEquipmentModels,
+    filterTeamIssuedItems,
     patchD4HEquipmentItem,
 } from "@/server/d4h-api/equipment";
 import { requireD4HTeamPermission } from "@/server/d4h-permissions";
@@ -539,13 +540,7 @@ export const d4hApiRouter = createTrpcRouter({
             }
 
             const items = await fetchD4HTeamEquipmentItems(accessToken, teamId);
-            const issued = items.flatMap((item) =>
-                item.owner.id === teamId &&
-                item.location?.resourceType === "Member" &&
-                item.location.id != null
-                    ? [{ item, holderId: item.location.id }]
-                    : [],
-            );
+            const issued = filterTeamIssuedItems(items, teamId);
             if (issued.length === 0) return [];
 
             const members = await getD4HTeamMembers(credentialRef, teamId).catch(() => []);

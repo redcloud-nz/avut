@@ -1040,7 +1040,7 @@ model KitCheck {
   bundleName     String
   /// `[{ id, title }]`: the D4H teams sent to.
   d4hTeams       Json
-  /// `KitCheckTemplate[]` (`src/lib/schemas/kit-check.ts`), snapshotted at send.
+  /// `KitCheckTemplatesByTeam` (`src/lib/schemas/kit-check.ts`): each D4H team's templates, snapshotted at send.
   templates      Json
   status         RecordStatus @default(Active)
   sentById       String?

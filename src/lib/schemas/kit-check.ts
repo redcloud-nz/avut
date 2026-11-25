@@ -93,6 +93,17 @@ export const KitCheckTemplate = z.object({
 
 export type KitCheckTemplate = z.infer<typeof KitCheckTemplate>;
 
+/**
+ * A kit check's templates, per D4H team (decision 6a): which bundle lines can be compared, and
+ * which variants are offered, depends on the team. Keyed by the D4H team id, as a string (JSON).
+ */
+export const KitCheckTemplatesByTeam = z.record(
+    z.string().regex(/^\d+$/, "Expected a D4H team id."),
+    z.array(KitCheckTemplate),
+);
+
+export type KitCheckTemplatesByTeam = z.infer<typeof KitCheckTemplatesByTeam>;
+
 /** What a held item's D4H record is missing, which the member is asked to fill in. */
 export const KitCheckProblem = z.enum(["serial", "variant"]);
 

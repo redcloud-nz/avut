@@ -17,6 +17,7 @@ import {
     KitCheckHeldItem,
     KitCheckResponseData,
     KitCheckTemplate,
+    KitCheckTemplatesByTeam,
 } from "./kit-check";
 
 /** An answer as the stage-1 form produces it, proposals included. */
@@ -102,6 +103,22 @@ describe("snapshots", () => {
         expect(KitCheckTemplate.parse(harness)).toEqual(harness);
         const gloves = { ...harness, variants: [], requireSN: false, sized: true };
         expect(KitCheckTemplate.parse(gloves)).toEqual(gloves);
+    });
+
+    it("parse templates keyed by D4H team id, and reject any other key", () => {
+        const helmet = {
+            id: "helmet",
+            category: "PPE",
+            name: "Helmet",
+            variants: [],
+            requireSN: false,
+            sized: true,
+            sizeOptional: true,
+            sizeOptions: [],
+        };
+        const byTeam = { "7": [helmet], "8": [] };
+        expect(KitCheckTemplatesByTeam.parse(byTeam)).toEqual(byTeam);
+        expect(KitCheckTemplatesByTeam.safeParse({ rescue: [helmet] }).success).toBe(false);
     });
 
     it("parse a held item and reject an unknown problem", () => {
