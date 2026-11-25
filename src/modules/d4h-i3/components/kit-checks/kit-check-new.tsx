@@ -403,7 +403,9 @@ function KitCheckNew_SendDialog({
                 ].join(", ");
                 if (failed > 0) toast.warning(`Kit check created: ${summary}.`);
                 else toast.success(`Kit check sent: ${summary}.`);
-                router.push(
+                // Replace, not push: Back from the track page must not reopen a send dialog
+                // that one click would send again, emailing everyone twice.
+                router.replace(
                     route("/orgs/[slug]/d4h-i3/kit-checks/[kit_check_id]", {
                         slug: organization.slug,
                         kit_check_id: kitCheckId,
