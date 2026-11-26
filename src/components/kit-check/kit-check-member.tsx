@@ -91,7 +91,9 @@ function KitCheck_MemberOpened({ token, kitCheck }: { token: string; kitCheck: K
 function KitCheck_MemberDraft({ token, kitCheck }: { token: string; kitCheck: KitCheckByToken }) {
     const logger = useLogger("KitCheck", "KitCheck_MemberDraft");
 
-    useEffect(() => window.scrollTo({ top: 0 }), []);
+    useEffect(() => {
+        window.scrollTo({ top: 0 });
+    }, []);
 
     // No effects: the open form isn't re-seeded from the cache while the member types.
     const save = useMutation(
@@ -136,11 +138,13 @@ function KitCheck_MemberDraft({ token, kitCheck }: { token: string; kitCheck: Ki
                     </AlertDescription>
                 </Alert>
             )}
-            <p className="text-sm text-muted-foreground">
-                Your answers save as you go. This link works until{" "}
-                {formatDate(kitCheck.expiresAt, MEMBER_DATES)}.
-            </p>
             <KitCheck_Form
+                notice={
+                    <>
+                        Your answers save as you go. This link works until{" "}
+                        {formatDate(kitCheck.expiresAt, MEMBER_DATES)}.
+                    </>
+                }
                 subject={kitCheck.subject}
                 templates={kitCheck.templates}
                 heldItems={kitCheck.heldItems}
@@ -164,7 +168,9 @@ function KitCheck_MemberSubmitted({
 }) {
     const logger = useLogger("KitCheck", "KitCheck_MemberSubmitted");
 
-    useEffect(() => window.scrollTo({ top: 0 }), []);
+    useEffect(() => {
+        window.scrollTo({ top: 0 });
+    }, []);
 
     const reopen = useMutation(
         trpc.publicForms.reopenKitCheckByToken.mutationOptions({

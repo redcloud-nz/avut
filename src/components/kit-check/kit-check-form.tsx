@@ -67,6 +67,7 @@ export function KitCheck_Form({
     onSubmit,
     submitting = false,
     footer,
+    notice,
 }: {
     subject: KitCheckSubject;
     templates: KitCheckTemplate[];
@@ -82,6 +83,8 @@ export function KitCheck_Form({
     submitting?: boolean;
     /** Shown in the sticky bar beside the submit button (e.g. the save status). */
     footer?: React.ReactNode;
+    /** A last line in the intro card (e.g. that answers save as you go). */
+    notice?: React.ReactNode;
 }) {
     const [response, setResponse] = useState<KitCheckResponse>(
         () => initialResponse ?? { held: {}, missing: {}, extras: [], comments: "", proposals: {} },
@@ -208,15 +211,17 @@ export function KitCheck_Form({
                 <CardContent className="flex flex-col gap-3 text-sm">
                     <p>Hi {subject.memberName},</p>
                     <p>
-                        We&apos;re updating our equipment records before buying new gear. Please go
-                        through each part below: what our records (D4H) say you have, the items
-                        everyone should have, {hasOptional && "things only some members hold, "}
+                        We&apos;re checking our equipment records against the kit each member
+                        actually has. Please go through each part below: what our records (D4H) say
+                        you have, the items everyone should have,{" "}
+                        {hasOptional && "things only some members hold, "}
                         and anything else. Tell us what you need as you go.
                     </p>
                     <p className="text-muted-foreground">
                         It takes about 5 minutes. No login is needed: this link is just for you.
                         Your answers go to {subject.requestedBy}.
                     </p>
+                    {notice && <p className="text-muted-foreground">{notice}</p>}
                 </CardContent>
             </Card>
 

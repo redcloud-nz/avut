@@ -287,14 +287,14 @@ describe("buildKitCheckSnapshot", () => {
         expect(byId.get("21")).toMatchObject({ variantId: null, problems: ["variant"] });
     });
 
-    it("pre-fills every held item as held, and nothing else", () => {
+    it("starts every held item unanswered, and nothing else", () => {
         const { members: result } = snapshot([item(30, 1, GLOVES_KIND), item(31, 1, GLOVES_KIND)]);
 
         const { response } = result.find((entry) => entry.member.id === 1)!;
         expect(response).toEqual({
             held: {
-                "30": { ...EMPTY_ANSWER, has: "yes" },
-                "31": { ...EMPTY_ANSWER, has: "yes" },
+                "30": { ...EMPTY_ANSWER },
+                "31": { ...EMPTY_ANSWER },
             },
             missing: {},
             extras: [],
@@ -424,7 +424,7 @@ describe("createKitCheck", () => {
             });
         }
         expect(requests[0].formInstance.formData).toMatchObject({
-            held: { "1": { ...EMPTY_ANSWER, has: "yes" } },
+            held: { "1": { ...EMPTY_ANSWER } },
         });
         expect(requests[0].heldItems).toEqual([
             expect.objectContaining({ id: "1", templateId: S.helmet }),

@@ -81,7 +81,7 @@ export type KitCheckMemberSnapshot<M extends KitCheckMemberSource> = {
     /** How many of the team's templates the member holds. */
     heldCount: number;
     heldItems: KitCheckHeldItem[];
-    /** The pre-filled answer: every held item `has: "yes"`. */
+    /** The starting answer: an unanswered entry per held item. */
     response: KitCheckResponseData;
 };
 
@@ -120,7 +120,7 @@ function describeItem(item: D4HEquipmentListItem): string {
  *   name. With none to offer, it asks for a free-text size, which may be left blank.
  * - **Held items:** one per counted item (LOST items don't count) of each held line. Its
  *   `variantId` is the offered variant whose D4H brand and model both equal the item's, or `null`.
- * - **Answer:** every held item pre-filled `has: "yes"`; nothing else answered.
+ * - **Answer:** an unanswered entry per held item; nothing answered.
  */
 export function buildKitCheckSnapshot<M extends KitCheckMemberSource>({
     columns,
@@ -178,7 +178,8 @@ export function buildKitCheckSnapshot<M extends KitCheckMemberSource>({
             }),
         );
         const held: Record<string, KitCheckAnswerData> = Object.fromEntries(
-            heldItems.map((held) => [held.id, { ...EMPTY_ANSWER, has: "yes" as const }]),
+            // Unanswered: a pre-ticked "Yes" read as already answered (checkpoint 2).
+            heldItems.map((held) => [held.id, { ...EMPTY_ANSWER, has: null }]),
         );
         return {
             member: row.member,
