@@ -228,6 +228,13 @@ a normal release. The branch survives the merge; keep accumulating on it and
 repeat until `production` moves to the next minor, at which point cut a fresh
 `hotfix/<minor>` branch.
 
+A hotfix branch gets no Vercel deployment of its own, so its first deployment
+would be production. To see it on Vercel before merging, push it to a preview
+branch (`git push origin hotfix/0.9:preview/hotfix-0.9`) and delete that when
+done, as in [Preview deployments](#preview-deployments). Don't enable
+`hotfix/**` in `vercel.json`: the branch outlives each merge, so its Neon
+branch would hold one of the 10 for good.
+
 ## Release notes
 
 `manage-release-version.yml` appends a `## What's Changed` section below the
