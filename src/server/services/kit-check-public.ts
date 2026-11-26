@@ -18,8 +18,8 @@ import "server-only";
 import * as z from "zod";
 
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
-import type { KitCheckSubject } from "@/lib/kit-check-types";
-import { answerErrors, EMPTY_ANSWER } from "@/lib/kit-check-validate";
+import { NOT_NEEDED, OTHER_VARIANT, type KitCheckSubject } from "@/lib/kit-check-types";
+import { answerErrors, ANY_VARIANT, EMPTY_ANSWER } from "@/lib/kit-check-validate";
 import {
     KitCheckHeldItem,
     KitCheckResponseData,
@@ -157,6 +157,47 @@ export function pruneKitCheckResponse(
     };
 }
 
+/** The variant ids an answer may hold besides the template's own: none, and the form's choices. */
+const VARIANT_SENTINELS: ReadonlySet<string> = new Set([
+    "",
+    OTHER_VARIANT,
+    ANY_VARIANT,
+    NOT_NEEDED,
+]);
+
+/**
+ * Refuse an answer whose `variantId` or `wantVariantId` is neither one of its template's offered
+ * variants nor one of the form's own choices (none, Other, Any, Not needed). Answers for items the
+ * member wasn't asked about are skipped: prune first.
+ * @throws ValidationError naming the first unknown variant id.
+ */
+export function assertKnownKitCheckVariants(
+    response: KitCheckResponseData,
+    templates: readonly KitCheckTemplate[],
+    heldItems: readonly KitCheckHeldItem[],
+): void {
+    const templateById = new Map(templates.map((template) => [template.id, template]));
+    const heldById = new Map(heldItems.map((item) => [item.id, item]));
+    const answers = [
+        ...Object.entries(response.held).map(
+            ([id, answer]) => [heldById.get(id)?.templateId, answer] as const,
+        ),
+        ...Object.entries(response.missing),
+    ];
+    for (const [templateId, answer] of answers) {
+        const template = templateId === undefined ? undefined : templateById.get(templateId);
+        if (!template) continue;
+        const offered = new Set(template.variants.map((variant) => variant.id));
+        for (const variantId of [answer.variantId, answer.wantVariantId]) {
+            if (!VARIANT_SENTINELS.has(variantId) && !offered.has(variantId)) {
+                throw new ValidationError(
+                    `"${variantId}" isn't one of the choices for ${template.name}.`,
+                );
+            }
+        }
+    }
+}
+
 /** The actor-less log context for the member's submit and reopen (decision 11). */
 async function memberLogContext(ctx: PublicContext, request: TokenRequest) {
     const actorLabel = `${request.memberName} (${request.d4hTeamTitle})`;
@@ -255,7 +296,8 @@ export async function saveKitCheckDraftByToken(
  * asked (`pruneKitCheckResponse`).
  * @throws NotFoundError(LINK_NOT_VALID) if the token names no live request.
  * @throws ConflictError if the form has already been submitted.
- * @throws ValidationError if the answers leave something the form asks unanswered.
+ * @throws ValidationError if the answers leave something the form asks unanswered, or pick a
+ * variant the template doesn't offer.
  */
 export async function submitKitCheckByToken(
     ctx: PublicContext,
@@ -271,6 +313,7 @@ export async function submitKitCheckByToken(
     const templates = templatesOf(request);
     const heldItems = z.array(KitCheckHeldItem).parse(request.heldItems);
     const formData = pruneKitCheckResponse(submitted, templates, heldItems);
+    assertKnownKitCheckVariants(formData, templates, heldItems);
     if (!isKitCheckComplete(formData, templates, heldItems)) {
         throw new ValidationError("Some questions haven't been answered yet.");
     }

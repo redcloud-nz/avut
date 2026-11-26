@@ -66,7 +66,11 @@ import { useOrganization } from "@/hooks/use-organization";
 import type { ExcludedReason } from "@/lib/i3-bundle-compare";
 import { route } from "@/lib/routes";
 import { I3BundleId } from "@/lib/schemas/i3-bundle";
-import { KIT_CHECK_D4H_TEAMS_MAX, type KitCheckTeamChoice } from "@/lib/schemas/kit-check";
+import {
+    KIT_CHECK_D4H_TEAMS_MAX,
+    KIT_CHECK_RECIPIENTS_MAX,
+    type KitCheckTeamChoice,
+} from "@/lib/schemas/kit-check";
 import { trpc } from "@/trpc/client";
 
 /** Whether the viewer can read D4H here: the page needs their personal D4H token. */
@@ -463,6 +467,12 @@ function KitCheckNew_Preview({
             })}
 
             <div className="flex flex-col items-end gap-2">
+                {chosenMembers.length > KIT_CHECK_RECIPIENTS_MAX && (
+                    <p className="text-sm text-destructive">
+                        A kit check can go to at most {KIT_CHECK_RECIPIENTS_MAX} members, and{" "}
+                        {chosenMembers.length} are chosen. Untick some to send.
+                    </p>
+                )}
                 {noEmailCount > 0 && (
                     <p className="text-sm text-muted-foreground">
                         {noEmailCount === 1
@@ -506,12 +516,13 @@ function KitCheckNew_SendDialog({
     emailRedirected: boolean;
 }) {
     const memberCount = emailCount + noEmailCount;
+    const canSend = memberCount > 0 && memberCount <= KIT_CHECK_RECIPIENTS_MAX;
     const logger = useLogger("I3", "SendKitCheck");
     const organization = useOrganization();
     const router = useRouter();
 
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["send"] as const));
-    const dialogOpen = action === "send" && memberCount > 0;
+    const dialogOpen = action === "send" && canSend;
 
     function handleOpenChange(open: boolean) {
         void setAction(open ? "send" : null, { history: open ? "push" : "replace" });
@@ -554,13 +565,15 @@ function KitCheckNew_SendDialog({
     return (
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button disabled={memberCount === 0}>Send kit check</Button>
+                <Button disabled={!canSend}>Send kit check</Button>
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Send kit check</DialogTitle>
                     <DialogDescription>
-                        Send {bundleName} to {teamTitles.join(", ")}.
+                        Send {bundleName} to{" "}
+                        {memberCount === 1 ? "1 member" : `${memberCount} members`} of{" "}
+                        {teamTitles.join(", ")}.
                     </DialogDescription>
                 </DialogHeader>
                 <DialogBody className="gap-2 text-sm">

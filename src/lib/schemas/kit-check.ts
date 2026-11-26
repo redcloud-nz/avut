@@ -49,6 +49,9 @@ export type KitCheckProgress = z.infer<typeof KitCheckProgress>;
 /** How long a kit-check link works, from its send (or resend). */
 export const KIT_CHECK_TOKEN_DAYS = 14;
 
+/** The most members one kit check may be sent to, across all its teams. */
+export const KIT_CHECK_RECIPIENTS_MAX = 200;
+
 /** A kit-check email's link token. Anything that isn't one simply resolves to `not-found`. */
 export const kitCheckTokenSchema = z.string().min(1).max(200);
 

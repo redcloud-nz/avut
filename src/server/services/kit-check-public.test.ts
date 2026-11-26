@@ -7,8 +7,8 @@ import { addDays } from "date-fns";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
-import { NOT_NEEDED } from "@/lib/kit-check-types";
-import { EMPTY_ANSWER } from "@/lib/kit-check-validate";
+import { NOT_NEEDED, OTHER_VARIANT } from "@/lib/kit-check-types";
+import { ANY_VARIANT, EMPTY_ANSWER } from "@/lib/kit-check-validate";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
 import {
     KitCheckId,
@@ -24,6 +24,7 @@ import { hashLinkToken } from "@/server/link-token";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 
 import {
+    assertKnownKitCheckVariants,
     getKitCheckByToken,
     isKitCheckComplete,
     LINK_NOT_VALID,
@@ -93,6 +94,46 @@ describe("isKitCheckComplete", () => {
             missing: { [gloves.id]: { ...EMPTY_ANSWER, has: "no" } },
         };
         expect(isKitCheckComplete(noWant, [helmet, gloves], [heldHelmet])).toBe(false);
+    });
+});
+
+describe("assertKnownKitCheckVariants", () => {
+    const sizedGloves: KitCheckTemplate = {
+        ...gloves,
+        variants: [{ id: "nitrile", label: "Nitrile" }],
+    };
+    const templates = [helmet, sizedGloves];
+    const withGloves = (answer: { wantVariantId: string }): KitCheckResponseData => ({
+        ...complete,
+        missing: { [gloves.id]: { ...EMPTY_ANSWER, has: "no", ...answer } },
+    });
+
+    it("accepts the template's own variants and the form's choices", () => {
+        for (const wantVariantId of ["nitrile", OTHER_VARIANT, ANY_VARIANT, NOT_NEEDED, ""]) {
+            expect(() =>
+                assertKnownKitCheckVariants(withGloves({ wantVariantId }), templates, [heldHelmet]),
+            ).not.toThrow();
+        }
+    });
+
+    it("refuses a variant id the template doesn't offer", () => {
+        expect(() =>
+            assertKnownKitCheckVariants(withGloves({ wantVariantId: "leather" }), templates, [
+                heldHelmet,
+            ]),
+        ).toThrow(ValidationError);
+        expect(() =>
+            assertKnownKitCheckVariants(
+                {
+                    ...complete,
+                    held: {
+                        [heldHelmet.id]: { ...EMPTY_ANSWER, has: "yes", variantId: "nitrile" },
+                    },
+                },
+                templates,
+                [heldHelmet],
+            ),
+        ).toThrow(ValidationError);
     });
 });
 
@@ -308,6 +349,19 @@ describe("kit check by token", () => {
             operationKey: "public-form-submission",
             actorLabel: "John Smith (Rescue Team)",
         });
+    });
+
+    it("refuses a submit naming a variant the template doesn't offer", async () => {
+        const { token, id } = await seedRequest();
+        const unknown: KitCheckResponseData = {
+            ...complete,
+            missing: { [gloves.id]: { ...EMPTY_ANSWER, has: "no", wantVariantId: "made-up" } },
+        };
+
+        await expect(submitKitCheckByToken(ctx, token, unknown)).rejects.toBeInstanceOf(
+            ValidationError,
+        );
+        expect((await readRequest(id)).formInstance.formStatus).toBe("Draft");
     });
 
     it('submits "Not sure" answers, and stores them', async () => {

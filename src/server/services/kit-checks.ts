@@ -35,6 +35,7 @@ import type { D4HTeamRef } from "@/lib/schemas/d4h/team";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
 import type { I3Bundle, I3BundleId, I3BundleLine, I3BundleSummary } from "@/lib/schemas/i3-bundle";
 import {
+    KIT_CHECK_RECIPIENTS_MAX,
     KIT_CHECK_TOKEN_DAYS,
     KitCheckD4HTeam,
     KitCheckHeldItem,
@@ -637,8 +638,8 @@ async function loadSendContext(
  * one (decision 1). Shared by create and resend.
  *
  * The hash and expiry go on (`Pending`) just before the send, as in the nag runner, so the link
- * works even if the `Sent` write is lost. On success the request is `Sent` with a new `sentAt`; on
- * failure it's `Failed` with no token. Either way the outcome is logged with its write. Progress
+ * works even if the `Sent` write is lost: then it stays `Pending` and still counts as sent. On
+ * success the request is `Sent` with a new `sentAt`; on failure it's `Failed` with no token. Either way the outcome is logged with its write. Progress
  * and answers are never touched (decision 13).
  */
 async function sendRequest(
@@ -686,8 +687,16 @@ async function sendRequest(
                     description: `Kit check sent to ${request.memberName} (${request.email})`,
                 }),
             ]);
-        // Retried once, as the nag runner's `markSent` is: the email has gone.
-        await markSent().catch(() => markSent());
+        // Retried once, as the nag runner's `markSent` is: the email has gone. If both fail, the
+        // request stays `Pending` with its live token, so the link it was sent still works.
+        await markSent()
+            .catch(() => markSent())
+            .catch((error: unknown) => {
+                console.error(
+                    `Kit check request ${request.id}: email sent, but the Sent write failed`,
+                    error,
+                );
+            });
         return "Sent";
     }
 
@@ -734,8 +743,8 @@ export type KitCheckSendResult = {
  * `kit-check-send` batch (decision 11).
  *
  * @throws NotFoundError if the bundle isn't in the organization, or the token doesn't reach a team.
- * @throws ValidationError if the bundle is Deleted, no member is chosen, or a chosen member isn't
- * in the team they're chosen under.
+ * @throws ValidationError if the bundle is Deleted, no member is chosen, more than
+ * `KIT_CHECK_RECIPIENTS_MAX` are, or a chosen member isn't in the team they're chosen under.
  */
 export async function createKitCheck(
     ctx: OrgServiceContext,
@@ -758,6 +767,12 @@ export async function createKitCheck(
     }
     if ([...chosen.values()].every((memberIds) => memberIds.size === 0)) {
         throw new ValidationError("Choose at least one member to send the kit check to.");
+    }
+    const recipientCount = [...chosen.values()].reduce((total, ids) => total + ids.size, 0);
+    if (recipientCount > KIT_CHECK_RECIPIENTS_MAX) {
+        throw new ValidationError(
+            `A kit check can go to at most ${KIT_CHECK_RECIPIENTS_MAX} members; ${recipientCount} are chosen.`,
+        );
     }
 
     const { bundle, teams: computed } = await computeTeamSnapshots(ctx, {

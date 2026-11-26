@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useEffectEvent, useRef } from "react";
 import { toast } from "sonner";
 
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
@@ -149,12 +149,15 @@ function KitCheck_MemberDraft({ token, kitCheck }: { token: string; kitCheck: Ki
         reset: save.reset,
     });
 
-    // Closing or leaving the tab sends a save still waiting to go, unless a submit carries it.
+    // Hiding the page sends a save still waiting to go, unless a submit carries it. On a tab or
+    // app switch the save is reliable; on a close it's best effort, as the browser may drop it.
+    const onHide = useEffectEvent(() => {
+        if (!submitting) flush();
+    });
     useEffect(() => {
-        if (submitting) return;
-        const onPageHide = () => flush();
+        const onPageHide = () => onHide();
         const onVisibilityChange = () => {
-            if (document.visibilityState === "hidden") flush();
+            if (document.visibilityState === "hidden") onHide();
         };
         window.addEventListener("pagehide", onPageHide);
         document.addEventListener("visibilitychange", onVisibilityChange);
@@ -162,7 +165,7 @@ function KitCheck_MemberDraft({ token, kitCheck }: { token: string; kitCheck: Ki
             window.removeEventListener("pagehide", onPageHide);
             document.removeEventListener("visibilitychange", onVisibilityChange);
         };
-    }, [flush, submitting]);
+    }, []);
 
     function handleSubmit(response: KitCheckResponse) {
         if (submit.isPending) return;

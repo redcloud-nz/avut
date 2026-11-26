@@ -16,6 +16,7 @@ import type { D4HEquipmentListItem } from "@/lib/schemas/d4h/equipment-item";
 import { I3BundleId, type I3BundleLine } from "@/lib/schemas/i3-bundle";
 import { I3TemplateId } from "@/lib/schemas/i3-template";
 import {
+    KIT_CHECK_RECIPIENTS_MAX,
     KIT_CHECK_TOKEN_DAYS,
     KitCheckRequestId,
     KitCheckResponseData,
@@ -539,7 +540,7 @@ describe("createKitCheck", () => {
         expect(requests[2]).toMatchObject({ deliveryStatus: "Sent", tokenHash: "hash-2" });
     });
 
-    it("counts a send whose Sent write keeps failing as failed, and sends the rest", async () => {
+    it("counts a send whose Sent write keeps failing as sent, keeping its live link", async () => {
         const deps = makeDeps();
         // John goes first: his Sent write and its one retry both fail.
         const update = db.kitCheckRequest.update.bind(db.kitCheckRequest);
@@ -559,17 +560,15 @@ describe("createKitCheck", () => {
             spy.mockRestore();
         }
 
-        expect(result).toMatchObject({ sent: 1, failed: 1, noEmail: 1 });
+        // The email went out, so the link it carries must keep working.
+        expect(result).toMatchObject({ sent: 2, failed: 0, noEmail: 1 });
         expect(deps.sendEmail).toHaveBeenCalledTimes(2);
         const requests = await db.kitCheckRequest.findMany({
             where: { kitCheckId: result.kitCheckId },
             orderBy: { d4hMemberId: "asc" },
         });
-        expect(requests[0]).toMatchObject({
-            deliveryStatus: "Failed",
-            tokenHash: null,
-            expiresAt: null,
-        });
+        expect(requests[0]).toMatchObject({ deliveryStatus: "Pending", tokenHash: "hash-1" });
+        expect(requests[0].expiresAt).not.toBeNull();
         expect(requests[2]).toMatchObject({ deliveryStatus: "Sent", tokenHash: "hash-2" });
     });
 
@@ -674,6 +673,30 @@ describe("createKitCheck", () => {
             createKitCheck(
                 ctx(),
                 { ...input, teams: [{ d4hTeamId: TEAM_ID, d4hMemberIds: [] }] },
+                deps,
+            ),
+        ).rejects.toBeInstanceOf(ValidationError);
+        expect(await db.kitCheck.count()).toBe(checksBefore);
+        expect(fetchD4HTeamEquipmentItems).not.toHaveBeenCalled();
+        expect(deps.sendEmail).not.toHaveBeenCalled();
+    });
+
+    it("refuses more members than the cap, before reading D4H", async () => {
+        const deps = makeDeps();
+        const checksBefore = await db.kitCheck.count();
+        vi.mocked(fetchD4HTeamEquipmentItems).mockClear();
+        const memberIds = Array.from({ length: KIT_CHECK_RECIPIENTS_MAX }, (_, i) => 1000 + i);
+
+        await expect(
+            createKitCheck(
+                ctx(),
+                {
+                    ...input,
+                    teams: [
+                        { d4hTeamId: TEAM_ID, d4hMemberIds: memberIds },
+                        { d4hTeamId: 8, d4hMemberIds: [1] },
+                    ],
+                },
                 deps,
             ),
         ).rejects.toBeInstanceOf(ValidationError);
