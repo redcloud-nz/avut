@@ -16,7 +16,7 @@ import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 // The URL carries a secret link token: keep it out of search indexes, and out of the Referer
 // header of anything the page links to.
 export const metadata: Metadata = {
-    title: "Equipment check",
+    title: "Issued Equipment Self-Audit",
     robots: { index: false, follow: false },
     referrer: "no-referrer",
 };

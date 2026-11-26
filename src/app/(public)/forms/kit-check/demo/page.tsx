@@ -10,7 +10,7 @@ import type { Metadata } from "next";
 import { KitCheck_Demo } from "@/components/kit-check/kit-check-demo";
 
 export const metadata: Metadata = {
-    title: "Equipment check (demo)",
+    title: "Issued Equipment Self-Audit (demo)",
     robots: { index: false, follow: false },
 };
 

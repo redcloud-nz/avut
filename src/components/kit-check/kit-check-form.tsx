@@ -203,7 +203,7 @@ export function KitCheck_Form({
         <form onSubmit={handleSubmit} className="flex flex-col gap-12" noValidate>
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-xl">Equipment check</CardTitle>
+                    <CardTitle className="text-xl">Issued Equipment Self-Audit</CardTitle>
                     <CardDescription>
                         {subject.teamName} · {subject.bundleName}
                     </CardDescription>
