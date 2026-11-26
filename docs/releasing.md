@@ -154,9 +154,11 @@ done. `/avut-release` does this step, after asking before it pushes.
 
 ## Preview deployments
 
-Vercel deploys only `integration`, `production` and branches under `preview/`
-(`git.deploymentEnabled` in [`vercel.json`](../vercel.json)). Pushing a
-feature branch, or opening its PR, creates no deployment. `integration` is
+Vercel deploys only `integration`, `production`, the `release/v*` branch
+(so the release PR gets a build before it merges into `production`) and
+branches under `preview/` (`git.deploymentEnabled` in
+[`vercel.json`](../vercel.json)). Pushing a feature branch, or opening its PR,
+creates no deployment. `integration` is
 itself a Vercel _preview_ deployment, so previews stay switched on at the
 project level. The rule is `"**": false`, not `"*": false`: Vercel matches
 branch names with minimatch, where `*` stops at `/` and would miss `feat/…`.

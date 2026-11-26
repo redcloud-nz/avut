@@ -5,6 +5,7 @@
       "**": false,
       "integration": true,
       "production": true,
+      "release/**": true,
       "preview/**": true
     }
   },

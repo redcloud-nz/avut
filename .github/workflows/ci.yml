@@ -6,9 +6,10 @@ name: CI
 # `integration` alone (it can carry commits integration's CI never saw if the
 # release branch was cut before they landed). This deliberately doesn't run
 # `prisma migrate deploy && next build`: the Vercel deployment does. Vercel
-# deploys only `integration`, `production` and `preview/**` (vercel.json), so
-# for a PR that build first runs after merge, unless the branch was pushed to
-# `preview/<name>` (docs/releasing.md → Preview deployments).
+# deploys only `integration`, `production`, `release/**` and `preview/**`
+# (vercel.json). The release PR gets that build before merge; a feature PR
+# gets it only after merge, unless the branch was pushed to `preview/<name>`
+# (docs/releasing.md → Preview deployments).
 
 on:
   pull_request:
