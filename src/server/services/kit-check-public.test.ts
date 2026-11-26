@@ -78,6 +78,15 @@ describe("isKitCheckComplete", () => {
         expect(isKitCheckComplete(complete, [helmet, gloves], [heldHelmet])).toBe(true);
     });
 
+    it("counts Not sure as answered", () => {
+        const unsure: KitCheckResponseData = {
+            ...prefilled,
+            held: { [heldHelmet.id]: { ...EMPTY_ANSWER, has: "unsure" } },
+            missing: { [gloves.id]: { ...EMPTY_ANSWER, has: "unsure" } },
+        };
+        expect(isKitCheckComplete(unsure, [helmet, gloves], [heldHelmet])).toBe(true);
+    });
+
     it("asks a No what they want", () => {
         const noWant: KitCheckResponseData = {
             ...prefilled,
@@ -299,6 +308,21 @@ describe("kit check by token", () => {
             operationKey: "public-form-submission",
             actorLabel: "John Smith (Rescue Team)",
         });
+    });
+
+    it('submits "Not sure" answers, and stores them', async () => {
+        const { token, id } = await seedRequest();
+        const unsure: KitCheckResponseData = {
+            ...complete,
+            held: { [heldHelmet.id]: { ...EMPTY_ANSWER, has: "unsure", notes: "Lent it out" } },
+            missing: { [gloves.id]: { ...EMPTY_ANSWER, has: "unsure" } },
+        };
+
+        await submitKitCheckByToken(ctx, token, unsure);
+
+        const after = await readRequest(id);
+        expect(after).toMatchObject({ submittedData: unsure });
+        expect(after.formInstance).toMatchObject({ formStatus: "Submitted", formData: unsure });
     });
 
     it("refuses a save after submit", async () => {

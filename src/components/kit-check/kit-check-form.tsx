@@ -50,7 +50,7 @@ const PROBLEM_LABELS = {
 
 /**
  * The member's side of a kit check, in two parts: the items D4H records as issued to them, and the
- * bundle's items D4H has nothing for. Each asks Have it (Y/N). Yes asks for whatever the record
+ * bundle's items D4H has nothing for. Each asks Have it (Yes, No or Not sure). Yes asks for whatever the record
  * lacks (serial, which variant) and offers a replacement; No asks which variant they want. Then
  * free rows for anything not on the list. Every visible question must be answered to submit.
  *
@@ -515,6 +515,7 @@ function KitCheck_ItemCard({
                     options={[
                         { value: "yes", label: "Yes" },
                         { value: "no", label: "No" },
+                        { value: "unsure", label: "Not sure" },
                         ...(template.allowOwn ? [{ value: "own", label: "Using my own" }] : []),
                     ]}
                     value={answer.has ?? ""}
@@ -655,9 +656,11 @@ function KitCheck_ItemCard({
                             ? "Which one? Brand and model"
                             : answer.has === "own"
                               ? "What do you use? Brand, model"
-                              : held && answer.has === "no"
-                                ? "What happened to it, if you know"
-                                : "Condition, or anything else"
+                              : answer.has === "unsure"
+                                ? "Why not sure? Anything you know helps"
+                                : held && answer.has === "no"
+                                  ? "What happened to it, if you know"
+                                  : "Condition, or anything else"
                     }
                 />
             </CardContent>

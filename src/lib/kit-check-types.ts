@@ -42,8 +42,10 @@ export type KitCheckTemplate = KitCheckTemplateData & {
 
 export type YesNo = "yes" | "no";
 
-/** The Have answer: Yes, No, or (demo only) using their own instead of team-issued kit. */
-export type HaveAnswer = YesNo | "own";
+/**
+ * The Have answer: Yes, No, Not sure, or (demo only) using their own instead of team-issued kit.
+ */
+export type HaveAnswer = YesNo | "unsure" | "own";
 
 /** The variant id the member picks when none of the template's variants fits. */
 export const OTHER_VARIANT = "other";

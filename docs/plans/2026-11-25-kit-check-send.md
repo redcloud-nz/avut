@@ -204,6 +204,18 @@ The admin pages come before the member form, so the member form's checkpoint has
     - an expired and an unknown token show the same card;
     - `npm run check` passes.
 
+- [x] **12a. A "Not sure" answer** `visual` (added at checkpoint 2, at the user's request)
+  - **Files:** `src/lib/schemas/kit-check.ts` + test, `src/lib/kit-check-types.ts`, `src/lib/kit-check-validate.ts` + test, `src/components/kit-check/kit-check-form.tsx`, `kit-check-summary.tsx`, `src/server/services/kit-check-public.ts` + test (if the completeness or `toResponseData` paths need it), `src/components/kit-check/kit-check-member.tsx`.
+  - **Do:**
+    - **Where it goes:** "Do you still have this?" (section 1, held items) and "Do you have one?" (section 2, missing templates) both offer **Yes / No / Not sure**. The answer value is `has: "unsure"`.
+    - **What it asks:** nothing more (no serial, variant, replacement, want or size questions). Notes stay available, and the notes placeholder invites a word on why.
+    - **Completeness:** "Not sure" counts as answered.
+    - **What it means:** it isn't a need, and it isn't counted as held.
+    - **Summary:** shows "Not sure", in both the member's summary and the admin answers dialog (which renders the same component).
+    - **Schema:** `KitCheckAnswerData.has` becomes `"yes" | "no" | "unsure" | null` (`"own"` stays rejected). The form type's `HaveAnswer` gains `"unsure"`. The member page's `toResponseData` passes `"unsure"` through.
+    - **Demo:** `/forms/kit-check/demo` gets the option too. It shares the form.
+  - **Done when:** schema and validate tests cover `"unsure"` (accepted and complete, asks nothing more); a public submit with "Not sure" answers stores them; `npm run check` passes.
+
 **Checkpoint 2:** the member form at phone and desktop widths, opened from a link in the Resend sink; the track page following it; the I3 Issue Items form still autosaving.
 
 ## Docs impact
@@ -259,3 +271,14 @@ From group B's review (tasks 8–9):
 From task 9a:
 
 - **Drop teams with nobody chosen.** `createKitCheck` should leave a picked team with no chosen members out of the check: off `d4hTeams` and off `templates`.
+
+From group C's review (tasks 9a–12):
+
+- **Stale draft after CONFLICT or NOT_FOUND.** In `kit-check-member.tsx`, both the save's and the submit's `onError` invalidate `getKitCheckByToken` on `CONFLICT` or `NOT_FOUND`. The page then shows the submitted view or the not-valid card instead of a stuck draft. Log expected conflicts at `warn`.
+- **The member's own save landing after their submit.** Ignore a save CONFLICT while `submit.isPending || submit.isSuccess`, so "Error" doesn't show next to "Sending…".
+- **Failed submit loses recent edits.** In the submit's `onError`, re-queue the response through `handleChange(response)`, because `cancel()` dropped the queued save. Don't flush before submitting: the flushed save would batch with the submit and break the BotID path match.
+- **Closing the tab loses recent edits.** Expose `flush` from `useDebouncedAutosave`. Call it on `pagehide` and on `visibilitychange: hidden` while no submit is pending.
+- **Save status for screen readers.** Wrap the form's footer save status in `role="status" aria-live="polite"`.
+- **Sticky bar at 320 px.** Check the bar at 320 px wide, and shorten the count or let the bar wrap if it's cramped.
+- **Member-left error wording.** When a member left the team between the preview and the send, the error should read "The team's members changed since the preview. Refresh and send again." instead of a raw D4H id.
+- **Hook status typing.** In `useDebouncedAutosave`, type `status` as `MutationStatus` and compare with `===`.

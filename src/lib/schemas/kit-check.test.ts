@@ -50,6 +50,14 @@ describe("KitCheckResponseData", () => {
         expect(KitCheckResponseData.parse(stageOneResponse)).toEqual(expected);
     });
 
+    it('accepts has: "unsure"', () => {
+        const response = {
+            ...stageOneResponse,
+            held: { "d4h-1": { ...EMPTY_ANSWER, has: "unsure", notes: "Lent it out" } },
+        };
+        expect(KitCheckResponseData.parse(response).held["d4h-1"].has).toBe("unsure");
+    });
+
     it('rejects has: "own"', () => {
         const response = {
             ...stageOneResponse,

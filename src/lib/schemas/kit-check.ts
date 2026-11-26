@@ -150,11 +150,12 @@ export type KitCheckHeldItem = z.infer<typeof KitCheckHeldItem>;
 // The member's answer: a `FormInstance`'s `formData`, and a request's `submittedData`
 
 /**
- * The member's answer for one held item or one missing template. `has` is Yes, No or not yet
- * answered: the demo's "Using my own" isn't offered (decision 4), so a save carrying it is refused.
+ * The member's answer for one held item or one missing template. `has` is Yes, No, Not sure, or
+ * not yet answered. Not sure asks nothing more, and is neither a need nor a held item. The demo's
+ * "Using my own" isn't offered (decision 4), so a save carrying it is refused.
  */
 export const KitCheckAnswerData = z.object({
-    has: z.enum(["yes", "no"]).nullable(),
+    has: z.enum(["yes", "no", "unsure"]).nullable(),
     /** has = yes: the serial, when the record lacks one (or none is recorded). */
     serial: z.string().max(KIT_CHECK_SERIAL_MAX),
     /** has = yes: the variant they hold, when the record doesn't say (or none is recorded). */

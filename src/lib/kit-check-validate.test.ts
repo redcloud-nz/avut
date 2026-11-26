@@ -159,6 +159,17 @@ describe("an optional item", () => {
     });
 });
 
+describe("not sure", () => {
+    it("is answered, asks nothing more, and needs nothing", () => {
+        const unsure = { ...EMPTY_ANSWER, has: "unsure" as const };
+        expect(answerErrors(unsure, harness, heldNoSerial)).toEqual({});
+        expect(answerErrors(unsure, harness, null)).toEqual({});
+        expect([...visibleFields(unsure, harness, heldNoSerial)]).toEqual(["has"]);
+        expect([...visibleFields(unsure, harness, null)]).toEqual(["has"]);
+        expect(wantsOne(unsure)).toBe(false);
+    });
+});
+
 describe("using their own", () => {
     it("asks nothing more, and needs nothing", () => {
         const own = { ...EMPTY_ANSWER, has: "own" as const };

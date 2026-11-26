@@ -86,6 +86,7 @@ export function KitCheck_Summary({
         ...rows.flatMap(({ template, answer, held }) => {
             if (held && answer.has === "no")
                 return [[template.name, "Recorded, but not with them", answer.notes || "—"]];
+            if (answer.has === "unsure") return [[template.name, "Not sure", answer.notes || "—"]];
             if (answer.has === "own")
                 return [
                     [
