@@ -9,7 +9,7 @@ manual: true
 
 Takes a finished feature branch to a merged PR with one human checkpoint. The review happens **before** the push, in a subagent with no authoring context, so a blocker costs one local fix rather than a push → review → fix → re-review round on GitHub. The PR is the record of that review, not the gate for it — `integration` requires CI to pass (strict: branch up to date), not an approval.
 
-`$ARGUMENTS` is optional free text: extra context for the PR description, or `--no-merge` to open the PR without auto-merge (e.g. something you want to look at in the Vercel preview first).
+`$ARGUMENTS` is optional free text: extra context for the PR description, or `--no-merge` to open the PR without auto-merge (e.g. something you want to look at on Vercel first). A feature branch gets no Vercel deployment of its own: to preview it, push it to a `preview/<name>` branch, which runs its migrations on a preview database (see [`docs/releasing.md` → Preview deployments](../../../docs/releasing.md#preview-deployments)).
 
 **A track** (`/avut-develop-feature`'s several issues on one branch, one commit each) ships as one PR like any other branch. The steps below say where a track differs: the review intent, the PR title and body, and the docs item.
 
@@ -126,7 +126,7 @@ Show the user, compactly:
 - what the review found and what you did about it — especially any blocking finding you left alone
 - the PR title and body
 - the docs item and the milestone it goes to, or "no docs impact"
-- what happens next: "Push, open PR, auto-merge (merge commit) when CI is green; if CI fails, fix it and push the fix" — or without auto-merge if `--no-merge` was given or the change needs a look in the preview first (UI change not yet checked in a browser, or a migration). Say the CI-fix part: the user's yes is what covers those later pushes.
+- what happens next: "Push, open PR, auto-merge (merge commit) when CI is green; if CI fails, fix it and push the fix" — or without auto-merge if `--no-merge` was given or the change needs a look first (UI change not yet checked in a browser, or a migration). That look is the local dev server, or a `preview/<name>` push if it has to be on Vercel; the PR itself no longer gets a preview. Say the CI-fix part: the user's yes is what covers those later pushes.
 
 Then wait. This is the only prompt before the push — pushing is publishing, so it needs an explicit yes. (Step 8's cleanup prompt comes after the merge.) If the user wants changes, make them and show the diff again. Don't restart the review for small edits.
 
