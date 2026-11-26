@@ -134,6 +134,24 @@ export function fetchD4HTeamEquipmentItems(
 }
 
 /**
+ * The items of `items` that D4H team `teamId` owns and that are issued to a person (located with a
+ * Member), each with its holder's member id. An item another team owns is left out, since the
+ * item page it would link to treats it as not found.
+ */
+export function filterTeamIssuedItems<I extends D4HEquipmentListItem>(
+    items: readonly I[],
+    teamId: number,
+): { item: I; holderId: number }[] {
+    return items.flatMap((item) =>
+        item.owner.id === teamId &&
+        item.location?.resourceType === "Member" &&
+        item.location.id != null
+            ? [{ item, holderId: item.location.id }]
+            : [],
+    );
+}
+
+/**
  * The generated PATCH body type omits `notes`, which D4H accepts (live probe, 2026-10-22). This
  * calls the endpoint with an untyped body, isolating the one cast.
  */

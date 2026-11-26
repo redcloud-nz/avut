@@ -40,15 +40,11 @@ import {
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
+import { bestQuality, checkItemQuality, qualityRulesForTemplate } from "@/lib/i3-item-quality";
 import { route } from "@/lib/routes";
 import { D4HEquipmentStatus } from "@/lib/schemas/d4h/equipment-item";
 import { D4HI3Module_ItemQuality_Badge } from "@/modules/d4h-i3/components/item-quality-badge";
 import { D4HI3Module_ReturnedBadge } from "@/modules/d4h-i3/components/returned-badge";
-import {
-    bestQuality,
-    checkItemQuality,
-    qualityRulesForTemplate,
-} from "@/modules/d4h-i3/lib/item-quality";
 import { trpc, type RouterOutput } from "@/trpc/client";
 
 /** The optional columns, in the order the Show Columns menu lists them. */

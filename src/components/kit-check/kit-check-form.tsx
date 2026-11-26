@@ -16,8 +16,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { cn } from "@/lib/utils";
-
 import {
     NOT_NEEDED,
     OTHER_VARIANT,
@@ -30,7 +28,7 @@ import {
     type KitCheckResponse,
     type KitCheckSubject,
     type KitCheckTemplate,
-} from "./kit-check-types";
+} from "@/lib/kit-check-types";
 import {
     answerErrors,
     ANY_VARIANT,
@@ -40,7 +38,8 @@ import {
     proposalFit,
     visibleFields,
     type KitCheckField,
-} from "./kit-check-validate";
+} from "@/lib/kit-check-validate";
+import { cn } from "@/lib/utils";
 
 type Errors = Partial<Record<KitCheckField, string>>;
 
@@ -51,35 +50,76 @@ const PROBLEM_LABELS = {
 
 /**
  * The member's side of a kit check, in two parts: the items D4H records as issued to them, and the
- * bundle's items D4H has nothing for. Each asks Have it (Y/N). Yes asks for whatever the record
+ * bundle's items D4H has nothing for. Each asks Have it (Yes, No or Not sure). Yes asks for whatever the record
  * lacks (serial, which variant) and offers a replacement; No asks which variant they want. Then
  * free rows for anything not on the list. Every visible question must be answered to submit.
+ *
+ * Uncontrolled, but seedable and observable: `initialResponse` sets where it starts (a saved
+ * draft), and `onChange` hears the whole response after every edit (to autosave it).
  */
 export function KitCheck_Form({
     subject,
     templates,
     heldItems,
     proposals = [],
+    initialResponse,
+    onChange,
     onSubmit,
+    submitting = false,
+    footer,
+    notice,
 }: {
     subject: KitCheckSubject;
     templates: KitCheckTemplate[];
     heldItems: KitCheckHeldItem[];
     /** Items the team is considering, to gauge interest. */
     proposals?: KitCheckProposal[];
+    /** The answers to start from. Read once, on mount. */
+    initialResponse?: KitCheckResponse;
+    /** Called with the whole response after every edit. */
+    onChange?: (response: KitCheckResponse) => void;
     onSubmit: (response: KitCheckResponse) => void;
+    /** Disables the submit button while a submit is in flight. */
+    submitting?: boolean;
+    /** Shown in the sticky bar beside the submit button (e.g. the save status). */
+    footer?: React.ReactNode;
+    /** A last line in the intro card (e.g. that answers save as you go). */
+    notice?: React.ReactNode;
 }) {
-    const [held, setHeld] = useState<Record<string, KitCheckAnswer>>({});
-    const [proposalAnswers, setProposalAnswers] = useState<Record<string, KitCheckProposalAnswer>>(
-        {},
+    const [response, setResponse] = useState<KitCheckResponse>(
+        () => initialResponse ?? { held: {}, missing: {}, extras: [], comments: "", proposals: {} },
     );
-    const [missing, setMissing] = useState<Record<string, KitCheckAnswer>>({});
-    const [extras, setExtras] = useState<KitCheckExtraItem[]>([]);
-    const [comments, setComments] = useState("");
+    const { held, missing, extras, comments } = response;
+    const proposalAnswers = response.proposals ?? {};
     const [showErrors, setShowErrors] = useState(false);
     const formId = useId();
-    // Extra rows are form-local, never records: a counter is enough to key them.
-    const nextExtraId = useRef(0);
+    // Extra rows are form-local, never records: a counter is enough to key them. It starts past
+    // any numeric ids a saved draft already holds.
+    const [firstExtraId] = useState(() => {
+        const used = extras.map((extra) => Number(extra.id)).filter(Number.isInteger);
+        return Math.max(-1, ...used) + 1;
+    });
+    const nextExtraId = useRef(firstExtraId);
+
+    const update = (change: (prev: KitCheckResponse) => KitCheckResponse) => {
+        const next = change(response);
+        setResponse(next);
+        onChange?.(next);
+    };
+    const setHeld = (
+        change: (prev: Record<string, KitCheckAnswer>) => Record<string, KitCheckAnswer>,
+    ) => update((prev) => ({ ...prev, held: change(prev.held) }));
+    const setMissing = (
+        change: (prev: Record<string, KitCheckAnswer>) => Record<string, KitCheckAnswer>,
+    ) => update((prev) => ({ ...prev, missing: change(prev.missing) }));
+    const setProposalAnswers = (
+        change: (
+            prev: Record<string, KitCheckProposalAnswer>,
+        ) => Record<string, KitCheckProposalAnswer>,
+    ) => update((prev) => ({ ...prev, proposals: change(prev.proposals ?? {}) }));
+    const setExtras = (change: (prev: KitCheckExtraItem[]) => KitCheckExtraItem[]) =>
+        update((prev) => ({ ...prev, extras: change(prev.extras) }));
+    const setComments = (value: string) => update((prev) => ({ ...prev, comments: value }));
 
     const templateById = new Map(templates.map((template) => [template.id, template]));
     const heldRows = heldItems.flatMap((item) => {
@@ -171,15 +211,17 @@ export function KitCheck_Form({
                 <CardContent className="flex flex-col gap-3 text-sm">
                     <p>Hi {subject.memberName},</p>
                     <p>
-                        We&apos;re updating our equipment records before buying new gear. Please go
-                        through each part below: what our records (D4H) say you have, the items
-                        everyone should have, things only some members hold, and anything else. Tell
-                        us what you need as you go.
+                        We&apos;re checking our equipment records against the kit each member
+                        actually has. Please go through each part below: what our records (D4H) say
+                        you have, the items everyone should have,{" "}
+                        {hasOptional && "things only some members hold, "}
+                        and anything else. Tell us what you need as you go.
                     </p>
                     <p className="text-muted-foreground">
                         It takes about 5 minutes. No login is needed: this link is just for you.
                         Your answers go to {subject.requestedBy}.
                     </p>
+                    {notice && <p className="text-muted-foreground">{notice}</p>}
                 </CardContent>
             </Card>
 
@@ -312,11 +354,16 @@ export function KitCheck_Form({
 
             <div className="sticky bottom-0 -mx-4 flex items-center justify-between gap-4 border-t bg-background/95 px-4 py-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] backdrop-blur">
                 <span className="text-xs text-muted-foreground">
-                    {answeredCount} of {rows.length} answered
+                    {answeredCount} of {rows.length}
+                    {/* Dropped on narrow phones (320 px), where the bar would crowd. */}
+                    <span className="sr-only sm:not-sr-only"> answered</span>
                 </span>
-                <Button type="submit" size="sm">
-                    Send my answers
-                </Button>
+                <div className="flex items-center gap-3">
+                    {footer}
+                    <Button type="submit" size="sm" disabled={submitting}>
+                        {submitting ? "Sending…" : "Send my answers"}
+                    </Button>
+                </div>
             </div>
         </form>
     );
@@ -470,6 +517,7 @@ function KitCheck_ItemCard({
                     options={[
                         { value: "yes", label: "Yes" },
                         { value: "no", label: "No" },
+                        { value: "unsure", label: "Not sure" },
                         ...(template.allowOwn ? [{ value: "own", label: "Using my own" }] : []),
                     ]}
                     value={answer.has ?? ""}
@@ -610,9 +658,11 @@ function KitCheck_ItemCard({
                             ? "Which one? Brand and model"
                             : answer.has === "own"
                               ? "What do you use? Brand, model"
-                              : held && answer.has === "no"
-                                ? "What happened to it, if you know"
-                                : "Condition, or anything else"
+                              : answer.has === "unsure"
+                                ? "Why not sure? Anything you know helps"
+                                : held && answer.has === "no"
+                                  ? "What happened to it, if you know"
+                                  : "Condition, or anything else"
                     }
                 />
             </CardContent>
@@ -633,11 +683,12 @@ function SizeField({
     onChange: (value: string) => void;
     error?: string;
 }) {
+    const label = template.sizeOptional ? "Size (optional)" : "Size";
     if (template.sizeOptions.length === 0) {
         return (
             <TextField
                 id={id}
-                label="Size"
+                label={label}
                 value={value}
                 onChange={onChange}
                 placeholder={template.sizeHint ?? "Your size"}
@@ -648,7 +699,7 @@ function SizeField({
     }
     return (
         <ChoiceChips
-            label="Size"
+            label={label}
             options={template.sizeOptions.map((size) => ({ value: size, label: size }))}
             value={value}
             onChange={onChange}

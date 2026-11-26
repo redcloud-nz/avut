@@ -5,7 +5,6 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
 import {
     OTHER_VARIANT,
     type KitCheckAnswer,
@@ -13,8 +12,8 @@ import {
     type KitCheckProposal,
     type KitCheckResponse,
     type KitCheckTemplate,
-} from "./kit-check-types";
-import { ANY_VARIANT, wantsOne } from "./kit-check-validate";
+} from "@/lib/kit-check-types";
+import { ANY_VARIANT, wantsOne } from "@/lib/kit-check-validate";
 
 function variantLabel(template: KitCheckTemplate, variantId: string, notes: string): string {
     if (variantId === OTHER_VARIANT) return notes.trim() ? `Other: ${notes.trim()}` : "Other";
@@ -33,12 +32,15 @@ export function KitCheck_Summary({
     heldItems,
     proposals = [],
     response,
+    intro = true,
     onRestart,
 }: {
     templates: KitCheckTemplate[];
     heldItems: KitCheckHeldItem[];
     proposals?: KitCheckProposal[];
     response: KitCheckResponse;
+    /** Opens with the member's "Thanks, that's everything" card. Off where an admin reads it. */
+    intro?: boolean;
     onRestart?: () => void;
 }) {
     const templateById = new Map(templates.map((template) => [template.id, template]));
@@ -84,6 +86,7 @@ export function KitCheck_Summary({
         ...rows.flatMap(({ template, answer, held }) => {
             if (held && answer.has === "no")
                 return [[template.name, "Recorded, but not with them", answer.notes || "—"]];
+            if (answer.has === "unsure") return [[template.name, "Not sure", answer.notes || "—"]];
             if (answer.has === "own")
                 return [
                     [
@@ -109,14 +112,16 @@ export function KitCheck_Summary({
 
     return (
         <div className="flex flex-col gap-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-xl">Thanks, that&apos;s everything</CardTitle>
-                    <CardDescription>
-                        Below is what the equipment officer receives from your answers.
-                    </CardDescription>
-                </CardHeader>
-            </Card>
+            {intro && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-xl">Thanks, that&apos;s everything</CardTitle>
+                        <CardDescription>
+                            Below is what the equipment officer receives from your answers.
+                        </CardDescription>
+                    </CardHeader>
+                </Card>
+            )}
 
             <SummaryTable
                 title="Needs"
@@ -136,7 +141,7 @@ export function KitCheck_Summary({
                     empty=""
                     headings={["Item", "Would use one", "Size", "Comments"]}
                     rows={proposals.map((proposal) => {
-                        const answer = response.proposals[proposal.id];
+                        const answer = response.proposals?.[proposal.id];
                         return [
                             proposal.name,
                             INTEREST_LABELS[answer?.interest ?? "unsure"],

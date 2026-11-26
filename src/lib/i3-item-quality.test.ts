@@ -14,7 +14,7 @@ import {
     type ItemQualityItem,
     type ItemQualityResult,
     type ItemQualityRules,
-} from "./item-quality";
+} from "./i3-item-quality";
 
 const BRAND_ACME = 10;
 const BRAND_BOLT = 20;

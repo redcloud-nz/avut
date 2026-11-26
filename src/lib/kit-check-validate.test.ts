@@ -5,13 +5,16 @@
 
 import { describe, expect, it } from "vitest";
 
-import type { KitCheckHeldItem, KitCheckTemplate } from "./kit-check-types";
-import { NOT_NEEDED } from "./kit-check-types";
+import type { KitCheckHeldItem, KitCheckTemplate } from "@/lib/kit-check-types";
+import { NOT_NEEDED } from "@/lib/kit-check-types";
+
 import {
     answerErrors,
+    ANY_VARIANT,
     EMPTY_ANSWER,
     EMPTY_PROPOSAL_ANSWER,
     proposalErrors,
+    visibleFields,
     wantsOne,
 } from "./kit-check-validate";
 
@@ -102,6 +105,44 @@ describe("a template with no variants", () => {
     });
 });
 
+describe("a sized template with no variants", () => {
+    // How a sent kit check offers a template with no variants: a free-text size, optional.
+    const overall = {
+        ...harness,
+        id: "overall",
+        variants: [],
+        requireSN: false,
+        sized: true,
+        sizeOptional: true,
+        sizeOptions: [],
+    };
+
+    it("asks a No that needs one for a size, but doesn't require it", () => {
+        const wants = { ...EMPTY_ANSWER, has: "no" as const, wantVariantId: ANY_VARIANT };
+        expect(visibleFields(wants, overall, null).has("size")).toBe(true);
+        expect(answerErrors(wants, overall, null)).toEqual({});
+        expect(wantsOne(wants)).toBe(true);
+    });
+
+    it("asks a replacement for a size straight away: there's no variant to pick first", () => {
+        const replace = { ...EMPTY_ANSWER, has: "yes" as const, replace: true };
+        expect(visibleFields(replace, overall, null).has("size")).toBe(true);
+        expect(answerErrors(replace, overall, null)).toEqual({});
+    });
+
+    it("still needs the No answered with whether they want one", () => {
+        expect(answerErrors({ ...EMPTY_ANSWER, has: "no" }, overall, null)).toEqual({
+            wantVariantId: "Please pick one, or say you don't need one.",
+        });
+    });
+
+    it("requires the size when it isn't optional", () => {
+        const required = { ...overall, sizeOptional: false };
+        const wants = { ...EMPTY_ANSWER, has: "no" as const, wantVariantId: ANY_VARIANT };
+        expect(answerErrors(wants, required, null)).toEqual({ size: "Please give your size." });
+    });
+});
+
 describe("an optional item", () => {
     const key = { ...harness, optional: true };
 
@@ -115,6 +156,17 @@ describe("an optional item", () => {
     it("asks a Yes for its details like any other item", () => {
         const yes = { ...EMPTY_ANSWER, has: "yes" as const };
         expect(Object.keys(answerErrors(yes, key, null)).sort()).toEqual(["serial", "variantId"]);
+    });
+});
+
+describe("not sure", () => {
+    it("is answered, asks nothing more, and needs nothing", () => {
+        const unsure = { ...EMPTY_ANSWER, has: "unsure" as const };
+        expect(answerErrors(unsure, harness, heldNoSerial)).toEqual({});
+        expect(answerErrors(unsure, harness, null)).toEqual({});
+        expect([...visibleFields(unsure, harness, heldNoSerial)]).toEqual(["has"]);
+        expect([...visibleFields(unsure, harness, null)]).toEqual(["has"]);
+        expect(wantsOne(unsure)).toBe(false);
     });
 });
 

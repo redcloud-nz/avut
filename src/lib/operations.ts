@@ -30,6 +30,7 @@ export const Operations = {
     "i3-return-items": { label: "I3 Return items" },
     "invitation-accept": { label: "Invitation accepted" },
     "invitation-reject": { label: "Invitation rejected" },
+    "kit-check-send": { label: "Kit check send" },
     "organization-leave": { label: "Left organisation" },
     // Single-entry batch for provenance: a no-login form answer has no actor; its batch carries the
     // name the person typed as `actorLabel`.

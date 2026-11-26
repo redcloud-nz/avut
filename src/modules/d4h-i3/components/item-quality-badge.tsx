@@ -7,7 +7,7 @@
 import { AlertWarningIcon } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { missingPartsLabel, type ItemQualityResult } from "@/modules/d4h-i3/lib/item-quality";
+import { missingPartsLabel, type ItemQualityResult } from "@/lib/i3-item-quality";
 
 const MISMATCH_REASON: Record<NonNullable<ItemQualityResult["mismatch"]>, string> = {
     "not-a-variant": "This isn't one of the template's variants.",

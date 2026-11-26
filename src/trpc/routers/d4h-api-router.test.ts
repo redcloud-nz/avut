@@ -91,7 +91,10 @@ vi.mock("@/server/d4h-api/client", () => ({
     ]),
 }));
 
-vi.mock("@/server/d4h-api/equipment", () => ({
+vi.mock("@/server/d4h-api/equipment", async (importOriginal) => ({
+    // Pure, so it runs for real.
+    filterTeamIssuedItems: (await importOriginal<typeof import("@/server/d4h-api/equipment")>())
+        .filterTeamIssuedItems,
     fetchD4HEquipmentItem: vi.fn(),
     fetchD4HEquipmentItemContents: vi.fn(),
     fetchD4HEquipmentItemsByKind: vi.fn(),

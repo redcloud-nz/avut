@@ -39,6 +39,10 @@ const OPT_OUT_ROUTES = [
     // I3 pages outside the issue/return/bundles cards.
     "/orgs/[slug]/d4h-i3/inspect",
     "/orgs/[slug]/d4h-i3/issued-types",
+    // Kit checks: unlinked and for system admins only.
+    "/orgs/[slug]/d4h-i3/kit-checks",
+    "/orgs/[slug]/d4h-i3/kit-checks/[kit_check_id]",
+    "/orgs/[slug]/d4h-i3/kit-checks/new",
     "/orgs/[slug]/d4h-i3/teams/[d4h_team_id]/issued-types",
     "/orgs/[slug]/d4h-i3/teams/[d4h_team_id]/issued-types/[type_id]",
     "/orgs/[slug]/d4h-i3/templates",

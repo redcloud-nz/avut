@@ -25,17 +25,13 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { useOrganization } from "@/hooks/use-organization";
+import { compareBundle, groupColumnsByCategory, type BundleCell } from "@/lib/i3-bundle-compare";
+import type { ItemQualityResult } from "@/lib/i3-item-quality";
 import { route } from "@/lib/routes";
 import { D4HEquipmentStatus } from "@/lib/schemas/d4h/equipment-item";
 import { D4HMember } from "@/lib/schemas/d4h/member";
 import { I3BundleId } from "@/lib/schemas/i3-bundle";
 import { D4HI3Module_ItemQuality_Badge } from "@/modules/d4h-i3/components/item-quality-badge";
-import {
-    compareBundle,
-    groupColumnsByCategory,
-    type BundleCell,
-} from "@/modules/d4h-i3/lib/bundle-compare";
-import type { ItemQualityResult } from "@/modules/d4h-i3/lib/item-quality";
 import { trpc, type RouterOutput } from "@/trpc/client";
 
 import { D4HI3Module_BundleExcludedLines } from "./bundle-matrix";

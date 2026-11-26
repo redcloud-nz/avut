@@ -7,7 +7,6 @@
 
 import type { ReactNode } from "react";
 
-import { useDebouncer } from "@tanstack/react-pacer";
 import { useMutation } from "@tanstack/react-query";
 
 import { useSession } from "@/client/auth-queries";
@@ -20,6 +19,7 @@ import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Field, FieldTitle } from "@/components/ui/field";
 import { Skeleton } from "@/components/ui/skeleton";
 import { I3FormStatusBadge } from "@/components/ui/status-badge";
+import { useDebouncedAutosave } from "@/hooks/use-debounced-autosave";
 import { usePreferences } from "@/hooks/use-preferences";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { OrganizationId } from "@/lib/schemas/organization";
@@ -110,8 +110,8 @@ export function useDraftFormAutosave({
     const saveMutation = useMutation(saveDraftFormInstanceMutation());
     const deleteMutation = useMutation(deleteDraftFormInstanceMutation());
 
-    const debouncer = useDebouncer(
-        (formData: Record<string, unknown>) => {
+    const { handleChange, cancel } = useDebouncedAutosave<Record<string, unknown>>({
+        save: (formData) => {
             saveMutation.mutate({
                 formInstanceId: instanceId,
                 organizationId,
@@ -119,26 +119,13 @@ export function useDraftFormAutosave({
                 formData,
             });
         },
-        { wait: 2000 },
-    );
+        status: saveMutation.status,
+        reset: saveMutation.reset,
+    });
 
     function handleDelete() {
         onDeleting();
         deleteMutation.mutate({ formInstanceId: instanceId, organizationId, formKey });
-    }
-
-    function handleChange(formData: Record<string, unknown>) {
-        // Reset the mutation state
-        if (saveMutation.status == "success") {
-            saveMutation.reset();
-        }
-
-        // Trigger the debounced mutation to save form data
-        debouncer.maybeExecute(formData);
-    }
-
-    function cancel() {
-        debouncer.cancel();
     }
 
     return { saveStatus: saveMutation.status, handleChange, handleDelete, cancel };
