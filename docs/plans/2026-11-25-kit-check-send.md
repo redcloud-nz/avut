@@ -243,42 +243,42 @@ Follow-ups to draft at the end (ask before filing):
 
 From group A1's review (task 3):
 
-- **Duplicate held items.** `buildKitCheckSnapshot` (`src/server/services/kit-checks.ts`) can emit the same D4H item twice. `compareBundle` matches by `kind.id`, and two templates can share a kind. Answers are keyed by item id, so they'd collide. Fix: emit each item at most once, under the first matching column, and add a snapshot test with two lines on one kind.
-- **Variant matching.** `variantId` is matched only against the variants offered to the team, but `problems` comes from all of the template's D4H variants. An item matching a variant that doesn't fit the team gets `variantId: null` and no `"variant"` problem. Fix: match against every variant of the template that has a D4H record. When the match isn't among the offered variants, add `"variant"`, so the member is asked.
-- **Output enums.** In `src/trpc/routers/kit-checks-router.ts`, add `satisfies z.ZodType<…>` to the `KitCheckExcludedLine.reason` and `KitCheckProgress` enums, against `ExcludedReason` and the service's `KitCheckProgress`.
+- ✓ **Duplicate held items.** `buildKitCheckSnapshot` (`src/server/services/kit-checks.ts`) can emit the same D4H item twice. `compareBundle` matches by `kind.id`, and two templates can share a kind. Answers are keyed by item id, so they'd collide. Fix: emit each item at most once, under the first matching column, and add a snapshot test with two lines on one kind.
+- ✓ **Variant matching.** `variantId` is matched only against the variants offered to the team, but `problems` comes from all of the template's D4H variants. An item matching a variant that doesn't fit the team gets `variantId: null` and no `"variant"` problem. Fix: match against every variant of the template that has a D4H record. When the match isn't among the offered variants, add `"variant"`, so the member is asked.
+- ✓ **Output enums.** In `src/trpc/routers/kit-checks-router.ts`, add `satisfies z.ZodType<…>` to the `KitCheckExcludedLine.reason` and `KitCheckProgress` enums, against `ExcludedReason` and the service's `KitCheckProgress`.
 
 From group A2's review (tasks 5–7):
 
-- **Send loop survives errors.** In `createKitCheck`'s send loop (`src/server/services/kit-checks.ts`), wrap each `sendRequest` call in try/catch. On a throw, count the request as failed and make a best-effort attempt to mark it `Failed` (hash and expiry cleared). Retry the `Sent` write once, as the nag runner's `markSent` does. Add a test where the `Sent` write rejects and the rest still send. Without this, one DB error stops the loop and leaves members `Pending`, and pressing Send again emails everyone twice.
-- **Prune what's submitted.** In `submitKitCheckByToken` (`src/server/services/kit-check-public.ts`), before the transaction:
+- ✓ **Send loop survives errors.** In `createKitCheck`'s send loop (`src/server/services/kit-checks.ts`), wrap each `sendRequest` call in try/catch. On a throw, count the request as failed and make a best-effort attempt to mark it `Failed` (hash and expiry cleared). Retry the `Sent` write once, as the nag runner's `markSent` does. Add a test where the `Sent` write rejects and the rest still send. Without this, one DB error stops the loop and leaves members `Pending`, and pressing Send again emails everyone twice.
+- ✓ **Prune what's submitted.** In `submitKitCheckByToken` (`src/server/services/kit-check-public.ts`), before the transaction:
   - keep only the `held` keys that are in the request's `heldItems`;
   - keep only the `missing` keys among the templates the member holds none of;
   - keep only extra rows with a non-blank `item`.
 
   So `submittedData` holds only answers to what the member was asked.
 
-- **Status before completeness.** In submit, check the `Draft` status before completeness, so a repeat submit is CONFLICT, not BAD_REQUEST.
-- **Output schema for the public read.** Add an `.output()` discriminated-union schema to `publicForms.getKitCheckByToken`, so later changes can't leak fields to anonymous callers.
-- **Refuse an empty send.** `createKitCheck` refuses a recipient set with no members with a `ValidationError`. Covered by task 9a.
+- ✓ **Status before completeness.** In submit, check the `Draft` status before completeness, so a repeat submit is CONFLICT, not BAD_REQUEST.
+- ✓ **Output schema for the public read.** Add an `.output()` discriminated-union schema to `publicForms.getKitCheckByToken`, so later changes can't leak fields to anonymous callers.
+- ✓ **Refuse an empty send.** `createKitCheck` refuses a recipient set with no members with a `ValidationError`. Covered by task 9a.
 
 From group B's review (tasks 8–9):
 
-- **Team cap and preview errors.** On the send page (`kit-check-new.tsx`), cap the team picks at `D4H_TEAMS_MAX` (20): disable unchecked boxes once 20 are picked, with a note. Wrap `KitCheckNew_Preview` in an error boundary that shows the message and leaves the picker usable, so a preview failure doesn't replace the whole page.
-- **One `KitCheckProgress`.** Move the enum to `src/lib/schemas/kit-check.ts`, beside `KitCheckDeliveryStatus`, and use it in the service, the router and `kit-check-labels.ts`. This also covers A1's `satisfies` note for that enum.
-- **Lint comment.** In `kit-check-content.tsx`, add the `react-hooks/incompatible-library` disable comment above `useReactTable`, as the sibling lists have.
-- **Answers-dialog wording.** When nothing is submitted, word the note by progress: when the member hasn't opened it yet, say "They haven't opened it yet; this is the pre-filled form".
+- ✓ **Team cap and preview errors.** On the send page (`kit-check-new.tsx`), cap the team picks at `D4H_TEAMS_MAX` (20): disable unchecked boxes once 20 are picked, with a note. Wrap `KitCheckNew_Preview` in an error boundary that shows the message and leaves the picker usable, so a preview failure doesn't replace the whole page.
+- ✓ **One `KitCheckProgress`.** Move the enum to `src/lib/schemas/kit-check.ts`, beside `KitCheckDeliveryStatus`, and use it in the service, the router and `kit-check-labels.ts`. This also covers A1's `satisfies` note for that enum.
+- **Lint comment.** In `kit-check-content.tsx`, add the `react-hooks/incompatible-library` disable comment above `useReactTable`, as the sibling lists have. Not added: in this component eslint reports the directive unused (the `exhaustive-deps` disable on the columns `useMemo` already keeps the React Compiler out of it), so it would only add a warning.
+- ✓ **Answers-dialog wording.** When nothing is submitted, word the note by progress: when the member hasn't opened it yet, say "They haven't opened it yet; this is the pre-filled form".
 
 From task 9a:
 
-- **Drop teams with nobody chosen.** `createKitCheck` should leave a picked team with no chosen members out of the check: off `d4hTeams` and off `templates`.
+- ✓ **Drop teams with nobody chosen.** `createKitCheck` should leave a picked team with no chosen members out of the check: off `d4hTeams` and off `templates`.
 
 From group C's review (tasks 9a–12):
 
-- **Stale draft after CONFLICT or NOT_FOUND.** In `kit-check-member.tsx`, both the save's and the submit's `onError` invalidate `getKitCheckByToken` on `CONFLICT` or `NOT_FOUND`. The page then shows the submitted view or the not-valid card instead of a stuck draft. Log expected conflicts at `warn`.
-- **The member's own save landing after their submit.** Ignore a save CONFLICT while `submit.isPending || submit.isSuccess`, so "Error" doesn't show next to "Sending…".
-- **Failed submit loses recent edits.** In the submit's `onError`, re-queue the response through `handleChange(response)`, because `cancel()` dropped the queued save. Don't flush before submitting: the flushed save would batch with the submit and break the BotID path match.
-- **Closing the tab loses recent edits.** Expose `flush` from `useDebouncedAutosave`. Call it on `pagehide` and on `visibilitychange: hidden` while no submit is pending.
-- **Save status for screen readers.** Wrap the form's footer save status in `role="status" aria-live="polite"`.
-- **Sticky bar at 320 px.** Check the bar at 320 px wide, and shorten the count or let the bar wrap if it's cramped.
-- **Member-left error wording.** When a member left the team between the preview and the send, the error should read "The team's members changed since the preview. Refresh and send again." instead of a raw D4H id.
-- **Hook status typing.** In `useDebouncedAutosave`, type `status` as `MutationStatus` and compare with `===`.
+- ✓ **Stale draft after CONFLICT or NOT_FOUND.** In `kit-check-member.tsx`, both the save's and the submit's `onError` invalidate `getKitCheckByToken` on `CONFLICT` or `NOT_FOUND`. The page then shows the submitted view or the not-valid card instead of a stuck draft. Log expected conflicts at `warn`.
+- ✓ **The member's own save landing after their submit.** Ignore a save CONFLICT while `submit.isPending || submit.isSuccess`, so "Error" doesn't show next to "Sending…".
+- ✓ **Failed submit loses recent edits.** In the submit's `onError`, re-queue the response through `handleChange(response)`, because `cancel()` dropped the queued save. Don't flush before submitting: the flushed save would batch with the submit and break the BotID path match.
+- ✓ **Closing the tab loses recent edits.** Expose `flush` from `useDebouncedAutosave`. Call it on `pagehide` and on `visibilitychange: hidden` while no submit is pending.
+- ✓ **Save status for screen readers.** Wrap the form's footer save status in `role="status" aria-live="polite"`.
+- ✓ **Sticky bar at 320 px.** Check the bar at 320 px wide, and shorten the count or let the bar wrap if it's cramped.
+- ✓ **Member-left error wording.** When a member left the team between the preview and the send, the error should read "The team's members changed since the preview. Refresh and send again." instead of a raw D4H id.
+- ✓ **Hook status typing.** In `useDebouncedAutosave`, type `status` as `MutationStatus` and compare with `===`.

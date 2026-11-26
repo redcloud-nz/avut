@@ -130,6 +130,33 @@ export function isKitCheckComplete(
     return heldDone && missingDone;
 }
 
+/**
+ * An answer cut down to what the member was asked: held answers for their own held items, missing
+ * answers for the templates they hold none of, and extra rows that name an item. Every answer kept
+ * is kept as given, "Not sure" included.
+ */
+export function pruneKitCheckResponse(
+    response: KitCheckResponseData,
+    templates: readonly KitCheckTemplate[],
+    heldItems: readonly KitCheckHeldItem[],
+): KitCheckResponseData {
+    const heldIds = new Set(heldItems.map((item) => item.id));
+    const heldTemplateIds = new Set(heldItems.map((item) => item.templateId));
+    const missingIds = new Set(
+        templates
+            .map((template) => template.id)
+            .filter((templateId) => !heldTemplateIds.has(templateId)),
+    );
+    return {
+        held: Object.fromEntries(Object.entries(response.held).filter(([id]) => heldIds.has(id))),
+        missing: Object.fromEntries(
+            Object.entries(response.missing).filter(([id]) => missingIds.has(id)),
+        ),
+        extras: response.extras.filter((extra) => extra.item.trim() !== ""),
+        comments: response.comments,
+    };
+}
+
 /** The actor-less log context for the member's submit and reopen (decision 11). */
 async function memberLogContext(ctx: PublicContext, request: TokenRequest) {
     const actorLabel = `${request.memberName} (${request.d4hTeamTitle})`;
@@ -224,24 +251,28 @@ export async function saveKitCheckDraftByToken(
  * Submit the member's answers: the working copy becomes the submitted answer (`submittedData`,
  * restamping `submittedAt`), and the form leaves Draft. One transaction, logged against the
  * request. The instance's write is guarded on Draft, so a second submit (another tab) throws and
- * rolls back, log entry included (decision 9).
+ * rolls back, log entry included (decision 9). What's stored is pruned to what the member was
+ * asked (`pruneKitCheckResponse`).
  * @throws NotFoundError(LINK_NOT_VALID) if the token names no live request.
- * @throws ValidationError if the answers leave something the form asks unanswered.
  * @throws ConflictError if the form has already been submitted.
+ * @throws ValidationError if the answers leave something the form asks unanswered.
  */
 export async function submitKitCheckByToken(
     ctx: PublicContext,
     token: string,
-    formData: KitCheckResponseData,
+    submitted: KitCheckResponseData,
 ): Promise<void> {
     const request = await requireRequestByToken(ctx, token);
 
-    const heldItems = z.array(KitCheckHeldItem).parse(request.heldItems);
-    if (!isKitCheckComplete(formData, templatesOf(request), heldItems)) {
-        throw new ValidationError("Some questions haven't been answered yet.");
-    }
+    // Before completeness: a repeat submit is a conflict, whatever it carries.
     if (request.formInstance.formStatus !== "Draft") {
         throw new ConflictError("This kit check has already been sent in.");
+    }
+    const templates = templatesOf(request);
+    const heldItems = z.array(KitCheckHeldItem).parse(request.heldItems);
+    const formData = pruneKitCheckResponse(submitted, templates, heldItems);
+    if (!isKitCheckComplete(formData, templates, heldItems)) {
+        throw new ValidationError("Some questions haven't been answered yet.");
     }
 
     const logCtx = await memberLogContext(ctx, request);

@@ -6,6 +6,7 @@
 "use client";
 
 import { useDebouncer } from "@tanstack/react-pacer";
+import type { MutationStatus } from "@tanstack/react-query";
 
 /**
  * The debounced-save core shared by the draft forms (the I3 forms and the kit check).
@@ -14,7 +15,8 @@ import { useDebouncer } from "@tanstack/react-pacer";
  * the mutation's `status` and `reset`. `handleChange(data)` resets a settled mutation, so the
  * save indicator goes back to idle, and queues a save of `data` after `wait` ms without another
  * change. Call `cancel()` before submitting, to drop a pending (not yet sent) save. A save
- * already in flight can still land; the caller's submit has to cope with that.
+ * already in flight can still land; the caller's submit has to cope with that. `flush()` sends a
+ * pending save now, e.g. when the page is being hidden or closed.
  */
 export function useDebouncedAutosave<TData>({
     save,
@@ -23,7 +25,7 @@ export function useDebouncedAutosave<TData>({
     wait = 2000,
 }: {
     save: (data: TData) => void;
-    status: string;
+    status: MutationStatus;
     reset: () => void;
     wait?: number;
 }) {
@@ -31,7 +33,7 @@ export function useDebouncedAutosave<TData>({
 
     function handleChange(data: TData) {
         // Reset the mutation state
-        if (status == "success") {
+        if (status === "success") {
             reset();
         }
 
@@ -43,5 +45,9 @@ export function useDebouncedAutosave<TData>({
         debouncer.cancel();
     }
 
-    return { handleChange, cancel };
+    function flush() {
+        debouncer.flush();
+    }
+
+    return { handleChange, cancel, flush };
 }

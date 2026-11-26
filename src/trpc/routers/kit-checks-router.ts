@@ -6,13 +6,16 @@
 import * as z from "zod";
 
 import { ForbiddenError } from "@/lib/errors";
+import type { ExcludedReason } from "@/lib/i3-bundle-compare";
 import { D4HTeamRef } from "@/lib/schemas/d4h/team";
 import { I3BundleId, I3BundleSummary } from "@/lib/schemas/i3-bundle";
 import {
+    KIT_CHECK_D4H_TEAMS_MAX,
     KitCheckD4HTeam,
     KitCheckDeliveryStatus,
     KitCheckHeldItem,
     KitCheckId,
+    KitCheckProgress,
     KitCheckRequestId,
     KitCheckResponseData,
     KitCheckTeamChoice,
@@ -34,16 +37,11 @@ const kitCheckProcedure = organizationProcedure({}, { allowSystemAdmin: true }).
     },
 );
 
-/** The most D4H teams one kit check is sent to. */
-const D4H_TEAMS_MAX = 20;
-
 const KitCheckExcludedLine = z.object({
     templateId: z.string(),
     name: z.string(),
-    reason: z.enum(["deleted", "no-d4h-type", "not-in-team"]),
+    reason: z.enum(["deleted", "no-d4h-type", "not-in-team"]) satisfies z.ZodType<ExcludedReason>,
 });
-
-const KitCheckProgress = z.enum(["NotOpened", "Opened", "Submitted", "Editing"]);
 
 const KitCheckSummary = z.object({
     id: KitCheckId.schema,
@@ -90,7 +88,7 @@ export const kitChecksRouter = createTrpcRouter({
         .input(
             z.object({
                 bundleId: I3BundleId.schema,
-                teams: z.array(KitCheckTeamChoice).min(1).max(D4H_TEAMS_MAX),
+                teams: z.array(KitCheckTeamChoice).min(1).max(KIT_CHECK_D4H_TEAMS_MAX),
             }),
         )
         .output(
@@ -178,7 +176,7 @@ export const kitChecksRouter = createTrpcRouter({
         .input(
             z.object({
                 bundleId: I3BundleId.schema,
-                d4hTeamIds: z.array(z.number().int()).min(1).max(D4H_TEAMS_MAX),
+                d4hTeamIds: z.array(z.number().int()).min(1).max(KIT_CHECK_D4H_TEAMS_MAX),
             }),
         )
         .output(

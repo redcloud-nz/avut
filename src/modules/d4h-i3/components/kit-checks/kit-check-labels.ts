@@ -3,10 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import type { KitCheckDeliveryStatus } from "@/lib/schemas/kit-check";
-
-/** A request's progress, as `kitChecks` derives it (decision 13 of the kit-check plan). */
-export type KitCheckProgress = "NotOpened" | "Opened" | "Submitted" | "Editing";
+import type { KitCheckDeliveryStatus, KitCheckProgress } from "@/lib/schemas/kit-check";
 
 /** How the admin pages name a request's last send. `Pending` is a send not yet confirmed. */
 export const DELIVERY_LABELS: Record<KitCheckDeliveryStatus, string> = {

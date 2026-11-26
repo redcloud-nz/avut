@@ -23,10 +23,15 @@ import {
 import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import { useOrganization } from "@/hooks/use-organization";
 import { useReturnFocus } from "@/hooks/use-return-focus";
-import type { KitCheckRequestId } from "@/lib/schemas/kit-check";
+import type { KitCheckProgress, KitCheckRequestId } from "@/lib/schemas/kit-check";
 import { trpc } from "@/trpc/client";
 
-type AnswersRequest = { id: KitCheckRequestId; memberName: string; d4hTeamTitle: string };
+type AnswersRequest = {
+    id: KitCheckRequestId;
+    memberName: string;
+    d4hTeamTitle: string;
+    progress: KitCheckProgress;
+};
 
 /**
  * `?action=view-answers&requestId=…`: what one member answered, as the equipment officer reads
@@ -48,14 +53,20 @@ export function D4HI3Module_KitCheckAnswers_Dialog({
                     <DialogDescription>Kit check answers, {request.d4hTeamTitle}</DialogDescription>
                 </DialogHeader>
                 <DialogBoundary>
-                    <KitCheckAnswers_Body requestId={request.id} />
+                    <KitCheckAnswers_Body requestId={request.id} progress={request.progress} />
                 </DialogBoundary>
             </DialogContent>
         </Dialog>
     );
 }
 
-function KitCheckAnswers_Body({ requestId }: { requestId: KitCheckRequestId }) {
+function KitCheckAnswers_Body({
+    requestId,
+    progress,
+}: {
+    requestId: KitCheckRequestId;
+    progress: KitCheckProgress;
+}) {
     const organization = useOrganization();
 
     const { data: answers } = useSuspenseQuery(
@@ -75,7 +86,11 @@ function KitCheckAnswers_Body({ requestId }: { requestId: KitCheckRequestId }) {
                 {submitted === null ? (
                     <Alert variant="info">
                         <AlertTitle>Not submitted yet</AlertTitle>
-                        <AlertDescription>These are their answers so far.</AlertDescription>
+                        <AlertDescription>
+                            {progress === "NotOpened"
+                                ? "They haven't opened it yet; this is the pre-filled form."
+                                : "These are their answers so far."}
+                        </AlertDescription>
                     </Alert>
                 ) : editing ? (
                     <Alert variant="info">

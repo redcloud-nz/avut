@@ -38,6 +38,14 @@ export const KitCheckDeliveryStatus = z.enum([
 
 export type KitCheckDeliveryStatus = z.infer<typeof KitCheckDeliveryStatus>;
 
+/**
+ * A request's progress, derived from its timestamps and its instance's `formStatus`, never from
+ * its delivery (decision 13). `Editing`: submitted, then reopened (decision 10).
+ */
+export const KitCheckProgress = z.enum(["NotOpened", "Opened", "Submitted", "Editing"]);
+
+export type KitCheckProgress = z.infer<typeof KitCheckProgress>;
+
 /** How long a kit-check link works, from its send (or resend). */
 export const KIT_CHECK_TOKEN_DAYS = 14;
 
@@ -76,6 +84,9 @@ export const KitCheckD4HTeam = z.object({
 });
 
 export type KitCheckD4HTeam = z.infer<typeof KitCheckD4HTeam>;
+
+/** The most D4H teams one kit check is sent to. */
+export const KIT_CHECK_D4H_TEAMS_MAX = 20;
 
 /** The most members of one D4H team a kit check can be sent to. */
 export const KIT_CHECK_TEAM_MEMBERS_MAX = 1000;

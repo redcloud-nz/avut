@@ -345,6 +345,49 @@ describe("kit check by token", () => {
         expect(await db.logEntry.count({ where: { objectId: id } })).toBe(1);
     });
 
+    it("refuses a second submit as a conflict even when it's incomplete", async () => {
+        const { token } = await seedRequest();
+        await submitKitCheckByToken(ctx, token, complete);
+
+        await expect(submitKitCheckByToken(ctx, token, prefilled)).rejects.toBeInstanceOf(
+            ConflictError,
+        );
+    });
+
+    it("stores only answers to what the member was asked, Not sure included", async () => {
+        const { token, id } = await seedRequest();
+        const padded: KitCheckResponseData = {
+            held: {
+                [heldHelmet.id]: { ...EMPTY_ANSWER, has: "unsure" },
+                // Not one of their held items.
+                "9999": { ...EMPTY_ANSWER, has: "yes" },
+            },
+            missing: {
+                [gloves.id]: { ...EMPTY_ANSWER, has: "unsure" },
+                // They hold a helmet, so it isn't missing; and another team's template.
+                [helmet.id]: { ...EMPTY_ANSWER, has: "no", wantVariantId: NOT_NEEDED },
+                "other-team-only": { ...EMPTY_ANSWER, has: "no", wantVariantId: NOT_NEEDED },
+            },
+            extras: [
+                { id: "1", item: "Head torch", kind: "have", size: "", notes: "" },
+                { id: "2", item: "   ", kind: "need", size: "", notes: "" },
+            ],
+            comments: "All good",
+        };
+
+        await submitKitCheckByToken(ctx, token, padded);
+
+        const expected: KitCheckResponseData = {
+            held: { [heldHelmet.id]: { ...EMPTY_ANSWER, has: "unsure" } },
+            missing: { [gloves.id]: { ...EMPTY_ANSWER, has: "unsure" } },
+            extras: [{ id: "1", item: "Head torch", kind: "have", size: "", notes: "" }],
+            comments: "All good",
+        };
+        const after = await readRequest(id);
+        expect(after.submittedData).toEqual(expected);
+        expect(after.formInstance.formData).toEqual(expected);
+    });
+
     it("rolls a submit that loses the race back, log entry included", async () => {
         const { token, id, formInstanceId } = await seedRequest();
         const submittedElsewhere: KitCheckResponseData = { ...complete, comments: "Other tab" };

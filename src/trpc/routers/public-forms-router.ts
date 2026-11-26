@@ -9,7 +9,12 @@ import * as z from "zod";
 import { TRPCError } from "@trpc/server";
 
 import { JacketInterestRow, JacketInterestSubmission } from "@/lib/schemas/jacket-interest";
-import { KitCheckResponseData, kitCheckTokenSchema } from "@/lib/schemas/kit-check";
+import {
+    KitCheckHeldItem,
+    KitCheckResponseData,
+    KitCheckTemplate,
+    kitCheckTokenSchema,
+} from "@/lib/schemas/kit-check";
 import * as KitCheckPublic from "@/server/services/kit-check-public";
 import * as PublicForms from "@/server/services/public-forms";
 
@@ -28,6 +33,30 @@ async function assertNotBot(): Promise<void> {
         });
     }
 }
+
+/**
+ * What an anonymous caller may read through a kit-check link, and nothing more: an object schema
+ * strips any field a later change adds to the service's result.
+ */
+const KitCheckByTokenOutput = z.discriminatedUnion("state", [
+    z.object({ state: z.literal("not-found") }),
+    z.object({
+        state: z.literal("ok"),
+        subject: z.object({
+            memberName: z.string(),
+            teamName: z.string(),
+            bundleName: z.string(),
+            requestedBy: z.string(),
+        }),
+        templates: z.array(KitCheckTemplate),
+        heldItems: z.array(KitCheckHeldItem),
+        formData: KitCheckResponseData,
+        formStatus: z.enum(["Draft", "Submitted"]),
+        submittedData: KitCheckResponseData.nullable(),
+        submittedAt: z.date().nullable(),
+        expiresAt: z.date(),
+    }),
+]) satisfies z.ZodType<KitCheckPublic.KitCheckByToken>;
 
 const kitCheckTokenInput = z.object({ token: kitCheckTokenSchema });
 const kitCheckAnswerInput = kitCheckTokenInput.extend({ formData: KitCheckResponseData });
@@ -50,6 +79,7 @@ export const publicFormsRouter = createTrpcRouter({
      */
     getKitCheckByToken: publicProcedure
         .input(kitCheckTokenInput)
+        .output(KitCheckByTokenOutput)
         .query(async ({ ctx, input: { token } }) => {
             return await KitCheckPublic.getKitCheckByToken(ctx, token);
         }),

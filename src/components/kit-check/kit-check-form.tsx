@@ -354,7 +354,9 @@ export function KitCheck_Form({
 
             <div className="sticky bottom-0 -mx-4 flex items-center justify-between gap-4 border-t bg-background/95 px-4 py-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] backdrop-blur">
                 <span className="text-xs text-muted-foreground">
-                    {answeredCount} of {rows.length} answered
+                    {answeredCount} of {rows.length}
+                    {/* Dropped on narrow phones (320 px), where the bar would crowd. */}
+                    <span className="sr-only sm:not-sr-only"> answered</span>
                 </span>
                 <div className="flex items-center gap-3">
                     {footer}

@@ -31,7 +31,7 @@ import {
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
 import { route } from "@/lib/routes";
-import type { KitCheckDeliveryStatus, KitCheckId } from "@/lib/schemas/kit-check";
+import type { KitCheckDeliveryStatus, KitCheckId, KitCheckProgress } from "@/lib/schemas/kit-check";
 import { trpc } from "@/trpc/client";
 
 import { D4HI3Module_KitCheckAnswers_Dialog } from "./kit-check-answers-dialog";
@@ -40,7 +40,6 @@ import {
     describeDeliveryCounts,
     describeProgressCounts,
     PROGRESS_LABELS,
-    type KitCheckProgress,
 } from "./kit-check-labels";
 import { D4HI3Module_ResendKitCheck_Dialog } from "./kit-check-resend-dialog";
 

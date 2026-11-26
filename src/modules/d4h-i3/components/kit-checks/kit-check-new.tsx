@@ -14,12 +14,14 @@ import {
     useQueryState,
 } from "nuqs";
 import { Suspense, useEffect, useId, useState } from "react";
+import { ErrorBoundary } from "react-error-boundary";
 import { toast } from "sonner";
 
-import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
+import { QueryErrorResetBoundary, useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
 import { kitChecksEffects } from "@/client/kit-checks-effects";
 import { Saratoga } from "@/components/blocks/saratoga";
+import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
@@ -64,7 +66,7 @@ import { useOrganization } from "@/hooks/use-organization";
 import type { ExcludedReason } from "@/lib/i3-bundle-compare";
 import { route } from "@/lib/routes";
 import { I3BundleId } from "@/lib/schemas/i3-bundle";
-import type { KitCheckTeamChoice } from "@/lib/schemas/kit-check";
+import { KIT_CHECK_D4H_TEAMS_MAX, type KitCheckTeamChoice } from "@/lib/schemas/kit-check";
 import { trpc } from "@/trpc/client";
 
 /** Whether the viewer can read D4H here: the page needs their personal D4H token. */
@@ -175,7 +177,11 @@ function KitCheckNew_Picker({
 
     // Ignore picks from the URL that aren't on offer (a stale or hand-edited link).
     const bundle = bundles.find((b) => b.id === bundleParam) ?? null;
-    const d4hTeamIds = d4hTeams.filter((t) => teamsParam.includes(t.id)).map((t) => t.id);
+    const d4hTeamIds = d4hTeams
+        .filter((t) => teamsParam.includes(t.id))
+        .map((t) => t.id)
+        .slice(0, KIT_CHECK_D4H_TEAMS_MAX);
+    const atTeamCap = d4hTeamIds.length >= KIT_CHECK_D4H_TEAMS_MAX;
 
     function toggleTeam(teamId: number, checked: boolean) {
         const next = checked ? [...d4hTeamIds, teamId] : d4hTeamIds.filter((id) => id !== teamId);
@@ -214,20 +220,34 @@ function KitCheckNew_Picker({
                                     Your D4H token doesn&rsquo;t reach any teams.
                                 </p>
                             ) : (
-                                d4hTeams.map((team) => (
-                                    <Field orientation="horizontal" key={team.id}>
-                                        <Checkbox
-                                            id={`${idPrefix}-team-${team.id}`}
-                                            checked={d4hTeamIds.includes(team.id)}
-                                            onCheckedChange={(checked) =>
-                                                toggleTeam(team.id, checked === true)
-                                            }
-                                        />
-                                        <FieldLabel htmlFor={`${idPrefix}-team-${team.id}`}>
-                                            {team.title}
-                                        </FieldLabel>
-                                    </Field>
-                                ))
+                                d4hTeams.map((team) => {
+                                    const checked = d4hTeamIds.includes(team.id);
+                                    return (
+                                        <Field
+                                            orientation="horizontal"
+                                            key={team.id}
+                                            data-disabled={!checked && atTeamCap}
+                                        >
+                                            <Checkbox
+                                                id={`${idPrefix}-team-${team.id}`}
+                                                checked={checked}
+                                                disabled={!checked && atTeamCap}
+                                                onCheckedChange={(next) =>
+                                                    toggleTeam(team.id, next === true)
+                                                }
+                                            />
+                                            <FieldLabel htmlFor={`${idPrefix}-team-${team.id}`}>
+                                                {team.title}
+                                            </FieldLabel>
+                                        </Field>
+                                    );
+                                })
+                            )}
+                            {atTeamCap && (
+                                <p className="text-sm text-muted-foreground">
+                                    A kit check goes to at most {KIT_CHECK_D4H_TEAMS_MAX} teams.
+                                    Untick one to pick another.
+                                </p>
                             )}
                         </FieldSet>
                     </FieldGroup>
@@ -235,16 +255,41 @@ function KitCheckNew_Picker({
             </Card>
 
             {bundle && d4hTeamIds.length > 0 ? (
-                <Suspense fallback={<CardLoadingFallback />}>
-                    <KitCheckNew_Preview
-                        // A new bundle or team set starts a fresh choice, everyone ticked.
-                        key={`${bundle.id}:${d4hTeamIds.join(",")}`}
-                        bundleId={bundle.id}
-                        bundleName={bundle.name}
-                        d4hTeamIds={d4hTeamIds}
-                        emailRedirected={emailRedirected}
-                    />
-                </Suspense>
+                // A new bundle or team set starts a fresh choice, everyone ticked, and clears an
+                // earlier preview's error.
+                <QueryErrorResetBoundary key={`${bundle.id}:${d4hTeamIds.join(",")}`}>
+                    {({ reset }) => (
+                        <ErrorBoundary
+                            onReset={reset}
+                            fallbackRender={({ error, resetErrorBoundary }) => (
+                                <Alert variant="destructive">
+                                    <AlertTitle>Couldn&rsquo;t preview the kit check</AlertTitle>
+                                    <AlertDescription>
+                                        {error instanceof Error ? error.message : String(error)}
+                                    </AlertDescription>
+                                    <AlertAction>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={resetErrorBoundary}
+                                        >
+                                            Try again
+                                        </Button>
+                                    </AlertAction>
+                                </Alert>
+                            )}
+                        >
+                            <Suspense fallback={<CardLoadingFallback />}>
+                                <KitCheckNew_Preview
+                                    bundleId={bundle.id}
+                                    bundleName={bundle.name}
+                                    d4hTeamIds={d4hTeamIds}
+                                    emailRedirected={emailRedirected}
+                                />
+                            </Suspense>
+                        </ErrorBoundary>
+                    )}
+                </QueryErrorResetBoundary>
             ) : (
                 <p className="text-sm text-muted-foreground">
                     Pick a bundle and at least one team to see who the kit check goes to.

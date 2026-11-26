@@ -8,7 +8,7 @@
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 
-import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 
 import { publicFormsEffects } from "@/client/public-forms-effects";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -95,36 +95,92 @@ function KitCheck_MemberDraft({ token, kitCheck }: { token: string; kitCheck: Ki
         window.scrollTo({ top: 0 });
     }, []);
 
-    // No effects: the open form isn't re-seeded from the cache while the member types.
-    const save = useMutation(
-        trpc.publicForms.saveKitCheckDraftByToken.mutationOptions({
-            onError(error) {
-                logger.error("Failed to save the kit check draft", error.message);
-            },
-        }),
-    );
+    const queryClient = useQueryClient();
+    /**
+     * The form was submitted elsewhere (another tab), or the link was replaced or has expired:
+     * refetch, so the page shows the submitted view or the not-valid card, not a stuck draft.
+     */
+    function refetchIfGone(code: string | undefined): boolean {
+        if (code !== "CONFLICT" && code !== "NOT_FOUND") return false;
+        void queryClient.invalidateQueries(
+            trpc.publicForms.getKitCheckByToken.queryFilter({ token }),
+        );
+        return true;
+    }
+
     const submit = useMutation(
         trpc.publicForms.submitKitCheckByToken.mutationOptions({
             meta: { effects: publicFormsEffects.submitKitCheckByToken },
             onError(error) {
+                if (refetchIfGone(error.data?.code)) {
+                    logger.warn("Kit check already submitted or link gone", error.message);
+                    return;
+                }
                 logger.error("Failed to submit the kit check", error.message);
                 toast.error(`Couldn't send your answers: ${error.message}`);
             },
         }),
     );
+    const submitting = submit.isPending || submit.isSuccess;
 
-    const { handleChange, cancel } = useDebouncedAutosave<KitCheckResponse>({
+    // No effects: the open form isn't re-seeded from the cache while the member types.
+    const save = useMutation(
+        trpc.publicForms.saveKitCheckDraftByToken.mutationOptions({
+            onError(error) {
+                const code = error.data?.code;
+                // The member's own save landing after their submit: expected, nothing to show.
+                if (code === "CONFLICT" && submitting) return;
+                if (refetchIfGone(code)) {
+                    logger.warn("Kit check draft save refused", error.message);
+                    return;
+                }
+                logger.error("Failed to save the kit check draft", error.message);
+            },
+        }),
+    );
+    const saveStatus =
+        save.status === "error" && save.error.data?.code === "CONFLICT" && submitting
+            ? "idle"
+            : save.status;
+
+    const { handleChange, cancel, flush } = useDebouncedAutosave<KitCheckResponse>({
         save: (response) => save.mutate({ token, formData: toResponseData(response) }),
         status: save.status,
         reset: save.reset,
     });
 
+    // Closing or leaving the tab sends a save still waiting to go, unless a submit carries it.
+    useEffect(() => {
+        if (submitting) return;
+        const onPageHide = () => flush();
+        const onVisibilityChange = () => {
+            if (document.visibilityState === "hidden") flush();
+        };
+        window.addEventListener("pagehide", onPageHide);
+        document.addEventListener("visibilitychange", onVisibilityChange);
+        return () => {
+            window.removeEventListener("pagehide", onPageHide);
+            document.removeEventListener("visibilitychange", onVisibilityChange);
+        };
+    }, [flush, submitting]);
+
     function handleSubmit(response: KitCheckResponse) {
         if (submit.isPending) return;
-        // Drop a save still waiting to go: the submit carries the same answers. It goes out on
-        // its own, never batched with another call, so BotID can check it (`src/lib/public-forms.ts`).
+        // Drop a save still waiting to go: the submit carries the same answers. Not flushed
+        // instead: the save would batch with the submit, and the submit must go out on its own so
+        // BotID can check it (`src/lib/public-forms.ts`).
         cancel();
-        submit.mutate({ token, formData: toResponseData(response) });
+        submit.mutate(
+            { token, formData: toResponseData(response) },
+            {
+                onError(error) {
+                    // `cancel()` dropped the queued save: queue these answers again, so a failed
+                    // submit doesn't lose the latest edits. Not when the draft is gone.
+                    const code = error.data?.code;
+                    if (code !== "CONFLICT" && code !== "NOT_FOUND") handleChange(response);
+                },
+            },
+        );
     }
 
     return (
@@ -152,8 +208,12 @@ function KitCheck_MemberDraft({ token, kitCheck }: { token: string; kitCheck: Ki
                 onChange={handleChange}
                 onSubmit={handleSubmit}
                 // Stays disabled after a success, until the refetch shows the submitted view.
-                submitting={submit.isPending || submit.isSuccess}
-                footer={<SaveStatusIndicator status={save.status} />}
+                submitting={submitting}
+                footer={
+                    <div role="status" aria-live="polite">
+                        <SaveStatusIndicator status={saveStatus} />
+                    </div>
+                }
             />
         </>
     );

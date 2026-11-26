@@ -45,6 +45,7 @@ import {
     type KitCheckAnswerData,
     type KitCheckDeliveryStatus,
     type KitCheckProblem,
+    type KitCheckProgress,
     type KitCheckTeamChoice,
     type KitCheckTemplate,
 } from "@/lib/schemas/kit-check";
@@ -118,8 +119,10 @@ function describeItem(item: D4HEquipmentListItem): string {
  * - **Templates:** one per comparable line, in the comparison's order. A template offers the
  *   variants that have a D4H record and fit the team (`fittingVariantIds`), labelled with their
  *   name. With none to offer, it asks for a free-text size, which may be left blank.
- * - **Held items:** one per counted item (LOST items don't count) of each held line. Its
- *   `variantId` is the offered variant whose D4H brand and model both equal the item's, or `null`.
+ * - **Held items:** one per counted item (LOST items don't count) of each held line, each item
+ *   once, under the first line it matches. Its `variantId` is the variant whose D4H brand and model
+ *   both equal the item's, when that variant is offered; otherwise `null`. A match that isn't
+ *   offered (it doesn't fit the team) is a `"variant"` problem, so the member is asked.
  * - **Answer:** an unanswered entry per held item; nothing answered.
  */
 export function buildKitCheckSnapshot<M extends KitCheckMemberSource>({
@@ -134,15 +137,14 @@ export function buildKitCheckSnapshot<M extends KitCheckMemberSource>({
     fittingVariantIds: readonly string[];
 }): KitCheckSnapshot<M> {
     const fitting = new Set(fittingVariantIds);
-    const offered = columns.map((column) =>
+    /** Per column, every variant of its template with a D4H record, fitting the team or not. */
+    const recorded = columns.map((column) =>
         variants
-            .filter(
-                (variant) =>
-                    variant.templateId === column.template.id &&
-                    variant.d4h !== null &&
-                    fitting.has(variant.id),
-            )
+            .filter((variant) => variant.templateId === column.template.id && variant.d4h !== null)
             .toSorted((a, b) => a.name.localeCompare(b.name)),
+    );
+    const offered = recorded.map((candidates) =>
+        candidates.filter((variant) => fitting.has(variant.id)),
     );
 
     const templates = columns.map(
@@ -159,22 +161,35 @@ export function buildKitCheckSnapshot<M extends KitCheckMemberSource>({
     );
 
     const members = rows.map((row): KitCheckMemberSnapshot<M> => {
+        // Two templates can share a D4H kind, so one item can turn up under both columns. Answers
+        // are keyed by item id, so it's listed once, under the first.
+        const seen = new Set<number>();
         const heldItems = row.cells.flatMap((cell, index) =>
-            cell.items.map(({ item, quality }): KitCheckHeldItem => {
-                const matched = offered[index].find(
+            cell.items.flatMap(({ item, quality }): KitCheckHeldItem[] => {
+                if (seen.has(item.id)) return [];
+                seen.add(item.id);
+                const matched = recorded[index].find(
                     (variant) =>
                         variant.d4h !== null &&
                         variant.d4h.brandId === item.brand.id &&
                         variant.d4h.modelId === (item.model?.id ?? null),
                 );
-                return {
-                    id: String(item.id),
-                    templateId: columns[index].template.id,
-                    description: describeItem(item),
-                    serial: item.serial,
-                    variantId: matched?.id ?? null,
-                    problems: problemsOf(quality),
-                };
+                const isOffered = matched !== undefined && offered[index].includes(matched);
+                const problems = problemsOf(quality);
+                // A variant that doesn't fit the team isn't one the member can pick: ask them.
+                if (matched && !isOffered && !problems.includes("variant")) {
+                    problems.push("variant");
+                }
+                return [
+                    {
+                        id: String(item.id),
+                        templateId: columns[index].template.id,
+                        description: describeItem(item),
+                        serial: item.serial,
+                        variantId: isOffered ? matched.id : null,
+                        problems,
+                    },
+                ];
             }),
         );
         const held: Record<string, KitCheckAnswerData> = Object.fromEntries(
@@ -356,12 +371,7 @@ export async function previewRecipients(
 
 // Admin reads
 
-/**
- * A request's progress, derived from its timestamps and its instance's `formStatus`, never from
- * its delivery (decision 13). `Editing`: submitted, then reopened (decision 10).
- */
-export type KitCheckProgress = "NotOpened" | "Opened" | "Submitted" | "Editing";
-
+/** A request's progress (`KitCheckProgress`): `Editing` is submitted, then reopened. */
 export function progressOf(request: {
     openedAt: Date | null;
     submittedAt: Date | null;
@@ -663,21 +673,30 @@ async function sendRequest(
     });
 
     if (result.ok) {
-        await ctx.prisma.$transaction([
-            ctx.prisma.kitCheckRequest.update({
-                where: { id: request.id, organizationId: ctx.organizationId },
-                data: { deliveryStatus: "Sent", sentAt: new Date() },
-            }),
-            ctx.logEvent({
-                action: "Update",
-                objectType: "KitCheckRequest",
-                objectId: request.id,
-                description: `Kit check sent to ${request.memberName} (${request.email})`,
-            }),
-        ]);
+        const markSent = () =>
+            ctx.prisma.$transaction([
+                ctx.prisma.kitCheckRequest.update({
+                    where: { id: request.id, organizationId: ctx.organizationId },
+                    data: { deliveryStatus: "Sent", sentAt: new Date() },
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "KitCheckRequest",
+                    objectId: request.id,
+                    description: `Kit check sent to ${request.memberName} (${request.email})`,
+                }),
+            ]);
+        // Retried once, as the nag runner's `markSent` is: the email has gone.
+        await markSent().catch(() => markSent());
         return "Sent";
     }
 
+    await markFailed(ctx, request);
+    return "Failed";
+}
+
+/** Mark a request `Failed`, its token cleared, logging the outcome with the write. */
+async function markFailed(ctx: OrgServiceContext, request: SendableRequest): Promise<void> {
     await ctx.prisma.$transaction([
         ctx.prisma.kitCheckRequest.update({
             where: { id: request.id, organizationId: ctx.organizationId },
@@ -690,7 +709,6 @@ async function sendRequest(
             description: `Kit check failed to send to ${request.memberName} (${request.email})`,
         }),
     ]);
-    return "Failed";
 }
 
 /** How a kit check's sends went. */
@@ -707,7 +725,8 @@ export type KitCheckSendResult = {
  *
  * Computes as the preview does, as the caller's D4H token sees it, and snapshots it (decision 6),
  * then keeps only the chosen members of each team; the rest get no request. A team listed twice
- * gets the members chosen under either listing.
+ * gets the members chosen under either listing. A team with nobody chosen is left out of the
+ * check: it isn't in its `d4hTeams` or its `templates`.
  * One transaction creates the `KitCheck` and, per chosen member, a Draft `FormInstance` holding the
  * pre-filled answer and a `KitCheckRequest`: `Pending`, or `NoEmail` when D4H has no email for
  * them (decision 12). Then each `Pending` request is sent in turn, `SEND_SPACING_MS` apart; one
@@ -744,16 +763,17 @@ export async function createKitCheck(
     const { bundle, teams: computed } = await computeTeamSnapshots(ctx, {
         accessToken,
         bundleId,
-        d4hTeamIds: [...chosen.keys()],
+        // A team with nobody chosen is left out of the check altogether.
+        d4hTeamIds: [...chosen].filter(([, memberIds]) => memberIds.size > 0).map(([id]) => id),
     });
 
     const teams = computed.map((snapshot) => {
         const memberIds = chosen.get(snapshot.team.id) ?? new Set<number>();
         const known = new Set(snapshot.members.map(({ member }) => member.id));
-        const foreign = [...memberIds].filter((memberId) => !known.has(memberId));
-        if (foreign.length > 0) {
+        if ([...memberIds].some((memberId) => !known.has(memberId))) {
+            // Most likely someone left the team between the preview and the send.
             throw new ValidationError(
-                `D4H member ${foreign.join(", ")} isn't in ${snapshot.team.title}.`,
+                "The team's members changed since the preview. Refresh and send again.",
             );
         }
         return {
@@ -850,14 +870,22 @@ export async function createKitCheck(
         // Spacing goes between sends, not before the first.
         if (sendAttempted) await deps.sleep(SEND_SPACING_MS);
         sendAttempted = true;
-        const outcome = await sendRequest(
-            batchCtx,
-            { id, email: member.email, memberName: member.name, d4hTeamTitle: team.title },
-            send,
-            deps,
-        );
-        if (outcome === "Sent") result.sent++;
-        else result.failed++;
+        const request = {
+            id,
+            email: member.email,
+            memberName: member.name,
+            d4hTeamTitle: team.title,
+        };
+        try {
+            const outcome = await sendRequest(batchCtx, request, send, deps);
+            if (outcome === "Sent") result.sent++;
+            else result.failed++;
+        } catch {
+            // A database error mustn't stop the loop: the rest would stay `Pending`, and a second
+            // Send would email everyone twice. Best effort: the database may still be failing.
+            result.failed++;
+            await markFailed(batchCtx, request).catch(() => {});
+        }
     }
     return result;
 }

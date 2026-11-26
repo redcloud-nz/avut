@@ -287,6 +287,62 @@ describe("buildKitCheckSnapshot", () => {
         expect(byId.get("21")).toMatchObject({ variantId: null, problems: ["variant"] });
     });
 
+    it("lists an item once, under the first line, when two lines share its D4H kind", () => {
+        const chestLine: I3BundleLine = {
+            template: { ...harnessLine.template, id: I3TemplateId.create(), name: "Chest harness" },
+        };
+        const comparison = compareBundle({
+            lines: [harnessLine, chestLine],
+            members,
+            items: [item(40, 1, HARNESS_KIND, { serial: "H-4" })],
+            fittingTemplateIds: [harnessLine.template.id, chestLine.template.id],
+        });
+        const { members: result } = buildKitCheckSnapshot({
+            columns: comparison.columns,
+            rows: comparison.rows,
+            variants,
+            fittingVariantIds,
+        });
+
+        const aroha = result.find((entry) => entry.member.id === 1)!;
+        expect(aroha.heldItems.map((held) => [held.id, held.templateId])).toEqual([
+            ["40", T.harness],
+        ]);
+        expect(Object.keys(aroha.response.held)).toEqual(["40"]);
+    });
+
+    it("asks about the variant of an item matching one that doesn't fit the team", () => {
+        // Astro is one of the template's D4H variants, but doesn't fit the team.
+        const withAstro: I3BundleLine = {
+            template: {
+                ...harnessLine.template,
+                variants: [...harnessLine.template.variants, { brandId: 1, modelId: 13 }],
+            },
+        };
+        const comparison = compareBundle({
+            lines: [withAstro],
+            members,
+            items: [
+                item(50, 1, HARNESS_KIND, {
+                    serial: "H-5",
+                    brand: { resourceType: "EquipmentBrand", id: 1, title: "Petzl" },
+                    model: { resourceType: "EquipmentModel", id: 13, title: "Astro" },
+                }),
+            ],
+            fittingTemplateIds: [T.harness],
+        });
+        const { members: result } = buildKitCheckSnapshot({
+            columns: comparison.columns,
+            rows: comparison.rows,
+            variants,
+            fittingVariantIds,
+        });
+
+        expect(result.find((entry) => entry.member.id === 1)!.heldItems).toEqual([
+            expect.objectContaining({ id: "50", variantId: null, problems: ["variant"] }),
+        ]);
+    });
+
     it("starts every held item unanswered, and nothing else", () => {
         const { members: result } = snapshot([item(30, 1, GLOVES_KIND), item(31, 1, GLOVES_KIND)]);
 
@@ -483,6 +539,81 @@ describe("createKitCheck", () => {
         expect(requests[2]).toMatchObject({ deliveryStatus: "Sent", tokenHash: "hash-2" });
     });
 
+    it("counts a send whose Sent write keeps failing as failed, and sends the rest", async () => {
+        const deps = makeDeps();
+        // John goes first: his Sent write and its one retry both fail.
+        const update = db.kitCheckRequest.update.bind(db.kitCheckRequest);
+        let sentWrites = 0;
+        const spy = vi.spyOn(db.kitCheckRequest, "update").mockImplementation(((
+            args: Parameters<typeof update>[0],
+        ) => {
+            if (args.data.deliveryStatus === "Sent" && ++sentWrites <= 2) {
+                return Promise.reject(new Error("Database unavailable"));
+            }
+            return update(args);
+        }) as unknown as typeof update);
+        let result;
+        try {
+            result = await createKitCheck(ctx(), input, deps);
+        } finally {
+            spy.mockRestore();
+        }
+
+        expect(result).toMatchObject({ sent: 1, failed: 1, noEmail: 1 });
+        expect(deps.sendEmail).toHaveBeenCalledTimes(2);
+        const requests = await db.kitCheckRequest.findMany({
+            where: { kitCheckId: result.kitCheckId },
+            orderBy: { d4hMemberId: "asc" },
+        });
+        expect(requests[0]).toMatchObject({
+            deliveryStatus: "Failed",
+            tokenHash: null,
+            expiresAt: null,
+        });
+        expect(requests[2]).toMatchObject({ deliveryStatus: "Sent", tokenHash: "hash-2" });
+    });
+
+    it("retries a failed Sent write once", async () => {
+        const update = db.kitCheckRequest.update.bind(db.kitCheckRequest);
+        let sentWrites = 0;
+        const spy = vi.spyOn(db.kitCheckRequest, "update").mockImplementation(((
+            args: Parameters<typeof update>[0],
+        ) => {
+            if (args.data.deliveryStatus === "Sent" && ++sentWrites === 1) {
+                return Promise.reject(new Error("Database blip"));
+            }
+            return update(args);
+        }) as unknown as typeof update);
+        let result;
+        try {
+            result = await createKitCheck(ctx(), input, makeDeps());
+        } finally {
+            spy.mockRestore();
+        }
+
+        expect(result).toMatchObject({ sent: 2, failed: 0 });
+    });
+
+    it("leaves a team with nobody chosen out of the check", async () => {
+        const OTHER_TEAM = 8;
+        // The token doesn't reach team 8: computing it would throw.
+        const result = await createKitCheck(
+            ctx(),
+            {
+                ...input,
+                teams: [
+                    { d4hTeamId: TEAM_ID, d4hMemberIds: [42] },
+                    { d4hTeamId: OTHER_TEAM, d4hMemberIds: [] },
+                ],
+            },
+            makeDeps(),
+        );
+
+        const check = await db.kitCheck.findUniqueOrThrow({ where: { id: result.kitCheckId } });
+        expect(check.d4hTeams).toEqual([{ id: TEAM_ID, title: "Rescue Team" }]);
+        expect(Object.keys(check.templates as object)).toEqual([String(TEAM_ID)]);
+    });
+
     it("spaces the sends, not before the first", async () => {
         const deps = makeDeps();
         await createKitCheck(ctx(), input, deps);
@@ -521,13 +652,15 @@ describe("createKitCheck", () => {
         const deps = makeDeps();
         const checksBefore = await db.kitCheck.count();
 
-        await expect(
-            createKitCheck(
-                ctx(),
-                { ...input, teams: [{ d4hTeamId: TEAM_ID, d4hMemberIds: [42, 999] }] },
-                deps,
-            ),
-        ).rejects.toBeInstanceOf(ValidationError);
+        const error = await createKitCheck(
+            ctx(),
+            { ...input, teams: [{ d4hTeamId: TEAM_ID, d4hMemberIds: [42, 999] }] },
+            deps,
+        ).catch((caught: unknown) => caught);
+        expect(error).toBeInstanceOf(ValidationError);
+        expect((error as Error).message).toBe(
+            "The team's members changed since the preview. Refresh and send again.",
+        );
         expect(await db.kitCheck.count()).toBe(checksBefore);
         expect(deps.sendEmail).not.toHaveBeenCalled();
     });
