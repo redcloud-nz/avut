@@ -233,11 +233,11 @@ None for the guides: the admin pages are unlinked and system-admin only, and the
 
 ## Parked
 
-Follow-ups to draft at the end (ask before filing):
+Settled 2026-11-26:
 
-- I3 template setting "Members may use their own" (`allowOwn`), and the form's "Using my own" answer.
-- I3 bundle lines marked optional ("things you might have"), and the form's section for them.
-- Considered items (proposals) on a kit check, to gauge interest in kit not yet in I3.
+- I3 template setting "Members may use their own" (`allowOwn`), and the form's "Using my own" answer: filed as #583.
+- I3 bundle lines marked optional ("things you might have"), and the form's section for them: filed as #584.
+- Considered items (proposals) on a kit check: dropped. The demo only had them for the soft shell jacket, which now has its own form.
 
 ## Review notes
 
