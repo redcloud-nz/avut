@@ -152,6 +152,52 @@ git merge-base --is-ancestor origin/integration origin/production && echo fast-f
 `git log origin/integration..origin/production --oneline` is empty once it's
 done. `/avut-release` does this step, after asking before it pushes.
 
+## Preview deployments
+
+Vercel deploys only `integration`, `production`, the `release/v*` branch
+(so the release PR gets a build before it merges into `production`) and
+branches under `preview/` (`git.deploymentEnabled` in
+[`vercel.json`](../vercel.json)). Pushing a feature branch, or opening its PR,
+creates no deployment. `integration` is
+itself a Vercel _preview_ deployment, so previews stay switched on at the
+project level. The rule is `"**": false`, not `"*": false`: Vercel matches
+branch names with minimatch, where `*` stops at `/` and would miss `feat/…`.
+
+To look at a branch on Vercel, push it to a `preview/` branch:
+
+```bash
+git push origin HEAD:preview/<name>     # e.g. preview/kit-check
+```
+
+Each push there redeploys it. Before you push, know what it does:
+
+- The build runs `prisma migrate deploy`, so **the branch's migrations are
+  applied to its preview database**. The Neon integration gives each previewed
+  git branch its own Neon branch (`preview/<git branch>`, here
+  `preview/preview/<name>`), copied from the Neon default branch. The
+  migrations don't touch shared preview data, but they stay on that Neon branch
+  until it's deleted, and they're already applied there if you push the same
+  `preview/<name>` again after changing the migration. Use a new name then.
+- The free Neon plan caps a project at 10 branches. A preview branch you
+  forget about holds one of them, and a full project fails the next deployment
+  with "Resource provisioning failed".
+
+When you're done with the preview:
+
+```bash
+git push origin --delete preview/<name>
+```
+
+- **Neon branch:** with the Neon integration's _Automatically delete obsolete
+  Neon branches_ setting on (Neon Console → Integrations → Manage → Branches →
+  Automation workflows), Neon deletes the branch the next time any preview deployment is
+  created, which includes the next `integration` deploy. To free it now, delete
+  `preview/preview/<name>` in the Neon Console.
+- **Vercel deployment:** nothing to do. The project's deployment retention
+  policy removes it in time. Deleting it by hand (dashboard, or
+  `vercel remove <url>`) isn't needed for the Neon branch, since the setting
+  above works from the git branch, not the deployment.
+
 ## Hotfixes
 
 For fixes that can't wait for the next `integration` release train, use a
@@ -183,6 +229,13 @@ into `production`, and add its `docs/releases/v0.9.3.md` — same requirement as
 a normal release. The branch survives the merge; keep accumulating on it and
 repeat until `production` moves to the next minor, at which point cut a fresh
 `hotfix/<minor>` branch.
+
+A hotfix branch gets no Vercel deployment of its own, so its first deployment
+would be production. To see it on Vercel before merging, push it to a preview
+branch (`git push origin hotfix/0.9:preview/hotfix-0.9`) and delete that when
+done, as in [Preview deployments](#preview-deployments). Don't enable
+`hotfix/**` in `vercel.json`: the branch outlives each merge, so its Neon
+branch would hold one of the 10 for good.
 
 ## Release notes
 

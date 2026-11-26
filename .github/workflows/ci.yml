@@ -4,9 +4,12 @@ name: CI
 # runs on PRs into `production` — the single release PR (docs/releasing.md) —
 # since that's the one PR that isn't otherwise covered by a prior run on
 # `integration` alone (it can carry commits integration's CI never saw if the
-# release branch was cut before they landed). The Vercel deployment already
-# covers `prisma migrate deploy && next build`, so this deliberately doesn't
-# build — it covers the two things nothing else did.
+# release branch was cut before they landed). This deliberately doesn't run
+# `prisma migrate deploy && next build`: the Vercel deployment does. Vercel
+# deploys only `integration`, `production`, `release/**` and `preview/**`
+# (vercel.json). The release PR gets that build before merge; a feature PR
+# gets it only after merge, unless the branch was pushed to `preview/<name>`
+# (docs/releasing.md → Preview deployments).
 
 on:
   pull_request:
