@@ -33,7 +33,7 @@
     "test:run": "vitest run",
     "test:tz": "TZ=Asia/Kolkata vitest run",
     "prepare": "husky",
-    "kit-check:export": "dotenv -e .env.local -- tsx scripts/kit-check-demo-export.ts"
+    "self-audit:export": "dotenv -e .env.local -- tsx scripts/self-audit-demo-export.ts"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"

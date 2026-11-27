@@ -7,17 +7,17 @@ import { checkBotId } from "botid/server";
 import { addDays } from "date-fns";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { NOT_NEEDED } from "@/lib/kit-check-types";
-import { EMPTY_ANSWER } from "@/lib/kit-check-validate";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
-import {
-    KitCheckId,
-    KitCheckRequestId,
-    type KitCheckResponseData,
-    type KitCheckTemplate,
-} from "@/lib/schemas/kit-check";
 import { OrganizationId } from "@/lib/schemas/organization";
+import {
+    SelfAuditCampaignId,
+    SelfAuditRequestId,
+    type SelfAuditResponseData,
+    type SelfAuditTemplate,
+} from "@/lib/schemas/self-audit";
 import { UserId } from "@/lib/schemas/user";
+import { NOT_NEEDED } from "@/lib/self-audit-types";
+import { EMPTY_ANSWER } from "@/lib/self-audit-validate";
 import { hashLinkToken } from "@/server/link-token";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
@@ -30,7 +30,7 @@ vi.mock("botid/server", () => ({
 
 const TEAM_ID = 7;
 
-const gloves: KitCheckTemplate = {
+const gloves: SelfAuditTemplate = {
     id: "gloves",
     category: "PPE",
     name: "Gloves",
@@ -41,14 +41,14 @@ const gloves: KitCheckTemplate = {
     sizeOptions: [],
 };
 
-const unanswered: KitCheckResponseData = { held: {}, missing: {}, extras: [], comments: "" };
-const complete: KitCheckResponseData = {
+const unanswered: SelfAuditResponseData = { held: {}, missing: {}, extras: [], comments: "" };
+const complete: SelfAuditResponseData = {
     ...unanswered,
     missing: { [gloves.id]: { ...EMPTY_ANSWER, has: "no", wantVariantId: NOT_NEEDED } },
 };
 
-describe("publicFormsRouter kit check", () => {
-    const S = { org: OrganizationId.create(), check: KitCheckId.create() };
+describe("publicFormsRouter self-audit", () => {
+    const S = { org: OrganizationId.create(), check: SelfAuditCampaignId.create() };
     const db = createMockPrisma();
     let seeded = 0;
 
@@ -56,7 +56,7 @@ describe("publicFormsRouter kit check", () => {
         await db.organization.create({
             data: { id: S.org, name: "Acme", slug: "acme", createdAt: new Date() },
         });
-        await db.kitCheck.create({
+        await db.selfAuditCampaign.create({
             data: {
                 id: S.check,
                 organizationId: S.org,
@@ -77,23 +77,23 @@ describe("publicFormsRouter kit check", () => {
     async function seedRequest() {
         seeded++;
         const token = `router-token-${seeded}`;
-        const id = KitCheckRequestId.create();
+        const id = SelfAuditRequestId.create();
         const formInstanceId = FormInstanceId.create();
         await db.formInstance.create({
             data: {
                 id: formInstanceId,
-                formKey: "kit-check",
+                formKey: "d4h-i3-self-audit",
                 organizationId: S.org,
                 userId: null,
                 formData: unanswered,
                 formStatus: "Draft",
             },
         });
-        await db.kitCheckRequest.create({
+        await db.selfAuditRequest.create({
             data: {
                 id,
                 organizationId: S.org,
-                kitCheckId: S.check,
+                campaignId: S.check,
                 d4hTeamId: TEAM_ID,
                 d4hTeamTitle: "Rescue Team",
                 d4hMemberId: seeded,
@@ -119,12 +119,12 @@ describe("publicFormsRouter kit check", () => {
     it("answers an unknown token not-found, and refuses its writes NOT_FOUND", async () => {
         const caller = anonymous();
         const token = "no-such-token";
-        expect(await caller.getKitCheckByToken({ token })).toEqual({ state: "not-found" });
+        expect(await caller.getSelfAuditByToken({ token })).toEqual({ state: "not-found" });
         for (const call of [
-            () => caller.openKitCheckByToken({ token }),
-            () => caller.saveKitCheckDraftByToken({ token, formData: complete }),
-            () => caller.submitKitCheckByToken({ token, formData: complete }),
-            () => caller.reopenKitCheckByToken({ token }),
+            () => caller.openSelfAuditByToken({ token }),
+            () => caller.saveSelfAuditDraftByToken({ token, formData: complete }),
+            () => caller.submitSelfAuditByToken({ token, formData: complete }),
+            () => caller.reopenSelfAuditByToken({ token }),
         ]) {
             await expect(call()).rejects.toMatchObject({
                 code: "NOT_FOUND",
@@ -133,11 +133,11 @@ describe("publicFormsRouter kit check", () => {
         }
     });
 
-    it("refuses an answer that isn't a kit-check answer", async () => {
+    it("refuses an answer that isn't a self-audit answer", async () => {
         const { token } = await seedRequest();
         const own = { ...complete.missing[gloves.id], has: "own" };
         await expect(
-            anonymous().saveKitCheckDraftByToken({
+            anonymous().saveSelfAuditDraftByToken({
                 token,
                 formData: { ...complete, missing: { [gloves.id]: own } } as never,
             }),
@@ -147,7 +147,7 @@ describe("publicFormsRouter kit check", () => {
     it("refuses an incomplete submit BAD_REQUEST", async () => {
         const { token } = await seedRequest();
         await expect(
-            anonymous().submitKitCheckByToken({ token, formData: unanswered }),
+            anonymous().submitSelfAuditByToken({ token, formData: unanswered }),
         ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     });
 
@@ -158,9 +158,9 @@ describe("publicFormsRouter kit check", () => {
         const { token, id } = await seedRequest();
 
         await expect(
-            anonymous().submitKitCheckByToken({ token, formData: complete }),
+            anonymous().submitSelfAuditByToken({ token, formData: complete }),
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
-        expect(await db.kitCheckRequest.findUniqueOrThrow({ where: { id } })).toMatchObject({
+        expect(await db.selfAuditRequest.findUniqueOrThrow({ where: { id } })).toMatchObject({
             submittedAt: null,
         });
     });
@@ -169,21 +169,21 @@ describe("publicFormsRouter kit check", () => {
         const caller = anonymous();
         const { token } = await seedRequest();
 
-        await caller.openKitCheckByToken({ token });
-        await caller.saveKitCheckDraftByToken({ token, formData: complete });
-        await caller.submitKitCheckByToken({ token, formData: complete });
-        expect(await caller.getKitCheckByToken({ token })).toMatchObject({
+        await caller.openSelfAuditByToken({ token });
+        await caller.saveSelfAuditDraftByToken({ token, formData: complete });
+        await caller.submitSelfAuditByToken({ token, formData: complete });
+        expect(await caller.getSelfAuditByToken({ token })).toMatchObject({
             state: "ok",
             formStatus: "Submitted",
             submittedData: complete,
         });
 
         await expect(
-            caller.saveKitCheckDraftByToken({ token, formData: unanswered }),
+            caller.saveSelfAuditDraftByToken({ token, formData: unanswered }),
         ).rejects.toMatchObject({ code: "CONFLICT" });
 
-        await caller.reopenKitCheckByToken({ token });
-        expect(await caller.getKitCheckByToken({ token })).toMatchObject({
+        await caller.reopenSelfAuditByToken({ token });
+        expect(await caller.getSelfAuditByToken({ token })).toMatchObject({
             formStatus: "Draft",
             submittedData: complete,
         });

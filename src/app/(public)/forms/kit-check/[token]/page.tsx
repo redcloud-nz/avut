@@ -9,8 +9,11 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { AuthCard_Skeleton } from "@/components/auth/auth-card-skeleton";
-import { KitCheck_Member, KitCheckLinkInvalid_Card } from "@/components/kit-check/kit-check-member";
-import { kitCheckTokenSchema } from "@/lib/schemas/kit-check";
+import {
+    SelfAudit_Member,
+    SelfAuditLinkInvalid_Card,
+} from "@/components/self-audit/self-audit-member";
+import { selfAuditTokenSchema } from "@/lib/schemas/self-audit";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 // The URL carries a secret link token: keep it out of search indexes, and out of the Referer
@@ -22,17 +25,17 @@ export const metadata: Metadata = {
 };
 
 // Not `async` — see the note in /auth/sign-in/page.tsx.
-export default function KitCheckMember_Page(props: PageProps<"/forms/kit-check/[token]">) {
+export default function SelfAuditMember_Page(props: PageProps<"/forms/kit-check/[token]">) {
     return (
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-6">
             <Suspense fallback={<AuthCard_Skeleton fields={0} />}>
-                <KitCheck_MemberFromParams params={props.params} />
+                <SelfAudit_MemberFromParams params={props.params} />
             </Suspense>
         </div>
     );
 }
 
-async function KitCheck_MemberFromParams({
+async function SelfAudit_MemberFromParams({
     params,
 }: {
     params: PageProps<"/forms/kit-check/[token]">["params"];
@@ -41,15 +44,15 @@ async function KitCheck_MemberFromParams({
 
     // Access is by the token alone, through the public procedures. A token the procedure's
     // input would reject can never match, so it gets the same answer as an unknown one.
-    if (!kitCheckTokenSchema.safeParse(token).success) return <KitCheckLinkInvalid_Card />;
+    if (!selfAuditTokenSchema.safeParse(token).success) return <SelfAuditLinkInvalid_Card />;
 
     // Read only: the page's GET never changes state, since email link scanners open every URL.
     // The client records the open once it mounts.
-    prefetch(trpc.publicForms.getKitCheckByToken.queryOptions({ token }));
+    prefetch(trpc.publicForms.getSelfAuditByToken.queryOptions({ token }));
 
     return (
         <HydrateClient>
-            <KitCheck_Member token={token} />
+            <SelfAudit_Member token={token} />
         </HydrateClient>
     );
 }

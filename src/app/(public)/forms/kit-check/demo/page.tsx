@@ -7,14 +7,14 @@
 
 import type { Metadata } from "next";
 
-import { KitCheck_Demo } from "@/components/kit-check/kit-check-demo";
+import { SelfAudit_Demo } from "@/components/self-audit/self-audit-demo";
 
 export const metadata: Metadata = {
     title: "Issued Equipment Self-Audit (demo)",
     robots: { index: false, follow: false },
 };
 
-/** A public, no-login demo of the kit-check member form, over made-up data. */
-export default function KitCheckDemo_Page() {
-    return <KitCheck_Demo />;
+/** A public, no-login demo of the self-audit member form, over made-up data. */
+export default function SelfAuditDemo_Page() {
+    return <SelfAudit_Demo />;
 }

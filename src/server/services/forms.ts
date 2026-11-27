@@ -132,8 +132,8 @@ export async function requireInstanceById(
 /**
  * One page of the caller's submitted instances of a form in the current organization, newest
  * first. "Submitted" is any status other than `Draft`, and the submitted time is `updatedAt`
- * (a non-draft is read-only, so nothing moves it afterwards). Kit-check instances are the one
- * exception: a member can reopen theirs to Draft (`kit-check-public.ts`). They're user-less, so
+ * (a non-draft is read-only, so nothing moves it afterwards). Self-audit instances are the one
+ * exception: a member can reopen theirs to Draft (`self-audit-public.ts`). They're user-less, so
  * they never appear here.
  *
  * @param cursor - The id of the last instance on the previous page; omit for the first page.

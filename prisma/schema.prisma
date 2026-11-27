@@ -62,7 +62,7 @@ model User {
   startedD4HNagRuns         D4HNagRun[]        @relation("d4h_nag_run_to_started_by")
   createdD4HNagOptOuts      D4HNagOptOut[]     @relation("d4h_nag_opt_out_to_created_by")
   teamUsers                 TeamUser[]         @relation("team_user_to_user")
-  sentKitChecks             KitCheck[]         @relation("kit_check_to_sent_by")
+  sentSelfAuditCampaigns             SelfAuditCampaign[]         @relation("self_audit_campaign_to_sent_by")
 
   @@unique([email])
   @@map("users")
@@ -149,8 +149,8 @@ model Organization {
   formInstances FormInstance[] @relation("form_instance_to_organization")
   d4hTasks      D4HTask[]      @relation("d4h_task_to_organization")
 
-  kitChecks        KitCheck[]        @relation("kit_check_to_organization")
-  kitCheckRequests KitCheckRequest[] @relation("kit_check_request_to_organization")
+  selfAuditCampaigns        SelfAuditCampaign[]        @relation("self_audit_campaign_to_organization")
+  selfAuditRequests SelfAuditRequest[] @relation("self_audit_request_to_organization")
 
   d4hNagRules      D4HNagRule[]      @relation("d4h_nag_rule_to_organization")
   d4hNagRuns       D4HNagRun[]       @relation("d4h_nag_run_to_organization")
@@ -967,7 +967,7 @@ model I3Bundle {
   updatedAt DateTime     @updatedAt
 
   items     I3BundleItem[] @relation("i3_bundle_item_to_i3_bundle")
-  kitChecks KitCheck[]     @relation("kit_check_to_i3_bundle")
+  selfAuditCampaigns SelfAuditCampaign[]     @relation("self_audit_campaign_to_i3_bundle")
 
   @@index([organizationId])
   @@map("i3_bundles")
@@ -1003,7 +1003,7 @@ model FormInstance {
   items    FormInstanceItem[] @relation("form_instance_item_to_form_instance")
   d4hTasks D4HTask[]          @relation("d4h_task_to_form_instance")
 
-  kitCheckRequest KitCheckRequest? @relation("kit_check_request_to_form_instance")
+  selfAuditRequest SelfAuditRequest? @relation("self_audit_request_to_form_instance")
 
   @@index([formKey, organizationId, userId])
   @@map("form_instances")
@@ -1026,69 +1026,69 @@ model FormInstanceItem {
   @@map("form_instance_items")
 }
 
-// Kit checks
+// Self audit campaigns
 
-/// One send of an I3 bundle's kit-check form to every D4H member of the chosen teams. The bundle's
+/// One send of an I3 bundle's self-audit form to every D4H member of the chosen teams. The bundle's
 /// templates are snapshotted at send, so the member form never reads I3 or D4H (#578).
-model KitCheck {
+model SelfAuditCampaign {
   id             String       @id
   organizationId String
-  organization   Organization @relation("kit_check_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization @relation("self_audit_campaign_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
   /// Null once the bundle is purged; `bundleName` keeps what it was called.
   bundleId       String?
-  bundle         I3Bundle?    @relation("kit_check_to_i3_bundle", fields: [bundleId], references: [id], onDelete: SetNull)
+  bundle         I3Bundle?    @relation("self_audit_campaign_to_i3_bundle", fields: [bundleId], references: [id], onDelete: SetNull)
   bundleName     String
   /// `[{ id, title }]`: the D4H teams sent to.
   d4hTeams       Json
-  /// `KitCheckTemplatesByTeam` (`src/lib/schemas/kit-check.ts`): each D4H team's templates, snapshotted at send.
+  /// `SelfAuditTemplatesByTeam` (`src/lib/schemas/self-audit.ts`): each D4H team's templates, snapshotted at send.
   templates      Json
   status         RecordStatus @default(Active)
   sentById       String?
-  sentBy         User?        @relation("kit_check_to_sent_by", fields: [sentById], references: [id], onDelete: SetNull)
+  sentBy         User?        @relation("self_audit_campaign_to_sent_by", fields: [sentById], references: [id], onDelete: SetNull)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
-  requests KitCheckRequest[] @relation("kit_check_request_to_kit_check")
+  requests SelfAuditRequest[] @relation("self_audit_request_to_campaign")
 
   @@index([organizationId])
-  @@map("kit_checks")
+  @@map("self_audit_campaigns")
 }
 
-/// One D4H member's kit-check form within a `KitCheck`. Their answers live on the linked
+/// One D4H member's self-audit form within a `SelfAuditCampaign`. Their answers live on the linked
 /// `FormInstance` (the working copy) and, once submitted, in `submittedData`.
-model KitCheckRequest {
+model SelfAuditRequest {
   id             String                 @id
   organizationId String
-  organization   Organization           @relation("kit_check_request_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
-  kitCheckId     String
-  kitCheck       KitCheck               @relation("kit_check_request_to_kit_check", fields: [kitCheckId], references: [id], onDelete: Cascade)
+  organization   Organization           @relation("self_audit_request_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  campaignId     String
+  campaign       SelfAuditCampaign               @relation("self_audit_request_to_campaign", fields: [campaignId], references: [id], onDelete: Cascade)
   d4hTeamId      Int
   d4hTeamTitle   String
   d4hMemberId    Int
   memberName     String
   email          String?
-  /// `KitCheckHeldItem[]`, snapshotted at send.
+  /// `SelfAuditHeldItem[]`, snapshotted at send.
   heldItems      Json
   /// sha256 hex of the link token in the email. Replaced on resend; cleared when a send fails.
   tokenHash      String?                @unique
   expiresAt      DateTime?
-  deliveryStatus KitCheckDeliveryStatus
+  deliveryStatus SelfAuditDeliveryStatus
   sentAt         DateTime?
   openedAt       DateTime?
   submittedAt    DateTime?
-  /// The last submitted answer (`KitCheckResponseData`). Kept while a reopened form is edited.
+  /// The last submitted answer (`SelfAuditResponseData`). Kept while a reopened form is edited.
   submittedData  Json?
   formInstanceId String                 @unique
-  formInstance   FormInstance           @relation("kit_check_request_to_form_instance", fields: [formInstanceId], references: [id], onDelete: Cascade)
+  formInstance   FormInstance           @relation("self_audit_request_to_form_instance", fields: [formInstanceId], references: [id], onDelete: Cascade)
   createdAt      DateTime               @default(now())
   updatedAt      DateTime               @updatedAt
 
-  @@unique([kitCheckId, d4hTeamId, d4hMemberId])
-  @@map("kit_check_requests")
+  @@unique([campaignId, d4hTeamId, d4hMemberId])
+  @@map("self_audit_requests")
 }
 
-/// The last send of a kit-check request's link. `Pending`: claimed, send not confirmed.
-enum KitCheckDeliveryStatus {
+/// The last send of a self-audit request's link. `Pending`: claimed, send not confirmed.
+enum SelfAuditDeliveryStatus {
   Pending
   Sent
   Failed

@@ -9,7 +9,7 @@ import { useDebouncer } from "@tanstack/react-pacer";
 import type { MutationStatus } from "@tanstack/react-query";
 
 /**
- * The debounced-save core shared by the draft forms (the I3 forms and the kit check).
+ * The debounced-save core shared by the draft forms (the I3 forms and the self-audit).
  *
  * Pass the save function (normally a mutation's `mutate`, closed over what the save needs) and
  * the mutation's `status` and `reset`. `handleChange(data)` resets a settled mutation, so the

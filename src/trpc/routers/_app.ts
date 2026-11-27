@@ -16,13 +16,13 @@ import { historyRouter } from "./history-router";
 import { i3BundlesRouter } from "./i3-bundles-router";
 import { i3Router } from "./i3-router";
 import { invitationsRouter } from "./invitations-router";
-import { kitChecksRouter } from "./kit-checks-router";
 import { notificationsRouter } from "./notification-router";
 import { organizationGroupsRouter } from "./organization-groups-router";
 import { organizationNotesRouter } from "./organization-notes-router";
 import { organizationsRouter } from "./organizations-router";
 import { personnelRouter } from "./personnel-router";
 import { publicFormsRouter } from "./public-forms-router";
+import { selfAuditCampaignsRouter } from "./self-audit-campaigns-router";
 import { settingsRouter } from "./settings-router";
 import { skillCheckSessionsRouter } from "./skill-check-sessions-router";
 import { skillChecksRouter } from "./skill-checks-router";
@@ -46,7 +46,7 @@ export const appRouter = createTrpcRouter({
     i3: i3Router,
     i3Bundles: i3BundlesRouter,
     invitations: invitationsRouter,
-    kitChecks: kitChecksRouter,
+    selfAuditCampaigns: selfAuditCampaignsRouter,
     notifications: notificationsRouter,
     organizationGroups: organizationGroupsRouter,
     organizationNotes: organizationNotesRouter,

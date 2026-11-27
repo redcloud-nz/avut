@@ -32,7 +32,7 @@ The d4h-i3 "kit check" becomes the **self-audit**. One send to a team's members 
 
 ### Review group A: data layer
 
-- [ ] **1a. Rename schema, identifiers and files (no behaviour change)**
+- [x] **1a. Rename schema, identifiers and files (no behaviour change)** (refactor(d4h-i3): rename kit check to self-audit). Note: the BotID path rename landed here, not in 1b; admin component files are `campaign-*.tsx`; the answers procedure is `getRequestAnswers`.
   - **Files:** `prisma/schema.prisma` + migration; every kit-check file (`git grep -il "kit.\?check"`, ≈50): `src/components/kit-check/` → `src/components/self-audit/`, `src/modules/d4h-i3/components/kit-checks/` → `…/self-audit-campaigns/`, services, routers (+ `_app.ts`), schemas, `src/lib/{forms,operations,kit-check-*}.ts`, `src/lib/schemas/log-entry.ts` (+ test), `src/client/*-effects.ts`, `src/emails/`, `scripts/kit-check-demo-export.ts`, `package.json` script name, comments in `form-fields.tsx`, `use-debounced-autosave.ts`, `server/services/forms.ts`, and `docs/releasing.md:169`'s example branch name.
   - **Do:** Decisions 1, 4, 8, and the admin route folders (`d4h-i3/kit-checks/**` → `d4h-i3/self-audit-campaigns/**`, param `[campaign_id]`; `/new` moves too and goes in task 2); update `help-cards.test.ts`'s opt-out list. Public routes stay put until 1b. Migration per decision 9. Leave old `docs/plans/*`, `docs/releases/*` and `prisma/migrations/*` alone.
   - **Done when:** `npm run check -- --all` passes; the only `kit.?check` hits outside history docs and old migrations are `src/app/(public)/forms/kit-check` and its URL builders.
