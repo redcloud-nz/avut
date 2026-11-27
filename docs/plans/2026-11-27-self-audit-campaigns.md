@@ -1,0 +1,82 @@
+# Self Audit Campaigns: rename kit check, pin to one team, edit members
+
+**Date:** 2026-11-27
+**Branch:** `chore/self-audit-rename` in `.claude/worktrees/self-audit-rename` (carries the title-rename commit a85d92fa)
+**DB:** migration-bearing: `npm run db:branch self-audit-rename` before the first `migrate dev`; ask before each `migrate dev`. Tasks 1a–3 each add a migration; before ship they're folded into one (re-copy the branch DB from `avut`, delete the three folders, one `migrate dev`).
+**Written against:** integration @ 6b27effd
+**Source:** user request (session 2026-11-27); follows #576 / #578
+
+The d4h-i3 "kit check" becomes the **self-audit**. One send to a team's members is a **Self Audit Campaign**. A campaign is pinned to one AVUT team (through that team's D4H link), is created as a Draft and then sent, and its members can be added, removed or withdrawn.
+
+## Decisions
+
+1. **Names.** `KitCheck` → `SelfAuditCampaign` (table `self_audit_campaigns`), `KitCheckRequest` → `SelfAuditRequest` (`self_audit_requests`), enum `KitCheckDeliveryStatus` → `SelfAuditDeliveryStatus`. Code follows: `src/**/kit-check*` → `self-audit*`, router `kitChecks` → `selfAuditCampaigns`, public procedures `…KitCheck…ByToken` → `…SelfAudit…ByToken`, ids `SelfAuditCampaignId`/`SelfAuditRequestId`, constants `SELF_AUDIT_*`. User-facing text: "Self Audit Campaign(s)" on the admin side, "self-audit" for the member's form (title stays "Issued Equipment Self-Audit").
+2. **Routes** (chosen by the user). Admin: `/orgs/[slug]/d4h-i3/self-audit-campaigns` and `…/[campaign_id]` (`/new` goes, decision 10). Member form: `/forms/[slug]/d4h-i3-self-audit/[token]`, `[slug]` being the **org** slug. The service checks it: `getSelfAuditByToken(ctx, { slug, token })` (and the other `…ByToken` calls) resolve to `LINK_NOT_VALID` when the slug isn't the token's org. Demo: `/forms/[slug]/d4h-i3-self-audit/demo` (sample data, saves nothing; the slug is ignored). `/forms/[slug]` sits beside static public forms like `/forms/chch-soft-shell-jacket`; static segments win, so an org slugged like a form key would be shadowed: acceptable, noted in `src/lib/public-forms.ts`.
+3. **Old URLs.** `/forms/kit-check/demo` (in production since 0.13.1) gets a permanent redirect to `/forms/chch-cdem/d4h-i3-self-audit/demo` in `next.config.ts` `redirects()`. Old token links aren't redirected: none reached production.
+4. **Keys.** `formKey` `"kit-check"` → `"d4h-i3-self-audit"`; log object types `KitCheck`/`KitCheckRequest` → `SelfAuditCampaign`/`SelfAuditRequest`; operation `kit-check-send` → `self-audit-campaign-send`. No data updates: old log rows keep their old object types, which history reads tolerate (`object-history.tsx` uses `safeParse`).
+5. **One team.** A campaign has `teamId` (AVUT `Team`, required, `onDelete: Restrict`) and snapshots `d4hTeamId` + `d4hTeamName` from the team's `Team_D4H` at create. Only active teams with a D4H link the caller's token reaches can be picked. `d4hTeams Json` goes; `templates` becomes that one team's `SelfAuditTemplate[]`. Requests lose `d4hTeamId`/`d4hTeamTitle` (the email's team name comes from `campaign.d4hTeamName`); unique becomes `[campaignId, d4hMemberId]`. Pages stay in the org scope; moving them under `/teams/[slug]` is later.
+6. **Withdraw** (sent campaigns only). `SelfAuditRequest.withdrawnAt DateTime?`. Withdrawing clears `tokenHash`/`expiresAt` (the link dies at once), keeps the row and any answers, and shows "Withdrawn". A withdrawn request can't get a link any other way: `resendRequest` rejects it, and the send loop's token write is conditional on `withdrawnAt: null`. Logged.
+7. **Add.** Members come from the **campaign's snapshotted `d4hTeamId`**, never the team's current link (so members and templates stay the same team even if the AVUT team is later relinked, unlinked or archived; the caller's token must still reach that D4H team). Addable = that D4H team's current members not in the campaign, plus withdrawn ones. A new member gets held items snapshotted against the campaign's stored templates. A member with no D4H email gets `NoEmail`, as today. **Re-adding** a withdrawn member reinstates the same row: `withdrawnAt` cleared, `memberName`/`email` refreshed from D4H (so `NoEmail` can become sendable), `heldItems` kept (the saved answers refer to them), `openedAt`/`submittedAt` kept, fresh link sent. `SELF_AUDIT_RECIPIENTS_MAX` counts non-withdrawn requests. No D4H token: PRECONDITION_FAILED via `getConfiguredD4HAccessToken`, as create does today. Logged as one batch (`self-audit-add-members`).
+8. **Access** unchanged: system admins only (`kitCheckProcedure` → `selfAuditProcedure`).
+9. **Existing data: (A), chosen by the user.** Let `migrate dev` drop the kit-check tables and create the new ones: no hand-written SQL, and only dev/preview test sends are lost (production never had the tables). Their `FormInstance` rows (`formKey "kit-check"`) are orphaned; delete them afterwards with a one-off, with permission.
+10. **Create → Draft → Send** (chosen by the user; replaces the all-in-one `/new` page). "New Campaign" is a dialog on the list page (`?action=create`, like `bundles/create-bundle.tsx`): team, bundle, optional name. The default name `<bundle name> <Mon YYYY>` is computed in the service in the org's time zone (`OrgSettings.general.timeZone`) and shown as the field's placeholder. Create makes a **Draft** (templates snapshotted, no members) and navigates to it. Campaign gets `name String` and `sentAt DateTime?` (null = Draft); `sentById` is set at send.
+    - **On a Draft:** "Add members" (team members preselected) adds requests as `Unsent` (new enum value, no token), or `NoEmail` when D4H has none. Removing one deletes it and its form instance. "Discard draft" deletes the whole Draft with its requests and form instances.
+    - **Send** ("Send to N", N = `Unsent` rows) first refreshes `memberName`/`email` of `Unsent` rows from D4H (a Draft may sit for days; a row now without an email becomes `NoEmail`), then **claims** the campaign in one `$transaction`: `updateMany({ where: { id, sentAt: null } })` setting `sentAt`/`sentById` (count 0 → rejected: already sent), every `Unsent` row → `Pending`, and the send log batch. Only then the send loop runs. An interrupted send leaves `Pending` rows, which Resend handles, as today.
+    - **Once sent:** Add emails at once; removal is Withdraw (decision 6).
+    - Single-entry writes (create, remove, discard, withdraw) log one entry each; only send and add-members open a batch, so `Operations` gains just `self-audit-add-members`.
+11. **One status** (data layer). `statusOf(request)` merges delivery and progress, by precedence: Withdrawn > Submitted > Editing > Opened > Failed > No email > Sent (incl. `Pending`) > Not sent (`Unsent`). Outputs carry a per-request `status` and campaign `counts: Record<Status, number>` (Withdrawn included). "Submitted (n of m)" excludes withdrawn from both n and m. The separate `delivery`/`progress` count records go.
+12. **Campaign page** (chosen by the user): a `RecordCard` (`src/components/ui/record-card.tsx`) holds the record: Name, Team, Bundle, Sent (date + by, or "Draft"), Updated footer. Status moves to a strip of count tiles above the table, one per status in decision 11 (styled like `skill-track/components/session-review-summary.tsx`, which is display-only; the click is new): a tile sets the table's Status filter, clicking the active tile clears it. Title is the campaign name.
+13. **Members table** (chosen by the user): Member · Status · Last activity · ⋮. Status is the decision 11 badge; Last activity is the latest of sent/opened/submitted/withdrawn, relative ("Opened 2h ago"). Email, the full timeline and expiry go in the member's dialog (today's answers dialog, extended). List page columns: Name, Team, Status (Draft/Sent), Sent, Submitted (n of m).
+
+## Tasks
+
+### Review group A: data layer
+
+- [ ] **1a. Rename schema, identifiers and files (no behaviour change)**
+  - **Files:** `prisma/schema.prisma` + migration; every kit-check file (`git grep -il "kit.\?check"`, ≈50): `src/components/kit-check/` → `src/components/self-audit/`, `src/modules/d4h-i3/components/kit-checks/` → `…/self-audit-campaigns/`, services, routers (+ `_app.ts`), schemas, `src/lib/{forms,operations,kit-check-*}.ts`, `src/lib/schemas/log-entry.ts` (+ test), `src/client/*-effects.ts`, `src/emails/`, `scripts/kit-check-demo-export.ts`, `package.json` script name, comments in `form-fields.tsx`, `use-debounced-autosave.ts`, `server/services/forms.ts`, and `docs/releasing.md:169`'s example branch name.
+  - **Do:** Decisions 1, 4, 8, and the admin route folders (`d4h-i3/kit-checks/**` → `d4h-i3/self-audit-campaigns/**`, param `[campaign_id]`; `/new` moves too and goes in task 2); update `help-cards.test.ts`'s opt-out list. Public routes stay put until 1b. Migration per decision 9. Leave old `docs/plans/*`, `docs/releases/*` and `prisma/migrations/*` alone.
+  - **Done when:** `npm run check -- --all` passes; the only `kit.?check` hits outside history docs and old migrations are `src/app/(public)/forms/kit-check` and its URL builders.
+- [ ] **1b. Public form URLs**
+  - **Files:** `src/app/(public)/forms/kit-check/**` → `src/app/(public)/forms/[slug]/d4h-i3-self-audit/{[token],demo}/page.tsx`, `self-audit-public.ts` (+ test), `public-forms-router.ts` (+ test), `src/lib/public-forms.ts`, `src/proxy.ts`, `self-audit-campaigns.ts` (`formUrl`), the email + its preview, `next.config.ts`.
+  - **Do:** Decisions 2–3. The `…ByToken` procedures take `slug`; the service rejects a mismatch. Rename the BotID path in `PUBLIC_FORM_BOT_PROTECTED_PATHS` (`publicForms.submitSelfAuditByToken`) and update `public-forms.ts`'s header comment. `formUrl` = `${baseUrl}/forms/${orgSlug}/d4h-i3-self-audit/${token}`. Add the redirect.
+  - **Done when:** test for slug mismatch → not valid; `git grep -iE "kit.?check"` empty outside history docs and old migrations; `npm run check` passes.
+- [ ] **2. One team, Draft → Send, one status**
+  - **Files:** schema + migration (`teamId`, `d4hTeamId`, `d4hTeamName`, `name`, `sentAt`, `Unsent`), `src/lib/schemas/self-audit.ts`, `self-audit-campaigns.ts` (+ test), `self-audit-public.ts`, router (+ test), the email call site, `src/lib/operations.ts`, `src/client/self-audit-campaigns-effects.ts`; delete `…/self-audit-campaigns/new/page.tsx`, the `…-new.tsx` component and its `help-cards.test.ts` entry; minimal type-level edits to the list, content and answers-dialog components (team column → campaign team, drop the team filter, show `status`) so the build stays green until tasks 4–5.
+  - **Do:** Decisions 5, 10 (create, send) and 11. `listD4HTeams` → `listTeams`: active org teams with a `Team_D4H` link the token reaches. `createCampaign(ctx, { accessToken, teamId, bundleId, name? })` makes a Draft (`computeTeamSnapshots` → one team). `sendCampaign(ctx, { accessToken, campaignId }, deps)`: refresh, claim, then the existing send loop (extracted). `previewRecipients` goes. Outputs carry `name`, `team: { id, name }`, `d4hTeamName`, `sentAt`, per-request `status`, `counts`. Effects: create and send invalidate the list and the campaign. Follows `src/server/services/CLAUDE.md`.
+  - **Done when:** tests: team without a D4H link rejected, token not reaching the team rejected, create makes a Draft with no requests and the org-time-zone default name, send emails only `Unsent`, second send rejected, an interrupted send leaves `Pending` rows that can be resent, `statusOf` precedence, no token → PRECONDITION_FAILED; `npm run check` passes.
+- [ ] **3. Add, remove, withdraw, discard**
+  - **Files:** schema + migration (`withdrawnAt`), service (+ test), router (+ test), `src/lib/operations.ts`, effects.
+  - **Do:** Decisions 6, 7 and 10. `listAddableMembers`; `addMembers` (Draft: `Unsent`/`NoEmail` rows, no mail; sent: snapshot + email at once via the send loop); `removeRequest` (Draft only: deletes request + form instance); `discardCampaign` (Draft only: deletes it with requests + form instances); `withdrawRequest` (sent only). `resendRequest` rejects withdrawn and `Unsent`; send-loop token write conditional on `withdrawnAt: null`; public token lookup treats withdrawn as not valid. Writes paired with `ctx.logEvent` per `docs/patterns/transactional-writes.md`. Effects invalidate the list and the campaign.
+  - **Done when:** tests: add to Draft (no mail; null email → `NoEmail`), add after send (mailed), re-add withdrawn with refreshed email, already-in / not-in-team rejected, cap, remove on Draft deletes / rejected after send, discard on Draft / rejected after send, withdraw (token dies, answers kept, counted as Withdrawn) / rejected on Draft, resend of withdrawn rejected, no token; `npm run check` passes.
+
+### Review group B: UI (one visual checkpoint at the end)
+
+- [ ] **4. List page and the create dialog** `visual`
+  - **Files:** `src/modules/d4h-i3/components/self-audit-campaigns/` list + new `create-campaign-dialog.tsx`.
+  - **Do:** Decisions 10 and 13 (list columns). Dialog per `docs/patterns/mutation-dialog.md`, modelled on `bundles/create-bundle.tsx`; on success navigate to the campaign. The no-D4H-token state the old page showed moves into the dialog.
+  - **Done when:** create from the list lands on a Draft campaign on 3106; `npm run check` passes.
+- [ ] **5. Campaign page: RecordCard, status strip, members table** `visual`
+  - **Files:** campaign content component, new `campaign-status-strip.tsx`, the labels file, the answers dialog (→ member dialog).
+  - **Do:** Decisions 11–13, per `docs/patterns/detail-page-data-fetching.md`.
+  - **Done when:** page renders for Draft and sent campaigns on 3106; tiles filter; `npm run check` passes.
+- [ ] **6a. Add members and Send** `visual`
+  - **Files:** campaign content component, new `add-members-dialog.tsx`, `send-campaign-dialog.tsx`, `discard-campaign-dialog.tsx`.
+  - **Do:** Per `docs/patterns/mutation-dialog.md`. Header actions: "Add members" (team members preselected on a Draft; withdrawn ones listed as "Re-add"), "Send to N" (Draft, confirm), "Discard draft" (Draft, confirm).
+  - **Done when:** create → add → send → add works on 3106 (mail to the Resend sink); `npm run check` passes.
+- [ ] **6b. Row menu: view, resend, remove, withdraw, re-add** `visual`
+  - **Files:** campaign content component, new `withdraw-request-dialog.tsx`, `remove-request-dialog.tsx`, `readd-request-dialog.tsx`.
+  - **Do:** Per `docs/patterns/mutation-dialog.md`, keeping today's `?action=…&requestId=<id>`; actions `view-answers | resend | remove | withdraw | re-add` (row) plus `create | add-members | send | discard` (page). Row ⋮: View, Resend (sent, not withdrawn), Remove (Draft), Withdraw (sent), Re-add (withdrawn; a confirm that calls `addMembers` with that one member).
+  - **Done when:** withdraw → re-add and remove work on 3106; `npm run check` passes.
+
+## Docs impact
+
+None for guides: system-admin only and unlinked. The public demo URL changes (redirected).
+
+## Out of scope
+
+- Moving campaigns into the team scope (`/teams/[slug]`).
+- #579 (needs report, D4H fixes), #583 (use my own), #584 (optional lines), #580 (ordering).
+- Opening access beyond system admins.
+- Archiving a sent campaign.
+
+## Parked
