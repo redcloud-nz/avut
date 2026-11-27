@@ -81,6 +81,8 @@ None for guides: system-admin only and unlinked. The public demo URL changes (re
 
 ## Parked
 
+Settled before ship: (a) filed as #589; (b) dropped by the user (kept as a known trade-off).
+
 - A sent campaign pins its team forever: discard is Draft-only, so the team can never be purged. Needs archive/delete of campaigns.
 - Redirect a valid token link under an old org slug to the current slug, so an org slug rename doesn't kill live links (decision 2).
 
