@@ -80,3 +80,16 @@ None for guides: system-admin only and unlinked. The public demo URL changes (re
 - Archiving a sent campaign.
 
 ## Parked
+
+## Review notes
+
+From the group A review (fix after the last group, one commit):
+
+1. `addMembers` (`self-audit-campaigns.ts` ~1338–1463): after `lockCampaign`, re-read `requests` with `tx` and redo the already-in check, the cap check and the `prior` (re-add) lookup, so concurrent adds can't hit P2002, overshoot the cap, or double-mint a re-add link.
+2. Interactive transactions in `addMembers` and `sendCampaign` loop per member; 200 members can exceed Prisma's 5 s default (P2028). Pass a sized `timeout` and/or batch the writes (`createMany`, `updateMany` grouped by outcome).
+3. Send refresh covers `NoEmail` rows too (`deliveryStatus in [Unsent, NoEmail]`) in both the pre-check and the read under the claim; reword the "add members before sending" error for an all-`NoEmail` Draft.
+4. `sendCampaign`: check the token reaches `campaign.d4hTeamId` (as `addMembers` does) and throw `NotFoundError`; document NOT_FOUND on the router.
+5. Send and re-add refresh read the hours-cached `getD4HTeamMembers`; revalidate its tag first (or use an uncached read) so a just-fixed email is picked up.
+6. Nit: if the read under the claim finds no `Unsent` rows, throw the `ValidationError` so the claim rolls back.
+7. Nit: `self-audit-campaigns-effects.ts` stacked doc blocks; move the module comment onto the exported `createEffects` call.
+8. Nit: `withdrawRequest` conditional on `withdrawnAt: null` (updateMany in an interactive transaction; count 0 → already withdrawn).
