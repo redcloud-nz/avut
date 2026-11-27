@@ -5,7 +5,7 @@
 
 import "server-only";
 
-import { cacheLife, cacheTag } from "next/cache";
+import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 import createFetchClient from "openapi-fetch";
 import { cache } from "react";
 import * as z from "zod";
@@ -195,13 +195,26 @@ export async function getD4HTeamsAccessibleWithToken(ref: D4HCredentialRef): Pro
     return whoami.members.map((member) => member.owner);
 }
 
+/** The cache tag of one D4H team's members, as `getD4HTeamMembers` reads them with one credential. */
+function d4hTeamMembersCacheTag(ref: D4HCredentialRef, d4hTeamId: number): string {
+    return `d4h-api-${ref.credentialId}-teams-${d4hTeamId}-members`;
+}
+
+/**
+ * Expire `getD4HTeamMembers`' cached read of one D4H team, so the next one asks D4H. Call it before
+ * a read whose answer must be current (e.g. the emails a send goes to), not on every read.
+ */
+export function expireD4HTeamMembers(ref: D4HCredentialRef, d4hTeamId: number): void {
+    revalidateTag(d4hTeamMembersCacheTag(ref, d4hTeamId), { expire: 0 });
+}
+
 export async function getD4HTeamMembers(
     ref: D4HCredentialRef,
     d4hTeamId: number,
 ): Promise<D4HMember[]> {
     "use cache";
     cacheLife("hours");
-    cacheTag(`d4h-api-${ref.credentialId}-teams-${d4hTeamId}-members`);
+    cacheTag(d4hTeamMembersCacheTag(ref, d4hTeamId));
     cacheTag(d4hApiCacheTag(ref.credentialId));
 
     const fetchClient = getD4HFetchClient(await resolveD4HCredential(ref));

@@ -27,7 +27,11 @@ import {
 import { TeamId } from "@/lib/schemas/team";
 import { UserId } from "@/lib/schemas/user";
 import { EMPTY_ANSWER } from "@/lib/self-audit-validate";
-import { getD4HTeamMembers, getD4HTokenMetadata } from "@/server/d4h-api/client";
+import {
+    expireD4HTeamMembers,
+    getD4HTeamMembers,
+    getD4HTokenMetadata,
+} from "@/server/d4h-api/client";
 import { fetchD4HTeamEquipmentItems } from "@/server/d4h-api/equipment";
 import { createLinkToken } from "@/server/link-token";
 import { listFitsForD4HTeam } from "@/server/services/i3-templates";
@@ -69,6 +73,7 @@ vi.mock("@/server/d4h-access-token", () => ({
 }));
 
 vi.mock("@/server/d4h-api/client", () => ({
+    expireD4HTeamMembers: vi.fn(),
     getD4HTokenMetadata: vi.fn(async () => ({
         d4HTeams: [{ id: TEAM_ID, resourceType: "Team", title: "Rescue Team", permissions: {} }],
         d4HOrganisations: [],
@@ -655,14 +660,15 @@ describe("campaigns", () => {
         const send = (campaignId: SelfAuditCampaignId, deps: SelfAuditSendDeps) =>
             sendCampaign(ctx(), { accessToken, campaignId }, deps);
 
-        it("emails only the Unsent members, at the addresses D4H has now", async () => {
+        it("emails the members D4H has an email for, at the addresses it has now", async () => {
             const { campaignId } = await draftWithMembers();
             const deps = makeDeps();
             const before = Date.now();
 
             const result = await send(campaignId, deps);
 
-            expect(result).toEqual({ campaignId, sent: 2, failed: 0, noEmail: 1 });
+            // Ana's email is gone from D4H, and Lee still has none.
+            expect(result).toEqual({ campaignId, sent: 2, failed: 0, noEmail: 2 });
             expect(deps.sendEmail).toHaveBeenCalledTimes(2);
             expect(deps.sendEmail.mock.calls.map(([args]) => args.to)).toEqual([
                 "john@example.com",
@@ -742,6 +748,92 @@ describe("campaigns", () => {
             ).toMatchObject({ sentAt: null });
         });
 
+        it("reads D4H's members fresh, not from the cache", async () => {
+            const { campaignId } = await draftWithMembers();
+            vi.mocked(expireD4HTeamMembers).mockClear();
+            vi.mocked(getD4HTeamMembers).mockClear();
+
+            await send(campaignId, makeDeps());
+
+            expect(expireD4HTeamMembers).toHaveBeenCalledWith(
+                expect.objectContaining({ credentialId: accessToken.id }),
+                TEAM_ID,
+            );
+            expect(vi.mocked(expireD4HTeamMembers).mock.invocationCallOrder[0]).toBeLessThan(
+                vi.mocked(getD4HTeamMembers).mock.invocationCallOrder[0]!,
+            );
+        });
+
+        it("sends a member added with no email once D4H has one", async () => {
+            const { campaignId, ids } = await draftWithMembers();
+            vi.mocked(getD4HTeamMembers).mockResolvedValueOnce([
+                d4hMember(45, "Lee Park", "lee@example.com"),
+            ]);
+            const deps = makeDeps();
+
+            const result = await send(campaignId, deps);
+
+            expect(deps.sendEmail.mock.calls.map(([args]) => args.to)).toContain("lee@example.com");
+            expect(result).toMatchObject({ noEmail: 0 });
+            expect(
+                await db.selfAuditRequest.findUniqueOrThrow({ where: { id: ids[45] } }),
+            ).toMatchObject({ email: "lee@example.com", deliveryStatus: "Sent" });
+        });
+
+        it("refuses a Draft whose members D4H has no email for, leaving it a Draft", async () => {
+            const { campaignId } = await draftWithMembers();
+            vi.mocked(getD4HTeamMembers).mockResolvedValueOnce([
+                d4hMember(42, "John Smith", ""),
+                d4hMember(43, "Ana Lee", ""),
+                d4hMember(44, "Kim Tan", ""),
+            ]);
+            const deps = makeDeps();
+
+            await expect(send(campaignId, deps)).rejects.toThrow(/no email for any member/);
+            expect(deps.sendEmail).not.toHaveBeenCalled();
+            expect(
+                await db.selfAuditCampaign.findUniqueOrThrow({ where: { id: campaignId } }),
+            ).toMatchObject({ sentAt: null, sentById: null });
+            expect((await requestsOf(campaignId)).map((r) => r.deliveryStatus)).toEqual([
+                "Unsent",
+                "Unsent",
+                "Unsent",
+                "NoEmail",
+            ]);
+        });
+
+        it("rolls the claim back when every member was removed meanwhile", async () => {
+            const { campaignId } = await draftWithMembers();
+            // Removed while this send reads D4H, after its first read found them.
+            vi.mocked(getD4HTeamMembers).mockImplementationOnce(async () => {
+                await db.selfAuditRequest.deleteMany({ where: { campaignId } });
+                return [];
+            });
+
+            await expect(send(campaignId, makeDeps())).rejects.toBeInstanceOf(ValidationError);
+            expect(
+                await db.selfAuditCampaign.findUniqueOrThrow({ where: { id: campaignId } }),
+            ).toMatchObject({ sentAt: null });
+            expect(
+                await db.logEntry.count({ where: { objectId: campaignId, action: "Update" } }),
+            ).toBe(0);
+        });
+
+        it("refuses a campaign whose D4H team the token no longer reaches", async () => {
+            const { campaignId } = await draftWithMembers();
+            vi.mocked(getD4HTokenMetadata).mockResolvedValueOnce({
+                d4HTeams: [],
+                d4HOrganisations: [],
+            });
+            const deps = makeDeps();
+
+            await expect(send(campaignId, deps)).rejects.toBeInstanceOf(NotFoundError);
+            expect(deps.sendEmail).not.toHaveBeenCalled();
+            expect(
+                await db.selfAuditCampaign.findUniqueOrThrow({ where: { id: campaignId } }),
+            ).toMatchObject({ sentAt: null });
+        });
+
         it("is NotFound for another org's campaign", async () => {
             const { campaignId } = await draftWithMembers();
             await expect(
@@ -761,7 +853,7 @@ describe("campaigns", () => {
             const { campaignId } = await draftWithMembers();
             const result = await send(campaignId, makeDeps(["john@example.com"]));
 
-            expect(result).toMatchObject({ sent: 1, failed: 1, noEmail: 1 });
+            expect(result).toMatchObject({ sent: 1, failed: 1, noEmail: 2 });
             const [john, , kim] = await requestsOf(campaignId);
             expect(john).toMatchObject({
                 deliveryStatus: "Failed",
@@ -794,7 +886,7 @@ describe("campaigns", () => {
             }
 
             // The email went out, so the link it carries must keep working.
-            expect(result).toMatchObject({ sent: 2, failed: 0, noEmail: 1 });
+            expect(result).toMatchObject({ sent: 2, failed: 0, noEmail: 2 });
             const [john, , kim] = await requestsOf(campaignId);
             expect(john).toMatchObject({ deliveryStatus: "Pending" });
             expect(john.tokenHash).not.toBeNull();
@@ -871,6 +963,7 @@ describe("campaigns", () => {
 
             expect(entries.map((entry) => [entry.objectType, entry.description])).toEqual([
                 ["SelfAuditRequest", "Self-audit not sent to Ana Lee: no email in D4H"],
+                ["SelfAuditRequest", "Self-audit not sent to Lee Park: no email in D4H"],
                 ["SelfAuditCampaign", expect.stringContaining("sent to Rescue Team")],
                 ["SelfAuditRequest", "Self-audit sent to John Smith (john@example.com)"],
                 ["SelfAuditRequest", "Self-audit failed to send to Kim Tan (kim@example.com)"],
@@ -1180,6 +1273,47 @@ describe("campaigns", () => {
             expect(ana.tokenHash).not.toBeNull();
         });
 
+        it("reads D4H fresh to re-add a withdrawn member, and from the cache otherwise", async () => {
+            const { campaignId, ids } = await draftWithMembers();
+            await sendCampaign(ctx(), { accessToken, campaignId }, makeDeps());
+            withNewMembers();
+            vi.mocked(expireD4HTeamMembers).mockClear();
+            await add(campaignId, [46]);
+            expect(expireD4HTeamMembers).not.toHaveBeenCalled();
+
+            await withdrawRequest(ctx(), ids[44]);
+            await add(campaignId, [44]);
+            expect(expireD4HTeamMembers).toHaveBeenCalledWith(expect.anything(), TEAM_ID);
+        });
+
+        it("refuses a member another add put in the campaign meanwhile", async () => {
+            const { campaignId } = await create();
+            // Another add of John lands while this one reads D4H.
+            vi.mocked(getD4HTeamMembers).mockImplementationOnce(async () => {
+                await add(campaignId, [42]);
+                return [d4hMember(42, "John Smith", "john@example.com")];
+            });
+
+            await expect(add(campaignId, [42])).rejects.toBeInstanceOf(ValidationError);
+            expect(await requestsOf(campaignId)).toHaveLength(1);
+        });
+
+        it("refuses going over the cap with members another add put in meanwhile", async () => {
+            const { campaignId } = await draftWithMembers();
+            // Four members, a cap of five (mocked): another add takes the last place.
+            vi.mocked(getD4HTeamMembers).mockImplementationOnce(async () => {
+                withNewMembers();
+                await add(campaignId, [46]);
+                return [
+                    d4hMember(46, "Mia Roa", "mia@example.com"),
+                    d4hMember(47, "Noa Ward", "noa@example.com"),
+                ];
+            });
+
+            await expect(add(campaignId, [47])).rejects.toBeInstanceOf(ValidationError);
+            expect(await requestsOf(campaignId)).toHaveLength(5);
+        });
+
         it("refuses a member already in the campaign, or not in the D4H team, adding nobody", async () => {
             const { campaignId } = await draftWithMembers();
             for (const memberIds of [[42], [99]]) {
@@ -1359,6 +1493,32 @@ describe("campaigns", () => {
             await sendCampaign(ctx(), { accessToken, campaignId }, makeDeps());
             await withdrawRequest(ctx(), ids[42]);
             await expect(withdrawRequest(ctx(), ids[42])).rejects.toBeInstanceOf(ValidationError);
+        });
+
+        it("refuses a member withdrawn meanwhile, logging the withdraw once", async () => {
+            const { campaignId, ids } = await draftWithMembers();
+            await sendCampaign(ctx(), { accessToken, campaignId }, makeDeps());
+            await withdrawRequest(ctx(), ids[42]);
+            // This withdraw read John before the other one landed.
+            const findFirst = db.selfAuditRequest.findFirst.bind(db.selfAuditRequest);
+            const spy = vi
+                .spyOn(db.selfAuditRequest, "findFirst")
+                .mockImplementationOnce(((args: Parameters<typeof findFirst>[0]) =>
+                    findFirst(args).then((request) =>
+                        request ? { ...request, withdrawnAt: null } : request,
+                    )) as unknown as typeof findFirst);
+            try {
+                await expect(withdrawRequest(ctx(), ids[42])).rejects.toBeInstanceOf(
+                    ValidationError,
+                );
+            } finally {
+                spy.mockRestore();
+            }
+            expect(
+                await db.logEntry.count({
+                    where: { objectId: ids[42], description: { contains: "withdrawn" } },
+                }),
+            ).toBe(1);
         });
 
         it("stops a send in progress from emailing a member withdrawn meanwhile", async () => {

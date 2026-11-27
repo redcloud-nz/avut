@@ -10,16 +10,17 @@ import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 
 import { selfAuditCampaignsEffects } from "@/client/self-audit-campaigns-effects";
-import {
-    AlertDialog,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { MutationButton } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogBody,
+    DialogCloseButton,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import { ObjectName } from "@/components/ui/typography";
 import { useLogger } from "@/hooks/use-logger";
 import { useOrganization } from "@/hooks/use-organization";
@@ -31,12 +32,13 @@ import { trpc } from "@/trpc/client";
  * `?action=withdraw&requestId=…`: withdraw a member from a sent campaign. Their link stops working
  * at once; their request and any answers are kept, shown as Withdrawn, and they can be re-added.
  * Host-driven: the campaign's page owns both params, resolves the request, and keeps this mounted
- * through the withdraw (the member stops being withdrawable as it succeeds).
+ * through the withdraw (the member stops being withdrawable as it succeeds). A state-transition
+ * confirm, so a plain `Dialog` (re-adding undoes it), with a destructive button since the link dies.
  */
 export function D4HI3Module_WithdrawSelfAuditRequest_Dialog({
     request,
     ...props
-}: ComponentProps<typeof AlertDialog> & {
+}: ComponentProps<typeof Dialog> & {
     request: { id: SelfAuditRequestId; memberName: string };
 }) {
     const logger = useLogger("I3", "WithdrawSelfAuditRequest");
@@ -67,17 +69,22 @@ export function D4HI3Module_WithdrawSelfAuditRequest_Dialog({
     }, [props.open, request.id]);
 
     return (
-        <AlertDialog {...props}>
-            <AlertDialogContent {...returnFocus}>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Withdraw member</AlertDialogTitle>
-                    <AlertDialogDescription>
+        <Dialog {...props}>
+            <DialogContent {...returnFocus}>
+                <DialogHeader>
+                    <DialogTitle>Withdraw member</DialogTitle>
+                    <DialogDescription>
                         Withdraw <ObjectName>{request.memberName}</ObjectName> from this campaign.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogBody className="text-sm">
+                    <p>
                         The link they were emailed stops working at once. Anything they&rsquo;ve
                         answered is kept, and you can re-add them later with a fresh link.
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
+                    </p>
+                </DialogBody>
+                <DialogFooter>
+                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
                         type="button"
                         variant="destructive"
@@ -90,9 +97,8 @@ export function D4HI3Module_WithdrawSelfAuditRequest_Dialog({
                             })
                         }
                     />
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }

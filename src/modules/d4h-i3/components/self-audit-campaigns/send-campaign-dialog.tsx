@@ -35,13 +35,16 @@ import { describeSendOutcome } from "./campaign-labels";
 type SendCampaign = {
     id: SelfAuditCampaignId;
     name: string;
-    /** How many members are waiting to be sent their link. */
-    unsentCount: number;
+    /** How many members a send tries: every member of the Draft, `NoEmail` ones included. */
+    memberCount: number;
+    /** How many of them had no email in D4H when added (they're checked again at send). */
+    noEmailCount: number;
 };
 
 /**
- * `?action=send`: confirm sending a Draft, then report how many emails went. Each member waiting
- * to be sent gets their own link; their name and email are read fresh from D4H first. Host-driven:
+ * `?action=send`: confirm sending a Draft, then report how many emails went. Each member gets their
+ * own link; their name and email are read fresh from D4H first, so one added with no email is sent
+ * theirs if D4H has one now. Host-driven:
  * the campaign's page owns the param and keeps this mounted through the send (the campaign stops
  * being a Draft as it succeeds).
  */
@@ -89,7 +92,8 @@ export function D4HI3Module_SendSelfAuditCampaign_Dialog({
     }, [props.open]);
 
     const noToken = mutation.isError && trpcErrorCode(mutation.error) === "PRECONDITION_FAILED";
-    const members = `${campaign.unsentCount} member${campaign.unsentCount === 1 ? "" : "s"}`;
+    const { memberCount, noEmailCount } = campaign;
+    const members = `${memberCount} member${memberCount === 1 ? "" : "s"}`;
 
     return (
         <Dialog {...props}>
@@ -97,7 +101,17 @@ export function D4HI3Module_SendSelfAuditCampaign_Dialog({
                 <DialogHeader>
                     <DialogTitle>Send campaign</DialogTitle>
                     <DialogDescription>
-                        Email {members} of <ObjectName>{campaign.name}</ObjectName> their own link.
+                        {memberCount === 0 ? (
+                            <>
+                                <ObjectName>{campaign.name}</ObjectName> has no members yet: add
+                                some before sending it.
+                            </>
+                        ) : (
+                            <>
+                                Email {members} of <ObjectName>{campaign.name}</ObjectName> their
+                                own link.
+                            </>
+                        )}
                     </DialogDescription>
                 </DialogHeader>
                 {noToken ? (
@@ -110,6 +124,13 @@ export function D4HI3Module_SendSelfAuditCampaign_Dialog({
                                 anyone without an email there is skipped. Links last{" "}
                                 {SELF_AUDIT_TOKEN_DAYS} days.
                             </p>
+                            {noEmailCount > 0 && (
+                                <p>
+                                    {noEmailCount === memberCount
+                                        ? "None of them had an email in D4H when added. Add their emails in D4H first: if it still has none, the campaign can't be sent."
+                                        : `${noEmailCount} of them had no email in D4H when added; they're sent theirs if D4H has one now.`}
+                                </p>
+                            )}
                             <p>
                                 Once it&rsquo;s sent the campaign is no longer a Draft: members you
                                 add later are emailed straight away, and members can be withdrawn
@@ -121,9 +142,9 @@ export function D4HI3Module_SendSelfAuditCampaign_Dialog({
                             <MutationButton
                                 type="button"
                                 status={mutation.status}
-                                disabled={campaign.unsentCount === 0}
+                                disabled={memberCount === 0}
                                 text={{
-                                    idle: `Send to ${campaign.unsentCount}`,
+                                    idle: `Send to ${memberCount}`,
                                     pending: "Sending",
                                     success: "Sent",
                                 }}

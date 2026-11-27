@@ -24,6 +24,7 @@ import { TeamId } from "@/lib/schemas/team";
 import { UserId } from "@/lib/schemas/user";
 import { EMPTY_ANSWER } from "@/lib/self-audit-validate";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
+import { getD4HTokenMetadata } from "@/server/d4h-api/client";
 import { fetchD4HTeamEquipmentItems } from "@/server/d4h-api/equipment";
 import { sendEmail } from "@/server/email";
 import { listFitsForD4HTeam } from "@/server/services/i3-templates";
@@ -48,6 +49,7 @@ vi.mock("@/server/d4h-access-token", () => ({
 }));
 
 vi.mock("@/server/d4h-api/client", () => ({
+    expireD4HTeamMembers: vi.fn(),
     getD4HTokenMetadata: vi.fn(async () => ({
         d4HTeams: [
             { id: TEAM_ID, resourceType: "Team", title: "Rescue Team", permissions: {} },
@@ -723,6 +725,18 @@ describe("selfAuditCampaignsRouter", () => {
             await expect(
                 admin().sendCampaign({ organizationId: T.org, campaignId }),
             ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+        });
+
+        it("is NOT_FOUND when the token no longer reaches the campaign's D4H team", async () => {
+            const campaignId = await draftWithMembers();
+            vi.mocked(getD4HTokenMetadata).mockResolvedValueOnce({
+                d4HTeams: [],
+                d4HOrganisations: [],
+            });
+            await expect(
+                admin().sendCampaign({ organizationId: T.org, campaignId }),
+            ).rejects.toMatchObject({ code: "NOT_FOUND" });
+            expect(sendEmail).not.toHaveBeenCalled();
         });
 
         it("refuses an org owner without the system admin role", async () => {

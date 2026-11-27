@@ -5,7 +5,7 @@
 "use client";
 
 import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
@@ -149,7 +149,21 @@ export function D4HI3Module_SelfAuditCampaign_Content({
     }
 
     const isDraft = campaign.sentAt === null;
-    const unsentCount = campaign.counts.Unsent;
+    // A send tries every member of a Draft: `NoEmail` ones are checked against D4H again.
+    const sendCount = campaign.counts.Unsent + campaign.counts.NoEmail;
+
+    // A param whose dialog can't open (a stale link, a back navigation, or the action's own
+    // success) is cleared, so it can't open the dialog later when the state comes round again.
+    const strandedAction =
+        (action === "send" && !isDraft) ||
+        (action === "withdraw" && !(target && !isDraft && isWithdrawable(target))) ||
+        (action === "re-add" && !(target && !isDraft && isReaddable(target)));
+    useEffect(() => {
+        if (!strandedAction) return;
+        if (action === "send") handlePageActionOpenChange("send", false);
+        else closeRequestAction();
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- runs when a param becomes stranded
+    }, [strandedAction]);
 
     type RowData = (typeof campaign.requests)[number];
 
@@ -280,10 +294,10 @@ export function D4HI3Module_SelfAuditCampaign_Content({
                     </Button>
                     {isDraft && (
                         <Button
-                            disabled={unsentCount === 0}
+                            disabled={sendCount === 0}
                             onClick={() => handlePageActionOpenChange("send", true)}
                         >
-                            <ObjectIcons.Invite /> Send to {unsentCount}
+                            <ObjectIcons.Invite /> Send to {sendCount}
                         </Button>
                     )}
                 </Saratoga.Actions>
@@ -352,7 +366,12 @@ export function D4HI3Module_SelfAuditCampaign_Content({
             />
             {/* Mounted on a sent campaign too, so it outlives the send that ends the Draft. */}
             <D4HI3Module_SendSelfAuditCampaign_Dialog
-                campaign={{ id: campaign.id, name: campaign.name, unsentCount }}
+                campaign={{
+                    id: campaign.id,
+                    name: campaign.name,
+                    memberCount: sendCount,
+                    noEmailCount: campaign.counts.NoEmail,
+                }}
                 open={action === "send" && isDraft}
                 onOpenChange={(open) => handlePageActionOpenChange("send", open)}
             />

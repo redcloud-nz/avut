@@ -8,21 +8,26 @@ import { trpc } from "@/trpc/client";
 import { createEffects, invalidate } from "@/trpc/mutation-effector";
 
 /**
- * Cache effects for `selfAuditCampaigns` router mutations, keyed by procedure name.
- *
- * Passed as `meta.effects` on the corresponding `useMutation` call — see `useMutationEffector`.
+ * The list's counts, the campaign's members, and who's left to add, after a member change. Who's
+ * left to add is a D4H read, so it's only marked stale: the add dialog closes on success, and its
+ * picker reads afresh when next opened, rather than D4H being read again as it closes.
  */
-/** The list's counts, the campaign's members, and who's left to add, after a member change. */
 function campaignChanged(organizationId: string, campaignId: SelfAuditCampaignId) {
     return [
         invalidate(trpc.selfAuditCampaigns.listCampaigns.queryFilter({ organizationId })),
         invalidate(trpc.selfAuditCampaigns.getCampaign.queryFilter({ organizationId, campaignId })),
         invalidate(
             trpc.selfAuditCampaigns.listAddableMembers.queryFilter({ organizationId, campaignId }),
+            { refetch: false },
         ),
     ];
 }
 
+/**
+ * Cache effects for `selfAuditCampaigns` router mutations, keyed by procedure name.
+ *
+ * Passed as `meta.effects` on the corresponding `useMutation` call — see `useMutationEffector`.
+ */
 export const selfAuditCampaignsEffects = createEffects<"selfAuditCampaigns">()({
     addMembers: ({ organizationId }, { campaignId }) => campaignChanged(organizationId, campaignId),
     // The new Draft joins the list. Its page isn't cached yet, but any entry for it is refetched.

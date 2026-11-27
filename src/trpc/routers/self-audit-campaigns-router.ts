@@ -281,14 +281,15 @@ export const selfAuditCampaignsRouter = createTrpcRouter({
         }),
 
     /**
-     * Send a Draft self audit campaign: refresh each not-yet-sent member's name and email from
-     * D4H, mark the campaign sent, then email each of them their own link, one at a time. Returns
-     * how many were sent, failed, or had no email.
+     * Send a Draft self audit campaign: refresh each member's name and email from D4H (those
+     * added with no email too), mark the campaign sent, then email each of them their own link,
+     * one at a time. Returns how many were sent, failed, or had no email.
      *
      * @throws TRPCError(PRECONDITION_FAILED) if the caller has no personal D4H token here.
-     * @throws TRPCError(NOT_FOUND) if the campaign isn't in the organization.
+     * @throws TRPCError(NOT_FOUND) if the campaign isn't in the organization, or the token doesn't
+     * reach its D4H team.
      * @throws TRPCError(CONFLICT) if the campaign has already been sent.
-     * @throws TRPCError(BAD_REQUEST) if it has no member to send to.
+     * @throws TRPCError(BAD_REQUEST) if it has no members, or D4H has an email for none of them.
      */
     sendCampaign: selfAuditProcedure
         .input(z.object({ campaignId: SelfAuditCampaignId.schema }))
