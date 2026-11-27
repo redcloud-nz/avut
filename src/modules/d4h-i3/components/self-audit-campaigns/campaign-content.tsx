@@ -31,6 +31,7 @@ import {
     DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { RecordCard, RecordCardId } from "@/components/ui/record-card";
@@ -46,9 +47,12 @@ import { D4HI3Module_SelfAuditCampaignMember_Dialog } from "./campaign-member-di
 import { D4HI3Module_ResendSelfAudit_Dialog } from "./campaign-resend-dialog";
 import { D4HI3Module_SelfAuditCampaign_StatusStrip } from "./campaign-status-strip";
 import { D4HI3Module_DiscardSelfAuditCampaign_Dialog } from "./discard-campaign-dialog";
+import { D4HI3Module_ReaddSelfAuditRequest_Dialog } from "./readd-request-dialog";
+import { D4HI3Module_RemoveSelfAuditRequest_Dialog } from "./remove-request-dialog";
 import { D4HI3Module_SendSelfAuditCampaign_Dialog } from "./send-campaign-dialog";
+import { D4HI3Module_WithdrawSelfAuditRequest_Dialog } from "./withdraw-request-dialog";
 
-type RequestAction = "view-answers" | "resend";
+type RequestAction = "view-answers" | "resend" | "remove" | "withdraw" | "re-add";
 type PageAction = "add-members" | "send" | "discard";
 
 /** A request has a live link to resend: it has an email, was sent, and isn't withdrawn. */
@@ -58,6 +62,21 @@ function isResendable(request: { status: SelfAuditStatus }): boolean {
         request.status !== "Unsent" &&
         request.status !== "Withdrawn"
     );
+}
+
+/** A member of a sent campaign who can be withdrawn: anyone not withdrawn already. */
+function isWithdrawable(request: { status: SelfAuditStatus }): boolean {
+    return request.status !== "Withdrawn";
+}
+
+/** A withdrawn member, who can be re-added with a fresh link. */
+function isReaddable(request: { status: SelfAuditStatus }): boolean {
+    return request.status === "Withdrawn";
+}
+
+/** A withdrawn member's row text reads dimmed. */
+function dimIfWithdrawn(request: { status: SelfAuditStatus }): string | undefined {
+    return request.status === "Withdrawn" ? "text-muted-foreground" : undefined;
 }
 
 /** The latest thing that happened to a request: sent, opened, submitted or withdrawn. */
@@ -82,8 +101,9 @@ function lastActivityOf(request: {
 /**
  * A self audit campaign's page: the campaign's record, its members by status, and the members
  * table, which the status strip filters. Hosts the page's dialogs, `?action=add-members` and, on a
- * Draft, `?action=send` and `?action=discard`, and the per-request ones,
- * `?action=view-answers&requestId=…` and `?action=resend&requestId=…`.
+ * Draft, `?action=send` and `?action=discard`, and the per-request ones, `?action=…&requestId=…`:
+ * `view-answers` and, as the member's state allows, `resend`, `remove` (Draft), `withdraw` (sent)
+ * and `re-add` (withdrawn).
  */
 export function D4HI3Module_SelfAuditCampaign_Content({
     campaignId,
@@ -102,7 +122,16 @@ export function D4HI3Module_SelfAuditCampaign_Content({
 
     const [action, setAction] = useQueryState(
         "action",
-        parseAsStringLiteral(["view-answers", "resend", "add-members", "send", "discard"] as const),
+        parseAsStringLiteral([
+            "view-answers",
+            "resend",
+            "remove",
+            "withdraw",
+            "re-add",
+            "add-members",
+            "send",
+            "discard",
+        ] as const),
     );
     const [requestId, setRequestId] = useQueryState("requestId", parseAsString);
     const target = campaign.requests.find((request) => request.id === requestId) ?? null;
@@ -129,6 +158,10 @@ export function D4HI3Module_SelfAuditCampaign_Content({
             Kaga.defineColumns<RowData>((col) => [
                 col.accessor("memberName", {
                     header: "Member",
+                    // A withdrawn member reads dimmed, here and in Last Activity.
+                    cell: (ctx) => (
+                        <span className={dimIfWithdrawn(ctx.row.original)}>{ctx.getValue()}</span>
+                    ),
                     enableColumnFilter: false,
                 }),
                 col.accessor("status", {
@@ -161,6 +194,7 @@ export function D4HI3Module_SelfAuditCampaign_Content({
                             <time
                                 dateTime={activity.date.toISOString()}
                                 title={formatDateTime(activity.date)}
+                                className={dimIfWithdrawn(ctx.row.original)}
                             >
                                 {activity.label}{" "}
                                 <ClientOnly fallback={null}>
@@ -179,6 +213,7 @@ export function D4HI3Module_SelfAuditCampaign_Content({
                         <div className="flex justify-end">
                             <RequestMenu
                                 request={ctx.row.original}
+                                isDraft={isDraft}
                                 onAction={(next) => openRequestAction(next, ctx.row.original.id)}
                             />
                         </div>
@@ -187,7 +222,7 @@ export function D4HI3Module_SelfAuditCampaign_Content({
                 }),
             ]),
         // eslint-disable-next-line react-hooks/exhaustive-deps -- openRequestAction only closes over stable nuqs setters
-        [formatDateTime],
+        [formatDateTime, isDraft],
     );
 
     const table = useReactTable({
@@ -342,6 +377,30 @@ export function D4HI3Module_SelfAuditCampaign_Content({
                     onOpenChange={(open) => (open ? undefined : closeRequestAction())}
                 />
             )}
+            {target && isDraft && (
+                <D4HI3Module_RemoveSelfAuditRequest_Dialog
+                    request={target}
+                    open={action === "remove"}
+                    onOpenChange={(open) => (open ? undefined : closeRequestAction())}
+                />
+            )}
+            {/* Withdraw and re-add stay mounted as the member's status flips, so their close
+                outlives the refetch. */}
+            {target && !isDraft && (
+                <D4HI3Module_WithdrawSelfAuditRequest_Dialog
+                    request={target}
+                    open={action === "withdraw" && isWithdrawable(target)}
+                    onOpenChange={(open) => (open ? undefined : closeRequestAction())}
+                />
+            )}
+            {target && !isDraft && (
+                <D4HI3Module_ReaddSelfAuditRequest_Dialog
+                    campaignId={campaign.id}
+                    request={target}
+                    open={action === "re-add" && isReaddable(target)}
+                    onOpenChange={(open) => (open ? undefined : closeRequestAction())}
+                />
+            )}
         </Saratoga.Root>
     );
 }
@@ -349,9 +408,11 @@ export function D4HI3Module_SelfAuditCampaign_Content({
 /** A member row's ⋮ menu: the actions that open the page's per-request dialogs. */
 function RequestMenu({
     request,
+    isDraft,
     onAction,
 }: {
     request: { memberName: string; status: SelfAuditStatus };
+    isDraft: boolean;
     onAction: (action: RequestAction) => void;
 }) {
     return (
@@ -376,7 +437,31 @@ function RequestMenu({
                             Resend
                         </DropdownMenuItem>
                     )}
+                    {isReaddable(request) && (
+                        <DropdownMenuItem onClick={() => onAction("re-add")}>
+                            Re-add
+                        </DropdownMenuItem>
+                    )}
                 </DropdownMenuGroup>
+                {isDraft && (
+                    <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem variant="destructive" onClick={() => onAction("remove")}>
+                            Remove
+                        </DropdownMenuItem>
+                    </>
+                )}
+                {!isDraft && isWithdrawable(request) && (
+                    <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                            variant="destructive"
+                            onClick={() => onAction("withdraw")}
+                        >
+                            Withdraw
+                        </DropdownMenuItem>
+                    </>
+                )}
             </DropdownMenuContent>
         </DropdownMenu>
     );
