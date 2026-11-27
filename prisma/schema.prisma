@@ -48,21 +48,21 @@ model User {
   providerCredentials    ProviderCredential[]     @relation("provider_credential_to_user")
   configs                UserConfig[]             @relation("user_config_to_user")
 
-  authoredOrganizationNotes OrganizationNote[] @relation("organization_note_to_author")
-  notes                     UserNote[]         @relation("user_note_to_user")
-  formInstances             FormInstance[]     @relation("form_instance_to_user")
-  requestedD4HTasks         D4HTask[]          @relation("d4h_task_to_requested_by")
-  appliedD4HTasks           D4HTask[]          @relation("d4h_task_to_applied_by")
-  logEntries                LogEntry[]         @relation("log_entry_to_user")
-  ownedLogEntries           LogEntry[]         @relation("log_entry_to_owner")
-  impersonatedLogEntries    LogEntry[]         @relation("log_entry_to_impersonator")
-  logBatches                LogBatch[]         @relation("log_batch_to_user")
-  batchUpdatePlans          BatchUpdatePlan[]  @relation("batch_update_plan_to_user")
-  createdD4HNagRules        D4HNagRule[]       @relation("d4h_nag_rule_to_created_by")
-  startedD4HNagRuns         D4HNagRun[]        @relation("d4h_nag_run_to_started_by")
-  createdD4HNagOptOuts      D4HNagOptOut[]     @relation("d4h_nag_opt_out_to_created_by")
-  teamUsers                 TeamUser[]         @relation("team_user_to_user")
-  sentSelfAuditCampaigns             SelfAuditCampaign[]         @relation("self_audit_campaign_to_sent_by")
+  authoredOrganizationNotes OrganizationNote[]  @relation("organization_note_to_author")
+  notes                     UserNote[]          @relation("user_note_to_user")
+  formInstances             FormInstance[]      @relation("form_instance_to_user")
+  requestedD4HTasks         D4HTask[]           @relation("d4h_task_to_requested_by")
+  appliedD4HTasks           D4HTask[]           @relation("d4h_task_to_applied_by")
+  logEntries                LogEntry[]          @relation("log_entry_to_user")
+  ownedLogEntries           LogEntry[]          @relation("log_entry_to_owner")
+  impersonatedLogEntries    LogEntry[]          @relation("log_entry_to_impersonator")
+  logBatches                LogBatch[]          @relation("log_batch_to_user")
+  batchUpdatePlans          BatchUpdatePlan[]   @relation("batch_update_plan_to_user")
+  createdD4HNagRules        D4HNagRule[]        @relation("d4h_nag_rule_to_created_by")
+  startedD4HNagRuns         D4HNagRun[]         @relation("d4h_nag_run_to_started_by")
+  createdD4HNagOptOuts      D4HNagOptOut[]      @relation("d4h_nag_opt_out_to_created_by")
+  teamUsers                 TeamUser[]          @relation("team_user_to_user")
+  sentSelfAuditCampaigns    SelfAuditCampaign[] @relation("self_audit_campaign_to_sent_by")
 
   @@unique([email])
   @@map("users")
@@ -149,8 +149,8 @@ model Organization {
   formInstances FormInstance[] @relation("form_instance_to_organization")
   d4hTasks      D4HTask[]      @relation("d4h_task_to_organization")
 
-  selfAuditCampaigns        SelfAuditCampaign[]        @relation("self_audit_campaign_to_organization")
-  selfAuditRequests SelfAuditRequest[] @relation("self_audit_request_to_organization")
+  selfAuditCampaigns SelfAuditCampaign[] @relation("self_audit_campaign_to_organization")
+  selfAuditRequests  SelfAuditRequest[]  @relation("self_audit_request_to_organization")
 
   d4hNagRules      D4HNagRule[]      @relation("d4h_nag_rule_to_organization")
   d4hNagRuns       D4HNagRun[]       @relation("d4h_nag_run_to_organization")
@@ -255,6 +255,8 @@ model Team {
   d4hNagOptOuts D4HNagOptOut[] @relation("d4h_nag_opt_out_to_team")
 
   skillCheckSessions SkillCheckSession[] @relation("skill_check_session_to_team")
+
+  selfAuditCampaigns SelfAuditCampaign[] @relation("self_audit_campaign_to_team")
 
   @@index([organizationId])
   @@map("teams")
@@ -966,8 +968,8 @@ model I3Bundle {
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
 
-  items     I3BundleItem[] @relation("i3_bundle_item_to_i3_bundle")
-  selfAuditCampaigns SelfAuditCampaign[]     @relation("self_audit_campaign_to_i3_bundle")
+  items              I3BundleItem[]      @relation("i3_bundle_item_to_i3_bundle")
+  selfAuditCampaigns SelfAuditCampaign[] @relation("self_audit_campaign_to_i3_bundle")
 
   @@index([organizationId])
   @@map("i3_bundles")
@@ -1028,21 +1030,29 @@ model FormInstanceItem {
 
 // Self audit campaigns
 
-/// One send of an I3 bundle's self-audit form to every D4H member of the chosen teams. The bundle's
-/// templates are snapshotted at send, so the member form never reads I3 or D4H (#578).
+/// One send of an I3 bundle's self-audit form to the D4H members of one AVUT team. Created as a
+/// Draft (`sentAt` null) with the bundle's templates snapshotted, so the member form never reads I3
+/// or D4H (#578); members are added, then the campaign is sent.
 model SelfAuditCampaign {
   id             String       @id
   organizationId String
   organization   Organization @relation("self_audit_campaign_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  teamId         String
+  team           Team         @relation("self_audit_campaign_to_team", fields: [teamId], references: [id], onDelete: Restrict)
+  /// The team's D4H link at create. Members and templates always come from this D4H team, even if
+  /// the AVUT team is later relinked or unlinked.
+  d4hTeamId      Int
+  d4hTeamName    String
   /// Null once the bundle is purged; `bundleName` keeps what it was called.
   bundleId       String?
   bundle         I3Bundle?    @relation("self_audit_campaign_to_i3_bundle", fields: [bundleId], references: [id], onDelete: SetNull)
   bundleName     String
-  /// `[{ id, title }]`: the D4H teams sent to.
-  d4hTeams       Json
-  /// `SelfAuditTemplatesByTeam` (`src/lib/schemas/self-audit.ts`): each D4H team's templates, snapshotted at send.
+  /// `SelfAuditTemplate[]` (`src/lib/schemas/self-audit.ts`): the D4H team's templates, snapshotted at create.
   templates      Json
   status         RecordStatus @default(Active)
+  /// Null while a Draft.
+  sentAt         DateTime?
   sentById       String?
   sentBy         User?        @relation("self_audit_campaign_to_sent_by", fields: [sentById], references: [id], onDelete: SetNull)
   createdAt      DateTime     @default(now())
@@ -1051,26 +1061,25 @@ model SelfAuditCampaign {
   requests SelfAuditRequest[] @relation("self_audit_request_to_campaign")
 
   @@index([organizationId])
+  @@index([teamId])
   @@map("self_audit_campaigns")
 }
 
 /// One D4H member's self-audit form within a `SelfAuditCampaign`. Their answers live on the linked
 /// `FormInstance` (the working copy) and, once submitted, in `submittedData`.
 model SelfAuditRequest {
-  id             String                 @id
+  id             String                  @id
   organizationId String
-  organization   Organization           @relation("self_audit_request_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization            @relation("self_audit_request_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
   campaignId     String
-  campaign       SelfAuditCampaign               @relation("self_audit_request_to_campaign", fields: [campaignId], references: [id], onDelete: Cascade)
-  d4hTeamId      Int
-  d4hTeamTitle   String
+  campaign       SelfAuditCampaign       @relation("self_audit_request_to_campaign", fields: [campaignId], references: [id], onDelete: Cascade)
   d4hMemberId    Int
   memberName     String
   email          String?
-  /// `SelfAuditHeldItem[]`, snapshotted at send.
+  /// `SelfAuditHeldItem[]`, snapshotted when the member is added.
   heldItems      Json
   /// sha256 hex of the link token in the email. Replaced on resend; cleared when a send fails.
-  tokenHash      String?                @unique
+  tokenHash      String?                 @unique
   expiresAt      DateTime?
   deliveryStatus SelfAuditDeliveryStatus
   sentAt         DateTime?
@@ -1078,17 +1087,19 @@ model SelfAuditRequest {
   submittedAt    DateTime?
   /// The last submitted answer (`SelfAuditResponseData`). Kept while a reopened form is edited.
   submittedData  Json?
-  formInstanceId String                 @unique
-  formInstance   FormInstance           @relation("self_audit_request_to_form_instance", fields: [formInstanceId], references: [id], onDelete: Cascade)
-  createdAt      DateTime               @default(now())
-  updatedAt      DateTime               @updatedAt
+  formInstanceId String                  @unique
+  formInstance   FormInstance            @relation("self_audit_request_to_form_instance", fields: [formInstanceId], references: [id], onDelete: Cascade)
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
 
-  @@unique([campaignId, d4hTeamId, d4hMemberId])
+  @@unique([campaignId, d4hMemberId])
   @@map("self_audit_requests")
 }
 
-/// The last send of a self-audit request's link. `Pending`: claimed, send not confirmed.
+/// The last send of a self-audit request's link. `Unsent`: on a Draft, no link yet. `Pending`:
+/// claimed, send not confirmed.
 enum SelfAuditDeliveryStatus {
+  Unsent
   Pending
   Sent
   Failed

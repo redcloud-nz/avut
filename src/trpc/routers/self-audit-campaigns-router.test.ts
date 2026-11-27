@@ -5,7 +5,7 @@
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { NotConfiguredError, NotFoundError } from "@/lib/errors";
+import { NotConfiguredError } from "@/lib/errors";
 import type { D4HEquipmentListItem } from "@/lib/schemas/d4h/equipment-item";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { I3BundleId } from "@/lib/schemas/i3-bundle";
@@ -17,8 +17,10 @@ import {
     SelfAuditRequestId,
     type SelfAuditHeldItem,
     type SelfAuditResponseData,
+    type SelfAuditStatus,
     type SelfAuditTemplate,
 } from "@/lib/schemas/self-audit";
+import { TeamId } from "@/lib/schemas/team";
 import { UserId } from "@/lib/schemas/user";
 import { EMPTY_ANSWER } from "@/lib/self-audit-validate";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
@@ -122,6 +124,9 @@ describe("selfAuditCampaignsRouter", () => {
         helmet: I3TemplateId.create(),
         radio: I3TemplateId.create(),
         helmetVariant: I3TemplateVariantId.create(),
+        team: TeamId.create(),
+        alpineTeam: TeamId.create(),
+        unlinkedTeam: TeamId.create(),
     };
     const db = createMockPrisma();
 
@@ -129,6 +134,18 @@ describe("selfAuditCampaignsRouter", () => {
         await db.organization.create({
             data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
         });
+        for (const [id, name, d4hTeamId, d4hTeamName] of [
+            [T.team, "Rescue", TEAM_ID, "Rescue Team"],
+            [T.alpineTeam, "Alpine", OTHER_TEAM_ID, "Alpine Team"],
+            [T.unlinkedTeam, "Unlinked", null, null],
+        ] as const) {
+            await db.team.create({ data: { id, organizationId: T.org, name } });
+            if (d4hTeamId !== null) {
+                await db.team_D4H.create({
+                    data: { teamId: id, d4hTeamId, d4hTeamName, d4hServerCode: "ap" },
+                });
+            }
+        }
         await db.i3Template.create({
             data: {
                 id: T.helmet,
@@ -219,22 +236,48 @@ describe("selfAuditCampaignsRouter", () => {
             }),
         );
 
-    const preview = { organizationId: T.org, bundleId: T.bundle, d4hTeamIds: [TEAM_ID] };
-    const send = {
-        organizationId: T.org,
-        bundleId: T.bundle,
-        teams: [{ d4hTeamId: TEAM_ID, d4hMemberIds: [42, 43] }],
-    };
+    const create = { organizationId: T.org, teamId: T.team, bundleId: T.bundle };
+
+    /** A Draft of the bundle for the Rescue team, with John (42) and Ana (43) added, `Unsent`. */
+    async function draftWithMembers() {
+        const { campaignId } = await admin().createCampaign(create);
+        for (const [d4hMemberId, memberName] of [
+            [42, "John Smith"],
+            [43, "Ana Lee"],
+        ] as const) {
+            const formInstanceId = FormInstanceId.create();
+            await db.formInstance.create({
+                data: {
+                    id: formInstanceId,
+                    formKey: "d4h-i3-self-audit",
+                    organizationId: T.org,
+                    formData: { held: {}, missing: {}, extras: [], comments: "" },
+                    formStatus: "Draft",
+                },
+            });
+            await db.selfAuditRequest.create({
+                data: {
+                    id: SelfAuditRequestId.create(),
+                    organizationId: T.org,
+                    campaignId,
+                    d4hMemberId,
+                    memberName,
+                    email: `${memberName.split(" ")[0].toLowerCase()}@example.com`,
+                    heldItems: [],
+                    deliveryStatus: "Unsent",
+                    formInstanceId,
+                },
+            });
+        }
+        return campaignId;
+    }
 
     describe("access", () => {
         it("refuses an org owner without the system admin role", async () => {
             await expect(owner().listBundles({ organizationId: T.org })).rejects.toMatchObject({
                 code: "FORBIDDEN",
             });
-            await expect(owner().listD4HTeams({ organizationId: T.org })).rejects.toMatchObject({
-                code: "FORBIDDEN",
-            });
-            await expect(owner().previewRecipients(preview)).rejects.toMatchObject({
+            await expect(owner().listTeams({ organizationId: T.org })).rejects.toMatchObject({
                 code: "FORBIDDEN",
             });
             expect(getConfiguredD4HAccessToken).not.toHaveBeenCalled();
@@ -245,10 +288,7 @@ describe("selfAuditCampaignsRouter", () => {
                 new NotConfiguredError("No personal D4H access token."),
             );
 
-            await expect(admin().listD4HTeams({ organizationId: T.org })).rejects.toMatchObject({
-                code: "PRECONDITION_FAILED",
-            });
-            await expect(admin().previewRecipients(preview)).rejects.toMatchObject({
+            await expect(admin().listTeams({ organizationId: T.org })).rejects.toMatchObject({
                 code: "PRECONDITION_FAILED",
             });
         });
@@ -261,12 +301,17 @@ describe("selfAuditCampaignsRouter", () => {
         });
     });
 
-    describe("listD4HTeams", () => {
-        it("lists the teams the caller's token reaches", async () => {
-            const teams = await admin().listD4HTeams({ organizationId: T.org });
+    describe("listTeams", () => {
+        it("lists the org's teams linked to a D4H team the caller's token reaches", async () => {
+            const teams = await admin().listTeams({ organizationId: T.org });
             expect(teams).toEqual([
-                { id: TEAM_ID, resourceType: "Team", title: "Rescue Team" },
-                { id: OTHER_TEAM_ID, resourceType: "Team", title: "Alpine Team" },
+                {
+                    id: T.alpineTeam,
+                    name: "Alpine",
+                    d4hTeamId: OTHER_TEAM_ID,
+                    d4hTeamName: "Alpine Team",
+                },
+                { id: T.team, name: "Rescue", d4hTeamId: TEAM_ID, d4hTeamName: "Rescue Team" },
             ]);
         });
     });
@@ -298,7 +343,6 @@ describe("selfAuditCampaignsRouter", () => {
             sizeOptional: true,
             sizeOptions: [],
         };
-        const otherTeamTemplate: SelfAuditTemplate = { ...template, variants: [] };
         const heldItem: SelfAuditHeldItem = {
             id: "1",
             templateId: T.helmet,
@@ -326,16 +370,14 @@ describe("selfAuditCampaignsRouter", () => {
                 data: {
                     id: R.check,
                     organizationId: T.org,
+                    name: "Responder Nov 2026",
+                    teamId: T.team,
+                    d4hTeamId: TEAM_ID,
+                    d4hTeamName: "Rescue Team",
                     bundleId: T.bundle,
                     bundleName: "Responder",
-                    d4hTeams: [
-                        { id: TEAM_ID, title: "Rescue Team" },
-                        { id: OTHER_TEAM_ID, title: "Alpine Team" },
-                    ],
-                    templates: {
-                        [String(TEAM_ID)]: [template],
-                        [String(OTHER_TEAM_ID)]: [otherTeamTemplate],
-                    },
+                    templates: [template],
+                    sentAt,
                     sentById: T.admin,
                     createdAt: sentAt,
                 },
@@ -344,9 +386,12 @@ describe("selfAuditCampaignsRouter", () => {
                 data: {
                     id: R.otherCheck,
                     organizationId: otherOrg,
+                    name: "Elsewhere",
+                    teamId: T.team,
+                    d4hTeamId: TEAM_ID,
+                    d4hTeamName: "Rescue Team",
                     bundleName: "Elsewhere",
-                    d4hTeams: [],
-                    templates: {},
+                    templates: [],
                 },
             });
 
@@ -354,8 +399,6 @@ describe("selfAuditCampaignsRouter", () => {
                 id: SelfAuditRequestId;
                 organizationId: OrganizationId;
                 campaignId: SelfAuditCampaignId;
-                d4hTeamId: number;
-                d4hTeamTitle: string;
                 memberId: number;
                 memberName: string;
                 email: string | null;
@@ -369,8 +412,6 @@ describe("selfAuditCampaignsRouter", () => {
                     id: R.notOpened,
                     organizationId: T.org,
                     campaignId: R.check,
-                    d4hTeamId: TEAM_ID,
-                    d4hTeamTitle: "Rescue Team",
                     memberId: 1,
                     memberName: "Zoe North",
                     email: "zoe@example.com",
@@ -381,8 +422,6 @@ describe("selfAuditCampaignsRouter", () => {
                     id: R.opened,
                     organizationId: T.org,
                     campaignId: R.check,
-                    d4hTeamId: TEAM_ID,
-                    d4hTeamTitle: "Rescue Team",
                     memberId: 2,
                     memberName: "Ana Lee",
                     email: "ana@example.com",
@@ -394,8 +433,6 @@ describe("selfAuditCampaignsRouter", () => {
                     id: R.submitted,
                     organizationId: T.org,
                     campaignId: R.check,
-                    d4hTeamId: OTHER_TEAM_ID,
-                    d4hTeamTitle: "Alpine Team",
                     memberId: 3,
                     memberName: "Bo Hill",
                     email: "bo@example.com",
@@ -409,8 +446,6 @@ describe("selfAuditCampaignsRouter", () => {
                     id: R.editing,
                     organizationId: T.org,
                     campaignId: R.check,
-                    d4hTeamId: TEAM_ID,
-                    d4hTeamTitle: "Rescue Team",
                     memberId: 4,
                     memberName: "John Smith",
                     email: "john@example.com",
@@ -424,8 +459,6 @@ describe("selfAuditCampaignsRouter", () => {
                     id: R.noEmail,
                     organizationId: T.org,
                     campaignId: R.check,
-                    d4hTeamId: TEAM_ID,
-                    d4hTeamTitle: "Rescue Team",
                     memberId: 5,
                     memberName: "Kim Park",
                     email: null,
@@ -436,8 +469,6 @@ describe("selfAuditCampaignsRouter", () => {
                     id: R.otherRequest,
                     organizationId: otherOrg,
                     campaignId: R.otherCheck,
-                    d4hTeamId: TEAM_ID,
-                    d4hTeamTitle: "Rescue Team",
                     memberId: 1,
                     memberName: "Elsewhere Member",
                     email: "else@example.com",
@@ -463,8 +494,6 @@ describe("selfAuditCampaignsRouter", () => {
                         id: request.id,
                         organizationId: request.organizationId,
                         campaignId: request.campaignId,
-                        d4hTeamId: request.d4hTeamId,
-                        d4hTeamTitle: request.d4hTeamTitle,
                         d4hMemberId: request.memberId,
                         memberName: request.memberName,
                         email: request.email,
@@ -494,9 +523,15 @@ describe("selfAuditCampaignsRouter", () => {
             ).rejects.toMatchObject({ code: "FORBIDDEN" });
         });
 
-        const counts = {
-            delivery: { Pending: 0, Sent: 3, Failed: 1, NoEmail: 1 },
-            progress: { NotOpened: 2, Opened: 1, Submitted: 1, Editing: 1 },
+        const counts: Record<SelfAuditStatus, number> = {
+            Withdrawn: 0,
+            Submitted: 1,
+            Editing: 1,
+            Opened: 1,
+            Failed: 0,
+            NoEmail: 1,
+            Sent: 1,
+            Unsent: 0,
         };
 
         it("lists the org's self audit campaigns with their counts", async () => {
@@ -505,11 +540,11 @@ describe("selfAuditCampaignsRouter", () => {
             expect(checks).toEqual([
                 {
                     id: R.check,
+                    name: "Responder Nov 2026",
+                    team: { id: T.team, name: "Rescue" },
+                    d4hTeamName: "Rescue Team",
                     bundleName: "Responder",
-                    d4hTeams: [
-                        { id: TEAM_ID, title: "Rescue Team" },
-                        { id: OTHER_TEAM_ID, title: "Alpine Team" },
-                    ],
+                    sentAt,
                     sentByName: "Sam Admin",
                     createdAt: sentAt,
                     counts,
@@ -517,23 +552,19 @@ describe("selfAuditCampaignsRouter", () => {
             ]);
         });
 
-        it("gets a self audit campaign with its requests by team and member, and their progress", async () => {
+        it("gets a self audit campaign with its requests by member, and their status", async () => {
             const check = await admin().getCampaign({ organizationId: T.org, campaignId: R.check });
 
             expect(check).toMatchObject({ id: R.check, sentByName: "Sam Admin", counts });
-            expect(check.requests.map((request) => [request.memberName, request.progress])).toEqual(
-                [
-                    ["Bo Hill", "Submitted"],
-                    ["Ana Lee", "Opened"],
-                    ["John Smith", "Editing"],
-                    ["Kim Park", "NotOpened"],
-                    ["Zoe North", "NotOpened"],
-                ],
-            );
+            expect(check.requests.map((request) => [request.memberName, request.status])).toEqual([
+                ["Ana Lee", "Opened"],
+                ["Bo Hill", "Submitted"],
+                ["John Smith", "Editing"],
+                ["Kim Park", "NoEmail"],
+                ["Zoe North", "Sent"],
+            ]);
             expect(check.requests.find((request) => request.id === R.editing)).toEqual({
                 id: R.editing,
-                d4hTeamId: TEAM_ID,
-                d4hTeamTitle: "Rescue Team",
                 d4hMemberId: 4,
                 memberName: "John Smith",
                 email: "john@example.com",
@@ -543,18 +574,18 @@ describe("selfAuditCampaignsRouter", () => {
                 submittedAt,
                 expiresAt,
                 formStatus: "Draft",
-                progress: "Editing",
+                status: "Editing",
             });
         });
 
-        it("gets a request's snapshot for its own team, and its answers", async () => {
+        it("gets a request's snapshot and its answers", async () => {
             const answers = await admin().getRequestAnswers({
                 organizationId: T.org,
                 requestId: R.submitted,
             });
 
             expect(answers).toEqual({
-                templates: [otherTeamTemplate],
+                templates: [template],
                 heldItems: [heldItem],
                 submittedData: submitted,
                 formData: draft,
@@ -596,133 +627,131 @@ describe("selfAuditCampaignsRouter", () => {
         });
     });
 
-    describe("previewRecipients", () => {
-        it("lists each team's members with their email and held count, and the excluded lines", async () => {
-            const result = await admin().previewRecipients(preview);
-
-            expect(result).toEqual([
-                {
-                    team: { id: TEAM_ID, title: "Rescue Team" },
-                    templateCount: 1,
-                    members: [
-                        { id: 43, name: "Ana Lee", email: null, heldCount: 0 },
-                        { id: 42, name: "John Smith", email: "john@example.com", heldCount: 1 },
-                    ],
-                    excluded: [{ templateId: T.radio, name: "Radio", reason: "no-d4h-type" }],
-                },
-            ]);
-            expect(fetchD4HTeamEquipmentItems).toHaveBeenCalledWith(accessToken, TEAM_ID);
-        });
-
-        it("is NOT_FOUND for a team the token can't reach, before reading D4H", async () => {
-            await expect(
-                admin().previewRecipients({ ...preview, d4hTeamIds: [TEAM_ID, 999] }),
-            ).rejects.toMatchObject({ code: "NOT_FOUND" });
-            expect(fetchD4HTeamEquipmentItems).not.toHaveBeenCalled();
-        });
-
-        it("is NOT_FOUND when the fit check can't reach the team", async () => {
-            vi.mocked(listFitsForD4HTeam).mockRejectedValue(
-                new NotFoundError(`D4H team ${TEAM_ID} not found.`),
-            );
-            await expect(admin().previewRecipients(preview)).rejects.toMatchObject({
-                code: "NOT_FOUND",
-            });
-        });
-
-        it("is NOT_FOUND for a bundle outside the org, and BAD_REQUEST for a Deleted one", async () => {
-            await expect(
-                admin().previewRecipients({ ...preview, bundleId: I3BundleId.create() }),
-            ).rejects.toMatchObject({ code: "NOT_FOUND" });
-            await expect(
-                admin().previewRecipients({ ...preview, bundleId: T.deletedBundle }),
-            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-        });
-    });
-
     describe("createCampaign", () => {
-        it("creates a request per member, sends to those with an email, and returns the counts", async () => {
-            const result = await admin().createCampaign(send);
-
-            expect(result).toEqual({
-                campaignId: expect.any(String),
-                sent: 1,
-                failed: 0,
-                noEmail: 1,
-            });
-            expect(sendEmail).toHaveBeenCalledTimes(1);
-            expect(sendEmail).toHaveBeenCalledWith(
-                expect.objectContaining({ to: "john@example.com" }),
-            );
-
-            const check = await admin().getCampaign({
-                organizationId: T.org,
-                campaignId: result.campaignId,
-            });
-            expect(
-                check.requests.map((request) => [request.memberName, request.deliveryStatus]),
-            ).toEqual([
-                ["Ana Lee", "NoEmail"],
-                ["John Smith", "Sent"],
-            ]);
-        });
-
-        it("sends only to the chosen members", async () => {
-            const result = await admin().createCampaign({
-                ...send,
-                teams: [{ d4hTeamId: TEAM_ID, d4hMemberIds: [42] }],
+        it("creates a Draft with no members, and lists it", async () => {
+            const { campaignId } = await admin().createCampaign({
+                ...create,
+                name: "Winter check",
             });
 
-            expect(result).toMatchObject({ sent: 1, failed: 0, noEmail: 0 });
-            const check = await admin().getCampaign({
-                organizationId: T.org,
-                campaignId: result.campaignId,
+            const campaign = await admin().getCampaign({ organizationId: T.org, campaignId });
+            expect(campaign).toMatchObject({
+                id: campaignId,
+                name: "Winter check",
+                team: { id: T.team, name: "Rescue" },
+                d4hTeamName: "Rescue Team",
+                bundleName: "Responder",
+                sentAt: null,
+                sentByName: null,
+                requests: [],
             });
-            expect(check.requests.map((request) => request.memberName)).toEqual(["John Smith"]);
-        });
-
-        it("is BAD_REQUEST for a member outside the team, or no members at all", async () => {
-            await expect(
-                admin().createCampaign({
-                    ...send,
-                    teams: [{ d4hTeamId: TEAM_ID, d4hMemberIds: [42, 999] }],
-                }),
-            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-            await expect(
-                admin().createCampaign({
-                    ...send,
-                    teams: [{ d4hTeamId: TEAM_ID, d4hMemberIds: [] }],
-                }),
-            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
             expect(sendEmail).not.toHaveBeenCalled();
+        });
+
+        it("is BAD_REQUEST for a team with no D4H link, or a Deleted bundle", async () => {
+            await expect(
+                admin().createCampaign({ ...create, teamId: T.unlinkedTeam }),
+            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+            await expect(
+                admin().createCampaign({ ...create, bundleId: T.deletedBundle }),
+            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+        });
+
+        it("is NOT_FOUND for a team or bundle outside the org", async () => {
+            await expect(
+                admin().createCampaign({ ...create, teamId: TeamId.create() }),
+            ).rejects.toMatchObject({ code: "NOT_FOUND" });
+            await expect(
+                admin().createCampaign({ ...create, bundleId: I3BundleId.create() }),
+            ).rejects.toMatchObject({ code: "NOT_FOUND" });
         });
 
         it("refuses an org owner without the system admin role", async () => {
-            await expect(owner().createCampaign(send)).rejects.toMatchObject({
+            await expect(owner().createCampaign(create)).rejects.toMatchObject({
                 code: "FORBIDDEN",
             });
-            expect(sendEmail).not.toHaveBeenCalled();
         });
 
         it("is PRECONDITION_FAILED without a personal D4H token", async () => {
             vi.mocked(getConfiguredD4HAccessToken).mockRejectedValue(
                 new NotConfiguredError("No personal D4H access token."),
             );
-            await expect(admin().createCampaign(send)).rejects.toMatchObject({
+            await expect(admin().createCampaign(create)).rejects.toMatchObject({
                 code: "PRECONDITION_FAILED",
             });
+        });
+    });
+
+    describe("sendCampaign", () => {
+        it("sends to the members with an email in D4H, and returns the counts", async () => {
+            const campaignId = await draftWithMembers();
+
+            const result = await admin().sendCampaign({ organizationId: T.org, campaignId });
+
+            expect(result).toEqual({ campaignId, sent: 1, failed: 0, noEmail: 1 });
+            expect(sendEmail).toHaveBeenCalledTimes(1);
+            expect(sendEmail).toHaveBeenCalledWith(
+                expect.objectContaining({ to: "john@example.com" }),
+            );
+
+            const campaign = await admin().getCampaign({ organizationId: T.org, campaignId });
+            expect(campaign).toMatchObject({ sentByName: "Sam Admin" });
+            expect(campaign.sentAt).not.toBeNull();
+            expect(
+                campaign.requests.map((request) => [request.memberName, request.status]),
+            ).toEqual([
+                ["Ana Lee", "NoEmail"],
+                ["John Smith", "Sent"],
+            ]);
+        });
+
+        it("is CONFLICT for a campaign already sent", async () => {
+            const campaignId = await draftWithMembers();
+            await admin().sendCampaign({ organizationId: T.org, campaignId });
+            vi.mocked(sendEmail).mockClear();
+
+            await expect(
+                admin().sendCampaign({ organizationId: T.org, campaignId }),
+            ).rejects.toMatchObject({ code: "CONFLICT" });
+            expect(sendEmail).not.toHaveBeenCalled();
+        });
+
+        it("is BAD_REQUEST for a Draft with no members", async () => {
+            const { campaignId } = await admin().createCampaign(create);
+            await expect(
+                admin().sendCampaign({ organizationId: T.org, campaignId }),
+            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+        });
+
+        it("refuses an org owner without the system admin role", async () => {
+            const campaignId = await draftWithMembers();
+            await expect(
+                owner().sendCampaign({ organizationId: T.org, campaignId }),
+            ).rejects.toMatchObject({ code: "FORBIDDEN" });
+            expect(sendEmail).not.toHaveBeenCalled();
+        });
+
+        it("is PRECONDITION_FAILED without a personal D4H token", async () => {
+            const campaignId = await draftWithMembers();
+            vi.mocked(getConfiguredD4HAccessToken).mockRejectedValue(
+                new NotConfiguredError("No personal D4H access token."),
+            );
+            await expect(
+                admin().sendCampaign({ organizationId: T.org, campaignId }),
+            ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
             expect(sendEmail).not.toHaveBeenCalled();
         });
     });
 
     describe("resendRequest", () => {
-        /** A sent check's requests, by member name. */
+        /** A sent campaign's requests, by member name. */
         async function sentRequests() {
-            const { campaignId } = await admin().createCampaign(send);
-            const check = await admin().getCampaign({ organizationId: T.org, campaignId });
+            const campaignId = await draftWithMembers();
+            await admin().sendCampaign({ organizationId: T.org, campaignId });
+            const campaign = await admin().getCampaign({ organizationId: T.org, campaignId });
             vi.mocked(sendEmail).mockClear();
             const byName = Object.fromEntries(
-                check.requests.map((request) => [request.memberName, request]),
+                campaign.requests.map((request) => [request.memberName, request]),
             );
             return { campaignId, john: byName["John Smith"]!, ana: byName["Ana Lee"]! };
         }

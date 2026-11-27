@@ -12,14 +12,18 @@ import { createEffects, invalidate } from "@/trpc/mutation-effector";
  * Passed as `meta.effects` on the corresponding `useMutation` call — see `useMutationEffector`.
  */
 export const selfAuditCampaignsEffects = createEffects<"selfAuditCampaigns">()({
-    // The new check joins the list. Its page isn't cached yet, but the send updates every
-    // request's delivery, so any entry for it is refetched.
+    // The new Draft joins the list. Its page isn't cached yet, but any entry for it is refetched.
     createCampaign: ({ organizationId }, { campaignId }) => [
         invalidate(trpc.selfAuditCampaigns.listCampaigns.queryFilter({ organizationId })),
         invalidate(trpc.selfAuditCampaigns.getCampaign.queryFilter({ organizationId, campaignId })),
     ],
-    // The request's delivery changes, and with it the check's counts.
+    // The request's delivery changes, and with it the campaign's counts.
     resendRequest: ({ organizationId }, { campaignId }) => [
+        invalidate(trpc.selfAuditCampaigns.listCampaigns.queryFilter({ organizationId })),
+        invalidate(trpc.selfAuditCampaigns.getCampaign.queryFilter({ organizationId, campaignId })),
+    ],
+    // The campaign is no longer a Draft, and every member's delivery changes.
+    sendCampaign: ({ organizationId }, { campaignId }) => [
         invalidate(trpc.selfAuditCampaigns.listCampaigns.queryFilter({ organizationId })),
         invalidate(trpc.selfAuditCampaigns.getCampaign.queryFilter({ organizationId, campaignId })),
     ],

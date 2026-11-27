@@ -6,21 +6,18 @@
 import * as z from "zod";
 
 import { ForbiddenError } from "@/lib/errors";
-import type { ExcludedReason } from "@/lib/i3-bundle-compare";
-import { D4HTeamRef } from "@/lib/schemas/d4h/team";
 import { I3BundleId, I3BundleSummary } from "@/lib/schemas/i3-bundle";
 import {
-    SELF_AUDIT_D4H_TEAMS_MAX,
+    SELF_AUDIT_CAMPAIGN_NAME_MAX,
     SelfAuditCampaignId,
-    SelfAuditD4HTeam,
     SelfAuditDeliveryStatus,
     SelfAuditHeldItem,
-    SelfAuditProgress,
     SelfAuditRequestId,
     SelfAuditResponseData,
-    SelfAuditTeamChoice,
+    SelfAuditStatus,
     SelfAuditTemplate,
 } from "@/lib/schemas/self-audit";
+import { TeamId } from "@/lib/schemas/team";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import * as SelfAuditCampaigns from "@/server/services/self-audit-campaigns";
 
@@ -38,29 +35,21 @@ const selfAuditProcedure = organizationProcedure({}, { allowSystemAdmin: true })
     },
 );
 
-const SelfAuditExcludedLine = z.object({
-    templateId: z.string(),
-    name: z.string(),
-    reason: z.enum(["deleted", "no-d4h-type", "not-in-team"]) satisfies z.ZodType<ExcludedReason>,
-});
-
 const SelfAuditCampaignSummary = z.object({
     id: SelfAuditCampaignId.schema,
+    name: z.string(),
+    team: z.object({ id: TeamId.schema, name: z.string() }),
+    d4hTeamName: z.string(),
     bundleName: z.string(),
-    d4hTeams: z.array(SelfAuditD4HTeam),
+    sentAt: z.date().nullable(),
     sentByName: z.string().nullable(),
     createdAt: z.date(),
-    counts: z.object({
-        delivery: z.record(SelfAuditDeliveryStatus, z.number()),
-        progress: z.record(SelfAuditProgress, z.number()),
-    }),
+    counts: z.record(SelfAuditStatus, z.number()),
 });
 
 /** A request as the admin pages see it. Deliberately has no token hash. */
 const SelfAuditRequestSummary = z.object({
     id: SelfAuditRequestId.schema,
-    d4hTeamId: z.number(),
-    d4hTeamTitle: z.string(),
     d4hMemberId: z.number(),
     memberName: z.string(),
     email: z.string().nullable(),
@@ -70,43 +59,44 @@ const SelfAuditRequestSummary = z.object({
     submittedAt: z.date().nullable(),
     expiresAt: z.date().nullable(),
     formStatus: z.string(),
-    progress: SelfAuditProgress,
+    status: SelfAuditStatus,
+});
+
+const SelfAuditSendResult = z.object({
+    campaignId: SelfAuditCampaignId.schema,
+    sent: z.number(),
+    failed: z.number(),
+    noEmail: z.number(),
 });
 
 export const selfAuditCampaignsRouter = createTrpcRouter({
     /**
-     * Create a self audit campaign of the bundle for the chosen D4H members of the chosen teams,
-     * snapshotting what each is asked, and email each member with an address their own link, one
-     * at a time. Returns how many were sent, failed, or had no email.
+     * Create a Draft self audit campaign of the bundle, pinned to the team, with the bundle's
+     * templates for the team's D4H team snapshotted and no members yet. Without a name, it's named
+     * after the bundle and the month.
      *
      * @throws TRPCError(PRECONDITION_FAILED) if the caller has no personal D4H token here.
-     * @throws TRPCError(NOT_FOUND) if the bundle isn't in the organization, or the token doesn't
-     * reach a team.
-     * @throws TRPCError(BAD_REQUEST) if the bundle is Deleted, no member is chosen, or a chosen
-     * member isn't in the team they're chosen under.
+     * @throws TRPCError(NOT_FOUND) if the team or the bundle isn't in the organization, or the
+     * token doesn't reach the team's D4H team.
+     * @throws TRPCError(BAD_REQUEST) if the team isn't Active or has no D4H link, or the bundle is
+     * Deleted.
      */
     createCampaign: selfAuditProcedure
         .input(
             z.object({
+                teamId: TeamId.schema,
                 bundleId: I3BundleId.schema,
-                teams: z.array(SelfAuditTeamChoice).min(1).max(SELF_AUDIT_D4H_TEAMS_MAX),
+                name: z.string().trim().max(SELF_AUDIT_CAMPAIGN_NAME_MAX).optional(),
             }),
         )
-        .output(
-            z.object({
-                campaignId: SelfAuditCampaignId.schema,
-                sent: z.number(),
-                failed: z.number(),
-                noEmail: z.number(),
-            }),
-        )
-        .mutation(async ({ ctx, input: { bundleId, teams } }) => {
+        .output(z.object({ campaignId: SelfAuditCampaignId.schema }))
+        .mutation(async ({ ctx, input: { teamId, bundleId, name } }) => {
             const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
-            return SelfAuditCampaigns.createCampaign(ctx, { accessToken, bundleId, teams });
+            return SelfAuditCampaigns.createCampaign(ctx, { accessToken, teamId, bundleId, name });
         }),
 
     /**
-     * A self audit campaign with every member's request: delivery, progress and times.
+     * A self audit campaign with every member's request: delivery, status and times.
      *
      * @throws TRPCError(NOT_FOUND) if the self audit campaign isn't in the organization.
      */
@@ -118,8 +108,8 @@ export const selfAuditCampaignsRouter = createTrpcRouter({
         }),
 
     /**
-     * What one member was asked (their team's templates and their held items, as snapshotted at
-     * send) and their answers: the last submitted one and the working copy.
+     * What one member was asked (the campaign's templates and their held items, as snapshotted)
+     * and their answers: the last submitted one and the working copy.
      *
      * @throws TRPCError(NOT_FOUND) if the request isn't in the organization.
      */
@@ -148,17 +138,7 @@ export const selfAuditCampaignsRouter = createTrpcRouter({
         }),
 
     /**
-     * The D4H teams the caller's personal D4H token reaches, to pick from.
-     *
-     * @throws TRPCError(PRECONDITION_FAILED) if the caller has no personal D4H token here.
-     */
-    listD4HTeams: selfAuditProcedure.output(z.array(D4HTeamRef.schema)).query(async ({ ctx }) => {
-        const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
-        return SelfAuditCampaigns.listD4HTeams(ctx, accessToken);
-    }),
-
-    /**
-     * The organization's self audit campaigns, newest first, with counts by delivery and progress.
+     * The organization's self audit campaigns, newest first, with counts by status.
      */
     listCampaigns: selfAuditProcedure
         .output(z.array(SelfAuditCampaignSummary))
@@ -167,41 +147,25 @@ export const selfAuditCampaignsRouter = createTrpcRouter({
         }),
 
     /**
-     * Who a self audit campaign of the bundle would go to, per team: each member with their email and how
-     * many of the bundle's lines they hold, and the lines left out of the comparison and why.
+     * The organization's Active teams linked to a D4H team the caller's personal D4H token
+     * reaches, to pin a campaign to.
      *
      * @throws TRPCError(PRECONDITION_FAILED) if the caller has no personal D4H token here.
-     * @throws TRPCError(NOT_FOUND) if the bundle isn't in the organization, or the token doesn't
-     * reach a team.
-     * @throws TRPCError(BAD_REQUEST) if the bundle is Deleted.
      */
-    previewRecipients: selfAuditProcedure
-        .input(
-            z.object({
-                bundleId: I3BundleId.schema,
-                d4hTeamIds: z.array(z.number().int()).min(1).max(SELF_AUDIT_D4H_TEAMS_MAX),
-            }),
-        )
+    listTeams: selfAuditProcedure
         .output(
             z.array(
                 z.object({
-                    team: SelfAuditD4HTeam,
-                    templateCount: z.number(),
-                    members: z.array(
-                        z.object({
-                            id: z.number(),
-                            name: z.string(),
-                            email: z.string().nullable(),
-                            heldCount: z.number(),
-                        }),
-                    ),
-                    excluded: z.array(SelfAuditExcludedLine),
+                    id: TeamId.schema,
+                    name: z.string(),
+                    d4hTeamId: z.number(),
+                    d4hTeamName: z.string(),
                 }),
             ),
         )
-        .query(async ({ ctx, input: { bundleId, d4hTeamIds } }) => {
+        .query(async ({ ctx }) => {
             const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
-            return SelfAuditCampaigns.previewRecipients(ctx, { accessToken, bundleId, d4hTeamIds });
+            return SelfAuditCampaigns.listTeams(ctx, accessToken);
         }),
 
     /**
@@ -222,5 +186,23 @@ export const selfAuditCampaignsRouter = createTrpcRouter({
         )
         .mutation(async ({ ctx, input: { requestId } }) => {
             return SelfAuditCampaigns.resendRequest(ctx, requestId);
+        }),
+
+    /**
+     * Send a Draft self audit campaign: refresh each not-yet-sent member's name and email from
+     * D4H, mark the campaign sent, then email each of them their own link, one at a time. Returns
+     * how many were sent, failed, or had no email.
+     *
+     * @throws TRPCError(PRECONDITION_FAILED) if the caller has no personal D4H token here.
+     * @throws TRPCError(NOT_FOUND) if the campaign isn't in the organization.
+     * @throws TRPCError(CONFLICT) if the campaign has already been sent.
+     * @throws TRPCError(BAD_REQUEST) if it has no member to send to.
+     */
+    sendCampaign: selfAuditProcedure
+        .input(z.object({ campaignId: SelfAuditCampaignId.schema }))
+        .output(SelfAuditSendResult)
+        .mutation(async ({ ctx, input: { campaignId } }) => {
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
+            return SelfAuditCampaigns.sendCampaign(ctx, { accessToken, campaignId });
         }),
 });

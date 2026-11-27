@@ -23,15 +23,17 @@ import {
 import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import { useOrganization } from "@/hooks/use-organization";
 import { useReturnFocus } from "@/hooks/use-return-focus";
-import type { SelfAuditProgress, SelfAuditRequestId } from "@/lib/schemas/self-audit";
+import type { SelfAuditRequestId, SelfAuditStatus } from "@/lib/schemas/self-audit";
 import { trpc } from "@/trpc/client";
 
 type AnswersRequest = {
     id: SelfAuditRequestId;
     memberName: string;
-    d4hTeamTitle: string;
-    progress: SelfAuditProgress;
+    status: SelfAuditStatus;
 };
+
+/** The statuses of a request whose form hasn't been opened. */
+const NOT_OPENED: readonly SelfAuditStatus[] = ["Unsent", "Sent", "Failed", "NoEmail"];
 
 /**
  * `?action=view-answers&requestId=…`: what one member answered, as the equipment officer reads
@@ -50,12 +52,10 @@ export function D4HI3Module_SelfAuditCampaignAnswers_Dialog({
             <DialogContent size="xl" {...returnFocus}>
                 <DialogHeader>
                     <DialogTitle>{request.memberName}</DialogTitle>
-                    <DialogDescription>
-                        Self-audit answers, {request.d4hTeamTitle}
-                    </DialogDescription>
+                    <DialogDescription>Self-audit answers</DialogDescription>
                 </DialogHeader>
                 <DialogBoundary>
-                    <SelfAuditAnswers_Body requestId={request.id} progress={request.progress} />
+                    <SelfAuditAnswers_Body requestId={request.id} status={request.status} />
                 </DialogBoundary>
             </DialogContent>
         </Dialog>
@@ -64,10 +64,10 @@ export function D4HI3Module_SelfAuditCampaignAnswers_Dialog({
 
 function SelfAuditAnswers_Body({
     requestId,
-    progress,
+    status,
 }: {
     requestId: SelfAuditRequestId;
-    progress: SelfAuditProgress;
+    status: SelfAuditStatus;
 }) {
     const organization = useOrganization();
 
@@ -89,7 +89,7 @@ function SelfAuditAnswers_Body({
                     <Alert variant="info">
                         <AlertTitle>Not submitted yet</AlertTitle>
                         <AlertDescription>
-                            {progress === "NotOpened"
+                            {NOT_OPENED.includes(status)
                                 ? "They haven't opened it yet; this is the pre-filled form."
                                 : "These are their answers so far."}
                         </AlertDescription>

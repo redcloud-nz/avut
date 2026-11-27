@@ -25,8 +25,7 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import {
     SelfAuditHeldItem,
     SelfAuditResponseData,
-    SelfAuditTemplatesByTeam,
-    type SelfAuditTemplate,
+    SelfAuditTemplate,
 } from "@/lib/schemas/self-audit";
 import { NOT_NEEDED, OTHER_VARIANT, type SelfAuditSubject } from "@/lib/self-audit-types";
 import { answerErrors, ANY_VARIANT, EMPTY_ANSWER } from "@/lib/self-audit-validate";
@@ -56,7 +55,7 @@ export type SelfAuditByToken =
     | {
           state: "ok";
           subject: SelfAuditSubject;
-          /** The request's team's templates, as snapshotted at send (decision 6a). */
+          /** The campaign's templates, as snapshotted at create (decision 6a). */
           templates: SelfAuditTemplate[];
           heldItems: SelfAuditHeldItem[];
           /** The working copy. */
@@ -73,8 +72,6 @@ const requestSelect = {
     id: true,
     organizationId: true,
     campaignId: true,
-    d4hTeamId: true,
-    d4hTeamTitle: true,
     memberName: true,
     heldItems: true,
     expiresAt: true,
@@ -85,7 +82,12 @@ const requestSelect = {
     organization: { select: { slug: true } },
     formInstance: { select: { formData: true, formStatus: true } },
     campaign: {
-        select: { bundleName: true, templates: true, sentBy: { select: { name: true } } },
+        select: {
+            bundleName: true,
+            d4hTeamName: true,
+            templates: true,
+            sentBy: { select: { name: true } },
+        },
     },
 } as const;
 
@@ -113,10 +115,9 @@ async function requireRequestByToken(
     return request;
 }
 
-/** The request's own team's templates. */
+/** The campaign's templates. */
 function templatesOf(request: TokenRequest): SelfAuditTemplate[] {
-    const byTeam = SelfAuditTemplatesByTeam.parse(request.campaign.templates);
-    return byTeam[String(request.d4hTeamId)] ?? [];
+    return z.array(SelfAuditTemplate).parse(request.campaign.templates);
 }
 
 /**
@@ -217,7 +218,7 @@ export function assertKnownSelfAuditVariants(
 
 /** The actor-less log context for the member's submit and reopen (decision 11). */
 async function memberLogContext(ctx: PublicContext, request: TokenRequest) {
-    const actorLabel = `${request.memberName} (${request.d4hTeamTitle})`;
+    const actorLabel = `${request.memberName} (${request.campaign.d4hTeamName})`;
     const batch = await createLogBatch(
         { operationKey: "public-form-submission", actorLabel },
         ctx.prisma,
@@ -244,7 +245,7 @@ export async function getSelfAuditByToken(
         state: "ok",
         subject: {
             memberName: request.memberName,
-            teamName: request.d4hTeamTitle,
+            teamName: request.campaign.d4hTeamName,
             bundleName: request.campaign.bundleName,
             requestedBy: request.campaign.sentBy?.name || UNKNOWN_SENDER,
         },
@@ -355,7 +356,7 @@ export async function submitSelfAuditByToken(
                 action: "Update",
                 objectType: "SelfAuditRequest",
                 objectId: request.id,
-                description: `Self-audit submitted by ${request.memberName} (${request.d4hTeamTitle})`,
+                description: `Self-audit submitted by ${request.memberName} (${request.campaign.d4hTeamName})`,
                 refs: [
                     {
                         objectType: "SelfAuditCampaign",
@@ -398,7 +399,7 @@ export async function reopenSelfAuditByToken(
                 action: "Update",
                 objectType: "SelfAuditRequest",
                 objectId: request.id,
-                description: `Self-audit reopened by ${request.memberName} (${request.d4hTeamTitle})`,
+                description: `Self-audit reopened by ${request.memberName} (${request.campaign.d4hTeamName})`,
                 refs: [
                     {
                         objectType: "SelfAuditCampaign",

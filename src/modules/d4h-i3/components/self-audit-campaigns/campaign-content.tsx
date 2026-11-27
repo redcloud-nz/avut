@@ -34,31 +34,34 @@ import { route } from "@/lib/routes";
 import type {
     SelfAuditCampaignId,
     SelfAuditDeliveryStatus,
-    SelfAuditProgress,
+    SelfAuditStatus,
 } from "@/lib/schemas/self-audit";
 import { trpc } from "@/trpc/client";
 
 import { D4HI3Module_SelfAuditCampaignAnswers_Dialog } from "./campaign-answers-dialog";
-import {
-    DELIVERY_LABELS,
-    describeDeliveryCounts,
-    describeProgressCounts,
-    PROGRESS_LABELS,
-} from "./campaign-labels";
+import { describeStatusCounts, STATUS_LABELS } from "./campaign-labels";
 import { D4HI3Module_ResendSelfAudit_Dialog } from "./campaign-resend-dialog";
 
-const DELIVERY_BADGES: Record<
-    SelfAuditDeliveryStatus,
-    "success-outline" | "destructive-outline" | "warning-outline" | "info-outline"
+const STATUS_BADGES: Record<
+    SelfAuditStatus,
+    "success-outline" | "destructive-outline" | "warning-outline" | "info-outline" | "outline"
 > = {
-    Sent: "success-outline",
+    Withdrawn: "outline",
+    Submitted: "success-outline",
+    Editing: "info-outline",
+    Opened: "info-outline",
     Failed: "destructive-outline",
     NoEmail: "warning-outline",
-    Pending: "info-outline",
+    Sent: "outline",
+    Unsent: "outline",
 };
 
-const DELIVERY_ORDER: SelfAuditDeliveryStatus[] = ["Sent", "Failed", "NoEmail", "Pending"];
-const PROGRESS_ORDER: SelfAuditProgress[] = ["NotOpened", "Opened", "Submitted", "Editing"];
+const STATUS_ORDER = Object.keys(STATUS_LABELS) as SelfAuditStatus[];
+
+/** A request has a link to resend: it has an email, and its campaign has been sent. */
+function isResendable(deliveryStatus: SelfAuditDeliveryStatus): boolean {
+    return deliveryStatus !== "NoEmail" && deliveryStatus !== "Unsent";
+}
 
 /**
  * A self audit campaign's page: who it went to, whether each email went, and how far each member has got.
@@ -107,63 +110,25 @@ export function D4HI3Module_SelfAuditCampaign_Content({
                 header: "Member",
                 enableColumnFilter: false,
             }),
-            col.accessor("d4hTeamTitle", {
-                header: "Team",
-                enableColumnFilter: true,
-                filterFn: Kaga.filterFns.oneOf,
-                meta: {
-                    columnOptions: campaign.d4hTeams.map((team) => ({
-                        label: team.title,
-                        value: team.title,
-                    })),
-                },
-            }),
             col.accessor("email", {
                 header: "Email",
                 cell: (ctx) => ctx.getValue() ?? "—",
                 enableColumnFilter: false,
             }),
-            col.accessor("deliveryStatus", {
-                header: "Delivery",
+            col.accessor("status", {
+                header: "Status",
                 cell: (ctx) => (
-                    <Badge variant={DELIVERY_BADGES[ctx.getValue()]}>
-                        {DELIVERY_LABELS[ctx.getValue()]}
+                    <Badge variant={STATUS_BADGES[ctx.getValue()]}>
+                        {STATUS_LABELS[ctx.getValue()]}
                     </Badge>
                 ),
                 enableGlobalFilter: false,
                 enableColumnFilter: true,
                 filterFn: Kaga.filterFns.oneOf,
                 meta: {
-                    columnOptions: DELIVERY_ORDER.map((status) => ({
-                        label: DELIVERY_LABELS[status],
+                    columnOptions: STATUS_ORDER.map((status) => ({
+                        label: STATUS_LABELS[status],
                         value: status,
-                    })),
-                },
-            }),
-            col.accessor("progress", {
-                header: "Progress",
-                cell: (ctx) => {
-                    const { progress, submittedAt } = ctx.row.original;
-                    // Reopened: the last submitted answers stand until they submit again.
-                    if (progress === "Editing" && submittedAt) {
-                        return (
-                            <>
-                                Editing{" "}
-                                <span className="text-muted-foreground">
-                                    (submitted {formatDateTime(submittedAt)})
-                                </span>
-                            </>
-                        );
-                    }
-                    return PROGRESS_LABELS[progress];
-                },
-                enableGlobalFilter: false,
-                enableColumnFilter: true,
-                filterFn: Kaga.filterFns.oneOf,
-                meta: {
-                    columnOptions: PROGRESS_ORDER.map((progress) => ({
-                        label: PROGRESS_LABELS[progress],
-                        value: progress,
                     })),
                 },
             }),
@@ -204,7 +169,7 @@ export function D4HI3Module_SelfAuditCampaign_Content({
                         >
                             View answers
                         </Button>
-                        {ctx.row.original.deliveryStatus !== "NoEmail" && (
+                        {isResendable(ctx.row.original.deliveryStatus) && (
                             <Button
                                 type="button"
                                 variant="ghost"
@@ -220,7 +185,7 @@ export function D4HI3Module_SelfAuditCampaign_Content({
             }),
         ]);
         // eslint-disable-next-line react-hooks/exhaustive-deps -- openRequestAction only closes over stable nuqs setters
-    }, [formatDateTime, campaign.d4hTeams]);
+    }, [formatDateTime]);
 
     const table = useReactTable({
         data: campaign.requests,
@@ -232,10 +197,7 @@ export function D4HI3Module_SelfAuditCampaign_Content({
         globalFilterFn: "includesString",
         initialState: {
             pagination: { pageIndex: 0, pageSize: Kaga.DEFAULT_PAGE_SIZE },
-            sorting: [
-                { id: "d4hTeamTitle", desc: false },
-                { id: "memberName", desc: false },
-            ],
+            sorting: [{ id: "memberName", desc: false }],
         },
     });
 
@@ -252,16 +214,18 @@ export function D4HI3Module_SelfAuditCampaign_Content({
                 ]}
             />
             <Saratoga.Header>
-                <Saratoga.Title>{campaign.bundleName}</Saratoga.Title>
+                <Saratoga.Title>{campaign.name}</Saratoga.Title>
             </Saratoga.Header>
             <Card>
                 <CardContent>
                     <DataList>
                         <DataItem inline>
-                            <DataItemTitle>Teams</DataItemTitle>
-                            <DataItemValue>
-                                {campaign.d4hTeams.map((team) => team.title).join(", ")}
-                            </DataItemValue>
+                            <DataItemTitle>Team</DataItemTitle>
+                            <DataItemValue>{campaign.team.name}</DataItemValue>
+                        </DataItem>
+                        <DataItem inline>
+                            <DataItemTitle>Bundle</DataItemTitle>
+                            <DataItemValue>{campaign.bundleName}</DataItemValue>
                         </DataItem>
                         <DataItem inline>
                             <DataItemTitle>Sent By</DataItemTitle>
@@ -269,19 +233,15 @@ export function D4HI3Module_SelfAuditCampaign_Content({
                         </DataItem>
                         <DataItem inline>
                             <DataItemTitle>Sent</DataItemTitle>
-                            <DataItemDateValue date={campaign.createdAt} />
+                            {campaign.sentAt ? (
+                                <DataItemDateValue date={campaign.sentAt} />
+                            ) : (
+                                <DataItemValue>Draft</DataItemValue>
+                            )}
                         </DataItem>
                         <DataItem inline>
-                            <DataItemTitle>Delivery</DataItemTitle>
-                            <DataItemValue>
-                                {describeDeliveryCounts(campaign.counts.delivery)}
-                            </DataItemValue>
-                        </DataItem>
-                        <DataItem inline>
-                            <DataItemTitle>Progress</DataItemTitle>
-                            <DataItemValue>
-                                {describeProgressCounts(campaign.counts.progress)}
-                            </DataItemValue>
+                            <DataItemTitle>Status</DataItemTitle>
+                            <DataItemValue>{describeStatusCounts(campaign.counts)}</DataItemValue>
                         </DataItem>
                     </DataList>
                 </CardContent>
@@ -299,7 +259,7 @@ export function D4HI3Module_SelfAuditCampaign_Content({
                     onOpenChange={(open) => (open ? undefined : closeRequestAction())}
                 />
             )}
-            {target && target.deliveryStatus !== "NoEmail" && (
+            {target && isResendable(target.deliveryStatus) && (
                 <D4HI3Module_ResendSelfAudit_Dialog
                     request={target}
                     open={action === "resend"}

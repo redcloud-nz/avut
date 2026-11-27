@@ -3,26 +3,31 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import { format } from "date-fns";
 import type { ReactElement } from "react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { TZDate } from "@date-fns/tz";
 import { render } from "@react-email/components";
 
-import { ValidationError } from "@/lib/errors";
+import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
 import { compareBundle } from "@/lib/i3-bundle-compare";
 import type { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import type { D4HEquipmentListItem } from "@/lib/schemas/d4h/equipment-item";
+import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { I3BundleId, type I3BundleLine } from "@/lib/schemas/i3-bundle";
 import { I3TemplateId } from "@/lib/schemas/i3-template";
 import { OrganizationId } from "@/lib/schemas/organization";
 import {
-    SELF_AUDIT_RECIPIENTS_MAX,
     SELF_AUDIT_TOKEN_DAYS,
     SelfAuditRequestId,
     SelfAuditResponseData,
+    type SelfAuditCampaignId,
 } from "@/lib/schemas/self-audit";
+import { TeamId } from "@/lib/schemas/team";
 import { UserId } from "@/lib/schemas/user";
 import { EMPTY_ANSWER } from "@/lib/self-audit-validate";
+import { getD4HTeamMembers } from "@/server/d4h-api/client";
 import { fetchD4HTeamEquipmentItems } from "@/server/d4h-api/equipment";
 import { createLinkToken } from "@/server/link-token";
 import { listFitsForD4HTeam } from "@/server/services/i3-templates";
@@ -32,8 +37,12 @@ import { createOrganizationMockContext } from "@/test/trpc-helpers";
 import {
     buildSelfAuditSnapshot,
     createCampaign,
+    defaultCampaignName,
+    listTeams,
     resendRequest,
     SEND_SPACING_MS,
+    sendCampaign,
+    statusOf,
     type SelfAuditIssuedItem,
     type SelfAuditSendDeps,
     type SelfAuditVariantSource,
@@ -361,21 +370,59 @@ describe("buildSelfAuditSnapshot", () => {
     });
 });
 
-describe("createCampaign", () => {
+describe("statusOf", () => {
+    const base = {
+        deliveryStatus: "Sent" as const,
+        openedAt: null,
+        submittedAt: null,
+        formStatus: "Draft",
+        withdrawnAt: null,
+    };
+    const at = new Date("2026-11-21T09:00:00Z");
+
+    it.each([
+        ["Withdrawn", { withdrawnAt: at, formStatus: "Submitted", submittedAt: at, openedAt: at }],
+        ["Submitted", { formStatus: "Submitted", submittedAt: at, openedAt: at }],
+        ["Editing", { submittedAt: at, openedAt: at }],
+        ["Opened", { openedAt: at, deliveryStatus: "Failed" as const }],
+        ["Failed", { deliveryStatus: "Failed" as const }],
+        ["NoEmail", { deliveryStatus: "NoEmail" as const }],
+        ["Sent", { deliveryStatus: "Sent" as const }],
+        ["Sent", { deliveryStatus: "Pending" as const }],
+        ["Unsent", { deliveryStatus: "Unsent" as const }],
+    ] as const)("is %s by precedence", (expected, overrides) => {
+        expect(statusOf({ ...base, ...overrides })).toBe(expected);
+    });
+});
+
+describe("defaultCampaignName", () => {
+    it("names the month in the given time zone", () => {
+        // Still November in UTC, already December in New Zealand.
+        const instant = new Date("2026-11-30T12:00:00Z");
+        expect(defaultCampaignName("Responder", "Pacific/Auckland", instant)).toBe(
+            "Responder Dec 2026",
+        );
+        expect(defaultCampaignName("Responder", "UTC", instant)).toBe("Responder Nov 2026");
+    });
+});
+
+describe("campaigns", () => {
     const HELMET_KIND = 50;
+    const UNREACHED_D4H_TEAM = 99;
     const S = {
         org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
         admin: UserId.create(),
         bundle: I3BundleId.create(),
         helmet: I3TemplateId.create(),
+        team: TeamId.create(),
+        unlinkedTeam: TeamId.create(),
+        archivedTeam: TeamId.create(),
+        unreachedTeam: TeamId.create(),
+        otherOrgTeam: TeamId.create(),
     };
     const db = createMockPrisma();
     const accessToken = { id: "d4h-token-fixture-id" } as unknown as D4HAccessToken_ServerOnly;
-    const input = {
-        accessToken,
-        bundleId: S.bundle,
-        teams: [{ d4hTeamId: TEAM_ID, d4hMemberIds: [42, 43, 44] }],
-    };
 
     const ctx = () =>
         createOrganizationMockContext({
@@ -396,15 +443,20 @@ describe("createCampaign", () => {
             sleep: vi.fn(async () => {}),
             createLinkToken: vi.fn(() => {
                 tokens++;
-                return { token: `token-${tokens}`, hash: `hash-${tokens}` };
+                return { token: `token-${tokens}`, hash: `hash-${tokens}-${Math.random()}` };
             }),
         } satisfies SelfAuditSendDeps;
     }
 
     beforeAll(async () => {
-        await db.organization.create({
-            data: { id: S.org, name: "Acme", slug: "acme", createdAt: new Date() },
-        });
+        for (const [id, slug] of [
+            [S.org, "acme"],
+            [S.otherOrg, "other"],
+        ] as const) {
+            await db.organization.create({
+                data: { id, name: slug === "acme" ? "Acme" : "Other", slug, createdAt: new Date() },
+            });
+        }
         await db.user.create({
             data: {
                 id: S.admin,
@@ -415,6 +467,37 @@ describe("createCampaign", () => {
                 updatedAt: new Date(),
             },
         });
+        const teams = [
+            { id: S.team, organizationId: S.org, name: "Rescue", d4hTeamId: TEAM_ID },
+            { id: S.unlinkedTeam, organizationId: S.org, name: "Unlinked", d4hTeamId: null },
+            {
+                id: S.archivedTeam,
+                organizationId: S.org,
+                name: "Archived",
+                d4hTeamId: TEAM_ID,
+                status: "Archived" as const,
+            },
+            {
+                id: S.unreachedTeam,
+                organizationId: S.org,
+                name: "Unreached",
+                d4hTeamId: UNREACHED_D4H_TEAM,
+            },
+            { id: S.otherOrgTeam, organizationId: S.otherOrg, name: "Away", d4hTeamId: TEAM_ID },
+        ];
+        for (const { d4hTeamId, ...team } of teams) {
+            await db.team.create({ data: team });
+            if (d4hTeamId !== null) {
+                await db.team_D4H.create({
+                    data: {
+                        teamId: team.id,
+                        d4hTeamId,
+                        d4hTeamName: d4hTeamId === TEAM_ID ? "Rescue Team" : "Far Away Team",
+                        d4hServerCode: "ap",
+                    },
+                });
+            }
+        }
         await db.i3Template.create({
             data: {
                 id: S.helmet,
@@ -447,314 +530,364 @@ describe("createCampaign", () => {
         });
     });
 
-    it("creates the check and, per member, a pre-filled draft and a request", async () => {
-        const result = await createCampaign(ctx(), input, makeDeps());
+    const create = (overrides: { teamId?: TeamId; name?: string } = {}) =>
+        createCampaign(ctx(), { accessToken, teamId: S.team, bundleId: S.bundle, ...overrides });
 
-        expect(result).toEqual({ campaignId: result.campaignId, sent: 2, failed: 0, noEmail: 1 });
-
-        const check = await db.selfAuditCampaign.findUniqueOrThrow({
-            where: { id: result.campaignId },
-        });
-        expect(check).toMatchObject({
-            organizationId: S.org,
-            bundleId: S.bundle,
-            bundleName: "Responder",
-            d4hTeams: [{ id: TEAM_ID, title: "Rescue Team" }],
-            sentById: S.admin,
-        });
-        expect(Object.keys(check.templates as object)).toEqual([String(TEAM_ID)]);
-
-        const requests = await db.selfAuditRequest.findMany({
-            where: { campaignId: result.campaignId },
-            include: { formInstance: true },
-            orderBy: { d4hMemberId: "asc" },
-        });
-        expect(requests.map((request) => [request.memberName, request.email])).toEqual([
-            ["John Smith", "john@example.com"],
-            ["Ana Lee", null],
-            ["Kim Tan", "kim@example.com"],
-        ]);
-        for (const request of requests) {
-            expect(request.formInstance).toMatchObject({
-                formKey: "d4h-i3-self-audit",
-                organizationId: S.org,
-                userId: null,
-                formStatus: "Draft",
+    /**
+     * A Draft with three members as they were added, before D4H changed: John (42, an old
+     * address; D4H now has another), Ana (43; D4H now has no email) and Kim (44), all `Unsent`,
+     * and Lee (45), added with no email (`NoEmail`).
+     */
+    async function draftWithMembers() {
+        const { campaignId } = await create();
+        const members = [
+            { d4hMemberId: 42, memberName: "Johnny Smith", email: "old-john@example.com" },
+            { d4hMemberId: 43, memberName: "Ana Lee", email: "ana@example.com" },
+            { d4hMemberId: 44, memberName: "Kim Tan", email: "kim@example.com" },
+            { d4hMemberId: 45, memberName: "Lee Park", email: null },
+        ];
+        const ids: Record<number, SelfAuditRequestId> = {};
+        for (const member of members) {
+            const id = SelfAuditRequestId.create();
+            const formInstanceId = FormInstanceId.create();
+            ids[member.d4hMemberId] = id;
+            await db.formInstance.create({
+                data: {
+                    id: formInstanceId,
+                    formKey: "d4h-i3-self-audit",
+                    organizationId: S.org,
+                    userId: null,
+                    formData: { held: {}, missing: {}, extras: [], comments: "" },
+                    formStatus: "Draft",
+                },
+            });
+            await db.selfAuditRequest.create({
+                data: {
+                    id,
+                    organizationId: S.org,
+                    campaignId,
+                    ...member,
+                    heldItems: [],
+                    deliveryStatus: member.email === null ? "NoEmail" : "Unsent",
+                    formInstanceId,
+                },
             });
         }
-        expect(requests[0].formInstance.formData).toMatchObject({
-            held: { "1": { ...EMPTY_ANSWER } },
+        return { campaignId, ids };
+    }
+
+    const requestsOf = (campaignId: SelfAuditCampaignId) =>
+        db.selfAuditRequest.findMany({ where: { campaignId }, orderBy: { d4hMemberId: "asc" } });
+
+    describe("listTeams", () => {
+        it("lists the org's Active teams linked to a D4H team the token reaches", async () => {
+            expect(await listTeams(ctx(), accessToken)).toEqual([
+                { id: S.team, name: "Rescue", d4hTeamId: TEAM_ID, d4hTeamName: "Rescue Team" },
+            ]);
         });
-        expect(requests[0].heldItems).toEqual([
-            expect.objectContaining({ id: "1", templateId: S.helmet }),
-        ]);
-        expect(requests[1].heldItems).toEqual([]);
     });
 
-    it("marks a member with no email NoEmail, and sends the rest their own link", async () => {
-        const deps = makeDeps();
-        const before = Date.now();
-        const { campaignId } = await createCampaign(ctx(), input, deps);
+    describe("createCampaign", () => {
+        it("creates a Draft pinned to the team, with its templates and no members", async () => {
+            const { campaignId } = await create();
 
-        const requests = await db.selfAuditRequest.findMany({
-            where: { campaignId },
-            orderBy: { d4hMemberId: "asc" },
+            const campaign = await db.selfAuditCampaign.findUniqueOrThrow({
+                where: { id: campaignId },
+                include: { requests: true },
+            });
+            expect(campaign).toMatchObject({
+                organizationId: S.org,
+                teamId: S.team,
+                d4hTeamId: TEAM_ID,
+                d4hTeamName: "Rescue Team",
+                bundleId: S.bundle,
+                bundleName: "Responder",
+                sentAt: null,
+                sentById: null,
+                requests: [],
+            });
+            expect(campaign.templates).toEqual([
+                expect.objectContaining({ id: S.helmet, name: "Helmet" }),
+            ]);
         });
-        expect(requests.map((request) => request.deliveryStatus)).toEqual([
-            "Sent",
-            "NoEmail",
-            "Sent",
-        ]);
-        expect(requests.map((request) => request.tokenHash)).toEqual(["hash-1", null, "hash-2"]);
-        expect(requests[1]).toMatchObject({ sentAt: null, expiresAt: null });
 
-        const days = SELF_AUDIT_TOKEN_DAYS * 24 * 60 * 60 * 1000;
-        expect(requests[0].sentAt).not.toBeNull();
-        expect(requests[0].expiresAt!.getTime()).toBeGreaterThanOrEqual(before + days);
-        expect(requests[0].expiresAt!.getTime()).toBeLessThanOrEqual(Date.now() + days);
+        it("names it after the bundle and the month in the org's time zone, unless named", async () => {
+            const { campaignId } = await create();
+            const month = format(new TZDate(new Date(), "Pacific/Auckland"), "MMM yyyy");
+            expect(
+                await db.selfAuditCampaign.findUniqueOrThrow({ where: { id: campaignId } }),
+            ).toMatchObject({ name: `Responder ${month}` });
 
-        expect(deps.sendEmail).toHaveBeenCalledTimes(2);
-        expect(deps.sendEmail).toHaveBeenCalledWith(
-            expect.objectContaining({ to: "john@example.com", subject: "Self-audit: Responder" }),
-        );
-        expect(deps.sendEmail).toHaveBeenCalledWith(
-            expect.objectContaining({ to: "kim@example.com" }),
-        );
-        const html = await render(deps.sendEmail.mock.calls[0][0].react as ReactElement);
-        expect(html).toMatch(/href="[^"]*\/forms\/acme\/d4h-i3-self-audit\/token-1"/);
-        expect(html).toContain("Ana Admin");
-    });
-
-    it("marks a failed send Failed with no token, and sends the rest", async () => {
-        const result = await createCampaign(ctx(), input, makeDeps(["john@example.com"]));
-
-        expect(result).toMatchObject({ sent: 1, failed: 1, noEmail: 1 });
-        const requests = await db.selfAuditRequest.findMany({
-            where: { campaignId: result.campaignId },
-            orderBy: { d4hMemberId: "asc" },
+            const { campaignId: named } = await create({ name: "  Winter check  " });
+            expect(
+                await db.selfAuditCampaign.findUniqueOrThrow({ where: { id: named } }),
+            ).toMatchObject({ name: "Winter check" });
         });
-        expect(requests[0]).toMatchObject({
-            deliveryStatus: "Failed",
-            tokenHash: null,
-            expiresAt: null,
-            sentAt: null,
-        });
-        expect(requests[2]).toMatchObject({ deliveryStatus: "Sent", tokenHash: "hash-2" });
-    });
 
-    it("counts a send whose Sent write keeps failing as sent, keeping its live link", async () => {
-        const deps = makeDeps();
-        // John goes first: his Sent write and its one retry both fail.
-        const update = db.selfAuditRequest.update.bind(db.selfAuditRequest);
-        let sentWrites = 0;
-        const spy = vi.spyOn(db.selfAuditRequest, "update").mockImplementation(((
-            args: Parameters<typeof update>[0],
-        ) => {
-            if (args.data.deliveryStatus === "Sent" && ++sentWrites <= 2) {
-                return Promise.reject(new Error("Database unavailable"));
+        it("logs one Create entry, in no batch", async () => {
+            const { campaignId } = await create();
+            const entries = await db.logEntry.findMany({ where: { objectId: campaignId } });
+            expect(entries).toEqual([
+                expect.objectContaining({
+                    action: "Create",
+                    objectType: "SelfAuditCampaign",
+                    batchId: null,
+                }),
+            ]);
+        });
+
+        it("refuses a team with no D4H link, or one that isn't Active", async () => {
+            for (const teamId of [S.unlinkedTeam, S.archivedTeam]) {
+                await expect(create({ teamId })).rejects.toBeInstanceOf(ValidationError);
             }
-            return update(args);
-        }) as unknown as typeof update);
-        let result;
-        try {
-            result = await createCampaign(ctx(), input, deps);
-        } finally {
-            spy.mockRestore();
-        }
-
-        // The email went out, so the link it carries must keep working.
-        expect(result).toMatchObject({ sent: 2, failed: 0, noEmail: 1 });
-        expect(deps.sendEmail).toHaveBeenCalledTimes(2);
-        const requests = await db.selfAuditRequest.findMany({
-            where: { campaignId: result.campaignId },
-            orderBy: { d4hMemberId: "asc" },
         });
-        expect(requests[0]).toMatchObject({ deliveryStatus: "Pending", tokenHash: "hash-1" });
-        expect(requests[0].expiresAt).not.toBeNull();
-        expect(requests[2]).toMatchObject({ deliveryStatus: "Sent", tokenHash: "hash-2" });
-    });
 
-    it("retries a failed Sent write once", async () => {
-        const update = db.selfAuditRequest.update.bind(db.selfAuditRequest);
-        let sentWrites = 0;
-        const spy = vi.spyOn(db.selfAuditRequest, "update").mockImplementation(((
-            args: Parameters<typeof update>[0],
-        ) => {
-            if (args.data.deliveryStatus === "Sent" && ++sentWrites === 1) {
-                return Promise.reject(new Error("Database blip"));
+        it("refuses a team whose D4H team the token doesn't reach, or another org's team", async () => {
+            const before = await db.selfAuditCampaign.count();
+            for (const teamId of [S.unreachedTeam, S.otherOrgTeam]) {
+                await expect(create({ teamId })).rejects.toBeInstanceOf(NotFoundError);
             }
-            return update(args);
-        }) as unknown as typeof update);
-        let result;
-        try {
-            result = await createCampaign(ctx(), input, makeDeps());
-        } finally {
-            spy.mockRestore();
-        }
-
-        expect(result).toMatchObject({ sent: 2, failed: 0 });
-    });
-
-    it("leaves a team with nobody chosen out of the check", async () => {
-        const OTHER_TEAM = 8;
-        // The token doesn't reach team 8: computing it would throw.
-        const result = await createCampaign(
-            ctx(),
-            {
-                ...input,
-                teams: [
-                    { d4hTeamId: TEAM_ID, d4hMemberIds: [42] },
-                    { d4hTeamId: OTHER_TEAM, d4hMemberIds: [] },
-                ],
-            },
-            makeDeps(),
-        );
-
-        const check = await db.selfAuditCampaign.findUniqueOrThrow({
-            where: { id: result.campaignId },
+            expect(await db.selfAuditCampaign.count()).toBe(before);
         });
-        expect(check.d4hTeams).toEqual([{ id: TEAM_ID, title: "Rescue Team" }]);
-        expect(Object.keys(check.templates as object)).toEqual([String(TEAM_ID)]);
     });
 
-    it("spaces the sends, not before the first", async () => {
-        const deps = makeDeps();
-        await createCampaign(ctx(), input, deps);
+    describe("sendCampaign", () => {
+        const send = (campaignId: SelfAuditCampaignId, deps: SelfAuditSendDeps) =>
+            sendCampaign(ctx(), { accessToken, campaignId }, deps);
 
-        expect(deps.sleep).toHaveBeenCalledTimes(1);
-        expect(deps.sleep).toHaveBeenCalledWith(SEND_SPACING_MS);
-        const [firstSend, secondSend] = deps.sendEmail.mock.invocationCallOrder;
-        expect(deps.sleep.mock.invocationCallOrder[0]).toBeGreaterThan(firstSend);
-        expect(deps.sleep.mock.invocationCallOrder[0]).toBeLessThan(secondSend);
-    });
+        it("emails only the Unsent members, at the addresses D4H has now", async () => {
+            const { campaignId } = await draftWithMembers();
+            const deps = makeDeps();
+            const before = Date.now();
 
-    it("creates requests for the chosen members only, and sends only to them", async () => {
-        const deps = makeDeps();
-        const result = await createCampaign(
-            ctx(),
-            { ...input, teams: [{ d4hTeamId: TEAM_ID, d4hMemberIds: [43, 44] }] },
-            deps,
-        );
+            const result = await send(campaignId, deps);
 
-        expect(result).toMatchObject({ sent: 1, failed: 0, noEmail: 1 });
-        const requests = await db.selfAuditRequest.findMany({
-            where: { campaignId: result.campaignId },
-            orderBy: { d4hMemberId: "asc" },
-        });
-        expect(requests.map((request) => [request.memberName, request.deliveryStatus])).toEqual([
-            ["Ana Lee", "NoEmail"],
-            ["Kim Tan", "Sent"],
-        ]);
-        expect(deps.sendEmail).toHaveBeenCalledTimes(1);
-        expect(deps.sendEmail).toHaveBeenCalledWith(
-            expect.objectContaining({ to: "kim@example.com" }),
-        );
-    });
+            expect(result).toEqual({ campaignId, sent: 2, failed: 0, noEmail: 1 });
+            expect(deps.sendEmail).toHaveBeenCalledTimes(2);
+            expect(deps.sendEmail.mock.calls.map(([args]) => args.to)).toEqual([
+                "john@example.com",
+                "kim@example.com",
+            ]);
+            const html = await render(deps.sendEmail.mock.calls[0][0].react as ReactElement);
+            expect(html).toMatch(/href="[^"]*\/forms\/acme\/d4h-i3-self-audit\/token-1"/);
+            expect(html).toContain("Rescue Team");
+            expect(html).toContain("Ana Admin");
 
-    it("refuses a chosen member who isn't in the team, creating and sending nothing", async () => {
-        const deps = makeDeps();
-        const checksBefore = await db.selfAuditCampaign.count();
+            const requests = await requestsOf(campaignId);
+            expect(
+                requests.map((request) => [
+                    request.memberName,
+                    request.email,
+                    request.deliveryStatus,
+                ]),
+            ).toEqual([
+                ["John Smith", "john@example.com", "Sent"],
+                ["Ana Lee", null, "NoEmail"],
+                ["Kim Tan", "kim@example.com", "Sent"],
+                ["Lee Park", null, "NoEmail"],
+            ]);
+            const days = SELF_AUDIT_TOKEN_DAYS * 24 * 60 * 60 * 1000;
+            expect(requests[0].expiresAt!.getTime()).toBeGreaterThanOrEqual(before + days);
+            expect(requests[1]).toMatchObject({ tokenHash: null, sentAt: null });
 
-        const error = await createCampaign(
-            ctx(),
-            { ...input, teams: [{ d4hTeamId: TEAM_ID, d4hMemberIds: [42, 999] }] },
-            deps,
-        ).catch((caught: unknown) => caught);
-        expect(error).toBeInstanceOf(ValidationError);
-        expect((error as Error).message).toBe(
-            "The team's members changed since the preview. Refresh and send again.",
-        );
-        expect(await db.selfAuditCampaign.count()).toBe(checksBefore);
-        expect(deps.sendEmail).not.toHaveBeenCalled();
-    });
-
-    it("refuses a send with no members chosen, before reading D4H", async () => {
-        const deps = makeDeps();
-        const checksBefore = await db.selfAuditCampaign.count();
-        vi.mocked(fetchD4HTeamEquipmentItems).mockClear();
-
-        await expect(
-            createCampaign(
-                ctx(),
-                { ...input, teams: [{ d4hTeamId: TEAM_ID, d4hMemberIds: [] }] },
-                deps,
-            ),
-        ).rejects.toBeInstanceOf(ValidationError);
-        expect(await db.selfAuditCampaign.count()).toBe(checksBefore);
-        expect(fetchD4HTeamEquipmentItems).not.toHaveBeenCalled();
-        expect(deps.sendEmail).not.toHaveBeenCalled();
-    });
-
-    it("refuses more members than the cap, before reading D4H", async () => {
-        const deps = makeDeps();
-        const checksBefore = await db.selfAuditCampaign.count();
-        vi.mocked(fetchD4HTeamEquipmentItems).mockClear();
-        const memberIds = Array.from({ length: SELF_AUDIT_RECIPIENTS_MAX }, (_, i) => 1000 + i);
-
-        await expect(
-            createCampaign(
-                ctx(),
-                {
-                    ...input,
-                    teams: [
-                        { d4hTeamId: TEAM_ID, d4hMemberIds: memberIds },
-                        { d4hTeamId: 8, d4hMemberIds: [1] },
-                    ],
-                },
-                deps,
-            ),
-        ).rejects.toBeInstanceOf(ValidationError);
-        expect(await db.selfAuditCampaign.count()).toBe(checksBefore);
-        expect(fetchD4HTeamEquipmentItems).not.toHaveBeenCalled();
-        expect(deps.sendEmail).not.toHaveBeenCalled();
-    });
-
-    it("logs the check, each request and each send's outcome in one self-audit-campaign-send batch", async () => {
-        const { campaignId } = await createCampaign(ctx(), input, makeDeps(["kim@example.com"]));
-
-        const requests = await db.selfAuditRequest.findMany({ where: { campaignId } });
-        const objectIds = [campaignId, ...requests.map((request) => request.id)];
-        const entries = await db.logEntry.findMany({
-            where: { objectId: { in: objectIds } },
-            orderBy: { sequence: "asc" },
+            const campaign = await db.selfAuditCampaign.findUniqueOrThrow({
+                where: { id: campaignId },
+            });
+            expect(campaign.sentById).toBe(S.admin);
+            expect(campaign.sentAt!.getTime()).toBeGreaterThanOrEqual(before);
         });
 
-        const batchIds = [...new Set(entries.map((entry) => entry.batchId))];
-        expect(batchIds).toHaveLength(1);
-        const batch = await db.logBatch.findUniqueOrThrow({ where: { id: batchIds[0]! } });
-        expect(batch).toMatchObject({ operationKey: "self-audit-campaign-send", userId: S.admin });
+        it("refuses a second send, emailing nobody", async () => {
+            const { campaignId } = await draftWithMembers();
+            await send(campaignId, makeDeps());
 
-        expect(entries.map((entry) => [entry.action, entry.objectType])).toEqual([
-            ["Create", "SelfAuditCampaign"],
-            ["Create", "SelfAuditRequest"],
-            ["Create", "SelfAuditRequest"],
-            ["Create", "SelfAuditRequest"],
-            ["Update", "SelfAuditRequest"],
-            ["Update", "SelfAuditRequest"],
-        ]);
-        expect(entries.slice(4).map((entry) => entry.description)).toEqual([
-            "Self-audit sent to John Smith (john@example.com)",
-            "Self-audit failed to send to Kim Tan (kim@example.com)",
-        ]);
+            const deps = makeDeps();
+            await expect(send(campaignId, deps)).rejects.toBeInstanceOf(ConflictError);
+            expect(deps.sendEmail).not.toHaveBeenCalled();
+        });
+
+        it("refuses a send another one claimed first, changing nothing", async () => {
+            const { campaignId } = await draftWithMembers();
+            // The other send claims it while this one reads D4H.
+            vi.mocked(getD4HTeamMembers).mockImplementationOnce(async () => {
+                await db.selfAuditCampaign.update({
+                    where: { id: campaignId },
+                    data: { sentAt: new Date() },
+                });
+                return [];
+            });
+
+            const deps = makeDeps();
+            await expect(send(campaignId, deps)).rejects.toBeInstanceOf(ConflictError);
+            expect(deps.sendEmail).not.toHaveBeenCalled();
+            expect((await requestsOf(campaignId)).map((r) => r.deliveryStatus)).toEqual([
+                "Unsent",
+                "Unsent",
+                "Unsent",
+                "NoEmail",
+            ]);
+            expect(
+                await db.logEntry.count({ where: { objectId: campaignId, action: "Update" } }),
+            ).toBe(0);
+        });
+
+        it("refuses a Draft with nobody to send to, before reading D4H", async () => {
+            const { campaignId } = await create();
+            vi.mocked(getD4HTeamMembers).mockClear();
+
+            await expect(send(campaignId, makeDeps())).rejects.toBeInstanceOf(ValidationError);
+            expect(getD4HTeamMembers).not.toHaveBeenCalled();
+            expect(
+                await db.selfAuditCampaign.findUniqueOrThrow({ where: { id: campaignId } }),
+            ).toMatchObject({ sentAt: null });
+        });
+
+        it("is NotFound for another org's campaign", async () => {
+            const { campaignId } = await draftWithMembers();
+            await expect(
+                sendCampaign(
+                    createOrganizationMockContext({
+                        organizationId: S.otherOrg,
+                        user: { id: S.admin, name: "Ana Admin", role: "admin" },
+                        prisma: db,
+                    }),
+                    { accessToken, campaignId },
+                    makeDeps(),
+                ),
+            ).rejects.toBeInstanceOf(NotFoundError);
+        });
+
+        it("marks a failed send Failed with no token, and sends the rest", async () => {
+            const { campaignId } = await draftWithMembers();
+            const result = await send(campaignId, makeDeps(["john@example.com"]));
+
+            expect(result).toMatchObject({ sent: 1, failed: 1, noEmail: 1 });
+            const [john, , kim] = await requestsOf(campaignId);
+            expect(john).toMatchObject({
+                deliveryStatus: "Failed",
+                tokenHash: null,
+                expiresAt: null,
+                sentAt: null,
+            });
+            expect(kim).toMatchObject({ deliveryStatus: "Sent" });
+        });
+
+        it("counts a send whose Sent write keeps failing as sent, keeping its live link", async () => {
+            const { campaignId } = await draftWithMembers();
+            const deps = makeDeps();
+            // John goes first: his Sent write and its one retry both fail.
+            const update = db.selfAuditRequest.update.bind(db.selfAuditRequest);
+            let sentWrites = 0;
+            const spy = vi.spyOn(db.selfAuditRequest, "update").mockImplementation(((
+                args: Parameters<typeof update>[0],
+            ) => {
+                if (args.data.deliveryStatus === "Sent" && ++sentWrites <= 2) {
+                    return Promise.reject(new Error("Database unavailable"));
+                }
+                return update(args);
+            }) as unknown as typeof update);
+            let result;
+            try {
+                result = await send(campaignId, deps);
+            } finally {
+                spy.mockRestore();
+            }
+
+            // The email went out, so the link it carries must keep working.
+            expect(result).toMatchObject({ sent: 2, failed: 0, noEmail: 1 });
+            const [john, , kim] = await requestsOf(campaignId);
+            expect(john).toMatchObject({ deliveryStatus: "Pending" });
+            expect(john.tokenHash).not.toBeNull();
+            expect(john.expiresAt).not.toBeNull();
+            expect(kim).toMatchObject({ deliveryStatus: "Sent" });
+        });
+
+        it("retries a failed Sent write once", async () => {
+            const { campaignId } = await draftWithMembers();
+            const update = db.selfAuditRequest.update.bind(db.selfAuditRequest);
+            let sentWrites = 0;
+            const spy = vi.spyOn(db.selfAuditRequest, "update").mockImplementation(((
+                args: Parameters<typeof update>[0],
+            ) => {
+                if (args.data.deliveryStatus === "Sent" && ++sentWrites === 1) {
+                    return Promise.reject(new Error("Database blip"));
+                }
+                return update(args);
+            }) as unknown as typeof update);
+            let result;
+            try {
+                result = await send(campaignId, makeDeps());
+            } finally {
+                spy.mockRestore();
+            }
+
+            expect(result).toMatchObject({ sent: 2, failed: 0 });
+        });
+
+        it("spaces the sends, not before the first", async () => {
+            const { campaignId } = await draftWithMembers();
+            const deps = makeDeps();
+            await send(campaignId, deps);
+
+            expect(deps.sleep).toHaveBeenCalledTimes(1);
+            expect(deps.sleep).toHaveBeenCalledWith(SEND_SPACING_MS);
+            const [firstSend, secondSend] = deps.sendEmail.mock.invocationCallOrder;
+            expect(deps.sleep.mock.invocationCallOrder[0]).toBeGreaterThan(firstSend);
+            expect(deps.sleep.mock.invocationCallOrder[0]).toBeLessThan(secondSend);
+        });
+
+        it("leaves the rest Pending when the send is cut short, and they can be resent", async () => {
+            const { campaignId, ids } = await draftWithMembers();
+            const deps = makeDeps();
+            deps.sleep.mockRejectedValueOnce(new Error("Function timed out"));
+
+            await expect(send(campaignId, deps)).rejects.toThrow("Function timed out");
+            const [john, , kim] = await requestsOf(campaignId);
+            expect(john).toMatchObject({ deliveryStatus: "Sent" });
+            expect(kim).toMatchObject({ deliveryStatus: "Pending", tokenHash: null });
+
+            const result = await resendRequest(ctx(), ids[44], makeDeps());
+            expect(result).toEqual({ campaignId, deliveryStatus: "Sent" });
+            expect(
+                await db.selfAuditRequest.findUniqueOrThrow({ where: { id: ids[44] } }),
+            ).toMatchObject({ deliveryStatus: "Sent" });
+        });
+
+        it("logs the send, each refresh to no email and each outcome in one self-audit-campaign-send batch", async () => {
+            const { campaignId, ids } = await draftWithMembers();
+            await send(campaignId, makeDeps(["kim@example.com"]));
+
+            const entries = await db.logEntry.findMany({
+                where: { objectId: { in: [campaignId, ...Object.values(ids)] }, action: "Update" },
+                orderBy: { sequence: "asc" },
+            });
+            const batchIds = [...new Set(entries.map((entry) => entry.batchId))];
+            expect(batchIds).toHaveLength(1);
+            const batch = await db.logBatch.findUniqueOrThrow({ where: { id: batchIds[0]! } });
+            expect(batch).toMatchObject({
+                operationKey: "self-audit-campaign-send",
+                userId: S.admin,
+            });
+
+            expect(entries.map((entry) => [entry.objectType, entry.description])).toEqual([
+                ["SelfAuditRequest", "Self-audit not sent to Ana Lee: no email in D4H"],
+                ["SelfAuditCampaign", expect.stringContaining("sent to Rescue Team")],
+                ["SelfAuditRequest", "Self-audit sent to John Smith (john@example.com)"],
+                ["SelfAuditRequest", "Self-audit failed to send to Kim Tan (kim@example.com)"],
+            ]);
+        });
     });
 
-    // Shares the fixtures above: each test creates a check, then resends one of its requests.
     describe("resendRequest", () => {
-        /** A fresh check, and John's request (sent, as `hash-1`) and Ana's (NoEmail). */
-        async function sentCheck() {
-            const { campaignId } = await createCampaign(ctx(), input, makeDeps());
-            const john = await db.selfAuditRequest.findFirstOrThrow({
-                where: { campaignId, d4hMemberId: 42 },
+        /** A sent campaign, and John's request (Sent) and Lee's (NoEmail). */
+        async function sentCampaign() {
+            const { campaignId, ids } = await draftWithMembers();
+            await sendCampaign(ctx(), { accessToken, campaignId }, makeDeps());
+            const john = await db.selfAuditRequest.findUniqueOrThrow({
+                where: { id: ids[42] },
                 include: { formInstance: true },
             });
-            const ana = await db.selfAuditRequest.findFirstOrThrow({
-                where: { campaignId, d4hMemberId: 43 },
-            });
-            return {
-                campaignId,
-                john: { ...john, id: SelfAuditRequestId.schema.parse(john.id) },
-                ana: { ...ana, id: SelfAuditRequestId.schema.parse(ana.id) },
-            };
+            return { campaignId, john: { ...john, id: ids[42] }, lee: ids[45] };
         }
 
         /** Deps whose sends succeed (or all fail), issuing `resent-token`/`resent-hash`. */
@@ -765,7 +898,7 @@ describe("createCampaign", () => {
         }
 
         it("replaces the token, so the old one no longer resolves, and restarts expiry", async () => {
-            const { campaignId, john } = await sentCheck();
+            const { campaignId, john } = await sentCampaign();
             const staleExpiry = new Date("2026-01-01T00:00:00Z");
             await db.selfAuditRequest.update({
                 where: { id: john.id },
@@ -779,12 +912,7 @@ describe("createCampaign", () => {
             expect(result).toEqual({ campaignId, deliveryStatus: "Sent" });
             const after = await db.selfAuditRequest.findUniqueOrThrow({ where: { id: john.id } });
             expect(after).toMatchObject({ deliveryStatus: "Sent", tokenHash: "resent-hash" });
-            // Every check's tokens are numbered from 1, so look only at this request.
-            expect(
-                await db.selfAuditRequest.findFirst({
-                    where: { id: john.id, tokenHash: john.tokenHash },
-                }),
-            ).toBeNull();
+            expect(after.tokenHash).not.toBe(john.tokenHash);
             const days = SELF_AUDIT_TOKEN_DAYS * 24 * 60 * 60 * 1000;
             expect(after.expiresAt!.getTime()).toBeGreaterThanOrEqual(before + days);
             expect(after.sentAt!.getTime()).toBeGreaterThanOrEqual(before);
@@ -792,6 +920,7 @@ describe("createCampaign", () => {
             expect(deps.sendEmail).toHaveBeenCalledTimes(1);
             const html = await render(deps.sendEmail.mock.calls[0][0].react as ReactElement);
             expect(html).toMatch(/href="[^"]*\/forms\/acme\/d4h-i3-self-audit\/resent-token"/);
+            expect(html).toContain("Rescue Team");
 
             const entries = await db.logEntry.findMany({
                 where: { objectId: john.id, action: "Update" },
@@ -808,8 +937,8 @@ describe("createCampaign", () => {
         });
 
         it("turns the old link not-found on the public form, and the new one opens it", async () => {
-            /** Deps issuing real tokens, so the public lookup can hash them. */
             const issued: string[] = [];
+            /** Deps issuing real tokens, so the public lookup can hash them. */
             function realTokenDeps() {
                 const deps = makeDeps();
                 deps.createLinkToken.mockImplementation(() => {
@@ -819,35 +948,29 @@ describe("createCampaign", () => {
                 });
                 return deps;
             }
-            const { campaignId } = await createCampaign(ctx(), input, realTokenDeps());
+            const { campaignId, ids } = await draftWithMembers();
+            await sendCampaign(ctx(), { accessToken, campaignId }, realTokenDeps());
             // John is sent first.
             const oldToken = issued[0]!;
-            const john = await db.selfAuditRequest.findFirstOrThrow({
-                where: { campaignId, d4hMemberId: 42 },
-            });
-            expect(
-                await getSelfAuditByToken({ prisma: db }, { slug: "acme", token: oldToken }),
-            ).toMatchObject({
+            const link = (token: string) => ({ slug: "acme", token });
+            expect(await getSelfAuditByToken({ prisma: db }, link(oldToken))).toMatchObject({
                 state: "ok",
+                subject: { teamName: "Rescue Team" },
             });
 
-            await resendRequest(ctx(), SelfAuditRequestId.schema.parse(john.id), realTokenDeps());
+            await resendRequest(ctx(), ids[42], realTokenDeps());
 
-            expect(
-                await getSelfAuditByToken({ prisma: db }, { slug: "acme", token: oldToken }),
-            ).toEqual({
+            expect(await getSelfAuditByToken({ prisma: db }, link(oldToken))).toEqual({
                 state: "not-found",
             });
-            expect(
-                await getSelfAuditByToken({ prisma: db }, { slug: "acme", token: issued.at(-1)! }),
-            ).toMatchObject({
+            expect(await getSelfAuditByToken({ prisma: db }, link(issued.at(-1)!))).toMatchObject({
                 state: "ok",
                 subject: { memberName: "John Smith" },
             });
         });
 
         it("leaves a submitted request's answers and progress alone when the resend fails", async () => {
-            const { john } = await sentCheck();
+            const { john } = await sentCampaign();
             const openedAt = new Date("2026-11-21T09:00:00Z");
             const submittedAt = new Date("2026-11-22T09:00:00Z");
             const answer = john.formInstance.formData as SelfAuditResponseData;
@@ -877,37 +1000,17 @@ describe("createCampaign", () => {
                 submittedData: answer,
                 formInstanceId: john.formInstanceId,
             });
-            expect(after.formInstance).toMatchObject({
-                formStatus: "Submitted",
-                formData: answer,
-            });
-        });
-
-        it("resends a request stuck in Pending", async () => {
-            const { john } = await sentCheck();
-            await db.selfAuditRequest.update({
-                where: { id: john.id },
-                data: { deliveryStatus: "Pending" },
-            });
-
-            const result = await resendRequest(ctx(), john.id, resendDeps());
-
-            expect(result.deliveryStatus).toBe("Sent");
-            expect(
-                await db.selfAuditRequest.findUniqueOrThrow({ where: { id: john.id } }),
-            ).toMatchObject({ deliveryStatus: "Sent", tokenHash: "resent-hash" });
+            expect(after.formInstance).toMatchObject({ formStatus: "Submitted", formData: answer });
         });
 
         it("refuses a NoEmail request, sending nothing", async () => {
-            const { ana } = await sentCheck();
+            const { lee } = await sentCampaign();
             const deps = resendDeps();
 
-            await expect(resendRequest(ctx(), ana.id, deps)).rejects.toBeInstanceOf(
-                ValidationError,
-            );
+            await expect(resendRequest(ctx(), lee, deps)).rejects.toBeInstanceOf(ValidationError);
             expect(deps.sendEmail).not.toHaveBeenCalled();
             expect(
-                await db.selfAuditRequest.findUniqueOrThrow({ where: { id: ana.id } }),
+                await db.selfAuditRequest.findUniqueOrThrow({ where: { id: lee } }),
             ).toMatchObject({ deliveryStatus: "NoEmail", tokenHash: null });
         });
     });

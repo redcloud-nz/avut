@@ -17,7 +17,6 @@ import {
     SelfAuditHeldItem,
     SelfAuditResponseData,
     SelfAuditTemplate,
-    SelfAuditTemplatesByTeam,
 } from "./self-audit";
 
 /** An answer as the stage-1 form produces it, proposals included. */
@@ -116,22 +115,6 @@ describe("snapshots", () => {
         expect(SelfAuditTemplate.parse(harness)).toEqual(harness);
         const gloves = { ...harness, variants: [], requireSN: false, sized: true };
         expect(SelfAuditTemplate.parse(gloves)).toEqual(gloves);
-    });
-
-    it("parse templates keyed by D4H team id, and reject any other key", () => {
-        const helmet = {
-            id: "helmet",
-            category: "PPE",
-            name: "Helmet",
-            variants: [],
-            requireSN: false,
-            sized: true,
-            sizeOptional: true,
-            sizeOptions: [],
-        };
-        const byTeam = { "7": [helmet], "8": [] };
-        expect(SelfAuditTemplatesByTeam.parse(byTeam)).toEqual(byTeam);
-        expect(SelfAuditTemplatesByTeam.safeParse({ rescue: [helmet] }).success).toBe(false);
     });
 
     it("parse a held item and reject an unknown problem", () => {

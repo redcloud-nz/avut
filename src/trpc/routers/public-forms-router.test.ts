@@ -15,6 +15,7 @@ import {
     type SelfAuditResponseData,
     type SelfAuditTemplate,
 } from "@/lib/schemas/self-audit";
+import { TeamId } from "@/lib/schemas/team";
 import { UserId } from "@/lib/schemas/user";
 import { NOT_NEEDED } from "@/lib/self-audit-types";
 import { EMPTY_ANSWER } from "@/lib/self-audit-validate";
@@ -48,7 +49,11 @@ const complete: SelfAuditResponseData = {
 };
 
 describe("publicFormsRouter self-audit", () => {
-    const S = { org: OrganizationId.create(), check: SelfAuditCampaignId.create() };
+    const S = {
+        org: OrganizationId.create(),
+        team: TeamId.create(),
+        check: SelfAuditCampaignId.create(),
+    };
     const db = createMockPrisma();
     let seeded = 0;
 
@@ -56,13 +61,18 @@ describe("publicFormsRouter self-audit", () => {
         await db.organization.create({
             data: { id: S.org, name: "Acme", slug: "acme", createdAt: new Date() },
         });
+        await db.team.create({ data: { id: S.team, organizationId: S.org, name: "Rescue" } });
         await db.selfAuditCampaign.create({
             data: {
                 id: S.check,
                 organizationId: S.org,
+                name: "Responder Nov 2026",
+                teamId: S.team,
+                d4hTeamId: TEAM_ID,
+                d4hTeamName: "Rescue Team",
                 bundleName: "Responder",
-                d4hTeams: [{ id: TEAM_ID, title: "Rescue Team" }],
-                templates: { [String(TEAM_ID)]: [gloves] },
+                templates: [gloves],
+                sentAt: new Date(),
             },
         });
     });
@@ -94,8 +104,6 @@ describe("publicFormsRouter self-audit", () => {
                 id,
                 organizationId: S.org,
                 campaignId: S.check,
-                d4hTeamId: TEAM_ID,
-                d4hTeamTitle: "Rescue Team",
                 d4hMemberId: seeded,
                 memberName: "Kim Tan",
                 email: "kim@example.com",

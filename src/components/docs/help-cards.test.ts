@@ -42,7 +42,6 @@ const OPT_OUT_ROUTES = [
     // Self audit campaigns: unlinked and for system admins only.
     "/orgs/[slug]/d4h-i3/self-audit-campaigns",
     "/orgs/[slug]/d4h-i3/self-audit-campaigns/[campaign_id]",
-    "/orgs/[slug]/d4h-i3/self-audit-campaigns/new",
     "/orgs/[slug]/d4h-i3/teams/[d4h_team_id]/issued-types",
     "/orgs/[slug]/d4h-i3/teams/[d4h_team_id]/issued-types/[type_id]",
     "/orgs/[slug]/d4h-i3/templates",

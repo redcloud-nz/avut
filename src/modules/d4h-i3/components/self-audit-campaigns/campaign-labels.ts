@@ -3,45 +3,25 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import type { SelfAuditDeliveryStatus, SelfAuditProgress } from "@/lib/schemas/self-audit";
+import type { SelfAuditStatus } from "@/lib/schemas/self-audit";
 
-/** How the admin pages name a request's last send. `Pending` is a send not yet confirmed. */
-export const DELIVERY_LABELS: Record<SelfAuditDeliveryStatus, string> = {
-    Pending: "Sending",
-    Sent: "Sent",
-    Failed: "Failed",
-    NoEmail: "No email",
-};
-
-export const PROGRESS_LABELS: Record<SelfAuditProgress, string> = {
-    NotOpened: "Not opened",
-    Opened: "Opened",
+/** How the admin pages name a request's status. `Sent` includes a send not yet confirmed. */
+export const STATUS_LABELS: Record<SelfAuditStatus, string> = {
+    Withdrawn: "Withdrawn",
     Submitted: "Submitted",
     Editing: "Editing",
+    Opened: "Opened",
+    Failed: "Failed",
+    NoEmail: "No email",
+    Sent: "Sent",
+    Unsent: "Not sent",
 };
 
-/** Joins the non-zero counts as "3 sent, 1 failed", or "—" when every count is zero. */
-function describeCounts(parts: [count: number, label: string][]): string {
-    const shown = parts.filter(([count]) => count > 0).map(([count, label]) => `${count} ${label}`);
+/** A self audit campaign's requests by status, as "2 submitted, 1 sent", or "—" with none. */
+export function describeStatusCounts(counts: Record<SelfAuditStatus, number>): string {
+    const shown = Object.entries(STATUS_LABELS)
+        .map(([status, label]) => [counts[status as SelfAuditStatus], label] as const)
+        .filter(([count]) => count > 0)
+        .map(([count, label]) => `${count} ${label.toLowerCase()}`);
     return shown.length > 0 ? shown.join(", ") : "—";
-}
-
-/** A self audit campaign's requests by delivery, as "3 sent, 1 no email". */
-export function describeDeliveryCounts(counts: Record<SelfAuditDeliveryStatus, number>): string {
-    return describeCounts([
-        [counts.Sent, "sent"],
-        [counts.Failed, "failed"],
-        [counts.NoEmail, "no email"],
-        [counts.Pending, "sending"],
-    ]);
-}
-
-/** A self audit campaign's requests by progress, as "2 submitted, 1 not opened". */
-export function describeProgressCounts(counts: Record<SelfAuditProgress, number>): string {
-    return describeCounts([
-        [counts.Submitted, "submitted"],
-        [counts.Editing, "editing"],
-        [counts.Opened, "opened"],
-        [counts.NotOpened, "not opened"],
-    ]);
 }

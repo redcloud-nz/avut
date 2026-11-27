@@ -18,14 +18,12 @@ import {
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
-import { ObjectIcons } from "@/components/icons";
-import { Button } from "@/components/ui/button";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
-import { describeDeliveryCounts, describeProgressCounts } from "./campaign-labels";
+import { describeStatusCounts } from "./campaign-labels";
 
 /** The organization's self audit campaigns, newest first. A top-level page of the module, so no trail. */
 export function D4HI3Module_SelfAuditCampaignList() {
@@ -41,8 +39,8 @@ export function D4HI3Module_SelfAuditCampaignList() {
     const columns = useMemo(
         () =>
             Kaga.defineColumns<RowData>((col) => [
-                col.accessor("bundleName", {
-                    header: "Bundle",
+                col.accessor("name", {
+                    header: "Name",
                     cell: (ctx) => (
                         <Link
                             href={route("/orgs/[slug]/d4h-i3/self-audit-campaigns/[campaign_id]", {
@@ -56,36 +54,28 @@ export function D4HI3Module_SelfAuditCampaignList() {
                     ),
                     enableColumnFilter: false,
                 }),
-                col.accessor((row) => row.d4hTeams.map((team) => team.title).join(", "), {
-                    id: "teams",
-                    header: "Teams",
-                    enableColumnFilter: false,
-                    enableSorting: false,
-                }),
-                col.accessor("sentByName", {
-                    header: "Sent By",
-                    cell: (ctx) => ctx.getValue() ?? "—",
+                col.accessor((row) => row.team.name, {
+                    id: "team",
+                    header: "Team",
                     enableColumnFilter: false,
                 }),
-                col.accessor("createdAt", {
+                col.accessor("sentAt", {
                     header: "Sent",
-                    cell: (ctx) => (
-                        <time dateTime={ctx.getValue().toISOString()}>
-                            {formatDateTime(ctx.getValue())}
-                        </time>
-                    ),
+                    cell: (ctx) => {
+                        const sentAt = ctx.getValue();
+                        return sentAt ? (
+                            <time dateTime={sentAt.toISOString()}>{formatDateTime(sentAt)}</time>
+                        ) : (
+                            "Draft"
+                        );
+                    },
                     enableColumnFilter: false,
                     enableGlobalFilter: false,
                 }),
                 col.display({
-                    id: "delivery",
-                    header: "Delivery",
-                    cell: (ctx) => describeDeliveryCounts(ctx.row.original.counts.delivery),
-                }),
-                col.display({
-                    id: "progress",
-                    header: "Progress",
-                    cell: (ctx) => describeProgressCounts(ctx.row.original.counts.progress),
+                    id: "status",
+                    header: "Status",
+                    cell: (ctx) => describeStatusCounts(ctx.row.original.counts),
                 }),
             ]),
         [formatDateTime, organization.slug],
@@ -101,7 +91,6 @@ export function D4HI3Module_SelfAuditCampaignList() {
         getPaginationRowModel: getPaginationRowModel(),
         initialState: {
             pagination: { pageIndex: 0, pageSize: Kaga.DEFAULT_PAGE_SIZE },
-            sorting: [{ id: "createdAt", desc: true }],
         },
     });
 
@@ -109,18 +98,6 @@ export function D4HI3Module_SelfAuditCampaignList() {
         <Saratoga.Root>
             <Saratoga.Header>
                 <Saratoga.Title>Self Audit Campaigns</Saratoga.Title>
-                <Saratoga.Actions>
-                    <Button variant="outline" asChild>
-                        <Link
-                            href={route("/orgs/[slug]/d4h-i3/self-audit-campaigns/new", {
-                                slug: organization.slug,
-                            })}
-                        >
-                            <ObjectIcons.Create />{" "}
-                            <span className="sr-only md:not-sr-only">New Self Audit Campaign</span>
-                        </Link>
-                    </Button>
-                </Saratoga.Actions>
             </Saratoga.Header>
             <div>
                 <Kaga.TableToolbar table={table} />

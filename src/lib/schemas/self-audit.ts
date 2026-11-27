@@ -28,8 +28,12 @@ export const SelfAuditRequestId = {
 
 export type SelfAuditRequestId = string & z.BRAND<"SelfAuditRequestId">;
 
-/** How a request's last send went (decision 13). `Pending`: claimed, send not confirmed. */
+/**
+ * How a request's last send went. `Unsent`: on a Draft, no link yet. `Pending`: claimed, send not
+ * confirmed.
+ */
 export const SelfAuditDeliveryStatus = z.enum([
+    "Unsent",
     "Pending",
     "Sent",
     "Failed",
@@ -39,17 +43,30 @@ export const SelfAuditDeliveryStatus = z.enum([
 export type SelfAuditDeliveryStatus = z.infer<typeof SelfAuditDeliveryStatus>;
 
 /**
- * A request's progress, derived from its timestamps and its instance's `formStatus`, never from
- * its delivery (decision 13). `Editing`: submitted, then reopened (decision 10).
+ * A request's one status, merging its delivery and its progress, in precedence order: the first
+ * that applies wins (`statusOf` in `src/server/services/self-audit-campaigns.ts`). `Editing`:
+ * submitted, then reopened. `Sent` includes `Pending`; `Unsent` is a Draft's member.
  */
-export const SelfAuditProgress = z.enum(["NotOpened", "Opened", "Submitted", "Editing"]);
+export const SelfAuditStatus = z.enum([
+    "Withdrawn",
+    "Submitted",
+    "Editing",
+    "Opened",
+    "Failed",
+    "NoEmail",
+    "Sent",
+    "Unsent",
+]);
 
-export type SelfAuditProgress = z.infer<typeof SelfAuditProgress>;
+export type SelfAuditStatus = z.infer<typeof SelfAuditStatus>;
+
+/** The longest name a self audit campaign may be given. */
+export const SELF_AUDIT_CAMPAIGN_NAME_MAX = 100;
 
 /** How long a self-audit link works, from its send (or resend). */
 export const SELF_AUDIT_TOKEN_DAYS = 14;
 
-/** The most members one self audit campaign may be sent to, across all its teams. */
+/** The most members one self audit campaign may be sent to. */
 export const SELF_AUDIT_RECIPIENTS_MAX = 200;
 
 /** A self-audit email's link token. Anything that isn't one simply resolves to `not-found`. */
@@ -78,29 +95,7 @@ function cappedRecord<T extends z.ZodType>(value: T, max: number) {
         .refine((record) => Object.keys(record).length <= max, `At most ${max} entries.`);
 }
 
-// Snapshots, taken at send (decision 6 of the self-audit plan)
-
-/** A D4H team a self audit campaign was sent to. */
-export const SelfAuditD4HTeam = z.object({
-    id: z.number().int(),
-    title: z.string(),
-});
-
-export type SelfAuditD4HTeam = z.infer<typeof SelfAuditD4HTeam>;
-
-/** The most D4H teams one self audit campaign is sent to. */
-export const SELF_AUDIT_D4H_TEAMS_MAX = 20;
-
-/** The most members of one D4H team a self audit campaign can be sent to. */
-export const SELF_AUDIT_TEAM_MEMBERS_MAX = 1000;
-
-/** A D4H team a self audit campaign goes to, and which of its members are sent one. */
-export const SelfAuditTeamChoice = z.object({
-    d4hTeamId: z.number().int(),
-    d4hMemberIds: z.array(z.number().int()).max(SELF_AUDIT_TEAM_MEMBERS_MAX),
-});
-
-export type SelfAuditTeamChoice = z.infer<typeof SelfAuditTeamChoice>;
+// Snapshots: a campaign's templates at create, a member's held items when they're added
 
 /** A brand/model a template allows: one of its I3 variants. */
 export const SelfAuditVariant = z.object({
@@ -129,17 +124,6 @@ export const SelfAuditTemplate = z.object({
 });
 
 export type SelfAuditTemplate = z.infer<typeof SelfAuditTemplate>;
-
-/**
- * A self audit campaign's templates, per D4H team (decision 6a): which bundle lines can be compared, and
- * which variants are offered, depends on the team. Keyed by the D4H team id, as a string (JSON).
- */
-export const SelfAuditTemplatesByTeam = z.record(
-    z.string().regex(/^\d+$/, "Expected a D4H team id."),
-    z.array(SelfAuditTemplate),
-);
-
-export type SelfAuditTemplatesByTeam = z.infer<typeof SelfAuditTemplatesByTeam>;
 
 /** What a held item's D4H record is missing, which the member is asked to fill in. */
 export const SelfAuditProblem = z.enum(["serial", "variant"]);

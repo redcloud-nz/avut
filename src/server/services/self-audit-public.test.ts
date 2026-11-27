@@ -15,8 +15,8 @@ import {
     type SelfAuditHeldItem,
     type SelfAuditResponseData,
     type SelfAuditTemplate,
-    type SelfAuditTemplatesByTeam,
 } from "@/lib/schemas/self-audit";
+import { TeamId } from "@/lib/schemas/team";
 import { UserId } from "@/lib/schemas/user";
 import { NOT_NEEDED, OTHER_VARIANT } from "@/lib/self-audit-types";
 import { ANY_VARIANT, EMPTY_ANSWER } from "@/lib/self-audit-validate";
@@ -143,6 +143,7 @@ describe("self-audit by token", () => {
     const S = {
         org: OrganizationId.create(),
         sender: UserId.create(),
+        team: TeamId.create(),
         check: SelfAuditCampaignId.create(),
         orphanCheck: SelfAuditCampaignId.create(),
     };
@@ -172,10 +173,10 @@ describe("self-audit by token", () => {
                 updatedAt: new Date(),
             },
         });
-        const templates: SelfAuditTemplatesByTeam = {
-            [String(TEAM_ID)]: [helmet, gloves],
-            "8": [{ ...helmet, id: "other-team-only" }],
-        };
+        await db.team.create({
+            data: { id: S.team, organizationId: S.org, name: "Rescue" },
+        });
+        const templates = [helmet, gloves];
         for (const [id, sentById] of [
             [S.check, S.sender],
             [S.orphanCheck, null],
@@ -184,9 +185,13 @@ describe("self-audit by token", () => {
                 data: {
                     id,
                     organizationId: S.org,
+                    name: "Responder Nov 2026",
+                    teamId: S.team,
+                    d4hTeamId: TEAM_ID,
+                    d4hTeamName: "Rescue Team",
                     bundleName: "Responder",
-                    d4hTeams: [{ id: TEAM_ID, title: "Rescue Team" }],
                     templates,
+                    sentAt: new Date(),
                     sentById,
                 },
             });
@@ -217,8 +222,6 @@ describe("self-audit by token", () => {
                 id,
                 organizationId: S.org,
                 campaignId,
-                d4hTeamId: TEAM_ID,
-                d4hTeamTitle: "Rescue Team",
                 d4hMemberId: 1000 + seeded,
                 memberName: "John Smith",
                 email: "john@example.com",
@@ -437,9 +440,9 @@ describe("self-audit by token", () => {
             },
             missing: {
                 [gloves.id]: { ...EMPTY_ANSWER, has: "unsure" },
-                // They hold a helmet, so it isn't missing; and another team's template.
+                // They hold a helmet, so it isn't missing; and a template not in the campaign.
                 [helmet.id]: { ...EMPTY_ANSWER, has: "no", wantVariantId: NOT_NEEDED },
-                "other-team-only": { ...EMPTY_ANSWER, has: "no", wantVariantId: NOT_NEEDED },
+                "not-in-campaign": { ...EMPTY_ANSWER, has: "no", wantVariantId: NOT_NEEDED },
             },
             extras: [
                 { id: "1", item: "Head torch", kind: "have", size: "", notes: "" },
