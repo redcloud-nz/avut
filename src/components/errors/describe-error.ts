@@ -44,7 +44,7 @@ export const ErrorDescriptions = {
 } as const satisfies Record<string, ErrorDescription>;
 
 /** Read tRPC's string error code off a client error, if this is one. */
-function trpcErrorCode(error: unknown): string | undefined {
+export function trpcErrorCode(error: unknown): string | undefined {
     if (!(error instanceof TRPCClientError)) return undefined;
 
     const data: unknown = error.data;

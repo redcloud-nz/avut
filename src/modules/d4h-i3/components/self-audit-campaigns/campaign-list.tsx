@@ -18,12 +18,14 @@ import {
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
+import { Badge } from "@/components/ui/badge";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
-import { describeStatusCounts } from "./campaign-labels";
+import { describeSubmitted } from "./campaign-labels";
+import { D4HI3Module_CreateSelfAuditCampaign_Dialog } from "./create-campaign-dialog";
 
 /** The organization's self audit campaigns, newest first. A top-level page of the module, so no trail. */
 export function D4HI3Module_SelfAuditCampaignList() {
@@ -59,6 +61,17 @@ export function D4HI3Module_SelfAuditCampaignList() {
                     header: "Team",
                     enableColumnFilter: false,
                 }),
+                col.accessor((row) => (row.sentAt ? "Sent" : "Draft"), {
+                    id: "status",
+                    header: "Status",
+                    cell: (ctx) =>
+                        ctx.getValue() === "Sent" ? (
+                            <Badge variant="secondary">Sent</Badge>
+                        ) : (
+                            <Badge variant="outline">Draft</Badge>
+                        ),
+                    enableColumnFilter: false,
+                }),
                 col.accessor("sentAt", {
                     header: "Sent",
                     cell: (ctx) => {
@@ -66,16 +79,16 @@ export function D4HI3Module_SelfAuditCampaignList() {
                         return sentAt ? (
                             <time dateTime={sentAt.toISOString()}>{formatDateTime(sentAt)}</time>
                         ) : (
-                            "Draft"
+                            "—"
                         );
                     },
                     enableColumnFilter: false,
                     enableGlobalFilter: false,
                 }),
                 col.display({
-                    id: "status",
-                    header: "Status",
-                    cell: (ctx) => describeStatusCounts(ctx.row.original.counts),
+                    id: "submitted",
+                    header: "Submitted",
+                    cell: (ctx) => describeSubmitted(ctx.row.original.counts),
                 }),
             ]),
         [formatDateTime, organization.slug],
@@ -98,6 +111,9 @@ export function D4HI3Module_SelfAuditCampaignList() {
         <Saratoga.Root>
             <Saratoga.Header>
                 <Saratoga.Title>Self Audit Campaigns</Saratoga.Title>
+                <Saratoga.Actions>
+                    <D4HI3Module_CreateSelfAuditCampaign_Dialog />
+                </Saratoga.Actions>
             </Saratoga.Header>
             <div>
                 <Kaga.TableToolbar table={table} />

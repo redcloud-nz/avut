@@ -38,7 +38,6 @@ import {
     addMembers,
     buildSelfAuditSnapshot,
     createCampaign,
-    defaultCampaignName,
     discardCampaign,
     listAddableMembers,
     listTeams,
@@ -404,17 +403,6 @@ describe("statusOf", () => {
         ["Unsent", { deliveryStatus: "Unsent" as const }],
     ] as const)("is %s by precedence", (expected, overrides) => {
         expect(statusOf({ ...base, ...overrides })).toBe(expected);
-    });
-});
-
-describe("defaultCampaignName", () => {
-    it("names the month in the given time zone", () => {
-        // Still November in UTC, already December in New Zealand.
-        const instant = new Date("2026-11-30T12:00:00Z");
-        expect(defaultCampaignName("Responder", "Pacific/Auckland", instant)).toBe(
-            "Responder Dec 2026",
-        );
-        expect(defaultCampaignName("Responder", "UTC", instant)).toBe("Responder Nov 2026");
     });
 });
 

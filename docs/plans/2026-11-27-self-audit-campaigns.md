@@ -51,7 +51,7 @@ The d4h-i3 "kit check" becomes the **self-audit**. One send to a team's members 
 
 ### Review group B: UI (one visual checkpoint at the end)
 
-- [ ] **4. List page and the create dialog** `visual`
+- [x] **4. List page and the create dialog** `visual` (feat(d4h-i3): create self-audit campaigns from a dialog). Notes: the name placeholder is computed client-side from `organization.settings.general.timeZone` with `defaultCampaignName`, moved to `src/lib/self-audit-campaign-name.ts` so the service and the dialog share it; the no-D4H state is the dialog catching `listTeams`'s PRECONDITION_FAILED (`trpcErrorCode`, now exported from `describe-error.ts`); not yet checked live on 3106.
   - **Files:** `src/modules/d4h-i3/components/self-audit-campaigns/` list + new `create-campaign-dialog.tsx`.
   - **Do:** Decisions 10 and 13 (list columns). Dialog per `docs/patterns/mutation-dialog.md`, modelled on `bundles/create-bundle.tsx`; on success navigate to the campaign. The no-D4H-token state the old page showed moves into the dialog.
   - **Done when:** create from the list lands on a Draft campaign on 3106; `npm run check` passes.

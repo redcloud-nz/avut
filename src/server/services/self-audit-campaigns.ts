@@ -16,10 +16,8 @@
 
 import "server-only";
 
-import { addDays, format } from "date-fns";
+import { addDays } from "date-fns";
 import * as z from "zod";
-
-import { TZDate } from "@date-fns/tz";
 
 import { baseUrl } from "@/emails/base-url";
 import SelfAuditRequestEmail, { selfAuditRequestSubject } from "@/emails/self-audit-request";
@@ -56,6 +54,7 @@ import {
     type SelfAuditProblem,
 } from "@/lib/schemas/self-audit";
 import { TeamId } from "@/lib/schemas/team";
+import { defaultCampaignName } from "@/lib/self-audit-campaign-name";
 import { EMPTY_ANSWER } from "@/lib/self-audit-validate";
 import { toD4HCredentialRef } from "@/server/d4h-access-token";
 import { getD4HTeamMembers, getD4HTokenMetadata } from "@/server/d4h-api/client";
@@ -607,11 +606,6 @@ export async function getRequestAnswers(
 }
 
 // Create
-
-/** A campaign's name when none is given: `<bundle name> <Mon YYYY>`, the month in `timeZone`. */
-export function defaultCampaignName(bundleName: string, timeZone: string, now = new Date()) {
-    return `${bundleName} ${format(new TZDate(now, timeZone), "MMM yyyy")}`;
-}
 
 /**
  * Create a Draft self audit campaign of the bundle, pinned to the team: the team's D4H link and the

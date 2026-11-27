@@ -25,3 +25,12 @@ export function describeStatusCounts(counts: Record<SelfAuditStatus, number>): s
         .map(([count, label]) => `${count} ${label.toLowerCase()}`);
     return shown.length > 0 ? shown.join(", ") : "—";
 }
+
+/**
+ * How many of a campaign's members have submitted, as "2 of 5", or "—" with no members. Withdrawn
+ * members count in neither number.
+ */
+export function describeSubmitted(counts: Record<SelfAuditStatus, number>): string {
+    const members = Object.values(counts).reduce((sum, count) => sum + count, 0) - counts.Withdrawn;
+    return members > 0 ? `${counts.Submitted} of ${members}` : "—";
+}
