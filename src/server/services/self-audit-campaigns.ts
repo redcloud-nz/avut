@@ -23,7 +23,9 @@ import { TZDate } from "@date-fns/tz";
 
 import { baseUrl } from "@/emails/base-url";
 import SelfAuditRequestEmail, { selfAuditRequestSubject } from "@/emails/self-audit-request";
+import type { Prisma } from "@/generated/prisma/client";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
+import { SelfAuditForm } from "@/lib/forms";
 import {
     compareBundle,
     type BundleRow,
@@ -33,8 +35,15 @@ import {
 import type { ItemQualityResult } from "@/lib/i3-item-quality";
 import type { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import type { D4HEquipmentListItem } from "@/lib/schemas/d4h/equipment-item";
-import type { I3Bundle, I3BundleId, I3BundleLine, I3BundleSummary } from "@/lib/schemas/i3-bundle";
+import { FormInstanceId } from "@/lib/schemas/form-instance";
 import {
+    I3BundleLine,
+    type I3Bundle,
+    type I3BundleId,
+    type I3BundleSummary,
+} from "@/lib/schemas/i3-bundle";
+import {
+    SELF_AUDIT_RECIPIENTS_MAX,
     SELF_AUDIT_TOKEN_DAYS,
     SelfAuditCampaignId,
     SelfAuditHeldItem,
@@ -442,6 +451,8 @@ export type SelfAuditRequestSummary = {
     openedAt: Date | null;
     submittedAt: Date | null;
     expiresAt: Date | null;
+    /** Set while the member is withdrawn from the sent campaign. */
+    withdrawnAt: Date | null;
     /** The instance's: `Submitted`, or `Draft` (never opened, being answered, or reopened). */
     formStatus: string;
     status: SelfAuditStatus;
@@ -458,6 +469,7 @@ const requestSelect = {
     openedAt: true,
     submittedAt: true,
     expiresAt: true,
+    withdrawnAt: true,
     formInstance: { select: { formStatus: true } },
 } as const;
 
@@ -741,7 +753,8 @@ async function loadSendContext(
 
 /**
  * Send one request's link: a fresh token, valid for `SELF_AUDIT_TOKEN_DAYS`, replacing any earlier
- * one (decision 1). Shared by send and resend.
+ * one (decision 1). Shared by send, add and resend. A withdrawn request is skipped: nothing is
+ * written or sent, and the outcome is `Withdrawn`.
  *
  * The hash and expiry go on (`Pending`) just before the send, as in the nag runner, so the link
  * works even if the `Sent` write is lost: then it stays `Pending` and still counts as sent. On
@@ -753,13 +766,16 @@ async function sendRequest(
     request: SendableRequest,
     send: SelfAuditSendContext,
     deps: SelfAuditSendDeps,
-): Promise<"Sent" | "Failed"> {
+): Promise<"Sent" | "Failed" | "Withdrawn"> {
     const link = deps.createLinkToken();
     const expiresAt = addDays(new Date(), SELF_AUDIT_TOKEN_DAYS);
-    await ctx.prisma.selfAuditRequest.update({
-        where: { id: request.id, organizationId: ctx.organizationId },
+    // Only while not withdrawn (decision 6 of the campaigns plan): a member withdrawn since the
+    // send read them gets no link, and no email.
+    const { count } = await ctx.prisma.selfAuditRequest.updateMany({
+        where: { id: request.id, organizationId: ctx.organizationId, withdrawnAt: null },
         data: { tokenHash: link.hash, expiresAt, deliveryStatus: "Pending" },
     });
+    if (count === 0) return "Withdrawn";
 
     const result = await deps.sendEmail({
         from: NoReplyEmailAddress,
@@ -835,14 +851,15 @@ async function sendRequests(
     requests: readonly SendableRequest[],
     send: SelfAuditSendContext,
     deps: SelfAuditSendDeps,
-): Promise<{ sent: number; failed: number }> {
-    const result = { sent: 0, failed: 0 };
+): Promise<{ sent: number; failed: number; withdrawn: number }> {
+    const result = { sent: 0, failed: 0, withdrawn: 0 };
     for (const [index, request] of requests.entries()) {
         // Spacing goes between sends, not before the first.
         if (index > 0) await deps.sleep(SEND_SPACING_MS);
         try {
             const outcome = await sendRequest(ctx, request, send, deps);
             if (outcome === "Sent") result.sent++;
+            else if (outcome === "Withdrawn") result.withdrawn++;
             else result.failed++;
         } catch {
             // A database error mustn't stop the loop: the rest would stay `Pending`, and they'd
@@ -989,8 +1006,9 @@ export type SelfAuditResendResult = {
 
 /**
  * Send a request's link again: a new token with a fresh `SELF_AUDIT_TOKEN_DAYS`, replacing the old
- * one, so the old link stops working (decision 1). Allowed for any delivery but `NoEmail`,
- * `Pending` included, for a send that never finished.
+ * one, so the old link stops working (decision 1). Allowed for a sent request with an email,
+ * `Pending` included, for a send that never finished; not for a Draft's `Unsent` member, who gets
+ * theirs when the campaign is sent, nor a withdrawn one (decision 6 of the campaigns plan).
  *
  * Resend keeps the draft (decision 13): the form instance, its answers, `submittedData` and the
  * progress timestamps are left alone, so the member picks up where they left off. A failed resend
@@ -998,7 +1016,8 @@ export type SelfAuditResendResult = {
  * `self-audit-campaign-send` batch (decision 11).
  *
  * @throws NotFoundError if the request isn't in the organization.
- * @throws ValidationError if the request has no email (`NoEmail`).
+ * @throws ValidationError if the request has no email (`NoEmail`), isn't sent yet (`Unsent`), or
+ * is withdrawn.
  */
 export async function resendRequest(
     ctx: OrgServiceContext,
@@ -1012,10 +1031,21 @@ export async function resendRequest(
             email: true,
             memberName: true,
             deliveryStatus: true,
+            withdrawnAt: true,
             campaign: { select: { bundleName: true, d4hTeamName: true } },
         },
     });
     if (!request) throw new NotFoundError(`SelfAuditRequest(id=${requestId}) not found.`);
+    if (request.withdrawnAt !== null) {
+        throw new ValidationError(
+            `${request.memberName} is withdrawn; re-add them to send them a link again.`,
+        );
+    }
+    if (request.deliveryStatus === "Unsent") {
+        throw new ValidationError(
+            `${request.memberName} gets their link when the Self Audit Campaign is sent.`,
+        );
+    }
     if (request.deliveryStatus === "NoEmail" || request.email === null) {
         throw new ValidationError(
             `${request.memberName} has no email in D4H, so their self-audit can't be sent.`,
@@ -1036,5 +1066,560 @@ export async function resendRequest(
         send,
         deps,
     );
+    // Withdrawn between the read and the send: nothing was written or sent.
+    if (deliveryStatus === "Withdrawn") {
+        throw new ValidationError(`${request.memberName} has been withdrawn.`);
+    }
     return { campaignId: SelfAuditCampaignId.schema.parse(request.campaignId), deliveryStatus };
+}
+
+// Members: add, remove, withdraw
+
+/**
+ * Lock the campaign row for this transaction, while it's still in the state it was read in
+ * (`sentAt` unchanged: a Draft still a Draft). A send claims the same row, so a Draft's member
+ * change and its send can't interleave: a change made first is seen by the send, and one made
+ * after is refused.
+ *
+ * @throws ConflictError if the campaign was sent (or discarded) since it was read.
+ */
+async function lockCampaign(
+    ctx: OrgServiceContext,
+    tx: Prisma.TransactionClient,
+    campaign: { id: SelfAuditCampaignId; name: string; sentAt: Date | null },
+): Promise<void> {
+    const { count } = await tx.selfAuditCampaign.updateMany({
+        where: { id: campaign.id, organizationId: ctx.organizationId, sentAt: campaign.sentAt },
+        data: { updatedAt: new Date() },
+    });
+    if (count === 0) {
+        throw new ConflictError(
+            `Self Audit Campaign ${campaign.name} changed meanwhile. Refresh and try again.`,
+        );
+    }
+}
+
+/**
+ * Snapshot what each current member of a campaign's D4H team would be asked, against the
+ * campaign's stored templates (decision 7 of the campaigns plan), not the bundle as it is now: a
+ * member added later is asked about the same templates as everyone else.
+ *
+ * Each stored template is matched by its I3 template's current D4H type and rules. One since
+ * deleted, or since unlinked from D4H, matches no items. Only the variants the stored template
+ * offers are offered, so a held item's `variantId` is always one the member can pick.
+ *
+ * @throws NotFoundError if the token doesn't reach the D4H team.
+ */
+async function snapshotCampaignMembers(
+    ctx: OrgServiceContext,
+    {
+        accessToken,
+        d4hTeamId,
+        templates,
+    }: {
+        accessToken: D4HAccessToken_ServerOnly;
+        d4hTeamId: number;
+        templates: readonly SelfAuditTemplate[];
+    },
+): Promise<SelfAuditMemberSnapshot<SelfAuditRecipient>[]> {
+    const credentialRef = toD4HCredentialRef(accessToken);
+    const { d4HTeams } = await getD4HTokenMetadata(credentialRef);
+    if (!d4HTeams.some((candidate) => candidate.id === d4hTeamId)) {
+        throw new NotFoundError(`D4H team ${d4hTeamId} not found.`);
+    }
+
+    const [records, items, members] = await Promise.all([
+        ctx.prisma.i3Template.findMany({
+            where: {
+                id: { in: templates.map((template) => template.id) },
+                organizationId: ctx.organizationId,
+            },
+            include: { d4h: true, variants: { include: { d4h: true } } },
+        }),
+        fetchD4HTeamEquipmentItems(accessToken, d4hTeamId),
+        getD4HTeamMembers(credentialRef, d4hTeamId),
+    ]);
+    const recordById = new Map(records.map((record) => [record.id, record]));
+
+    // In the stored order, the order the campaign's templates were snapshotted in: an item
+    // matching two templates is listed under the first, as at create.
+    const lines = templates.flatMap((template): I3BundleLine[] => {
+        const record = recordById.get(template.id);
+        if (!record) return [];
+        return [
+            I3BundleLine.schema.parse({
+                template: {
+                    id: record.id,
+                    name: record.name,
+                    status: record.status,
+                    d4h: record.d4h
+                        ? {
+                              categoryId: record.d4h.categoryId,
+                              categoryTitle: record.d4h.categoryTitle,
+                              kindId: record.d4h.kindId,
+                              kindTitle: record.d4h.kindTitle,
+                              requireSN: record.d4h.requireSN,
+                              brandModelRule: record.d4h.brandModelRule,
+                          }
+                        : null,
+                    variants: record.variants.flatMap((variant) =>
+                        variant.d4h
+                            ? [{ brandId: variant.d4h.brandId, modelId: variant.d4h.modelId }]
+                            : [],
+                    ),
+                },
+            }),
+        ];
+    });
+    const variantSources = records.flatMap((record) =>
+        record.variants.map(
+            (variant): SelfAuditVariantSource => ({
+                id: variant.id,
+                templateId: variant.templateId,
+                name: variant.name,
+                d4h: variant.d4h
+                    ? { brandId: variant.d4h.brandId, modelId: variant.d4h.modelId }
+                    : null,
+            }),
+        ),
+    );
+
+    const issued = filterTeamIssuedItems(items, d4hTeamId).map(
+        ({ item, holderId }): SelfAuditIssuedItem => ({ ...item, holder: { id: holderId } }),
+    );
+    const recipients = members.map(
+        (member): SelfAuditRecipient => ({
+            id: member.id,
+            name: member.name,
+            email: emailOf(member),
+        }),
+    );
+
+    const comparison = compareBundle({
+        lines,
+        members: recipients,
+        items: issued,
+        // The stored templates fitted the team when the campaign was created.
+        fittingTemplateIds: templates.map((template) => template.id),
+    });
+    return buildSelfAuditSnapshot({
+        columns: comparison.columns,
+        rows: comparison.rows,
+        variants: variantSources,
+        fittingVariantIds: templates.flatMap((template) =>
+            template.variants.map((variant) => variant.id),
+        ),
+    }).members;
+}
+
+/** A D4H member who can be added to a self audit campaign. */
+export type SelfAuditAddableMember = {
+    d4hMemberId: number;
+    name: string;
+    /** Trimmed; `null` when D4H has none. */
+    email: string | null;
+    /** Set when they're a withdrawn member: adding them re-adds that request. */
+    withdrawnRequestId: SelfAuditRequestId | null;
+};
+
+/**
+ * The members of the campaign's D4H team (as snapshotted at create, decision 7 of the campaigns
+ * plan) who can be added, by name: those not in the campaign, and those withdrawn from it. A
+ * withdrawn member no longer in the D4H team isn't listed, since re-adding refreshes them from it.
+ *
+ * @throws NotFoundError if the campaign isn't in the organization, or the token doesn't reach its
+ * D4H team.
+ */
+export async function listAddableMembers(
+    ctx: OrgServiceContext,
+    {
+        accessToken,
+        campaignId,
+    }: { accessToken: D4HAccessToken_ServerOnly; campaignId: SelfAuditCampaignId },
+): Promise<SelfAuditAddableMember[]> {
+    const campaign = await ctx.prisma.selfAuditCampaign.findFirst({
+        where: { id: campaignId, organizationId: ctx.organizationId },
+        select: {
+            d4hTeamId: true,
+            requests: { select: { id: true, d4hMemberId: true, withdrawnAt: true } },
+        },
+    });
+    if (!campaign) throw new NotFoundError(`SelfAuditCampaign(id=${campaignId}) not found.`);
+
+    const credentialRef = toD4HCredentialRef(accessToken);
+    const { d4HTeams } = await getD4HTokenMetadata(credentialRef);
+    if (!d4HTeams.some((candidate) => candidate.id === campaign.d4hTeamId)) {
+        throw new NotFoundError(`D4H team ${campaign.d4hTeamId} not found.`);
+    }
+    const members = await getD4HTeamMembers(credentialRef, campaign.d4hTeamId);
+    const requestByMember = new Map(
+        campaign.requests.map((request) => [request.d4hMemberId, request]),
+    );
+
+    return members
+        .flatMap((member): SelfAuditAddableMember[] => {
+            const request = requestByMember.get(member.id);
+            if (request && request.withdrawnAt === null) return [];
+            return [
+                {
+                    d4hMemberId: member.id,
+                    name: member.name,
+                    email: emailOf(member),
+                    withdrawnRequestId: request
+                        ? SelfAuditRequestId.schema.parse(request.id)
+                        : null,
+                },
+            ];
+        })
+        .toSorted((a, b) => a.name.localeCompare(b.name));
+}
+
+/** How adding members went. */
+export type SelfAuditAddResult = {
+    campaignId: SelfAuditCampaignId;
+    /** New members and re-added ones. */
+    added: number;
+    /** Emailed now: only on a sent campaign. */
+    sent: number;
+    failed: number;
+    /** Added with no email in D4H, so not emailed. */
+    noEmail: number;
+};
+
+/**
+ * Add members of the campaign's D4H team to it (decisions 7 and 10 of the campaigns plan). Members
+ * and their held items come from the D4H team snapshotted at create, held items against the
+ * campaign's stored templates (`snapshotCampaignMembers`).
+ *
+ * - **A new member** gets a Draft `FormInstance` with the pre-filled answer and a request.
+ * - **A withdrawn member** is re-added: the same request, `withdrawnAt` cleared and their name
+ *   and email refreshed from D4H. Their held items, answers and progress are kept.
+ *
+ * On a Draft they're `Unsent` (no link yet) and nobody is emailed. On a sent campaign they're
+ * `Pending` and emailed at once, one at a time as a send is. Either way a member D4H has no email
+ * for is `NoEmail`. Every entry joins one `self-audit-add-members` batch.
+ *
+ * @throws NotFoundError if the campaign isn't in the organization, or the token doesn't reach its
+ * D4H team.
+ * @throws ValidationError if no member is given, one is already in the campaign (and not
+ * withdrawn), one isn't in the D4H team, or the campaign would go over `SELF_AUDIT_RECIPIENTS_MAX`
+ * members (withdrawn ones not counted).
+ * @throws ConflictError if the campaign was sent since it was read.
+ */
+export async function addMembers(
+    ctx: OrgServiceContext,
+    {
+        accessToken,
+        campaignId,
+        d4hMemberIds,
+    }: {
+        accessToken: D4HAccessToken_ServerOnly;
+        campaignId: SelfAuditCampaignId;
+        d4hMemberIds: readonly number[];
+    },
+    deps: SelfAuditSendDeps = defaultSelfAuditSendDeps,
+): Promise<SelfAuditAddResult> {
+    const campaign = await ctx.prisma.selfAuditCampaign.findFirst({
+        where: { id: campaignId, organizationId: ctx.organizationId },
+        select: {
+            name: true,
+            bundleName: true,
+            d4hTeamId: true,
+            d4hTeamName: true,
+            templates: true,
+            sentAt: true,
+            requests: {
+                select: { id: true, d4hMemberId: true, memberName: true, withdrawnAt: true },
+            },
+        },
+    });
+    if (!campaign) throw new NotFoundError(`SelfAuditCampaign(id=${campaignId}) not found.`);
+
+    const memberIds = [...new Set(d4hMemberIds)];
+    if (memberIds.length === 0) {
+        throw new ValidationError("Choose at least one member to add.");
+    }
+    const requestByMember = new Map(
+        campaign.requests.map((request) => [request.d4hMemberId, request]),
+    );
+    for (const memberId of memberIds) {
+        const request = requestByMember.get(memberId);
+        if (request && request.withdrawnAt === null) {
+            throw new ValidationError(
+                `${request.memberName} is already in the Self Audit Campaign.`,
+            );
+        }
+    }
+    const current = campaign.requests.filter((request) => request.withdrawnAt === null).length;
+    if (current + memberIds.length > SELF_AUDIT_RECIPIENTS_MAX) {
+        throw new ValidationError(
+            `A Self Audit Campaign can have at most ${SELF_AUDIT_RECIPIENTS_MAX} members; it has ${current}, and ${memberIds.length} are chosen.`,
+        );
+    }
+
+    const snapshots = await snapshotCampaignMembers(ctx, {
+        accessToken,
+        d4hTeamId: campaign.d4hTeamId,
+        templates: z.array(SelfAuditTemplate).parse(campaign.templates),
+    });
+    const snapshotByMember = new Map(snapshots.map((snapshot) => [snapshot.member.id, snapshot]));
+    const chosen = memberIds.map((memberId) => {
+        const snapshot = snapshotByMember.get(memberId);
+        if (!snapshot) {
+            // Most likely they left the team since the list was read.
+            throw new ValidationError(
+                `D4H member ${memberId} isn't in ${campaign.d4hTeamName}. Refresh and try again.`,
+            );
+        }
+        return snapshot;
+    });
+
+    const isDraft = campaign.sentAt === null;
+    const campaignRef = {
+        objectType: "SelfAuditCampaign",
+        objectId: campaignId,
+        role: "context",
+    } as const;
+
+    const { batchId, toSend } = await ctx.prisma.$transaction(async (tx) => {
+        await lockCampaign(ctx, tx, { id: campaignId, ...campaign });
+        const batch = await createLogBatch(
+            { operationKey: "self-audit-add-members", userId: ctx.userId },
+            tx,
+        );
+        const batchCtx = withBatch(ctx, batch.id);
+
+        const toSend: SendableRequest[] = [];
+        for (const { member, heldItems, response } of chosen) {
+            const deliveryStatus: SelfAuditDeliveryStatus =
+                member.email === null ? "NoEmail" : isDraft ? "Unsent" : "Pending";
+            const noEmail = member.email === null ? ": no email in D4H" : "";
+            const prior = requestByMember.get(member.id);
+            let id: SelfAuditRequestId;
+            if (prior) {
+                // Re-added: the held items stay, since the saved answers refer to them.
+                id = SelfAuditRequestId.schema.parse(prior.id);
+                await tx.selfAuditRequest.update({
+                    where: { id, organizationId: ctx.organizationId },
+                    data: {
+                        withdrawnAt: null,
+                        memberName: member.name,
+                        email: member.email,
+                        deliveryStatus,
+                    },
+                });
+                await batchCtx.logEvent(
+                    {
+                        action: "Update",
+                        objectType: "SelfAuditRequest",
+                        objectId: id,
+                        description: `Self-audit re-added for ${member.name}${noEmail}`,
+                        refs: [campaignRef],
+                    },
+                    tx,
+                );
+            } else {
+                id = SelfAuditRequestId.create();
+                const formInstanceId = FormInstanceId.create();
+                await tx.formInstance.create({
+                    data: {
+                        id: formInstanceId,
+                        formKey: SelfAuditForm.formKey,
+                        organizationId: ctx.organizationId,
+                        userId: null,
+                        formData: response,
+                        formStatus: "Draft",
+                    },
+                });
+                await tx.selfAuditRequest.create({
+                    data: {
+                        id,
+                        organizationId: ctx.organizationId,
+                        campaignId,
+                        d4hMemberId: member.id,
+                        memberName: member.name,
+                        email: member.email,
+                        heldItems,
+                        deliveryStatus,
+                        formInstanceId,
+                    },
+                });
+                await batchCtx.logEvent(
+                    {
+                        action: "Create",
+                        objectType: "SelfAuditRequest",
+                        objectId: id,
+                        description: `Self-audit for ${member.name}${noEmail}`,
+                        refs: [campaignRef],
+                    },
+                    tx,
+                );
+            }
+            if (!isDraft && member.email !== null) {
+                toSend.push({ id, email: member.email, memberName: member.name });
+            }
+        }
+        return { batchId: batch.id, toSend };
+    });
+
+    const noEmail = chosen.filter(({ member }) => member.email === null).length;
+    if (toSend.length === 0) {
+        return { campaignId, added: chosen.length, sent: 0, failed: 0, noEmail };
+    }
+    const send = await loadSendContext(ctx, {
+        bundleName: campaign.bundleName,
+        teamName: campaign.d4hTeamName,
+    });
+    const { sent, failed } = await sendRequests(withBatch(ctx, batchId), toSend, send, deps);
+    return { campaignId, added: chosen.length, sent, failed, noEmail };
+}
+
+/**
+ * Remove a member from a Draft: their request and its form instance are deleted (decision 10 of
+ * the campaigns plan). Logged as one entry. Once sent, a member is withdrawn instead.
+ *
+ * @throws NotFoundError if the request isn't in the organization.
+ * @throws ValidationError if the campaign has been sent.
+ * @throws ConflictError if it was sent since it was read.
+ */
+export async function removeRequest(
+    ctx: OrgServiceContext,
+    requestId: SelfAuditRequestId,
+): Promise<{ campaignId: SelfAuditCampaignId }> {
+    const request = await ctx.prisma.selfAuditRequest.findFirst({
+        where: { id: requestId, organizationId: ctx.organizationId },
+        select: {
+            campaignId: true,
+            memberName: true,
+            formInstanceId: true,
+            campaign: { select: { name: true, sentAt: true } },
+        },
+    });
+    if (!request) throw new NotFoundError(`SelfAuditRequest(id=${requestId}) not found.`);
+    if (request.campaign.sentAt !== null) {
+        throw new ValidationError(
+            `Self Audit Campaign ${request.campaign.name} has been sent: withdraw ${request.memberName} instead.`,
+        );
+    }
+    const campaignId = SelfAuditCampaignId.schema.parse(request.campaignId);
+
+    await ctx.prisma.$transaction(async (tx) => {
+        await lockCampaign(ctx, tx, { id: campaignId, ...request.campaign });
+        await tx.selfAuditRequest.delete({
+            where: { id: requestId, organizationId: ctx.organizationId },
+        });
+        await tx.formInstance.delete({ where: { id: request.formInstanceId } });
+        await ctx.logEvent(
+            {
+                action: "Delete",
+                objectType: "SelfAuditRequest",
+                objectId: requestId,
+                description: `Self-audit for ${request.memberName} removed`,
+                refs: [{ objectType: "SelfAuditCampaign", objectId: campaignId, role: "context" }],
+            },
+            tx,
+        );
+    });
+    return { campaignId };
+}
+
+/**
+ * Withdraw a member from a sent campaign (decision 6 of the campaigns plan): their link is cleared
+ * at once, so it stops working, and the request and any answers are kept. Logged as one entry.
+ * Re-adding them (`addMembers`) is the only way back to a link.
+ *
+ * @throws NotFoundError if the request isn't in the organization.
+ * @throws ValidationError if the campaign is a Draft (remove the member instead), or the member is
+ * already withdrawn.
+ */
+export async function withdrawRequest(
+    ctx: OrgServiceContext,
+    requestId: SelfAuditRequestId,
+): Promise<{ campaignId: SelfAuditCampaignId }> {
+    const request = await ctx.prisma.selfAuditRequest.findFirst({
+        where: { id: requestId, organizationId: ctx.organizationId },
+        select: {
+            campaignId: true,
+            memberName: true,
+            withdrawnAt: true,
+            campaign: { select: { name: true, sentAt: true } },
+        },
+    });
+    if (!request) throw new NotFoundError(`SelfAuditRequest(id=${requestId}) not found.`);
+    if (request.campaign.sentAt === null) {
+        throw new ValidationError(
+            `Self Audit Campaign ${request.campaign.name} is a Draft: remove ${request.memberName} instead.`,
+        );
+    }
+    if (request.withdrawnAt !== null) {
+        throw new ValidationError(`${request.memberName} is already withdrawn.`);
+    }
+    const campaignId = SelfAuditCampaignId.schema.parse(request.campaignId);
+
+    await ctx.prisma.$transaction([
+        ctx.prisma.selfAuditRequest.update({
+            where: { id: requestId, organizationId: ctx.organizationId },
+            data: { withdrawnAt: new Date(), tokenHash: null, expiresAt: null },
+        }),
+        ctx.logEvent({
+            action: "Update",
+            objectType: "SelfAuditRequest",
+            objectId: requestId,
+            description: `Self-audit withdrawn from ${request.memberName}`,
+            refs: [{ objectType: "SelfAuditCampaign", objectId: campaignId, role: "context" }],
+        }),
+    ]);
+    return { campaignId };
+}
+
+// Discard
+
+/**
+ * Discard a Draft (decision 10 of the campaigns plan): it's deleted with its requests and their
+ * form instances. Logged as one entry. A sent campaign can't be discarded.
+ *
+ * @throws NotFoundError if the campaign isn't in the organization.
+ * @throws ValidationError if it has been sent.
+ * @throws ConflictError if it was sent since it was read.
+ */
+export async function discardCampaign(
+    ctx: OrgServiceContext,
+    campaignId: SelfAuditCampaignId,
+): Promise<{ campaignId: SelfAuditCampaignId }> {
+    const campaign = await ctx.prisma.selfAuditCampaign.findFirst({
+        where: { id: campaignId, organizationId: ctx.organizationId },
+        select: { name: true, sentAt: true },
+    });
+    if (!campaign) throw new NotFoundError(`SelfAuditCampaign(id=${campaignId}) not found.`);
+    if (campaign.sentAt !== null) {
+        throw new ValidationError(
+            `Self Audit Campaign ${campaign.name} has been sent, so it can't be discarded.`,
+        );
+    }
+
+    await ctx.prisma.$transaction(async (tx) => {
+        await lockCampaign(ctx, tx, { id: campaignId, ...campaign });
+        // Read under the lock: a member added after the first read goes too.
+        const requests = await tx.selfAuditRequest.findMany({
+            where: { campaignId },
+            select: { formInstanceId: true },
+        });
+        await tx.selfAuditRequest.deleteMany({ where: { campaignId } });
+        await tx.formInstance.deleteMany({
+            where: { id: { in: requests.map((request) => request.formInstanceId) } },
+        });
+        await tx.selfAuditCampaign.delete({
+            where: { id: campaignId, organizationId: ctx.organizationId },
+        });
+        await ctx.logEvent(
+            {
+                action: "Delete",
+                objectType: "SelfAuditCampaign",
+                objectId: campaignId,
+                description: `Self Audit Campaign ${campaign.name} discarded`,
+            },
+            tx,
+        );
+    });
+    return { campaignId };
 }

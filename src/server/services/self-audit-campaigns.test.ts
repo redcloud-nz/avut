@@ -27,7 +27,7 @@ import {
 import { TeamId } from "@/lib/schemas/team";
 import { UserId } from "@/lib/schemas/user";
 import { EMPTY_ANSWER } from "@/lib/self-audit-validate";
-import { getD4HTeamMembers } from "@/server/d4h-api/client";
+import { getD4HTeamMembers, getD4HTokenMetadata } from "@/server/d4h-api/client";
 import { fetchD4HTeamEquipmentItems } from "@/server/d4h-api/equipment";
 import { createLinkToken } from "@/server/link-token";
 import { listFitsForD4HTeam } from "@/server/services/i3-templates";
@@ -35,19 +35,31 @@ import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createOrganizationMockContext } from "@/test/trpc-helpers";
 
 import {
+    addMembers,
     buildSelfAuditSnapshot,
     createCampaign,
     defaultCampaignName,
+    discardCampaign,
+    listAddableMembers,
     listTeams,
+    removeRequest,
+    requireCampaignById,
     resendRequest,
     SEND_SPACING_MS,
     sendCampaign,
     statusOf,
+    withdrawRequest,
     type SelfAuditIssuedItem,
     type SelfAuditSendDeps,
     type SelfAuditVariantSource,
 } from "./self-audit-campaigns";
 import { getSelfAuditByToken } from "./self-audit-public";
+
+// A small member cap, so the cap test needn't add hundreds.
+vi.mock("@/lib/schemas/self-audit", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/lib/schemas/self-audit")>()),
+    SELF_AUDIT_RECIPIENTS_MAX: 5,
+}));
 
 vi.mock("@/server/d4h-access-token", () => ({
     toD4HCredentialRef: vi.fn((token: { id: string }) => ({
@@ -83,14 +95,14 @@ vi.mock("@/server/services/i3-templates", () => ({
 function d4hMember(id: number, name: string, email: string) {
     return {
         id,
-        resourceType: "Member",
+        resourceType: "Member" as const,
         email: { value: email, verified: true },
         name,
-        owner: { id: TEAM_ID, resourceType: "Team" },
+        owner: { id: TEAM_ID, resourceType: "Team" as const },
         position: null,
         ref: null,
-        role: { id: null, resourceType: "Role" },
-        status: "OPERATIONAL",
+        role: { id: null, resourceType: "Role" as const },
+        status: "OPERATIONAL" as const,
     };
 }
 
@@ -1012,6 +1024,374 @@ describe("campaigns", () => {
             expect(
                 await db.selfAuditRequest.findUniqueOrThrow({ where: { id: lee } }),
             ).toMatchObject({ deliveryStatus: "NoEmail", tokenHash: null });
+        });
+
+        it("refuses a withdrawn request, sending nothing", async () => {
+            const { john } = await sentCampaign();
+            await withdrawRequest(ctx(), john.id);
+            const deps = resendDeps();
+
+            await expect(resendRequest(ctx(), john.id, deps)).rejects.toBeInstanceOf(
+                ValidationError,
+            );
+            expect(deps.sendEmail).not.toHaveBeenCalled();
+            expect(
+                await db.selfAuditRequest.findUniqueOrThrow({ where: { id: john.id } }),
+            ).toMatchObject({ tokenHash: null, expiresAt: null });
+        });
+
+        it("refuses a Draft's Unsent request, sending nothing", async () => {
+            const { ids } = await draftWithMembers();
+            const deps = resendDeps();
+
+            await expect(resendRequest(ctx(), ids[42], deps)).rejects.toBeInstanceOf(
+                ValidationError,
+            );
+            expect(deps.sendEmail).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("addMembers", () => {
+        const add = (
+            campaignId: SelfAuditCampaignId,
+            d4hMemberIds: number[],
+            deps: SelfAuditSendDeps = makeDeps(),
+        ) => addMembers(ctx(), { accessToken, campaignId, d4hMemberIds }, deps);
+
+        /** D4H's team as the default mock has it, plus Mia (46) and Noa (47). */
+        const withNewMembers = () =>
+            vi
+                .mocked(getD4HTeamMembers)
+                .mockResolvedValueOnce([
+                    d4hMember(42, "John Smith", " john@example.com "),
+                    d4hMember(43, "Ana Lee", "  "),
+                    d4hMember(44, "Kim Tan", "kim@example.com"),
+                    d4hMember(46, "Mia Roa", "mia@example.com"),
+                    d4hMember(47, "Noa Ward", "noa@example.com"),
+                ]);
+
+        it("adds to a Draft without mailing: Unsent, or NoEmail when D4H has none", async () => {
+            const { campaignId } = await create();
+            const deps = makeDeps();
+
+            const result = await add(campaignId, [42, 43], deps);
+
+            expect(result).toEqual({ campaignId, added: 2, sent: 0, failed: 0, noEmail: 1 });
+            expect(deps.sendEmail).not.toHaveBeenCalled();
+            const requests = await db.selfAuditRequest.findMany({
+                where: { campaignId },
+                orderBy: { d4hMemberId: "asc" },
+                include: { formInstance: true },
+            });
+            expect(requests).toMatchObject([
+                {
+                    d4hMemberId: 42,
+                    memberName: "John Smith",
+                    email: "john@example.com",
+                    deliveryStatus: "Unsent",
+                    tokenHash: null,
+                    heldItems: [expect.objectContaining({ id: "1", templateId: S.helmet })],
+                    formInstance: {
+                        formKey: "d4h-i3-self-audit",
+                        formStatus: "Draft",
+                        formData: expect.objectContaining({
+                            held: { "1": expect.objectContaining({ has: null }) },
+                        }),
+                    },
+                },
+                { d4hMemberId: 43, email: null, deliveryStatus: "NoEmail", heldItems: [] },
+            ]);
+        });
+
+        it("snapshots held items against the campaign's templates, not the bundle's now", async () => {
+            const { campaignId } = await create();
+            // The bundle loses its helmet line after the campaign was created.
+            await db.i3BundleItem.deleteMany({ where: { bundleId: S.bundle } });
+            try {
+                await add(campaignId, [42]);
+            } finally {
+                await db.i3BundleItem.create({
+                    data: { bundleId: S.bundle, templateId: S.helmet },
+                });
+            }
+            const [john] = await requestsOf(campaignId);
+            expect(john.heldItems).toEqual([expect.objectContaining({ id: "1" })]);
+        });
+
+        it("emails a member added after the send at once, in one self-audit-add-members batch", async () => {
+            const { campaignId } = await draftWithMembers();
+            await sendCampaign(ctx(), { accessToken, campaignId }, makeDeps());
+            withNewMembers();
+            const deps = makeDeps();
+
+            const result = await add(campaignId, [46], deps);
+
+            expect(result).toEqual({ campaignId, added: 1, sent: 1, failed: 0, noEmail: 0 });
+            expect(deps.sendEmail.mock.calls.map(([args]) => args.to)).toEqual(["mia@example.com"]);
+            const mia = (await requestsOf(campaignId)).find((r) => r.d4hMemberId === 46)!;
+            expect(mia).toMatchObject({ deliveryStatus: "Sent", withdrawnAt: null });
+            expect(mia.tokenHash).not.toBeNull();
+
+            const entries = await db.logEntry.findMany({
+                where: { objectId: mia.id },
+                orderBy: { sequence: "asc" },
+            });
+            expect(entries.map((entry) => [entry.action, entry.description])).toEqual([
+                ["Create", "Self-audit for Mia Roa"],
+                ["Update", "Self-audit sent to Mia Roa (mia@example.com)"],
+            ]);
+            expect(new Set(entries.map((entry) => entry.batchId)).size).toBe(1);
+            const batch = await db.logBatch.findUniqueOrThrow({
+                where: { id: entries[0]!.batchId! },
+            });
+            expect(batch).toMatchObject({ operationKey: "self-audit-add-members" });
+        });
+
+        it("re-adds a withdrawn member: same request, email refreshed, held items and answers kept", async () => {
+            const { campaignId, ids } = await draftWithMembers();
+            await sendCampaign(ctx(), { accessToken, campaignId }, makeDeps());
+            // Ana had no email at the send; she opened her (now dead) form before being withdrawn.
+            const openedAt = new Date("2026-11-21T09:00:00Z");
+            const heldItems = [
+                {
+                    id: "9",
+                    templateId: S.helmet,
+                    description: "Helmet",
+                    serial: null,
+                    variantId: null,
+                    problems: [],
+                },
+            ];
+            await db.selfAuditRequest.update({
+                where: { id: ids[43] },
+                data: { openedAt, heldItems },
+            });
+            await withdrawRequest(ctx(), ids[43]);
+            vi.mocked(getD4HTeamMembers).mockResolvedValueOnce([
+                d4hMember(43, "Ana Lee-Smith", "ana.new@example.com"),
+            ]);
+            const deps = makeDeps();
+
+            const result = await add(campaignId, [43], deps);
+
+            expect(result).toEqual({ campaignId, added: 1, sent: 1, failed: 0, noEmail: 0 });
+            expect(deps.sendEmail.mock.calls.map(([args]) => args.to)).toEqual([
+                "ana.new@example.com",
+            ]);
+            const requests = await requestsOf(campaignId);
+            expect(requests).toHaveLength(4);
+            const ana = await db.selfAuditRequest.findUniqueOrThrow({ where: { id: ids[43] } });
+            expect(ana).toMatchObject({
+                withdrawnAt: null,
+                memberName: "Ana Lee-Smith",
+                email: "ana.new@example.com",
+                deliveryStatus: "Sent",
+                openedAt,
+                heldItems,
+            });
+            expect(ana.tokenHash).not.toBeNull();
+        });
+
+        it("refuses a member already in the campaign, or not in the D4H team, adding nobody", async () => {
+            const { campaignId } = await draftWithMembers();
+            for (const memberIds of [[42], [99]]) {
+                await expect(add(campaignId, memberIds)).rejects.toBeInstanceOf(ValidationError);
+            }
+            expect(await requestsOf(campaignId)).toHaveLength(4);
+        });
+
+        it("refuses going over the member cap, not counting withdrawn members", async () => {
+            const { campaignId, ids } = await draftWithMembers();
+            // Four members, a cap of five (mocked).
+            withNewMembers();
+            await expect(add(campaignId, [46, 47])).rejects.toBeInstanceOf(ValidationError);
+
+            await sendCampaign(ctx(), { accessToken, campaignId }, makeDeps());
+            await withdrawRequest(ctx(), ids[44]);
+            withNewMembers();
+            expect(await add(campaignId, [46, 47])).toMatchObject({ added: 2 });
+        });
+
+        it("refuses a campaign the token's D4H teams don't reach", async () => {
+            const { campaignId } = await create();
+            vi.mocked(getD4HTokenMetadata).mockResolvedValueOnce({
+                d4HTeams: [],
+                d4HOrganisations: [],
+            });
+            await expect(add(campaignId, [42])).rejects.toBeInstanceOf(NotFoundError);
+        });
+
+        it("refuses a Draft that was sent meanwhile, adding nobody", async () => {
+            const { campaignId } = await create();
+            vi.mocked(getD4HTeamMembers).mockImplementationOnce(async () => {
+                await db.selfAuditCampaign.update({
+                    where: { id: campaignId },
+                    data: { sentAt: new Date() },
+                });
+                return [d4hMember(42, "John Smith", "john@example.com")];
+            });
+            const deps = makeDeps();
+
+            await expect(add(campaignId, [42], deps)).rejects.toBeInstanceOf(ConflictError);
+            expect(deps.sendEmail).not.toHaveBeenCalled();
+            expect(await requestsOf(campaignId)).toHaveLength(0);
+        });
+    });
+
+    describe("listAddableMembers", () => {
+        it("lists the D4H team's members not in the campaign, and withdrawn ones", async () => {
+            const { campaignId, ids } = await draftWithMembers();
+            await db.selfAuditRequest.delete({ where: { id: ids[44] } });
+            await db.selfAuditRequest.update({
+                where: { id: ids[43] },
+                data: { withdrawnAt: new Date() },
+            });
+
+            expect(await listAddableMembers(ctx(), { accessToken, campaignId })).toEqual([
+                { d4hMemberId: 43, name: "Ana Lee", email: null, withdrawnRequestId: ids[43] },
+                {
+                    d4hMemberId: 44,
+                    name: "Kim Tan",
+                    email: "kim@example.com",
+                    withdrawnRequestId: null,
+                },
+            ]);
+        });
+    });
+
+    describe("removeRequest", () => {
+        it("deletes a Draft's request and its form instance, logging one entry", async () => {
+            const { campaignId, ids } = await draftWithMembers();
+            const { formInstanceId } = await db.selfAuditRequest.findUniqueOrThrow({
+                where: { id: ids[42] },
+            });
+
+            expect(await removeRequest(ctx(), ids[42])).toEqual({ campaignId });
+
+            expect(await db.selfAuditRequest.findUnique({ where: { id: ids[42] } })).toBeNull();
+            expect(await db.formInstance.findUnique({ where: { id: formInstanceId } })).toBeNull();
+            expect(await requestsOf(campaignId)).toHaveLength(3);
+            expect(await db.logEntry.findMany({ where: { objectId: ids[42] } })).toEqual([
+                expect.objectContaining({
+                    action: "Delete",
+                    objectType: "SelfAuditRequest",
+                    batchId: null,
+                }),
+            ]);
+        });
+
+        it("refuses once the campaign is sent, removing nothing", async () => {
+            const { campaignId, ids } = await draftWithMembers();
+            await sendCampaign(ctx(), { accessToken, campaignId }, makeDeps());
+
+            await expect(removeRequest(ctx(), ids[42])).rejects.toBeInstanceOf(ValidationError);
+            expect(await requestsOf(campaignId)).toHaveLength(4);
+        });
+    });
+
+    describe("discardCampaign", () => {
+        it("deletes a Draft with its requests and form instances, logging one entry", async () => {
+            const { campaignId } = await draftWithMembers();
+            const formInstanceIds = (await requestsOf(campaignId)).map((r) => r.formInstanceId);
+
+            expect(await discardCampaign(ctx(), campaignId)).toEqual({ campaignId });
+
+            expect(await db.selfAuditCampaign.findUnique({ where: { id: campaignId } })).toBeNull();
+            expect(await requestsOf(campaignId)).toHaveLength(0);
+            expect(await db.formInstance.count({ where: { id: { in: formInstanceIds } } })).toBe(0);
+            expect(
+                await db.logEntry.findMany({ where: { objectId: campaignId, action: "Delete" } }),
+            ).toEqual([expect.objectContaining({ objectType: "SelfAuditCampaign" })]);
+        });
+
+        it("refuses a sent campaign, deleting nothing", async () => {
+            const { campaignId } = await draftWithMembers();
+            await sendCampaign(ctx(), { accessToken, campaignId }, makeDeps());
+
+            await expect(discardCampaign(ctx(), campaignId)).rejects.toBeInstanceOf(
+                ValidationError,
+            );
+            expect(await requestsOf(campaignId)).toHaveLength(4);
+        });
+    });
+
+    describe("withdrawRequest", () => {
+        it("kills the link at once, keeps the answers, and counts the member as Withdrawn", async () => {
+            const issued: string[] = [];
+            const deps = makeDeps();
+            deps.createLinkToken.mockImplementation(() => {
+                const link = createLinkToken();
+                issued.push(link.token);
+                return link;
+            });
+            const { campaignId, ids } = await draftWithMembers();
+            await sendCampaign(ctx(), { accessToken, campaignId }, deps);
+            // John is sent first.
+            const link = { slug: "acme", token: issued[0]! };
+            expect(await getSelfAuditByToken({ prisma: db }, link)).toMatchObject({ state: "ok" });
+            const before = await db.selfAuditRequest.findUniqueOrThrow({
+                where: { id: ids[42] },
+                include: { formInstance: true },
+            });
+
+            expect(await withdrawRequest(ctx(), ids[42])).toEqual({ campaignId });
+
+            expect(await getSelfAuditByToken({ prisma: db }, link)).toEqual({
+                state: "not-found",
+            });
+            const after = await db.selfAuditRequest.findUniqueOrThrow({
+                where: { id: ids[42] },
+                include: { formInstance: true },
+            });
+            expect(after).toMatchObject({
+                tokenHash: null,
+                expiresAt: null,
+                deliveryStatus: "Sent",
+                heldItems: before.heldItems,
+                formInstance: { formData: before.formInstance.formData },
+            });
+            expect(after.withdrawnAt).not.toBeNull();
+
+            const campaign = await requireCampaignById(ctx(), campaignId);
+            expect(campaign.counts.Withdrawn).toBe(1);
+            expect(campaign.requests.find((r) => r.id === ids[42])).toMatchObject({
+                status: "Withdrawn",
+            });
+            expect(
+                await db.logEntry.findMany({
+                    where: { objectId: ids[42], description: { contains: "withdrawn" } },
+                }),
+            ).toEqual([expect.objectContaining({ action: "Update", batchId: null })]);
+        });
+
+        it("refuses a Draft's member, or one already withdrawn", async () => {
+            const { campaignId, ids } = await draftWithMembers();
+            await expect(withdrawRequest(ctx(), ids[42])).rejects.toBeInstanceOf(ValidationError);
+
+            await sendCampaign(ctx(), { accessToken, campaignId }, makeDeps());
+            await withdrawRequest(ctx(), ids[42]);
+            await expect(withdrawRequest(ctx(), ids[42])).rejects.toBeInstanceOf(ValidationError);
+        });
+
+        it("stops a send in progress from emailing a member withdrawn meanwhile", async () => {
+            const { campaignId, ids } = await draftWithMembers();
+            const deps = makeDeps();
+            // Kim is withdrawn while John's email goes.
+            deps.sendEmail.mockImplementationOnce(async () => {
+                await db.selfAuditRequest.update({
+                    where: { id: ids[44] },
+                    data: { withdrawnAt: new Date() },
+                });
+                return { ok: true as const };
+            });
+
+            const result = await sendCampaign(ctx(), { accessToken, campaignId }, deps);
+
+            expect(result).toMatchObject({ sent: 1, failed: 0 });
+            expect(deps.sendEmail).toHaveBeenCalledTimes(1);
+            expect(
+                await db.selfAuditRequest.findUniqueOrThrow({ where: { id: ids[44] } }),
+            ).toMatchObject({ tokenHash: null, deliveryStatus: "Pending" });
         });
     });
 });

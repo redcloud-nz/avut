@@ -35,6 +35,7 @@ export const Operations = {
     // name the person typed as `actorLabel`.
     "public-form-submission": { label: "Public form submission" },
     "rubbish-purge": { label: "Rubbish bin auto-purge" },
+    "self-audit-add-members": { label: "Self Audit Campaign members added" },
     "self-audit-campaign-send": { label: "Self Audit Campaign send" },
     "skill-package-import": { label: "Skill package import" },
 } as const;

@@ -121,6 +121,7 @@ describe("Operations", () => {
             "organization-leave",
             "public-form-submission",
             "rubbish-purge",
+            "self-audit-add-members",
             "self-audit-campaign-send",
             "skill-package-import",
         ]);

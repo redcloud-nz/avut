@@ -573,6 +573,7 @@ describe("selfAuditCampaignsRouter", () => {
                 openedAt,
                 submittedAt,
                 expiresAt,
+                withdrawnAt: null,
                 formStatus: "Draft",
                 status: "Editing",
             });
@@ -796,6 +797,120 @@ describe("selfAuditCampaignsRouter", () => {
                 owner().resendRequest({ organizationId: T.org, requestId: john.id }),
             ).rejects.toMatchObject({ code: "FORBIDDEN" });
             expect(sendEmail).not.toHaveBeenCalled();
+        });
+
+        it("is BAD_REQUEST for a withdrawn member", async () => {
+            const { john } = await sentRequests();
+            await admin().withdrawRequest({ organizationId: T.org, requestId: john.id });
+
+            await expect(
+                admin().resendRequest({ organizationId: T.org, requestId: john.id }),
+            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+            expect(sendEmail).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("members", () => {
+        it("lists who can be added, and adds them to a Draft without mailing", async () => {
+            const { campaignId } = await admin().createCampaign(create);
+
+            const addable = await admin().listAddableMembers({ organizationId: T.org, campaignId });
+            expect(addable.map((m) => [m.d4hMemberId, m.email, m.withdrawnRequestId])).toEqual([
+                [43, null, null],
+                [42, "john@example.com", null],
+            ]);
+
+            const result = await admin().addMembers({
+                organizationId: T.org,
+                campaignId,
+                d4hMemberIds: [42, 43],
+            });
+            expect(result).toEqual({ campaignId, added: 2, sent: 0, failed: 0, noEmail: 1 });
+            expect(sendEmail).not.toHaveBeenCalled();
+            const campaign = await admin().getCampaign({ organizationId: T.org, campaignId });
+            expect(campaign.requests.map((r) => [r.memberName, r.status])).toEqual([
+                ["Ana Lee", "NoEmail"],
+                ["John Smith", "Unsent"],
+            ]);
+        });
+
+        it("is BAD_REQUEST to add a member already in the campaign", async () => {
+            const campaignId = await draftWithMembers();
+            await expect(
+                admin().addMembers({ organizationId: T.org, campaignId, d4hMemberIds: [42] }),
+            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+        });
+
+        it("removes a Draft's member, and withdraws a sent one", async () => {
+            const campaignId = await draftWithMembers();
+            const draft = await admin().getCampaign({ organizationId: T.org, campaignId });
+            const [ana, john] = draft.requests;
+
+            expect(
+                await admin().removeRequest({ organizationId: T.org, requestId: ana!.id }),
+            ).toEqual({ campaignId });
+            await expect(
+                admin().withdrawRequest({ organizationId: T.org, requestId: john!.id }),
+            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+
+            await admin().sendCampaign({ organizationId: T.org, campaignId });
+            expect(
+                await admin().withdrawRequest({ organizationId: T.org, requestId: john!.id }),
+            ).toEqual({ campaignId });
+            await expect(
+                admin().removeRequest({ organizationId: T.org, requestId: john!.id }),
+            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+
+            const sent = await admin().getCampaign({ organizationId: T.org, campaignId });
+            expect(sent.requests).toEqual([
+                expect.objectContaining({ memberName: "John Smith", status: "Withdrawn" }),
+            ]);
+            expect(sent.requests[0]!.withdrawnAt).not.toBeNull();
+            expect(sent.counts.Withdrawn).toBe(1);
+        });
+
+        it("discards a Draft, but not a sent campaign", async () => {
+            const draftId = await draftWithMembers();
+            expect(
+                await admin().discardCampaign({ organizationId: T.org, campaignId: draftId }),
+            ).toEqual({ campaignId: draftId });
+            await expect(
+                admin().getCampaign({ organizationId: T.org, campaignId: draftId }),
+            ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+            const sentId = await draftWithMembers();
+            await admin().sendCampaign({ organizationId: T.org, campaignId: sentId });
+            await expect(
+                admin().discardCampaign({ organizationId: T.org, campaignId: sentId }),
+            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+        });
+
+        it("is PRECONDITION_FAILED to list or add without a personal D4H token", async () => {
+            const campaignId = await draftWithMembers();
+            vi.mocked(getConfiguredD4HAccessToken).mockRejectedValue(
+                new NotConfiguredError("No personal D4H access token."),
+            );
+            await expect(
+                admin().listAddableMembers({ organizationId: T.org, campaignId }),
+            ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+            await expect(
+                admin().addMembers({ organizationId: T.org, campaignId, d4hMemberIds: [42] }),
+            ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+        });
+
+        it("refuses an org owner without the system admin role", async () => {
+            const campaignId = await draftWithMembers();
+            const requestId = (await admin().getCampaign({ organizationId: T.org, campaignId }))
+                .requests[0]!.id;
+            for (const call of [
+                () => owner().listAddableMembers({ organizationId: T.org, campaignId }),
+                () => owner().addMembers({ organizationId: T.org, campaignId, d4hMemberIds: [42] }),
+                () => owner().removeRequest({ organizationId: T.org, requestId }),
+                () => owner().withdrawRequest({ organizationId: T.org, requestId }),
+                () => owner().discardCampaign({ organizationId: T.org, campaignId }),
+            ]) {
+                await expect(call()).rejects.toMatchObject({ code: "FORBIDDEN" });
+            }
         });
     });
 });

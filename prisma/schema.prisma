@@ -1085,6 +1085,9 @@ model SelfAuditRequest {
   sentAt         DateTime?
   openedAt       DateTime?
   submittedAt    DateTime?
+  /// Set when the member is withdrawn from a sent campaign: the link is cleared, the answers kept.
+  /// Cleared again when they're re-added.
+  withdrawnAt    DateTime?
   /// The last submitted answer (`SelfAuditResponseData`). Kept while a reopened form is edited.
   submittedData  Json?
   formInstanceId String                  @unique

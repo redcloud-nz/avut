@@ -11,7 +11,8 @@
  *
  * Every call hashes the link token and finds the request holding that hash with an expiry still
  * ahead, in the organisation the URL's slug names. An unknown token, one replaced by a resend, an
- * expired one, and one under another organisation's slug all get the same answer: `not-found`
+ * expired one, a withdrawn member's, and one under another organisation's slug all get the same
+ * answer: `not-found`
  * from the read, `NotFoundError(LINK_NOT_VALID)` from the writes. The admin side
  * (create, send, track) is in `self-audit-campaigns.ts`.
  */
@@ -92,12 +93,17 @@ const requestSelect = {
 } as const;
 
 /**
- * The live request a link names, or `null` (unknown, replaced or expired token, or a slug that
- * isn't the token's organisation's).
+ * The live request a link names, or `null` (unknown, replaced or expired token, a withdrawn
+ * request, or a slug that isn't the token's organisation's).
  */
 async function findRequestByToken(ctx: PublicContext, { slug, token }: SelfAuditLink) {
     const request = await ctx.prisma.selfAuditRequest.findFirst({
-        where: { tokenHash: hashLinkToken(token), expiresAt: { gt: new Date() } },
+        // Withdrawing clears the token too; this keeps a withdrawn request dead regardless.
+        where: {
+            tokenHash: hashLinkToken(token),
+            expiresAt: { gt: new Date() },
+            withdrawnAt: null,
+        },
         select: requestSelect,
     });
     return request && request.organization.slug === slug ? request : null;

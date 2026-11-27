@@ -9,6 +9,7 @@ import { ForbiddenError } from "@/lib/errors";
 import { I3BundleId, I3BundleSummary } from "@/lib/schemas/i3-bundle";
 import {
     SELF_AUDIT_CAMPAIGN_NAME_MAX,
+    SELF_AUDIT_RECIPIENTS_MAX,
     SelfAuditCampaignId,
     SelfAuditDeliveryStatus,
     SelfAuditHeldItem,
@@ -58,6 +59,7 @@ const SelfAuditRequestSummary = z.object({
     openedAt: z.date().nullable(),
     submittedAt: z.date().nullable(),
     expiresAt: z.date().nullable(),
+    withdrawnAt: z.date().nullable(),
     formStatus: z.string(),
     status: SelfAuditStatus,
 });
@@ -69,7 +71,43 @@ const SelfAuditSendResult = z.object({
     noEmail: z.number(),
 });
 
+/** A campaign a member change was made to. */
+const SelfAuditCampaignRef = z.object({ campaignId: SelfAuditCampaignId.schema });
+
 export const selfAuditCampaignsRouter = createTrpcRouter({
+    /**
+     * Add members of the campaign's D4H team, or re-add withdrawn ones. On a Draft they wait for
+     * the send; on a sent campaign they're emailed at once. Returns how many were added, sent,
+     * failed, or had no email.
+     *
+     * @throws TRPCError(PRECONDITION_FAILED) if the caller has no personal D4H token here.
+     * @throws TRPCError(NOT_FOUND) if the campaign isn't in the organization, or the token doesn't
+     * reach its D4H team.
+     * @throws TRPCError(BAD_REQUEST) if no member is given, one is already in the campaign, one
+     * isn't in its D4H team, or it would have too many members.
+     * @throws TRPCError(CONFLICT) if the campaign was sent meanwhile.
+     */
+    addMembers: selfAuditProcedure
+        .input(
+            z.object({
+                campaignId: SelfAuditCampaignId.schema,
+                d4hMemberIds: z.array(z.number().int()).min(1).max(SELF_AUDIT_RECIPIENTS_MAX),
+            }),
+        )
+        .output(
+            z.object({
+                campaignId: SelfAuditCampaignId.schema,
+                added: z.number(),
+                sent: z.number(),
+                failed: z.number(),
+                noEmail: z.number(),
+            }),
+        )
+        .mutation(async ({ ctx, input: { campaignId, d4hMemberIds } }) => {
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
+            return SelfAuditCampaigns.addMembers(ctx, { accessToken, campaignId, d4hMemberIds });
+        }),
+
     /**
      * Create a Draft self audit campaign of the bundle, pinned to the team, with the bundle's
      * templates for the team's D4H team snapshotted and no members yet. Without a name, it's named
@@ -93,6 +131,20 @@ export const selfAuditCampaignsRouter = createTrpcRouter({
         .mutation(async ({ ctx, input: { teamId, bundleId, name } }) => {
             const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
             return SelfAuditCampaigns.createCampaign(ctx, { accessToken, teamId, bundleId, name });
+        }),
+
+    /**
+     * Discard a Draft: delete it with its members and their forms.
+     *
+     * @throws TRPCError(NOT_FOUND) if the campaign isn't in the organization.
+     * @throws TRPCError(BAD_REQUEST) if it has been sent.
+     * @throws TRPCError(CONFLICT) if it was sent meanwhile.
+     */
+    discardCampaign: selfAuditProcedure
+        .input(z.object({ campaignId: SelfAuditCampaignId.schema }))
+        .output(SelfAuditCampaignRef)
+        .mutation(async ({ ctx, input: { campaignId } }) => {
+            return SelfAuditCampaigns.discardCampaign(ctx, campaignId);
         }),
 
     /**
@@ -126,6 +178,31 @@ export const selfAuditCampaignsRouter = createTrpcRouter({
         )
         .query(async ({ ctx, input: { requestId } }) => {
             return SelfAuditCampaigns.getRequestAnswers(ctx, requestId);
+        }),
+
+    /**
+     * The members of the campaign's D4H team who can be added: those not in it, and withdrawn
+     * ones (with the request re-adding them would reinstate).
+     *
+     * @throws TRPCError(PRECONDITION_FAILED) if the caller has no personal D4H token here.
+     * @throws TRPCError(NOT_FOUND) if the campaign isn't in the organization, or the token doesn't
+     * reach its D4H team.
+     */
+    listAddableMembers: selfAuditProcedure
+        .input(z.object({ campaignId: SelfAuditCampaignId.schema }))
+        .output(
+            z.array(
+                z.object({
+                    d4hMemberId: z.number(),
+                    name: z.string(),
+                    email: z.string().nullable(),
+                    withdrawnRequestId: SelfAuditRequestId.schema.nullable(),
+                }),
+            ),
+        )
+        .query(async ({ ctx, input: { campaignId } }) => {
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
+            return SelfAuditCampaigns.listAddableMembers(ctx, { accessToken, campaignId });
         }),
 
     /**
@@ -169,12 +246,26 @@ export const selfAuditCampaignsRouter = createTrpcRouter({
         }),
 
     /**
-     * Email a member their link again, with a new token and a fresh expiry; the old link stops
-     * working. Their draft, submitted answers and progress are kept. Allowed for any delivery but
-     * NoEmail, a stuck Pending included.
+     * Remove a member from a Draft, deleting their request and form.
      *
      * @throws TRPCError(NOT_FOUND) if the request isn't in the organization.
-     * @throws TRPCError(BAD_REQUEST) if the member has no email.
+     * @throws TRPCError(BAD_REQUEST) if the campaign has been sent (withdraw instead).
+     * @throws TRPCError(CONFLICT) if it was sent meanwhile.
+     */
+    removeRequest: selfAuditProcedure
+        .input(z.object({ requestId: SelfAuditRequestId.schema }))
+        .output(SelfAuditCampaignRef)
+        .mutation(async ({ ctx, input: { requestId } }) => {
+            return SelfAuditCampaigns.removeRequest(ctx, requestId);
+        }),
+
+    /**
+     * Email a member their link again, with a new token and a fresh expiry; the old link stops
+     * working. Their draft, submitted answers and progress are kept. Allowed for a sent member
+     * with an email, a stuck Pending included.
+     *
+     * @throws TRPCError(NOT_FOUND) if the request isn't in the organization.
+     * @throws TRPCError(BAD_REQUEST) if the member has no email, isn't sent yet, or is withdrawn.
      */
     resendRequest: selfAuditProcedure
         .input(z.object({ requestId: SelfAuditRequestId.schema }))
@@ -204,5 +295,20 @@ export const selfAuditCampaignsRouter = createTrpcRouter({
         .mutation(async ({ ctx, input: { campaignId } }) => {
             const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
             return SelfAuditCampaigns.sendCampaign(ctx, { accessToken, campaignId });
+        }),
+
+    /**
+     * Withdraw a member from a sent campaign: their link stops working at once; their request and
+     * answers are kept, shown as Withdrawn.
+     *
+     * @throws TRPCError(NOT_FOUND) if the request isn't in the organization.
+     * @throws TRPCError(BAD_REQUEST) if the campaign is a Draft (remove instead), or the member is
+     * already withdrawn.
+     */
+    withdrawRequest: selfAuditProcedure
+        .input(z.object({ requestId: SelfAuditRequestId.schema }))
+        .output(SelfAuditCampaignRef)
+        .mutation(async ({ ctx, input: { requestId } }) => {
+            return SelfAuditCampaigns.withdrawRequest(ctx, requestId);
         }),
 });
