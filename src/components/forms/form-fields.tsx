@@ -10,7 +10,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 
 /**
- * Fields shared by the public forms under `/forms` (kit check, jacket): big tap targets for
+ * Fields shared by the public forms under `/forms` (self-audit, jacket): big tap targets for
  * phones, with the error shown under the field.
  */
 

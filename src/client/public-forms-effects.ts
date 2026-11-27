@@ -14,10 +14,20 @@ import { createEffects, invalidate } from "@/trpc/mutation-effector";
 export const publicFormsEffects = createEffects<"publicForms">()({
     // The form's status and its submitted answers change. Draft saves have no effect, so the open
     // form isn't re-seeded from the cache while the member types.
-    reopenKitCheckByToken: (vars) => [
-        invalidate(trpc.publicForms.getKitCheckByToken.queryFilter({ token: vars.token })),
+    reopenSelfAuditByToken: (vars) => [
+        invalidate(
+            trpc.publicForms.getSelfAuditByToken.queryFilter({
+                slug: vars.slug,
+                token: vars.token,
+            }),
+        ),
     ],
-    submitKitCheckByToken: (vars) => [
-        invalidate(trpc.publicForms.getKitCheckByToken.queryFilter({ token: vars.token })),
+    submitSelfAuditByToken: (vars) => [
+        invalidate(
+            trpc.publicForms.getSelfAuditByToken.queryFilter({
+                slug: vars.slug,
+                token: vars.token,
+            }),
+        ),
     ],
 });

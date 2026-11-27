@@ -117,7 +117,7 @@ async function otherOrgCheckBlocker(
         },
     });
     return count > 0
-        ? `Other organisations have recorded ${count} skill check${count == 1 ? "" : "s"} against this ${label}, so it can't be permanently deleted.`
+        ? `Other organisations have recorded ${count} skill check${count === 1 ? "" : "s"} against this ${label}, so it can't be permanently deleted.`
         : null;
 }
 
@@ -168,7 +168,14 @@ const handlers: Record<TrashableEntityId, TrashHandler> = {
         async recover(ctx, id) {
             await Teams.recover(ctx, TeamId.schema.parse(id));
         },
-        purgeBlocker: async () => null,
+        async purgeBlocker(ctx, id) {
+            // A campaign keeps its team (`onDelete: NoAction`). Only a Draft can be discarded,
+            // so a sent campaign pins its team until campaigns can be archived or deleted.
+            const count = await ctx.prisma.selfAuditCampaign.count({ where: { teamId: id } });
+            return count > 0
+                ? `This team has ${count} self-audit campaign${count === 1 ? "" : "s"}, so it can't be permanently deleted.`
+                : null;
+        },
         async purge(ctx, id, name) {
             await ctx.prisma.$transaction([
                 purgeLog(ctx, "team", id, name),

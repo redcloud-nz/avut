@@ -166,7 +166,7 @@ branch names with minimatch, where `*` stops at `/` and would miss `feat/…`.
 To look at a branch on Vercel, push it to a `preview/` branch:
 
 ```bash
-git push origin HEAD:preview/<name>     # e.g. preview/kit-check
+git push origin HEAD:preview/<name>     # e.g. preview/self-audit
 ```
 
 Each push there redeploys it. Before you push, know what it does:

@@ -23,7 +23,7 @@ import type { RouterInput, RouterOutput } from "@/trpc/routers/_app";
  */
 export type MutationEffect =
     | { type: "write"; queryKey: QueryKey; data: unknown | ((old: unknown) => unknown) }
-    | { type: "invalidate"; filter: QueryFilters };
+    | { type: "invalidate"; filter: QueryFilters; refetchType?: "none" };
 
 /**
  * Declares an exact query cache entry to overwrite with data from a mutation's response.
@@ -68,9 +68,14 @@ export function write<
  *
  * By default this awaits a refetch of every matching query that is currently mounted. A mutation
  * whose `onSuccess` navigates away should set `meta.navigates` so it only marks them stale.
+ * Pass `{ refetch: false }` to only mark this one filter's queries stale, for a query that's
+ * costly to refetch and whose mounted view is about to go (e.g. the picker in a closing dialog):
+ * it refetches when next mounted.
  */
-export function invalidate(filter: QueryFilters): MutationEffect {
-    return { type: "invalidate", filter };
+export function invalidate(filter: QueryFilters, options?: { refetch?: boolean }): MutationEffect {
+    return options?.refetch === false
+        ? { type: "invalidate", filter, refetchType: "none" }
+        : { type: "invalidate", filter };
 }
 
 function isInvalidateEffect(
@@ -188,14 +193,15 @@ export function useMutationEffector(queryClient: QueryClient) {
             }
 
             // A navigating mutation marks queries stale without awaiting a refetch of them.
-            const refetchType = mutation.meta?.navigates ? ("none" as const) : undefined;
+            const navigates = mutation.meta?.navigates === true;
 
             await Promise.all(
-                effects
-                    .filter(isInvalidateEffect)
-                    .map((effect) =>
-                        queryClient.invalidateQueries({ ...effect.filter, refetchType }),
-                    ),
+                effects.filter(isInvalidateEffect).map((effect) =>
+                    queryClient.invalidateQueries({
+                        ...effect.filter,
+                        refetchType: navigates ? "none" : effect.refetchType,
+                    }),
+                ),
             );
         };
 

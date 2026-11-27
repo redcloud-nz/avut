@@ -106,6 +106,35 @@ describe("useMutationEffector", () => {
         });
     });
 
+    it("only marks a query stale, without refetching it, for invalidate(…, { refetch: false })", async () => {
+        const queryClient = makeClient();
+        const queryFn = vi.fn().mockResolvedValue("value");
+        const onSuccess = vi.fn();
+        queryClient.setQueryData(["picker"], "cached");
+
+        function Harness() {
+            useMutationEffector(queryClient);
+            useQuery({ queryKey: ["picker"], queryFn, staleTime: Infinity });
+            const mutation = useMutation<void, Error, void>({
+                mutationFn: () => Promise.resolve(),
+                onSuccess,
+                meta: { effects: () => [invalidate({ queryKey: ["picker"] }, { refetch: false })] },
+            });
+            return <button onClick={() => mutation.mutate()}>mutate</button>;
+        }
+
+        render(
+            <QueryClientProvider client={queryClient}>
+                <Harness />
+            </QueryClientProvider>,
+        );
+        fireEvent.click(screen.getByRole("button"));
+
+        await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1));
+        expect(queryFn).not.toHaveBeenCalled();
+        expect(queryClient.getQueryState(["picker"])?.isInvalidated).toBe(true);
+    });
+
     it("does nothing for mutations without meta.effects", async () => {
         const queryClient = makeClient();
         const queryFn = vi.fn().mockResolvedValue("value");

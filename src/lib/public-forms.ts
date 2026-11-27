@@ -10,8 +10,11 @@
  * To add a form: an entry here, a schema for its answers, a submit procedure in `publicForms`,
  * and its page.
  *
- * Forms reached through a per-person emailed link, like the kit check (`/forms/kit-check/<token>`),
- * aren't listed here: the token finds the organisation and the record.
+ * Forms reached through a per-person emailed link, like the self-audit
+ * (`/forms/<org slug>/d4h-i3-self-audit/<token>`), aren't listed here: the token finds the record,
+ * and the slug must be its organisation's. The static form pages here sit beside `/forms/[slug]`
+ * and win over it, so an organisation slugged like one of these keys can't be reached there:
+ * don't give a form key an organisation's slug, or the other way round.
  */
 export const PUBLIC_FORMS = {
     "chch-soft-shell-jacket": {
@@ -34,5 +37,5 @@ export type PublicFormKey = keyof typeof PUBLIC_FORMS;
  */
 export const PUBLIC_FORM_BOT_PROTECTED_PATHS = [
     { path: "/trpc/publicForms.submitJacketInterest", method: "POST" },
-    { path: "/trpc/publicForms.submitKitCheckByToken", method: "POST" },
+    { path: "/trpc/publicForms.submitSelfAuditByToken", method: "POST" },
 ] as const;
