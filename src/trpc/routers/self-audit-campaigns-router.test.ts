@@ -547,6 +547,7 @@ describe("selfAuditCampaignsRouter", () => {
                     sentAt,
                     sentByName: "Sam Admin",
                     createdAt: sentAt,
+                    updatedAt: expect.any(Date),
                     counts,
                 },
             ]);

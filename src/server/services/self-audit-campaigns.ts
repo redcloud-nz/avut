@@ -436,6 +436,7 @@ export type SelfAuditCampaignSummary = {
     /** Null while a Draft, or once the sender's account is purged. */
     sentByName: string | null;
     createdAt: Date;
+    updatedAt: Date;
     counts: SelfAuditCampaignCounts;
 };
 
@@ -496,6 +497,7 @@ const campaignSelect = {
     bundleName: true,
     sentAt: true,
     createdAt: true,
+    updatedAt: true,
     team: { select: { id: true, name: true } },
     sentBy: { select: { name: true } },
     requests: { select: requestSelect },
@@ -509,6 +511,7 @@ function toCampaignSummary(
         bundleName: string;
         sentAt: Date | null;
         createdAt: Date;
+        updatedAt: Date;
         team: { id: string; name: string };
         sentBy: { name: string } | null;
     },
@@ -523,6 +526,7 @@ function toCampaignSummary(
         sentAt: campaign.sentAt,
         sentByName: campaign.sentBy?.name ?? null,
         createdAt: campaign.createdAt,
+        updatedAt: campaign.updatedAt,
         counts: countRequests(requests),
     };
 }

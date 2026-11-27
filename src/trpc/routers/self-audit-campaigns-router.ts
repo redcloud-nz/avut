@@ -45,6 +45,7 @@ const SelfAuditCampaignSummary = z.object({
     sentAt: z.date().nullable(),
     sentByName: z.string().nullable(),
     createdAt: z.date(),
+    updatedAt: z.date(),
     counts: z.record(SelfAuditStatus, z.number()),
 });
 

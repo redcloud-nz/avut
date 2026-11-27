@@ -18,55 +18,67 @@ import {
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
+import { ClientOnly } from "@/components/client-only";
+import { TeamLink } from "@/components/entity-links/team-link";
+import { DropdownMenuTriggerIcon } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
+import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import {
-    DataItem,
-    DataItemDateValue,
-    DataItemTitle,
-    DataItemValue,
-    DataList,
-} from "@/components/ui/data-item";
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
 import { route } from "@/lib/routes";
-import type {
-    SelfAuditCampaignId,
-    SelfAuditDeliveryStatus,
-    SelfAuditStatus,
-} from "@/lib/schemas/self-audit";
+import type { SelfAuditCampaignId, SelfAuditStatus } from "@/lib/schemas/self-audit";
 import { trpc } from "@/trpc/client";
 
-import { D4HI3Module_SelfAuditCampaignAnswers_Dialog } from "./campaign-answers-dialog";
-import { describeStatusCounts, STATUS_LABELS } from "./campaign-labels";
+import { STATUS_BADGES, STATUS_LABELS, STATUS_ORDER } from "./campaign-labels";
+import { D4HI3Module_SelfAuditCampaignMember_Dialog } from "./campaign-member-dialog";
 import { D4HI3Module_ResendSelfAudit_Dialog } from "./campaign-resend-dialog";
+import { D4HI3Module_SelfAuditCampaign_StatusStrip } from "./campaign-status-strip";
 
-const STATUS_BADGES: Record<
-    SelfAuditStatus,
-    "success-outline" | "destructive-outline" | "warning-outline" | "info-outline" | "outline"
-> = {
-    Withdrawn: "outline",
-    Submitted: "success-outline",
-    Editing: "info-outline",
-    Opened: "info-outline",
-    Failed: "destructive-outline",
-    NoEmail: "warning-outline",
-    Sent: "outline",
-    Unsent: "outline",
-};
+type RequestAction = "view-answers" | "resend";
 
-const STATUS_ORDER = Object.keys(STATUS_LABELS) as SelfAuditStatus[];
+/** A request has a live link to resend: it has an email, was sent, and isn't withdrawn. */
+function isResendable(request: { status: SelfAuditStatus }): boolean {
+    return (
+        request.status !== "NoEmail" &&
+        request.status !== "Unsent" &&
+        request.status !== "Withdrawn"
+    );
+}
 
-/** A request has a link to resend: it has an email, and its campaign has been sent. */
-function isResendable(deliveryStatus: SelfAuditDeliveryStatus): boolean {
-    return deliveryStatus !== "NoEmail" && deliveryStatus !== "Unsent";
+/** The latest thing that happened to a request: sent, opened, submitted or withdrawn. */
+function lastActivityOf(request: {
+    sentAt: Date | null;
+    openedAt: Date | null;
+    submittedAt: Date | null;
+    withdrawnAt: Date | null;
+}): { label: string; date: Date } | null {
+    const events = [
+        { label: "Sent", date: request.sentAt },
+        { label: "Opened", date: request.openedAt },
+        { label: "Submitted", date: request.submittedAt },
+        { label: "Withdrawn", date: request.withdrawnAt },
+    ].filter((event): event is { label: string; date: Date } => event.date !== null);
+    return events.reduce<{ label: string; date: Date } | null>(
+        (latest, event) => (latest === null || event.date > latest.date ? event : latest),
+        null,
+    );
 }
 
 /**
- * A self audit campaign's page: who it went to, whether each email went, and how far each member has got.
- * Hosts the per-request dialogs, `?action=view-answers&requestId=…` and
- * `?action=resend&requestId=…`.
+ * A self audit campaign's page: the campaign's record, its members by status, and the members
+ * table, which the status strip filters. Hosts the per-request dialogs,
+ * `?action=view-answers&requestId=…` and `?action=resend&requestId=…`.
  */
 export function D4HI3Module_SelfAuditCampaign_Content({
     campaignId,
@@ -90,7 +102,7 @@ export function D4HI3Module_SelfAuditCampaign_Content({
     const [requestId, setRequestId] = useQueryState("requestId", parseAsString);
     const target = campaign.requests.find((request) => request.id === requestId) ?? null;
 
-    function openRequestAction(next: "view-answers" | "resend", id: string) {
+    function openRequestAction(next: RequestAction, id: string) {
         void setRequestId(id, { history: "push" });
         void setAction(next, { history: "push" });
     }
@@ -101,91 +113,71 @@ export function D4HI3Module_SelfAuditCampaign_Content({
 
     type RowData = (typeof campaign.requests)[number];
 
-    const columns = useMemo(() => {
-        const timeCell = (value: Date | null) =>
-            value ? <time dateTime={value.toISOString()}>{formatDateTime(value)}</time> : "—";
-
-        return Kaga.defineColumns<RowData>((col) => [
-            col.accessor("memberName", {
-                header: "Member",
-                enableColumnFilter: false,
-            }),
-            col.accessor("email", {
-                header: "Email",
-                cell: (ctx) => ctx.getValue() ?? "—",
-                enableColumnFilter: false,
-            }),
-            col.accessor("status", {
-                header: "Status",
-                cell: (ctx) => (
-                    <Badge variant={STATUS_BADGES[ctx.getValue()]}>
-                        {STATUS_LABELS[ctx.getValue()]}
-                    </Badge>
-                ),
-                enableGlobalFilter: false,
-                enableColumnFilter: true,
-                filterFn: Kaga.filterFns.oneOf,
-                meta: {
-                    columnOptions: STATUS_ORDER.map((status) => ({
-                        label: STATUS_LABELS[status],
-                        value: status,
-                    })),
-                },
-            }),
-            col.accessor("sentAt", {
-                header: "Sent",
-                cell: (ctx) => timeCell(ctx.getValue()),
-                enableColumnFilter: false,
-                enableGlobalFilter: false,
-            }),
-            col.accessor("openedAt", {
-                header: "Opened",
-                cell: (ctx) => timeCell(ctx.getValue()),
-                enableColumnFilter: false,
-                enableGlobalFilter: false,
-            }),
-            col.accessor("submittedAt", {
-                header: "Submitted",
-                cell: (ctx) => timeCell(ctx.getValue()),
-                enableColumnFilter: false,
-                enableGlobalFilter: false,
-            }),
-            col.accessor("expiresAt", {
-                header: "Expires",
-                cell: (ctx) => timeCell(ctx.getValue()),
-                enableColumnFilter: false,
-                enableGlobalFilter: false,
-            }),
-            col.display({
-                id: "actions",
-                header: "",
-                cell: (ctx) => (
-                    <div className="flex justify-end gap-1">
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openRequestAction("view-answers", ctx.row.original.id)}
-                        >
-                            View answers
-                        </Button>
-                        {isResendable(ctx.row.original.deliveryStatus) && (
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => openRequestAction("resend", ctx.row.original.id)}
+    const columns = useMemo(
+        () =>
+            Kaga.defineColumns<RowData>((col) => [
+                col.accessor("memberName", {
+                    header: "Member",
+                    enableColumnFilter: false,
+                }),
+                col.accessor("status", {
+                    header: "Status",
+                    cell: (ctx) => (
+                        <Badge variant={STATUS_BADGES[ctx.getValue()]}>
+                            {STATUS_LABELS[ctx.getValue()]}
+                        </Badge>
+                    ),
+                    sortingFn: (a, b) =>
+                        STATUS_ORDER.indexOf(a.original.status) -
+                        STATUS_ORDER.indexOf(b.original.status),
+                    enableGlobalFilter: false,
+                    enableColumnFilter: true,
+                    filterFn: Kaga.filterFns.oneOf,
+                    meta: {
+                        columnOptions: STATUS_ORDER.map((status) => ({
+                            label: STATUS_LABELS[status],
+                            value: status,
+                        })),
+                    },
+                }),
+                col.accessor((request) => lastActivityOf(request)?.date.getTime() ?? 0, {
+                    id: "lastActivity",
+                    header: "Last Activity",
+                    cell: (ctx) => {
+                        const activity = lastActivityOf(ctx.row.original);
+                        if (!activity) return "—";
+                        return (
+                            <time
+                                dateTime={activity.date.toISOString()}
+                                title={formatDateTime(activity.date)}
                             >
-                                Resend
-                            </Button>
-                        )}
-                    </div>
-                ),
-                enableHiding: false,
-            }),
-        ]);
+                                {activity.label}{" "}
+                                <ClientOnly fallback={null}>
+                                    <RelativeTime date={activity.date} />
+                                </ClientOnly>
+                            </time>
+                        );
+                    },
+                    enableColumnFilter: false,
+                    enableGlobalFilter: false,
+                }),
+                col.display({
+                    id: "actions",
+                    header: "",
+                    cell: (ctx) => (
+                        <div className="flex justify-end">
+                            <RequestMenu
+                                request={ctx.row.original}
+                                onAction={(next) => openRequestAction(next, ctx.row.original.id)}
+                            />
+                        </div>
+                    ),
+                    enableHiding: false,
+                }),
+            ]),
         // eslint-disable-next-line react-hooks/exhaustive-deps -- openRequestAction only closes over stable nuqs setters
-    }, [formatDateTime]);
+        [formatDateTime],
+    );
 
     const table = useReactTable({
         data: campaign.requests,
@@ -200,6 +192,14 @@ export function D4HI3Module_SelfAuditCampaign_Content({
             sorting: [{ id: "memberName", desc: false }],
         },
     });
+
+    // A tile is active when the Status filter holds its status alone.
+    const statusColumn = table.getColumn("status");
+    const statusFilter = statusColumn?.getFilterValue();
+    const activeStatus =
+        Array.isArray(statusFilter) && statusFilter.length === 1
+            ? (statusFilter[0] as SelfAuditStatus)
+            : null;
 
     return (
         <Saratoga.Root>
@@ -216,36 +216,57 @@ export function D4HI3Module_SelfAuditCampaign_Content({
             <Saratoga.Header>
                 <Saratoga.Title>{campaign.name}</Saratoga.Title>
             </Saratoga.Header>
-            <Card>
+            <RecordCard label="Self Audit Campaign" updatedAt={campaign.updatedAt}>
                 <CardContent>
                     <DataList>
-                        <DataItem inline>
-                            <DataItemTitle>Team</DataItemTitle>
-                            <DataItemValue>{campaign.team.name}</DataItemValue>
+                        <RecordCardId label="ID" id={campaign.id} />
+                        <DataItem>
+                            <DataItemTitle>Name</DataItemTitle>
+                            <DataItemValue>{campaign.name}</DataItemValue>
                         </DataItem>
-                        <DataItem inline>
+                        <DataItem>
+                            <DataItemTitle>Team</DataItemTitle>
+                            <DataItemValue>
+                                <TeamLink team={campaign.team} />
+                            </DataItemValue>
+                        </DataItem>
+                        <DataItem>
                             <DataItemTitle>Bundle</DataItemTitle>
                             <DataItemValue>{campaign.bundleName}</DataItemValue>
                         </DataItem>
-                        <DataItem inline>
-                            <DataItemTitle>Sent By</DataItemTitle>
-                            <DataItemValue>{campaign.sentByName ?? "—"}</DataItemValue>
-                        </DataItem>
-                        <DataItem inline>
+                        <DataItem>
                             <DataItemTitle>Sent</DataItemTitle>
-                            {campaign.sentAt ? (
-                                <DataItemDateValue date={campaign.sentAt} />
-                            ) : (
-                                <DataItemValue>Draft</DataItemValue>
-                            )}
-                        </DataItem>
-                        <DataItem inline>
-                            <DataItemTitle>Status</DataItemTitle>
-                            <DataItemValue>{describeStatusCounts(campaign.counts)}</DataItemValue>
+                            <DataItemValue>
+                                {campaign.sentAt ? (
+                                    <>
+                                        <time
+                                            dateTime={campaign.sentAt.toISOString()}
+                                            className="block"
+                                        >
+                                            {formatDateTime(campaign.sentAt)}
+                                        </time>
+                                        {campaign.sentByName && (
+                                            <span className="text-muted-foreground">
+                                                by {campaign.sentByName}
+                                            </span>
+                                        )}
+                                    </>
+                                ) : (
+                                    "Draft"
+                                )}
+                            </DataItemValue>
                         </DataItem>
                     </DataList>
                 </CardContent>
-            </Card>
+            </RecordCard>
+            <D4HI3Module_SelfAuditCampaign_StatusStrip
+                counts={campaign.counts}
+                activeStatus={activeStatus}
+                onSelect={(status) => {
+                    statusColumn?.setFilterValue(status ? [status] : undefined);
+                    table.setPageIndex(0);
+                }}
+            />
             <div>
                 <Kaga.TableToolbar table={table} />
                 <Kaga.Table table={table} />
@@ -253,13 +274,13 @@ export function D4HI3Module_SelfAuditCampaign_Content({
             </div>
 
             {target && (
-                <D4HI3Module_SelfAuditCampaignAnswers_Dialog
+                <D4HI3Module_SelfAuditCampaignMember_Dialog
                     request={target}
                     open={action === "view-answers"}
                     onOpenChange={(open) => (open ? undefined : closeRequestAction())}
                 />
             )}
-            {target && isResendable(target.deliveryStatus) && (
+            {target && isResendable(target) && (
                 <D4HI3Module_ResendSelfAudit_Dialog
                     request={target}
                     open={action === "resend"}
@@ -268,4 +289,46 @@ export function D4HI3Module_SelfAuditCampaign_Content({
             )}
         </Saratoga.Root>
     );
+}
+
+/** A member row's ⋮ menu: the actions that open the page's per-request dialogs. */
+function RequestMenu({
+    request,
+    onAction,
+}: {
+    request: { memberName: string; status: SelfAuditStatus };
+    onAction: (action: RequestAction) => void;
+}) {
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Actions for ${request.memberName}`}
+                >
+                    <DropdownMenuTriggerIcon />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuGroup>
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => onAction("view-answers")}>
+                        View
+                    </DropdownMenuItem>
+                    {isResendable(request) && (
+                        <DropdownMenuItem onClick={() => onAction("resend")}>
+                            Resend
+                        </DropdownMenuItem>
+                    )}
+                </DropdownMenuGroup>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
+
+/** A component, not an inline call, so the server never reads the clock at all. */
+function RelativeTime({ date }: { date: Date }) {
+    const { formatRelativeDateTime } = usePreferences();
+    return formatRelativeDateTime(date);
 }

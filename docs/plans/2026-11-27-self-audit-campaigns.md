@@ -55,7 +55,7 @@ The d4h-i3 "kit check" becomes the **self-audit**. One send to a team's members 
   - **Files:** `src/modules/d4h-i3/components/self-audit-campaigns/` list + new `create-campaign-dialog.tsx`.
   - **Do:** Decisions 10 and 13 (list columns). Dialog per `docs/patterns/mutation-dialog.md`, modelled on `bundles/create-bundle.tsx`; on success navigate to the campaign. The no-D4H-token state the old page showed moves into the dialog.
   - **Done when:** create from the list lands on a Draft campaign on 3106; `npm run check` passes.
-- [ ] **5. Campaign page: RecordCard, status strip, members table** `visual`
+- [x] **5. Campaign page: RecordCard, status strip, members table** `visual` (feat(d4h-i3): campaign page with record card, status strip and slimmer table). Notes: the campaign summary gains `updatedAt` (service + router output) for the card's footer; the answers dialog is now `campaign-member-dialog.tsx` (action stays `view-answers`, the menu item reads "View"); Resend is hidden for withdrawn rows too; the card starts with an ID row (house shape) and Team links to the team; the page's metadata title is the campaign name; not yet checked live on 3106.
   - **Files:** campaign content component, new `campaign-status-strip.tsx`, the labels file, the answers dialog (→ member dialog).
   - **Do:** Decisions 11–13, per `docs/patterns/detail-page-data-fetching.md`.
   - **Done when:** page renders for Draft and sent campaigns on 3106; tiles filter; `npm run check` passes.

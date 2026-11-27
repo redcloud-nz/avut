@@ -30,7 +30,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
         }),
     );
 
-    return { title: `${campaign.bundleName} ${TITLE_SEPARATOR} Self Audit Campaigns` };
+    return { title: `${campaign.name} ${TITLE_SEPARATOR} Self Audit Campaigns` };
 }
 
 // Unlinked and for system admins only: `selfAuditCampaigns` refuses anyone else.
