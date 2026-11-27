@@ -168,7 +168,14 @@ const handlers: Record<TrashableEntityId, TrashHandler> = {
         async recover(ctx, id) {
             await Teams.recover(ctx, TeamId.schema.parse(id));
         },
-        purgeBlocker: async () => null,
+        async purgeBlocker(ctx, id) {
+            // A campaign keeps its team (`onDelete: Restrict`). Deleted campaigns count too,
+            // since their rows are still there.
+            const count = await ctx.prisma.selfAuditCampaign.count({ where: { teamId: id } });
+            return count > 0
+                ? `This team has ${count} self-audit campaign${count == 1 ? "" : "s"}, so it can't be permanently deleted.`
+                : null;
+        },
         async purge(ctx, id, name) {
             await ctx.prisma.$transaction([
                 purgeLog(ctx, "team", id, name),

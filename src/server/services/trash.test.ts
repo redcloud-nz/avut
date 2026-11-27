@@ -10,6 +10,7 @@ import { I3BundleId } from "@/lib/schemas/i3-bundle";
 import { I3TemplateId } from "@/lib/schemas/i3-template";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
+import { SelfAuditCampaignId } from "@/lib/schemas/self-audit";
 import { SkillId } from "@/lib/schemas/skill";
 import { SkillCheckId } from "@/lib/schemas/skill-check";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
@@ -39,6 +40,8 @@ describe("Trash service", () => {
         expiredTeam: TeamId.create(),
         freshTeam: TeamId.create(),
         undatedTeam: TeamId.create(),
+        // A team in the bin, past its window, that a self-audit campaign still points at.
+        campaignTeam: TeamId.create(),
         check: SkillCheckId.create(),
         // A package of this org's own, with a Deleted group and a Deleted skill to purge.
         ownPkg: SkillPackageId.create(),
@@ -101,6 +104,7 @@ describe("Trash service", () => {
             [T.expiredTeam, "Deleted"],
             [T.freshTeam, "Deleted"],
             [T.undatedTeam, "Deleted"],
+            [T.campaignTeam, "Deleted"],
         ] as const) {
             await db.team.create({
                 data: { id, organizationId: T.org, name: id, tags: [], properties: {}, status },
@@ -221,7 +225,22 @@ describe("Trash service", () => {
             },
         });
 
+        await db.selfAuditCampaign.create({
+            data: {
+                id: SelfAuditCampaignId.create(),
+                organizationId: T.org,
+                name: "Responder Nov 2026",
+                teamId: T.campaignTeam,
+                d4hTeamId: 1,
+                d4hTeamName: "Rescue Team",
+                bundleName: "Responder",
+                templates: [],
+                status: "Deleted",
+            },
+        });
+
         await logDelete("Team", T.expiredTeam, daysAgo(31));
+        await logDelete("Team", T.campaignTeam, daysAgo(31));
         await logDelete("Team", T.freshTeam, daysAgo(5));
         await logDelete("SkillPackage", T.sharedPkg, daysAgo(60));
     });
@@ -240,13 +259,24 @@ describe("Trash service", () => {
         expect(await db.skillPackage.findUnique({ where: { id: T.sharedPkg } })).not.toBeNull();
     });
 
+    it("refuses to purge a team a self-audit campaign points at, even a Deleted campaign", async () => {
+        await expect(Trash.purge(ctx(), "team", T.campaignTeam)).rejects.toThrow(
+            /This team has 1 self-audit campaign, so it can't be permanently deleted/,
+        );
+        expect(await db.team.findUnique({ where: { id: T.campaignTeam } })).not.toBeNull();
+    });
+
     it("purgeExpired purges past-window rows and reports blocked and undated ones", async () => {
         const summary = await Trash.purgeExpired(ctx(), now, ["team", "skillPackage"]);
 
         expect(summary.purged).toEqual([{ type: "team", id: T.expiredTeam }]);
-        expect(summary.blocked).toEqual([
-            expect.objectContaining({ type: "skillPackage", id: T.sharedPkg }),
-        ]);
+        expect(summary.blocked).toHaveLength(2);
+        expect(summary.blocked).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ type: "team", id: T.campaignTeam }),
+                expect.objectContaining({ type: "skillPackage", id: T.sharedPkg }),
+            ]),
+        );
         expect(summary.undated).toEqual([{ type: "team", id: T.undatedTeam }]);
         expect(summary.failed).toEqual([]);
 
