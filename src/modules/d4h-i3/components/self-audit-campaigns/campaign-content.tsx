@@ -38,7 +38,11 @@ import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
 import { route } from "@/lib/routes";
-import type { SelfAuditCampaignId, SelfAuditStatus } from "@/lib/schemas/self-audit";
+import type {
+    SelfAuditCampaignId,
+    SelfAuditDeliveryStatus,
+    SelfAuditStatus,
+} from "@/lib/schemas/self-audit";
 import { trpc } from "@/trpc/client";
 
 import { D4HI3Module_AddSelfAuditMembers_Dialog } from "./add-members-dialog";
@@ -55,12 +59,19 @@ import { D4HI3Module_WithdrawSelfAuditRequest_Dialog } from "./withdraw-request-
 type RequestAction = "view-answers" | "resend" | "remove" | "withdraw" | "re-add";
 type PageAction = "add-members" | "send" | "discard";
 
-/** A request has a live link to resend: it has an email, was sent, and isn't withdrawn. */
-function isResendable(request: { status: SelfAuditStatus }): boolean {
+/**
+ * A request whose link can be resent: it was sent (or tried), and isn't withdrawn. Read from the
+ * delivery status rather than the merged one, which shows progress (Opened, Submitted) over it.
+ */
+function isResendable(request: {
+    deliveryStatus: SelfAuditDeliveryStatus;
+    withdrawnAt: Date | null;
+}): boolean {
     return (
-        request.status !== "NoEmail" &&
-        request.status !== "Unsent" &&
-        request.status !== "Withdrawn"
+        (request.deliveryStatus === "Pending" ||
+            request.deliveryStatus === "Sent" ||
+            request.deliveryStatus === "Failed") &&
+        request.withdrawnAt === null
     );
 }
 
@@ -430,7 +441,12 @@ function RequestMenu({
     isDraft,
     onAction,
 }: {
-    request: { memberName: string; status: SelfAuditStatus };
+    request: {
+        memberName: string;
+        status: SelfAuditStatus;
+        deliveryStatus: SelfAuditDeliveryStatus;
+        withdrawnAt: Date | null;
+    };
     isDraft: boolean;
     onAction: (action: RequestAction) => void;
 }) {

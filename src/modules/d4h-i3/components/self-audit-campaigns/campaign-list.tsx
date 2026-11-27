@@ -18,6 +18,7 @@ import {
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
+import { TeamLink } from "@/components/entity-links/team-link";
 import { Badge } from "@/components/ui/badge";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
@@ -59,6 +60,7 @@ export function D4HI3Module_SelfAuditCampaignList() {
                 col.accessor((row) => row.team.name, {
                     id: "team",
                     header: "Team",
+                    cell: (ctx) => <TeamLink team={ctx.row.original.team} />,
                     enableColumnFilter: false,
                 }),
                 col.accessor((row) => (row.sentAt ? "Sent" : "Draft"), {

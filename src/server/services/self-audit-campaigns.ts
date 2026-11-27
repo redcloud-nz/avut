@@ -24,12 +24,7 @@ import SelfAuditRequestEmail, { selfAuditRequestSubject } from "@/emails/self-au
 import type { Prisma } from "@/generated/prisma/client";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
 import { SelfAuditForm } from "@/lib/forms";
-import {
-    compareBundle,
-    type BundleRow,
-    type ComparableLine,
-    type ExcludedReason,
-} from "@/lib/i3-bundle-compare";
+import { compareBundle, type BundleRow, type ComparableLine } from "@/lib/i3-bundle-compare";
 import type { ItemQualityResult } from "@/lib/i3-item-quality";
 import type { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import type { D4HEquipmentListItem } from "@/lib/schemas/d4h/equipment-item";
@@ -281,35 +276,39 @@ function emailOf(member: { email?: { value: string } | null }): string | null {
     return member.email?.value.trim() || null;
 }
 
-/** A bundle line the comparison leaves out for a team, and why. */
-export type SelfAuditExcludedLine = {
-    templateId: string;
-    name: string;
-    reason: ExcludedReason;
-};
-
-export type SelfAuditTeamSnapshot = SelfAuditSnapshot<SelfAuditRecipient> & {
-    excluded: SelfAuditExcludedLine[];
-};
+/**
+ * Check the caller's D4H token reaches a campaign's D4H team.
+ *
+ * @throws NotFoundError if it doesn't.
+ */
+async function requireReachableD4HTeam(
+    accessToken: D4HAccessToken_ServerOnly,
+    d4hTeamId: number,
+): Promise<void> {
+    const { d4HTeams } = await getD4HTokenMetadata(toD4HCredentialRef(accessToken));
+    if (!d4HTeams.some((candidate) => candidate.id === d4hTeamId)) {
+        throw new NotFoundError(`D4H team ${d4hTeamId} not found.`);
+    }
+}
 
 /**
- * Compare the bundle against one D4H team and snapshot what each member would be asked, as the
- * caller's D4H token sees it.
+ * The bundle's templates as one D4H team is asked them: its comparable lines for that team, with
+ * the variants that fit it, as the caller's D4H token sees it. Reads no members or equipment: a
+ * campaign is created with none, and members are snapshotted as they're added.
  *
  * @throws NotFoundError if the bundle isn't in the organization, or the token doesn't reach the team.
  * @throws ValidationError if the bundle is Deleted.
  */
-export async function computeTeamSnapshot(
+async function snapshotTemplates(
     ctx: OrgServiceContext,
     {
         accessToken,
         bundleId,
         d4hTeamId,
     }: { accessToken: D4HAccessToken_ServerOnly; bundleId: I3BundleId; d4hTeamId: number },
-): Promise<{ bundle: I3Bundle; snapshot: SelfAuditTeamSnapshot }> {
-    const credentialRef = toD4HCredentialRef(accessToken);
-    const [{ d4HTeams }, bundleWithLines] = await Promise.all([
-        getD4HTokenMetadata(credentialRef),
+): Promise<{ bundle: I3Bundle; templates: SelfAuditTemplate[] }> {
+    const [, bundleWithLines] = await Promise.all([
+        requireReachableD4HTeam(accessToken, d4hTeamId),
         I3Bundles.getWithLines(ctx, bundleId),
     ]);
 
@@ -318,14 +317,14 @@ export async function computeTeamSnapshot(
     if (bundle.status !== "Active") {
         throw new ValidationError(`I3Bundle(id=${bundleId}) is ${bundle.status}.`);
     }
-    if (!d4HTeams.some((candidate) => candidate.id === d4hTeamId)) {
-        throw new NotFoundError(`D4H team ${d4hTeamId} not found.`);
-    }
 
-    const variants = await ctx.prisma.i3TemplateVariant.findMany({
-        where: { templateId: { in: lines.map((line) => line.template.id) } },
-        include: { d4h: true },
-    });
+    const [variants, fits] = await Promise.all([
+        ctx.prisma.i3TemplateVariant.findMany({
+            where: { templateId: { in: lines.map((line) => line.template.id) } },
+            include: { d4h: true },
+        }),
+        I3Templates.listFitsForD4HTeam(ctx, { accessToken, teamId: d4hTeamId }),
+    ]);
     const variantSources = variants.map(
         (variant): SelfAuditVariantSource => ({
             id: variant.id,
@@ -337,51 +336,19 @@ export async function computeTeamSnapshot(
         }),
     );
 
-    const [fits, items, members] = await Promise.all([
-        I3Templates.listFitsForD4HTeam(ctx, { accessToken, teamId: d4hTeamId }),
-        fetchD4HTeamEquipmentItems(accessToken, d4hTeamId),
-        getD4HTeamMembers(credentialRef, d4hTeamId),
-    ]);
-
-    const issued = filterTeamIssuedItems(items, d4hTeamId).map(
-        ({ item, holderId }): SelfAuditIssuedItem => ({
-            ...item,
-            holder: { id: holderId },
-        }),
-    );
-    const recipients = members.map(
-        (member): SelfAuditRecipient => ({
-            id: member.id,
-            name: member.name,
-            email: emailOf(member),
-        }),
-    );
-
-    const comparison = compareBundle({
+    const { columns } = compareBundle({
         lines,
-        members: recipients,
-        items: issued,
+        members: [],
+        items: [],
         fittingTemplateIds: fits.templateIds,
     });
-
-    const snapshot = buildSelfAuditSnapshot({
-        columns: comparison.columns,
-        rows: comparison.rows,
+    const { templates } = buildSelfAuditSnapshot<SelfAuditMemberSource>({
+        columns,
+        rows: [],
         variants: variantSources,
         fittingVariantIds: fits.variantIds,
     });
-
-    return {
-        bundle,
-        snapshot: {
-            ...snapshot,
-            excluded: comparison.excluded.map(({ line, reason }) => ({
-                templateId: line.template.id,
-                name: line.template.name,
-                reason,
-            })),
-        },
-    };
+    return { bundle, templates };
 }
 
 // Admin reads
@@ -653,8 +620,8 @@ export async function createCampaign(
     if (!team.d4h) throw new ValidationError(`${team.name} isn't linked to a D4H team.`);
     const { d4hTeamId, d4hTeamName } = team.d4h;
 
-    const [{ bundle, snapshot }, settings] = await Promise.all([
-        computeTeamSnapshot(ctx, { accessToken, bundleId, d4hTeamId }),
+    const [{ bundle, templates }, settings] = await Promise.all([
+        snapshotTemplates(ctx, { accessToken, bundleId, d4hTeamId }),
         OrgSettings.read(ctx.prisma, ctx.organizationId),
     ]);
     const campaignName =
@@ -672,7 +639,7 @@ export async function createCampaign(
                 d4hTeamName,
                 bundleId: bundle.id,
                 bundleName: bundle.name,
-                templates: snapshot.templates,
+                templates,
             },
         }),
         ctx.logEvent({
@@ -700,21 +667,6 @@ export const SEND_SPACING_MS = 500;
  * per member on top of the default.
  */
 const MEMBER_WRITES_TIMEOUT_MS = 5_000 + SELF_AUDIT_RECIPIENTS_MAX * 100;
-
-/**
- * Check the caller's D4H token reaches a campaign's D4H team.
- *
- * @throws NotFoundError if it doesn't.
- */
-async function requireReachableD4HTeam(
-    accessToken: D4HAccessToken_ServerOnly,
-    d4hTeamId: number,
-): Promise<void> {
-    const { d4HTeams } = await getD4HTokenMetadata(toD4HCredentialRef(accessToken));
-    if (!d4HTeams.some((candidate) => candidate.id === d4hTeamId)) {
-        throw new NotFoundError(`D4H team ${d4hTeamId} not found.`);
-    }
-}
 
 /** The fallback for who's asking, when the sender's account is gone. */
 const UNKNOWN_SENDER = "The team equipment officer";
@@ -1309,12 +1261,8 @@ export async function listAddableMembers(
     });
     if (!campaign) throw new NotFoundError(`SelfAuditCampaign(id=${campaignId}) not found.`);
 
-    const credentialRef = toD4HCredentialRef(accessToken);
-    const { d4HTeams } = await getD4HTokenMetadata(credentialRef);
-    if (!d4HTeams.some((candidate) => candidate.id === campaign.d4hTeamId)) {
-        throw new NotFoundError(`D4H team ${campaign.d4hTeamId} not found.`);
-    }
-    const members = await getD4HTeamMembers(credentialRef, campaign.d4hTeamId);
+    await requireReachableD4HTeam(accessToken, campaign.d4hTeamId);
+    const members = await getD4HTeamMembers(toD4HCredentialRef(accessToken), campaign.d4hTeamId);
     const requestByMember = new Map(
         campaign.requests.map((request) => [request.d4hMemberId, request]),
     );

@@ -30,7 +30,7 @@ import { ObjectName } from "@/components/ui/typography";
 import { useLogger } from "@/hooks/use-logger";
 import { useOrganization } from "@/hooks/use-organization";
 import { useReturnFocus } from "@/hooks/use-return-focus";
-import type { SelfAuditCampaignId } from "@/lib/schemas/self-audit";
+import { SELF_AUDIT_RECIPIENTS_MAX, type SelfAuditCampaignId } from "@/lib/schemas/self-audit";
 import { trpc } from "@/trpc/client";
 
 import { D4HI3Module_SelfAuditCampaign_D4HGate } from "./campaign-d4h-gate";
@@ -40,6 +40,7 @@ type AddMembersCampaign = {
     id: SelfAuditCampaignId;
     d4hTeamName: string;
     sentAt: Date | null;
+    requests: readonly { withdrawnAt: Date | null }[];
 };
 
 /**
@@ -99,9 +100,17 @@ function AddMembers_Body({
     );
     const sortedMembers = [...members].sort((a, b) => a.name.localeCompare(b.name));
 
+    // `SELF_AUDIT_RECIPIENTS_MAX` counts the members not withdrawn, as the service does.
+    const memberCount = campaign.requests.filter((request) => request.withdrawnAt === null).length;
+    const room = Math.max(0, SELF_AUDIT_RECIPIENTS_MAX - memberCount);
+
     const [selected, setSelected] = useState<ReadonlySet<number>>(
-        () => new Set(isDraft ? members.map((member) => member.d4hMemberId) : []),
+        () =>
+            new Set(
+                isDraft ? sortedMembers.slice(0, room).map((member) => member.d4hMemberId) : [],
+            ),
     );
+    const overCap = selected.size > room;
 
     function handleCheckedChange(d4hMemberId: number, checked: boolean) {
         setSelected((prev) => {
@@ -220,13 +229,21 @@ function AddMembers_Body({
                         );
                     })}
                 </FieldGroup>
+                {overCap && (
+                    <Alert variant="warning">
+                        <AlertDescription>
+                            A campaign can have at most {SELF_AUDIT_RECIPIENTS_MAX} members. It has{" "}
+                            {memberCount}, so select at most {room}.
+                        </AlertDescription>
+                    </Alert>
+                )}
             </DialogBody>
             <DialogFooter>
                 <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                 <MutationButton
                     type="button"
                     status={mutation.status}
-                    disabled={selected.size === 0}
+                    disabled={selected.size === 0 || overCap}
                     text={{
                         idle: selected.size > 0 ? `Add ${selected.size}` : "Add",
                         pending: isDraft ? "Adding" : "Adding and sending",

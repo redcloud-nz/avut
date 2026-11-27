@@ -654,6 +654,14 @@ describe("campaigns", () => {
             }
             expect(await db.selfAuditCampaign.count()).toBe(before);
         });
+
+        it("reads no D4H members or equipment", async () => {
+            vi.mocked(getD4HTeamMembers).mockClear();
+            vi.mocked(fetchD4HTeamEquipmentItems).mockClear();
+            await create();
+            expect(getD4HTeamMembers).not.toHaveBeenCalled();
+            expect(fetchD4HTeamEquipmentItems).not.toHaveBeenCalled();
+        });
     });
 
     describe("sendCampaign", () => {

@@ -1039,7 +1039,7 @@ model SelfAuditCampaign {
   organization   Organization @relation("self_audit_campaign_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
   name           String
   teamId         String
-  team           Team         @relation("self_audit_campaign_to_team", fields: [teamId], references: [id], onDelete: Restrict)
+  team           Team         @relation("self_audit_campaign_to_team", fields: [teamId], references: [id], onDelete: NoAction)
   /// The team's D4H link at create. Members and templates always come from this D4H team, even if
   /// the AVUT team is later relinked or unlinked.
   d4hTeamId      Int

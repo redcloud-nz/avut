@@ -25,7 +25,8 @@ import * as SelfAuditCampaigns from "@/server/services/self-audit-campaigns";
 import { createTrpcRouter, organizationProcedure } from "../init";
 
 /**
- * Every self-audit procedure is for system admins only (decision 15 of the self-audit plan): an org
+ * Every self-audit procedure is for system admins only (decision 15 of
+ * `docs/plans/2026-11-25-kit-check-send.md`, kept by decision 8 of the campaigns plan): an org
  * member without the Better Auth `admin` role is refused, whatever their org roles.
  */
 const selfAuditProcedure = organizationProcedure({}, { allowSystemAdmin: true }).use(
