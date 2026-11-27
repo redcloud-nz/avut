@@ -20,7 +20,7 @@ import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { ClientOnly } from "@/components/client-only";
 import { TeamLink } from "@/components/entity-links/team-link";
-import { DropdownMenuTriggerIcon } from "@/components/icons";
+import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
@@ -40,12 +40,16 @@ import { route } from "@/lib/routes";
 import type { SelfAuditCampaignId, SelfAuditStatus } from "@/lib/schemas/self-audit";
 import { trpc } from "@/trpc/client";
 
+import { D4HI3Module_AddSelfAuditMembers_Dialog } from "./add-members-dialog";
 import { STATUS_BADGES, STATUS_LABELS, STATUS_ORDER } from "./campaign-labels";
 import { D4HI3Module_SelfAuditCampaignMember_Dialog } from "./campaign-member-dialog";
 import { D4HI3Module_ResendSelfAudit_Dialog } from "./campaign-resend-dialog";
 import { D4HI3Module_SelfAuditCampaign_StatusStrip } from "./campaign-status-strip";
+import { D4HI3Module_DiscardSelfAuditCampaign_Dialog } from "./discard-campaign-dialog";
+import { D4HI3Module_SendSelfAuditCampaign_Dialog } from "./send-campaign-dialog";
 
 type RequestAction = "view-answers" | "resend";
+type PageAction = "add-members" | "send" | "discard";
 
 /** A request has a live link to resend: it has an email, was sent, and isn't withdrawn. */
 function isResendable(request: { status: SelfAuditStatus }): boolean {
@@ -77,7 +81,8 @@ function lastActivityOf(request: {
 
 /**
  * A self audit campaign's page: the campaign's record, its members by status, and the members
- * table, which the status strip filters. Hosts the per-request dialogs,
+ * table, which the status strip filters. Hosts the page's dialogs, `?action=add-members` and, on a
+ * Draft, `?action=send` and `?action=discard`, and the per-request ones,
  * `?action=view-answers&requestId=…` and `?action=resend&requestId=…`.
  */
 export function D4HI3Module_SelfAuditCampaign_Content({
@@ -97,7 +102,7 @@ export function D4HI3Module_SelfAuditCampaign_Content({
 
     const [action, setAction] = useQueryState(
         "action",
-        parseAsStringLiteral(["view-answers", "resend"] as const),
+        parseAsStringLiteral(["view-answers", "resend", "add-members", "send", "discard"] as const),
     );
     const [requestId, setRequestId] = useQueryState("requestId", parseAsString);
     const target = campaign.requests.find((request) => request.id === requestId) ?? null;
@@ -110,6 +115,12 @@ export function D4HI3Module_SelfAuditCampaign_Content({
         void setAction(null, { history: "replace" });
         void setRequestId(null, { history: "replace" });
     }
+    function handlePageActionOpenChange(next: PageAction, open: boolean) {
+        void setAction(open ? next : null, { history: open ? "push" : "replace" });
+    }
+
+    const isDraft = campaign.sentAt === null;
+    const unsentCount = campaign.counts.Unsent;
 
     type RowData = (typeof campaign.requests)[number];
 
@@ -215,6 +226,32 @@ export function D4HI3Module_SelfAuditCampaign_Content({
             />
             <Saratoga.Header>
                 <Saratoga.Title>{campaign.name}</Saratoga.Title>
+                <Saratoga.Actions>
+                    {isDraft && (
+                        <Button
+                            variant="destructive"
+                            onClick={() => handlePageActionOpenChange("discard", true)}
+                        >
+                            <ObjectIcons.Delete />
+                            <span className="sr-only md:not-sr-only">Discard draft</span>
+                        </Button>
+                    )}
+                    <Button
+                        variant="outline"
+                        onClick={() => handlePageActionOpenChange("add-members", true)}
+                    >
+                        <ObjectIcons.Create />
+                        <span className="sr-only md:not-sr-only">Add members</span>
+                    </Button>
+                    {isDraft && (
+                        <Button
+                            disabled={unsentCount === 0}
+                            onClick={() => handlePageActionOpenChange("send", true)}
+                        >
+                            <ObjectIcons.Invite /> Send to {unsentCount}
+                        </Button>
+                    )}
+                </Saratoga.Actions>
             </Saratoga.Header>
             <RecordCard label="Self Audit Campaign" updatedAt={campaign.updatedAt}>
                 <CardContent>
@@ -273,6 +310,24 @@ export function D4HI3Module_SelfAuditCampaign_Content({
                 <Kaga.TablePagination table={table} />
             </div>
 
+            <D4HI3Module_AddSelfAuditMembers_Dialog
+                campaign={campaign}
+                open={action === "add-members"}
+                onOpenChange={(open) => handlePageActionOpenChange("add-members", open)}
+            />
+            {/* Mounted on a sent campaign too, so it outlives the send that ends the Draft. */}
+            <D4HI3Module_SendSelfAuditCampaign_Dialog
+                campaign={{ id: campaign.id, name: campaign.name, unsentCount }}
+                open={action === "send" && isDraft}
+                onOpenChange={(open) => handlePageActionOpenChange("send", open)}
+            />
+            {isDraft && (
+                <D4HI3Module_DiscardSelfAuditCampaign_Dialog
+                    campaign={campaign}
+                    open={action === "discard"}
+                    onOpenChange={(open) => handlePageActionOpenChange("discard", open)}
+                />
+            )}
             {target && (
                 <D4HI3Module_SelfAuditCampaignMember_Dialog
                     request={target}

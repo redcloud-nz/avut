@@ -47,3 +47,21 @@ export function describeSubmitted(counts: Record<SelfAuditStatus, number>): stri
     const members = Object.values(counts).reduce((sum, count) => sum + count, 0) - counts.Withdrawn;
     return members > 0 ? `${counts.Submitted} of ${members}` : "—";
 }
+
+/** "3 sent, 1 failed, 1 with no email", leaving out the zero counts (but never empty). */
+export function describeSendOutcome({
+    sent,
+    failed,
+    noEmail,
+}: {
+    sent: number;
+    failed: number;
+    noEmail: number;
+}): string {
+    const parts = [
+        sent > 0 && `${sent} sent`,
+        failed > 0 && `${failed} failed`,
+        noEmail > 0 && `${noEmail} with no email`,
+    ].filter((part): part is string => typeof part === "string");
+    return parts.length > 0 ? parts.join(", ") : "nothing sent";
+}

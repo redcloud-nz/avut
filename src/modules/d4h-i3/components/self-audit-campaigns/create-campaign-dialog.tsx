@@ -4,11 +4,9 @@
  */
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useId } from "react";
-import { ErrorBoundary } from "react-error-boundary";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -17,9 +15,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
 import { selfAuditCampaignsEffects } from "@/client/self-audit-campaigns-effects";
-import { trpcErrorCode } from "@/components/errors/describe-error";
 import { ObjectIcons } from "@/components/icons";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
@@ -50,6 +46,8 @@ import { SELF_AUDIT_CAMPAIGN_NAME_MAX } from "@/lib/schemas/self-audit";
 import { TeamId } from "@/lib/schemas/team";
 import { defaultCampaignName } from "@/lib/self-audit-campaign-name";
 import { trpc } from "@/trpc/client";
+
+import { D4HI3Module_SelfAuditCampaign_D4HGate } from "./campaign-d4h-gate";
 
 const formSchema = z.object({
     teamId: z.string({ error: "Pick a team." }).pipe(TeamId.schema),
@@ -87,68 +85,12 @@ export function D4HI3Module_CreateSelfAuditCampaign_Dialog() {
                     </DialogDescription>
                 </DialogHeader>
                 <DialogBoundary>
-                    <CreateCampaign_D4HGate />
+                    <D4HI3Module_SelfAuditCampaign_D4HGate>
+                        <CreateCampaign_Body />
+                    </D4HI3Module_SelfAuditCampaign_D4HGate>
                 </DialogBoundary>
             </DialogContent>
         </Dialog>
-    );
-}
-
-/**
- * The team list needs D4H: `listTeams` is PRECONDITION_FAILED when the organization has D4H off or
- * the caller has no personal D4H token here. That one case gets its own body; anything else goes
- * on to `DialogBoundary` (a fallback that throws hands the error to the boundary above).
- */
-function CreateCampaign_D4HGate() {
-    return (
-        <ErrorBoundary
-            fallbackRender={({ error }) => {
-                if (trpcErrorCode(error) !== "PRECONDITION_FAILED") throw error;
-                return <CreateCampaign_NoD4H />;
-            }}
-        >
-            <CreateCampaign_Body />
-        </ErrorBoundary>
-    );
-}
-
-function CreateCampaign_NoD4H() {
-    const organization = useOrganization();
-    const d4hEnabled = organization.settings.integrations.d4h.enabled !== false;
-
-    return (
-        <>
-            <DialogBody>
-                <Alert variant="warning">
-                    <AlertTitle>
-                        {d4hEnabled ? "Needs your personal D4H token" : "D4H isn't connected"}
-                    </AlertTitle>
-                    <AlertDescription>
-                        {d4hEnabled ? (
-                            <p>
-                                A self audit campaign reads its team and each member&rsquo;s
-                                equipment from D4H with your own token. Add one in{" "}
-                                <Link
-                                    href="/user/settings/d4h"
-                                    className="underline underline-offset-4"
-                                >
-                                    User Settings › D4H
-                                </Link>
-                                .
-                            </p>
-                        ) : (
-                            <p>
-                                This organisation doesn&rsquo;t have the D4H integration enabled, so
-                                there&rsquo;s no team to send a self audit campaign to.
-                            </p>
-                        )}
-                    </AlertDescription>
-                </Alert>
-            </DialogBody>
-            <DialogFooter>
-                <DialogCloseButton variant="outline">Close</DialogCloseButton>
-            </DialogFooter>
-        </>
     );
 }
 

@@ -59,7 +59,7 @@ The d4h-i3 "kit check" becomes the **self-audit**. One send to a team's members 
   - **Files:** campaign content component, new `campaign-status-strip.tsx`, the labels file, the answers dialog (→ member dialog).
   - **Do:** Decisions 11–13, per `docs/patterns/detail-page-data-fetching.md`.
   - **Done when:** page renders for Draft and sent campaigns on 3106; tiles filter; `npm run check` passes.
-- [ ] **6a. Add members and Send** `visual`
+- [x] **6a. Add members and Send** `visual` (feat(d4h-i3): add members, send and discard on a self-audit campaign). Notes: header actions are plain buttons (the page has no Actions menu), the content component hosting all three `?action=` dialogs; the no-D4H alert moved from the create dialog to a shared `campaign-d4h-gate.tsx` (add members gates its `listAddableMembers` read on it; send shows it in place of the confirm when the mutation is PRECONDITION_FAILED); send and add report sent/failed/no-email in a toast (`describeSendOutcome` in the labels file); the send dialog stays mounted after the Draft ends so its close outlives the refetch; "Send to N" is disabled at N = 0; not yet checked live on 3106.
   - **Files:** campaign content component, new `add-members-dialog.tsx`, `send-campaign-dialog.tsx`, `discard-campaign-dialog.tsx`.
   - **Do:** Per `docs/patterns/mutation-dialog.md`. Header actions: "Add members" (team members preselected on a Draft; withdrawn ones listed as "Re-add"), "Send to N" (Draft, confirm), "Discard draft" (Draft, confirm).
   - **Done when:** create → add → send → add works on 3106 (mail to the Resend sink); `npm run check` passes.
