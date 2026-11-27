@@ -119,12 +119,14 @@ describe("publicFormsRouter self-audit", () => {
     it("answers an unknown token not-found, and refuses its writes NOT_FOUND", async () => {
         const caller = anonymous();
         const token = "no-such-token";
-        expect(await caller.getSelfAuditByToken({ token })).toEqual({ state: "not-found" });
+        expect(await caller.getSelfAuditByToken({ slug: "acme", token })).toEqual({
+            state: "not-found",
+        });
         for (const call of [
-            () => caller.openSelfAuditByToken({ token }),
-            () => caller.saveSelfAuditDraftByToken({ token, formData: complete }),
-            () => caller.submitSelfAuditByToken({ token, formData: complete }),
-            () => caller.reopenSelfAuditByToken({ token }),
+            () => caller.openSelfAuditByToken({ slug: "acme", token }),
+            () => caller.saveSelfAuditDraftByToken({ slug: "acme", token, formData: complete }),
+            () => caller.submitSelfAuditByToken({ slug: "acme", token, formData: complete }),
+            () => caller.reopenSelfAuditByToken({ slug: "acme", token }),
         ]) {
             await expect(call()).rejects.toMatchObject({
                 code: "NOT_FOUND",
@@ -138,6 +140,7 @@ describe("publicFormsRouter self-audit", () => {
         const own = { ...complete.missing[gloves.id], has: "own" };
         await expect(
             anonymous().saveSelfAuditDraftByToken({
+                slug: "acme",
                 token,
                 formData: { ...complete, missing: { [gloves.id]: own } } as never,
             }),
@@ -147,7 +150,7 @@ describe("publicFormsRouter self-audit", () => {
     it("refuses an incomplete submit BAD_REQUEST", async () => {
         const { token } = await seedRequest();
         await expect(
-            anonymous().submitSelfAuditByToken({ token, formData: unanswered }),
+            anonymous().submitSelfAuditByToken({ slug: "acme", token, formData: unanswered }),
         ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     });
 
@@ -158,7 +161,7 @@ describe("publicFormsRouter self-audit", () => {
         const { token, id } = await seedRequest();
 
         await expect(
-            anonymous().submitSelfAuditByToken({ token, formData: complete }),
+            anonymous().submitSelfAuditByToken({ slug: "acme", token, formData: complete }),
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
         expect(await db.selfAuditRequest.findUniqueOrThrow({ where: { id } })).toMatchObject({
             submittedAt: null,
@@ -169,21 +172,21 @@ describe("publicFormsRouter self-audit", () => {
         const caller = anonymous();
         const { token } = await seedRequest();
 
-        await caller.openSelfAuditByToken({ token });
-        await caller.saveSelfAuditDraftByToken({ token, formData: complete });
-        await caller.submitSelfAuditByToken({ token, formData: complete });
-        expect(await caller.getSelfAuditByToken({ token })).toMatchObject({
+        await caller.openSelfAuditByToken({ slug: "acme", token });
+        await caller.saveSelfAuditDraftByToken({ slug: "acme", token, formData: complete });
+        await caller.submitSelfAuditByToken({ slug: "acme", token, formData: complete });
+        expect(await caller.getSelfAuditByToken({ slug: "acme", token })).toMatchObject({
             state: "ok",
             formStatus: "Submitted",
             submittedData: complete,
         });
 
         await expect(
-            caller.saveSelfAuditDraftByToken({ token, formData: unanswered }),
+            caller.saveSelfAuditDraftByToken({ slug: "acme", token, formData: unanswered }),
         ).rejects.toMatchObject({ code: "CONFLICT" });
 
-        await caller.reopenSelfAuditByToken({ token });
-        expect(await caller.getSelfAuditByToken({ token })).toMatchObject({
+        await caller.reopenSelfAuditByToken({ slug: "acme", token });
+        expect(await caller.getSelfAuditByToken({ slug: "acme", token })).toMatchObject({
             formStatus: "Draft",
             submittedData: complete,
         });

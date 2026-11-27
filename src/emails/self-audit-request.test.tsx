@@ -18,7 +18,7 @@ const props: SelfAuditRequestEmailProps = {
     team: { name: "Alpha Team" },
     bundle: { name: "Responder" },
     requestedBy: "Ana Lee",
-    formUrl: "https://www.avut.nz/forms/kit-check/TOKEN123",
+    formUrl: "https://www.avut.nz/forms/chch-cdem/d4h-i3-self-audit/TOKEN123",
     // 11:00 on Wednesday 9 December in Auckland (NZDT, UTC+13): still the 9th there.
     expiresAt: new Date("2026-12-08T22:00:00Z"),
     timeZone: "Pacific/Auckland",
@@ -46,6 +46,8 @@ describe("SelfAuditRequestEmail", () => {
         expect(text).toContain("The link works until Wed 9 Dec 2026.");
 
         const html = await render(<SelfAuditRequestEmail {...props} />);
-        expect(html).toContain('href="https://www.avut.nz/forms/kit-check/TOKEN123"');
+        expect(html).toContain(
+            'href="https://www.avut.nz/forms/chch-cdem/d4h-i3-self-audit/TOKEN123"',
+        );
     });
 });

@@ -600,6 +600,8 @@ export const defaultSelfAuditSendDeps: SelfAuditSendDeps = {
 /** What every email of one self audit campaign shares. */
 type SelfAuditSendContext = {
     organizationName: string;
+    /** The form link's first segment: `/forms/<slug>/d4h-i3-self-audit/<token>`. */
+    organizationSlug: string;
     bundleName: string;
     requestedBy: string;
     timeZone: string;
@@ -614,7 +616,7 @@ type SendableRequest = {
     d4hTeamTitle: string;
 };
 
-/** The organization's name, time zone and Reply-To, and the caller's name as the sender. */
+/** The organization's name, slug, time zone and Reply-To, and the caller's name as the sender. */
 async function loadSendContext(
     ctx: OrgServiceContext,
     bundleName: string,
@@ -622,13 +624,14 @@ async function loadSendContext(
     const [organization, sender, settings] = await Promise.all([
         ctx.prisma.organization.findUniqueOrThrow({
             where: { id: ctx.organizationId },
-            select: { name: true },
+            select: { name: true, slug: true },
         }),
         ctx.prisma.user.findUnique({ where: { id: ctx.userId }, select: { name: true } }),
         OrgSettings.read(ctx.prisma, ctx.organizationId),
     ]);
     return {
         organizationName: organization.name,
+        organizationSlug: organization.slug,
         bundleName,
         requestedBy: sender?.name || UNKNOWN_SENDER,
         timeZone: settings.general.timeZone,
@@ -669,7 +672,7 @@ async function sendRequest(
             team: { name: request.d4hTeamTitle },
             bundle: { name: send.bundleName },
             requestedBy: send.requestedBy,
-            formUrl: `${baseUrl}/forms/kit-check/${link.token}`,
+            formUrl: `${baseUrl}/forms/${send.organizationSlug}/d4h-i3-self-audit/${link.token}`,
             expiresAt,
             timeZone: send.timeZone,
             recipientEmail: request.email,

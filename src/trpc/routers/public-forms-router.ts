@@ -58,7 +58,8 @@ const SelfAuditByTokenOutput = z.discriminatedUnion("state", [
     }),
 ]) satisfies z.ZodType<SelfAuditPublic.SelfAuditByToken>;
 
-const selfAuditTokenInput = z.object({ token: selfAuditTokenSchema });
+/** A self-audit link: the organisation's slug from the URL, and the link token. */
+const selfAuditTokenInput = z.object({ slug: z.string(), token: selfAuditTokenSchema });
 const selfAuditAnswerInput = selfAuditTokenInput.extend({ formData: SelfAuditResponseData });
 
 /**
@@ -68,9 +69,10 @@ const selfAuditAnswerInput = selfAuditTokenInput.extend({ formData: SelfAuditRes
  * `src/instrumentation-client.ts` (`PUBLIC_FORM_BOT_PROTECTED_PATHS`).
  *
  * The self-audit's procedures (`…SelfAudit…ByToken`) are reached through a per-member emailed link
- * instead: the token finds the organisation and the request (`src/server/services/self-audit-public.ts`).
- * Unknown, replaced and expired tokens all read as `not-found`, and the writes refuse them with
- * NOT_FOUND "This link has expired or isn't valid."
+ * instead (`/forms/<org slug>/d4h-i3-self-audit/<token>`): the token finds the request, and the
+ * slug must be its organisation's (`src/server/services/self-audit-public.ts`). Unknown, replaced
+ * and expired tokens, and a slug that isn't the token's organisation's, all read as `not-found`,
+ * and the writes refuse them with NOT_FOUND "This link has expired or isn't valid."
  */
 export const publicFormsRouter = createTrpcRouter({
     /**
@@ -80,8 +82,8 @@ export const publicFormsRouter = createTrpcRouter({
     getSelfAuditByToken: publicProcedure
         .input(selfAuditTokenInput)
         .output(SelfAuditByTokenOutput)
-        .query(async ({ ctx, input: { token } }) => {
-            return await SelfAuditPublic.getSelfAuditByToken(ctx, token);
+        .query(async ({ ctx, input: { slug, token } }) => {
+            return await SelfAuditPublic.getSelfAuditByToken(ctx, { slug, token });
         }),
 
     /**
@@ -99,8 +101,8 @@ export const publicFormsRouter = createTrpcRouter({
      */
     openSelfAuditByToken: publicProcedure
         .input(selfAuditTokenInput)
-        .mutation(async ({ ctx, input: { token } }) => {
-            await SelfAuditPublic.openSelfAuditByToken(ctx, token);
+        .mutation(async ({ ctx, input: { slug, token } }) => {
+            await SelfAuditPublic.openSelfAuditByToken(ctx, { slug, token });
             return { opened: true as const };
         }),
 
@@ -111,8 +113,8 @@ export const publicFormsRouter = createTrpcRouter({
      */
     reopenSelfAuditByToken: publicProcedure
         .input(selfAuditTokenInput)
-        .mutation(async ({ ctx, input: { token } }) => {
-            await SelfAuditPublic.reopenSelfAuditByToken(ctx, token);
+        .mutation(async ({ ctx, input: { slug, token } }) => {
+            await SelfAuditPublic.reopenSelfAuditByToken(ctx, { slug, token });
             return { reopened: true as const };
         }),
 
@@ -124,8 +126,8 @@ export const publicFormsRouter = createTrpcRouter({
      */
     saveSelfAuditDraftByToken: publicProcedure
         .input(selfAuditAnswerInput)
-        .mutation(async ({ ctx, input: { token, formData } }) => {
-            await SelfAuditPublic.saveSelfAuditDraftByToken(ctx, token, formData);
+        .mutation(async ({ ctx, input: { slug, token, formData } }) => {
+            await SelfAuditPublic.saveSelfAuditDraftByToken(ctx, { slug, token }, formData);
             return { saved: true as const };
         }),
 
@@ -151,9 +153,9 @@ export const publicFormsRouter = createTrpcRouter({
      */
     submitSelfAuditByToken: publicProcedure
         .input(selfAuditAnswerInput)
-        .mutation(async ({ ctx, input: { token, formData } }) => {
+        .mutation(async ({ ctx, input: { slug, token, formData } }) => {
             await assertNotBot();
-            await SelfAuditPublic.submitSelfAuditByToken(ctx, token, formData);
+            await SelfAuditPublic.submitSelfAuditByToken(ctx, { slug, token }, formData);
             return { submitted: true as const };
         }),
 });

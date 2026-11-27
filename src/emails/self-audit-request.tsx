@@ -33,7 +33,7 @@ export interface SelfAuditRequestEmailProps {
     bundle: { name: string };
     /** Who sent the self-audit: the sender's name, or a role when they're unknown. */
     requestedBy: string;
-    /** `${baseUrl}/forms/kit-check/<token>`. */
+    /** `${baseUrl}/forms/<org slug>/d4h-i3-self-audit/<token>`. */
     formUrl: string;
     /** When the link stops working. */
     expiresAt: Date;
@@ -49,7 +49,7 @@ const SAMPLE_PROPS = {
     team: { name: "Response Team" },
     bundle: { name: "Field Responder" },
     requestedBy: "Alex Smith",
-    formUrl: "http://localhost:3000/forms/kit-check/SAMPLETOKEN",
+    formUrl: "http://localhost:3000/forms/test-org/d4h-i3-self-audit/SAMPLETOKEN",
     expiresAt: new Date("2026-12-09T06:00:00Z"),
     timeZone: "Pacific/Auckland",
     recipientEmail: "jan.kowalski@example.com",

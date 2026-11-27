@@ -154,6 +154,14 @@ describe("self-audit by token", () => {
         await db.organization.create({
             data: { id: S.org, name: "Acme", slug: "acme", createdAt: new Date() },
         });
+        await db.organization.create({
+            data: {
+                id: OrganizationId.create(),
+                name: "Other Org",
+                slug: "other-org",
+                createdAt: new Date(),
+            },
+        });
         await db.user.create({
             data: {
                 id: S.sender,
@@ -229,13 +237,14 @@ describe("self-audit by token", () => {
         db.selfAuditRequest.findUniqueOrThrow({ where: { id }, include: { formInstance: true } });
 
     describe("a token that finds no live request", () => {
-        async function expectNotFound(token: string) {
-            expect(await getSelfAuditByToken(ctx, token)).toEqual({ state: "not-found" });
+        async function expectNotFound(token: string, slug = "acme") {
+            const link = { slug, token };
+            expect(await getSelfAuditByToken(ctx, link)).toEqual({ state: "not-found" });
             for (const call of [
-                () => openSelfAuditByToken(ctx, token),
-                () => saveSelfAuditDraftByToken(ctx, token, complete),
-                () => submitSelfAuditByToken(ctx, token, complete),
-                () => reopenSelfAuditByToken(ctx, token),
+                () => openSelfAuditByToken(ctx, link),
+                () => saveSelfAuditDraftByToken(ctx, link, complete),
+                () => submitSelfAuditByToken(ctx, link, complete),
+                () => reopenSelfAuditByToken(ctx, link),
             ]) {
                 const error = await call().catch((caught: unknown) => caught);
                 expect(error).toBeInstanceOf(NotFoundError);
@@ -260,12 +269,20 @@ describe("self-audit by token", () => {
             const { token } = await seedRequest({ expiresAt: new Date(Date.now() - 1000) });
             await expectNotFound(token);
         });
+
+        it("is not-found under another organisation's slug", async () => {
+            const { token } = await seedRequest();
+            await expectNotFound(token, "other-org");
+            expect(await getSelfAuditByToken(ctx, { slug: "acme", token })).toMatchObject({
+                state: "ok",
+            });
+        });
     });
 
     it("reads the subject, the team's snapshot and the answers, and changes nothing", async () => {
         const { token, id } = await seedRequest();
 
-        const form = await getSelfAuditByToken(ctx, token);
+        const form = await getSelfAuditByToken(ctx, { slug: "acme", token });
 
         expect(form).toEqual({
             state: "ok",
@@ -289,7 +306,7 @@ describe("self-audit by token", () => {
 
     it("names the team equipment officer when the sender is gone", async () => {
         const { token } = await seedRequest({ campaignId: S.orphanCheck });
-        expect(await getSelfAuditByToken(ctx, token)).toMatchObject({
+        expect(await getSelfAuditByToken(ctx, { slug: "acme", token })).toMatchObject({
             subject: { requestedBy: "the team equipment officer" },
         });
     });
@@ -297,18 +314,18 @@ describe("self-audit by token", () => {
     it("stamps openedAt once on open", async () => {
         const { token, id } = await seedRequest();
 
-        await openSelfAuditByToken(ctx, token);
+        await openSelfAuditByToken(ctx, { slug: "acme", token });
         const { openedAt } = await readRequest(id);
         expect(openedAt).toBeInstanceOf(Date);
 
-        await openSelfAuditByToken(ctx, token);
+        await openSelfAuditByToken(ctx, { slug: "acme", token });
         expect((await readRequest(id)).openedAt).toEqual(openedAt);
     });
 
     it("saves the draft and stamps openedAt, without logging", async () => {
         const { token, id } = await seedRequest();
 
-        await saveSelfAuditDraftByToken(ctx, token, complete);
+        await saveSelfAuditDraftByToken(ctx, { slug: "acme", token }, complete);
 
         const after = await readRequest(id);
         expect(after.openedAt).toBeInstanceOf(Date);
@@ -319,9 +336,9 @@ describe("self-audit by token", () => {
     it("refuses an incomplete submit", async () => {
         const { token, id } = await seedRequest();
 
-        await expect(submitSelfAuditByToken(ctx, token, prefilled)).rejects.toBeInstanceOf(
-            ValidationError,
-        );
+        await expect(
+            submitSelfAuditByToken(ctx, { slug: "acme", token }, prefilled),
+        ).rejects.toBeInstanceOf(ValidationError);
         expect((await readRequest(id)).formInstance.formStatus).toBe("Draft");
     });
 
@@ -329,7 +346,7 @@ describe("self-audit by token", () => {
         const { token, id } = await seedRequest();
         const before = Date.now();
 
-        await submitSelfAuditByToken(ctx, token, complete);
+        await submitSelfAuditByToken(ctx, { slug: "acme", token }, complete);
 
         const after = await readRequest(id);
         expect(after).toMatchObject({ submittedData: complete });
@@ -360,9 +377,9 @@ describe("self-audit by token", () => {
             missing: { [gloves.id]: { ...EMPTY_ANSWER, has: "no", wantVariantId: "made-up" } },
         };
 
-        await expect(submitSelfAuditByToken(ctx, token, unknown)).rejects.toBeInstanceOf(
-            ValidationError,
-        );
+        await expect(
+            submitSelfAuditByToken(ctx, { slug: "acme", token }, unknown),
+        ).rejects.toBeInstanceOf(ValidationError);
         expect((await readRequest(id)).formInstance.formStatus).toBe("Draft");
     });
 
@@ -374,7 +391,7 @@ describe("self-audit by token", () => {
             missing: { [gloves.id]: { ...EMPTY_ANSWER, has: "unsure" } },
         };
 
-        await submitSelfAuditByToken(ctx, token, unsure);
+        await submitSelfAuditByToken(ctx, { slug: "acme", token }, unsure);
 
         const after = await readRequest(id);
         expect(after).toMatchObject({ submittedData: unsure });
@@ -383,31 +400,31 @@ describe("self-audit by token", () => {
 
     it("refuses a save after submit", async () => {
         const { token, id } = await seedRequest();
-        await submitSelfAuditByToken(ctx, token, complete);
+        await submitSelfAuditByToken(ctx, { slug: "acme", token }, complete);
 
-        await expect(saveSelfAuditDraftByToken(ctx, token, prefilled)).rejects.toBeInstanceOf(
-            ConflictError,
-        );
+        await expect(
+            saveSelfAuditDraftByToken(ctx, { slug: "acme", token }, prefilled),
+        ).rejects.toBeInstanceOf(ConflictError);
         expect((await readRequest(id)).formInstance.formData).toEqual(complete);
     });
 
     it("refuses a second submit, writing no log", async () => {
         const { token, id } = await seedRequest();
-        await submitSelfAuditByToken(ctx, token, complete);
+        await submitSelfAuditByToken(ctx, { slug: "acme", token }, complete);
 
-        await expect(submitSelfAuditByToken(ctx, token, complete)).rejects.toBeInstanceOf(
-            ConflictError,
-        );
+        await expect(
+            submitSelfAuditByToken(ctx, { slug: "acme", token }, complete),
+        ).rejects.toBeInstanceOf(ConflictError);
         expect(await db.logEntry.count({ where: { objectId: id } })).toBe(1);
     });
 
     it("refuses a second submit as a conflict even when it's incomplete", async () => {
         const { token } = await seedRequest();
-        await submitSelfAuditByToken(ctx, token, complete);
+        await submitSelfAuditByToken(ctx, { slug: "acme", token }, complete);
 
-        await expect(submitSelfAuditByToken(ctx, token, prefilled)).rejects.toBeInstanceOf(
-            ConflictError,
-        );
+        await expect(
+            submitSelfAuditByToken(ctx, { slug: "acme", token }, prefilled),
+        ).rejects.toBeInstanceOf(ConflictError);
     });
 
     it("stores only answers to what the member was asked, Not sure included", async () => {
@@ -431,7 +448,7 @@ describe("self-audit by token", () => {
             comments: "All good",
         };
 
-        await submitSelfAuditByToken(ctx, token, padded);
+        await submitSelfAuditByToken(ctx, { slug: "acme", token }, padded);
 
         const expected: SelfAuditResponseData = {
             held: { [heldHelmet.id]: { ...EMPTY_ANSWER, has: "unsure" } },
@@ -460,9 +477,9 @@ describe("self-audit by token", () => {
             return found;
         }) as unknown as typeof findFirst);
         try {
-            await expect(submitSelfAuditByToken(ctx, token, complete)).rejects.toBeInstanceOf(
-                ConflictError,
-            );
+            await expect(
+                submitSelfAuditByToken(ctx, { slug: "acme", token }, complete),
+            ).rejects.toBeInstanceOf(ConflictError);
         } finally {
             spy.mockRestore();
         }
@@ -475,10 +492,10 @@ describe("self-audit by token", () => {
 
     it("reopens keeping the submitted answer, and a resubmit replaces it", async () => {
         const { token, id } = await seedRequest();
-        await submitSelfAuditByToken(ctx, token, complete);
+        await submitSelfAuditByToken(ctx, { slug: "acme", token }, complete);
         const first = await readRequest(id);
 
-        await reopenSelfAuditByToken(ctx, token);
+        await reopenSelfAuditByToken(ctx, { slug: "acme", token });
 
         const reopened = await readRequest(id);
         expect(reopened).toMatchObject({
@@ -486,7 +503,7 @@ describe("self-audit by token", () => {
             submittedAt: first.submittedAt,
         });
         expect(reopened.formInstance.formStatus).toBe("Draft");
-        expect(await getSelfAuditByToken(ctx, token)).toMatchObject({
+        expect(await getSelfAuditByToken(ctx, { slug: "acme", token })).toMatchObject({
             formStatus: "Draft",
             submittedData: complete,
         });
@@ -500,13 +517,13 @@ describe("self-audit by token", () => {
         ]);
 
         // A reopen of a Draft is a no-op.
-        await reopenSelfAuditByToken(ctx, token);
+        await reopenSelfAuditByToken(ctx, { slug: "acme", token });
         expect(await db.logEntry.count({ where: { objectId: id } })).toBe(2);
 
         const changed: SelfAuditResponseData = { ...complete, comments: "Changed my mind" };
-        await saveSelfAuditDraftByToken(ctx, token, changed);
+        await saveSelfAuditDraftByToken(ctx, { slug: "acme", token }, changed);
         await new Promise((resolve) => setTimeout(resolve, 5));
-        await submitSelfAuditByToken(ctx, token, changed);
+        await submitSelfAuditByToken(ctx, { slug: "acme", token }, changed);
 
         const resubmitted = await readRequest(id);
         expect(resubmitted.submittedData).toEqual(changed);

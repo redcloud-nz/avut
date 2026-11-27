@@ -132,6 +132,13 @@ const nextConfig: NextConfig = {
                 destination: "/docs/skill-track/packages",
                 permanent: true,
             },
+            // The kit check became the self-audit, under the organisation's slug. Its public demo
+            // was in production from 0.13.1; emailed token links never reached it.
+            {
+                source: "/forms/kit-check/demo",
+                destination: "/forms/chch-cdem/d4h-i3-self-audit/demo",
+                permanent: true,
+            },
         ];
     },
     cacheComponents: true,

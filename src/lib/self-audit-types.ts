@@ -8,8 +8,8 @@
  * an I3 bundle in two parts: the items D4H records as issued to them (do they still have each
  * one, and does its record need fixing?), and the bundle's items D4H has nothing for (do they
  * have one anyway?). Either way they can ask for a new one, in a chosen variant. The demo
- * (`/forms/kit-check/demo`) fills these from sample data; the emailed per-member form fills
- * them from the bundle and D4H.
+ * (`/forms/<org slug>/d4h-i3-self-audit/demo`) fills these from sample data; the emailed
+ * per-member form fills them from the bundle and D4H.
  *
  * The stored shapes are defined once, as Zod schemas in `src/lib/schemas/self-audit.ts`. The
  * types here are those, plus the demo-only extras the emailed form doesn't send (yet): "Using my

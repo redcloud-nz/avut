@@ -2,7 +2,7 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Path: /forms/kit-check/[token]
+ * Path: /forms/[slug]/d4h-i3-self-audit/[token]   ([slug] is the organisation's)
  */
 
 import type { Metadata } from "next";
@@ -25,7 +25,9 @@ export const metadata: Metadata = {
 };
 
 // Not `async` — see the note in /auth/sign-in/page.tsx.
-export default function SelfAuditMember_Page(props: PageProps<"/forms/kit-check/[token]">) {
+export default function SelfAuditMember_Page(
+    props: PageProps<"/forms/[slug]/d4h-i3-self-audit/[token]">,
+) {
     return (
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-6">
             <Suspense fallback={<AuthCard_Skeleton fields={0} />}>
@@ -38,21 +40,22 @@ export default function SelfAuditMember_Page(props: PageProps<"/forms/kit-check/
 async function SelfAudit_MemberFromParams({
     params,
 }: {
-    params: PageProps<"/forms/kit-check/[token]">["params"];
+    params: PageProps<"/forms/[slug]/d4h-i3-self-audit/[token]">["params"];
 }) {
-    const { token } = await params;
+    const { slug, token } = await params;
 
-    // Access is by the token alone, through the public procedures. A token the procedure's
-    // input would reject can never match, so it gets the same answer as an unknown one.
+    // Access is by the token alone, through the public procedures, which also check the slug is
+    // the token's organisation's. A token the procedure's input would reject can never match, so
+    // it gets the same answer as an unknown one.
     if (!selfAuditTokenSchema.safeParse(token).success) return <SelfAuditLinkInvalid_Card />;
 
     // Read only: the page's GET never changes state, since email link scanners open every URL.
     // The client records the open once it mounts.
-    prefetch(trpc.publicForms.getSelfAuditByToken.queryOptions({ token }));
+    prefetch(trpc.publicForms.getSelfAuditByToken.queryOptions({ slug, token }));
 
     return (
         <HydrateClient>
-            <SelfAudit_Member token={token} />
+            <SelfAudit_Member slug={slug} token={token} />
         </HydrateClient>
     );
 }

@@ -521,7 +521,7 @@ describe("createCampaign", () => {
             expect.objectContaining({ to: "kim@example.com" }),
         );
         const html = await render(deps.sendEmail.mock.calls[0][0].react as ReactElement);
-        expect(html).toMatch(/href="[^"]*\/forms\/kit-check\/token-1"/);
+        expect(html).toMatch(/href="[^"]*\/forms\/acme\/d4h-i3-self-audit\/token-1"/);
         expect(html).toContain("Ana Admin");
     });
 
@@ -791,7 +791,7 @@ describe("createCampaign", () => {
 
             expect(deps.sendEmail).toHaveBeenCalledTimes(1);
             const html = await render(deps.sendEmail.mock.calls[0][0].react as ReactElement);
-            expect(html).toMatch(/href="[^"]*\/forms\/kit-check\/resent-token"/);
+            expect(html).toMatch(/href="[^"]*\/forms\/acme\/d4h-i3-self-audit\/resent-token"/);
 
             const entries = await db.logEntry.findMany({
                 where: { objectId: john.id, action: "Update" },
@@ -825,16 +825,22 @@ describe("createCampaign", () => {
             const john = await db.selfAuditRequest.findFirstOrThrow({
                 where: { campaignId, d4hMemberId: 42 },
             });
-            expect(await getSelfAuditByToken({ prisma: db }, oldToken)).toMatchObject({
+            expect(
+                await getSelfAuditByToken({ prisma: db }, { slug: "acme", token: oldToken }),
+            ).toMatchObject({
                 state: "ok",
             });
 
             await resendRequest(ctx(), SelfAuditRequestId.schema.parse(john.id), realTokenDeps());
 
-            expect(await getSelfAuditByToken({ prisma: db }, oldToken)).toEqual({
+            expect(
+                await getSelfAuditByToken({ prisma: db }, { slug: "acme", token: oldToken }),
+            ).toEqual({
                 state: "not-found",
             });
-            expect(await getSelfAuditByToken({ prisma: db }, issued.at(-1)!)).toMatchObject({
+            expect(
+                await getSelfAuditByToken({ prisma: db }, { slug: "acme", token: issued.at(-1)! }),
+            ).toMatchObject({
                 state: "ok",
                 subject: { memberName: "John Smith" },
             });

@@ -39,18 +39,21 @@ type SelfAuditByToken = Extract<
 const MEMBER_DATES: DisplayPreferences = { ...DEFAULT_DISPLAY_PREFERENCES, dateFormat: "written" };
 
 /**
- * The page a self-audit's emailed link opens (`/forms/kit-check/<token>`): the member's form while
- * it's a draft, autosaving as they go, and what they sent once it's submitted, with a way back in
- * while the link lasts. Works signed out or in; the token is the only access.
+ * The page a self-audit's emailed link opens (`/forms/<org slug>/d4h-i3-self-audit/<token>`): the
+ * member's form while it's a draft, autosaving as they go, and what they sent once it's submitted,
+ * with a way back in while the link lasts. Works signed out or in; the token is the only access.
  *
+ * @param slug The organisation slug from the URL; it must be the token's organisation's.
  * @param token The link token from the email. Never logged.
  */
-export function SelfAudit_Member({ token }: { token: string }) {
-    const { data } = useSuspenseQuery(trpc.publicForms.getSelfAuditByToken.queryOptions({ token }));
+export function SelfAudit_Member({ slug, token }: { slug: string; token: string }) {
+    const { data } = useSuspenseQuery(
+        trpc.publicForms.getSelfAuditByToken.queryOptions({ slug, token }),
+    );
 
     if (data.state === "not-found") return <SelfAuditLinkInvalid_Card />;
 
-    return <SelfAudit_MemberOpened token={token} selfAudit={data} />;
+    return <SelfAudit_MemberOpened slug={slug} token={token} selfAudit={data} />;
 }
 
 /** Shown for a link token that finds no live request: unknown, replaced by a resend, or expired. */
@@ -66,9 +69,11 @@ export function SelfAuditLinkInvalid_Card() {
 }
 
 function SelfAudit_MemberOpened({
+    slug,
     token,
     selfAudit,
 }: {
+    slug: string;
     token: string;
     selfAudit: SelfAuditByToken;
 }) {
@@ -87,20 +92,22 @@ function SelfAudit_MemberOpened({
     useEffect(() => {
         if (openSent.current) return;
         openSent.current = true;
-        markOpened({ token });
-    }, [markOpened, token]);
+        markOpened({ slug, token });
+    }, [markOpened, slug, token]);
 
     return selfAudit.formStatus === "Submitted" ? (
-        <SelfAudit_MemberSubmitted token={token} selfAudit={selfAudit} />
+        <SelfAudit_MemberSubmitted slug={slug} token={token} selfAudit={selfAudit} />
     ) : (
-        <SelfAudit_MemberDraft token={token} selfAudit={selfAudit} />
+        <SelfAudit_MemberDraft slug={slug} token={token} selfAudit={selfAudit} />
     );
 }
 
 function SelfAudit_MemberDraft({
+    slug,
     token,
     selfAudit,
 }: {
+    slug: string;
     token: string;
     selfAudit: SelfAuditByToken;
 }) {
@@ -118,7 +125,7 @@ function SelfAudit_MemberDraft({
     function refetchIfGone(code: string | undefined): boolean {
         if (code !== "CONFLICT" && code !== "NOT_FOUND") return false;
         void queryClient.invalidateQueries(
-            trpc.publicForms.getSelfAuditByToken.queryFilter({ token }),
+            trpc.publicForms.getSelfAuditByToken.queryFilter({ slug, token }),
         );
         return true;
     }
@@ -159,7 +166,7 @@ function SelfAudit_MemberDraft({
             : save.status;
 
     const { handleChange, cancel, flush } = useDebouncedAutosave<SelfAuditResponse>({
-        save: (response) => save.mutate({ token, formData: toResponseData(response) }),
+        save: (response) => save.mutate({ slug, token, formData: toResponseData(response) }),
         status: save.status,
         reset: save.reset,
     });
@@ -189,7 +196,7 @@ function SelfAudit_MemberDraft({
         // BotID can check it (`src/lib/public-forms.ts`).
         cancel();
         submit.mutate(
-            { token, formData: toResponseData(response) },
+            { slug, token, formData: toResponseData(response) },
             {
                 onError(error) {
                     // `cancel()` dropped the queued save: queue these answers again, so a failed
@@ -238,9 +245,11 @@ function SelfAudit_MemberDraft({
 }
 
 function SelfAudit_MemberSubmitted({
+    slug,
     token,
     selfAudit,
 }: {
+    slug: string;
     token: string;
     selfAudit: SelfAuditByToken;
 }) {
@@ -276,7 +285,7 @@ function SelfAudit_MemberSubmitted({
                 variant="outline"
                 className="self-start"
                 disabled={reopen.isPending || reopen.isSuccess}
-                onClick={() => reopen.mutate({ token })}
+                onClick={() => reopen.mutate({ slug, token })}
             >
                 Change my answers
             </Button>

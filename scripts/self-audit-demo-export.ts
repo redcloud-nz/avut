@@ -4,7 +4,7 @@
  *
  * Export I3 bundles from the database `.env.local` points at into the self-audit demo's data
  * file, `src/components/self-audit/self-audit-demo-bundle.json`. The public demo
- * (`/forms/kit-check/demo`) renders that file, so the demo shows real bundles' items without
+ * (`/forms/<org slug>/d4h-i3-self-audit/demo`) renders that file, so the demo shows real bundles' items without
  * reading any database. Read-only.
  *
  * The first bundle is what every member should have; any more are "things you might have",

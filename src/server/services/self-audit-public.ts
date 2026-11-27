@@ -4,12 +4,15 @@
  */
 
 /**
- * The member's side of a self-audit: everything the emailed link (`/forms/kit-check/<token>`)
- * reaches, with no account. See `docs/plans/2026-11-25-self-audit-send.md`, decisions 7–11.
+ * The member's side of a self-audit: everything the emailed link
+ * (`/forms/<org slug>/d4h-i3-self-audit/<token>`) reaches, with no account. See
+ * `docs/plans/2026-11-25-kit-check-send.md`, decisions 7–11, and
+ * `docs/plans/2026-11-27-self-audit-campaigns.md`, decision 2.
  *
  * Every call hashes the link token and finds the request holding that hash with an expiry still
- * ahead. An unknown token, one replaced by a resend, and an expired one all get the same answer:
- * `not-found` from the read, `NotFoundError(LINK_NOT_VALID)` from the writes. The admin side
+ * ahead, in the organisation the URL's slug names. An unknown token, one replaced by a resend, an
+ * expired one, and one under another organisation's slug all get the same answer: `not-found`
+ * from the read, `NotFoundError(LINK_NOT_VALID)` from the writes. The admin side
  * (create, send, track) is in `self-audit-campaigns.ts`.
  */
 
@@ -34,6 +37,12 @@ import { isPrismaRecordNotFound } from "@/server/prisma-errors";
 import { unattendedOrgContext, type OrgServiceContext } from "./service-context";
 
 type PublicContext = Pick<OrgServiceContext, "prisma">;
+
+/** What a self-audit link carries: the organisation's slug and the link token. */
+export interface SelfAuditLink {
+    slug: string;
+    token: string;
+}
 
 /** What every write says for a token that finds no live request. */
 export const LINK_NOT_VALID = "This link has expired or isn't valid.";
@@ -73,25 +82,33 @@ const requestSelect = {
     submittedAt: true,
     submittedData: true,
     formInstanceId: true,
+    organization: { select: { slug: true } },
     formInstance: { select: { formData: true, formStatus: true } },
     campaign: {
         select: { bundleName: true, templates: true, sentBy: { select: { name: true } } },
     },
 } as const;
 
-/** The live request a link token names, or `null` (unknown, replaced or expired). */
-async function findRequestByToken(ctx: PublicContext, token: string) {
-    return await ctx.prisma.selfAuditRequest.findFirst({
+/**
+ * The live request a link names, or `null` (unknown, replaced or expired token, or a slug that
+ * isn't the token's organisation's).
+ */
+async function findRequestByToken(ctx: PublicContext, { slug, token }: SelfAuditLink) {
+    const request = await ctx.prisma.selfAuditRequest.findFirst({
         where: { tokenHash: hashLinkToken(token), expiresAt: { gt: new Date() } },
         select: requestSelect,
     });
+    return request && request.organization.slug === slug ? request : null;
 }
 
 type TokenRequest = NonNullable<Awaited<ReturnType<typeof findRequestByToken>>>;
 
-/** @throws NotFoundError(LINK_NOT_VALID) if the token names no live request. */
-async function requireRequestByToken(ctx: PublicContext, token: string): Promise<TokenRequest> {
-    const request = await findRequestByToken(ctx, token);
+/** @throws NotFoundError(LINK_NOT_VALID) if the link names no live request. */
+async function requireRequestByToken(
+    ctx: PublicContext,
+    link: SelfAuditLink,
+): Promise<TokenRequest> {
+    const request = await findRequestByToken(ctx, link);
     if (!request) throw new NotFoundError(LINK_NOT_VALID);
     return request;
 }
@@ -218,9 +235,9 @@ async function memberLogContext(ctx: PublicContext, request: TokenRequest) {
  */
 export async function getSelfAuditByToken(
     ctx: PublicContext,
-    token: string,
+    link: SelfAuditLink,
 ): Promise<SelfAuditByToken> {
-    const request = await findRequestByToken(ctx, token);
+    const request = await findRequestByToken(ctx, link);
     if (!request) return { state: "not-found" };
 
     return {
@@ -257,10 +274,10 @@ async function stampOpened(ctx: PublicContext, request: TokenRequest): Promise<v
 /**
  * Record that the member opened their form: `openedAt`, if unset. Idempotent. Called once by the
  * page on mount, not on GET, so a link scanner that only fetches the page leaves it unset.
- * @throws NotFoundError(LINK_NOT_VALID) if the token names no live request.
+ * @throws NotFoundError(LINK_NOT_VALID) if the link names no live request.
  */
-export async function openSelfAuditByToken(ctx: PublicContext, token: string): Promise<void> {
-    const request = await requireRequestByToken(ctx, token);
+export async function openSelfAuditByToken(ctx: PublicContext, link: SelfAuditLink): Promise<void> {
+    const request = await requireRequestByToken(ctx, link);
     await stampOpened(ctx, request);
 }
 
@@ -268,15 +285,15 @@ export async function openSelfAuditByToken(ctx: PublicContext, token: string): P
  * Autosave the member's working copy. Writes only while the form is a Draft, so a save landing
  * after a submit is refused (decision 9). Also stamps `openedAt`, in case the page's open call was
  * lost. Not logged.
- * @throws NotFoundError(LINK_NOT_VALID) if the token names no live request.
+ * @throws NotFoundError(LINK_NOT_VALID) if the link names no live request.
  * @throws ConflictError if the form has been submitted.
  */
 export async function saveSelfAuditDraftByToken(
     ctx: PublicContext,
-    token: string,
+    link: SelfAuditLink,
     formData: SelfAuditResponseData,
 ): Promise<void> {
-    const request = await requireRequestByToken(ctx, token);
+    const request = await requireRequestByToken(ctx, link);
 
     const { count } = await ctx.prisma.formInstance.updateMany({
         where: { id: request.formInstanceId, formStatus: "Draft" },
@@ -294,17 +311,17 @@ export async function saveSelfAuditDraftByToken(
  * request. The instance's write is guarded on Draft, so a second submit (another tab) throws and
  * rolls back, log entry included (decision 9). What's stored is pruned to what the member was
  * asked (`pruneSelfAuditResponse`).
- * @throws NotFoundError(LINK_NOT_VALID) if the token names no live request.
+ * @throws NotFoundError(LINK_NOT_VALID) if the link names no live request.
  * @throws ConflictError if the form has already been submitted.
  * @throws ValidationError if the answers leave something the form asks unanswered, or pick a
  * variant the template doesn't offer.
  */
 export async function submitSelfAuditByToken(
     ctx: PublicContext,
-    token: string,
+    link: SelfAuditLink,
     submitted: SelfAuditResponseData,
 ): Promise<void> {
-    const request = await requireRequestByToken(ctx, token);
+    const request = await requireRequestByToken(ctx, link);
 
     // Before completeness: a repeat submit is a conflict, whatever it carries.
     if (request.formInstance.formStatus !== "Draft") {
@@ -361,10 +378,13 @@ export async function submitSelfAuditByToken(
  * Let the member change their submitted answers: the form goes back to Draft (decision 10).
  * `submittedData` and `submittedAt` stay, so the last submitted answers stand until they submit
  * again. A no-op if the form is already a Draft. Logged against the request.
- * @throws NotFoundError(LINK_NOT_VALID) if the token names no live request.
+ * @throws NotFoundError(LINK_NOT_VALID) if the link names no live request.
  */
-export async function reopenSelfAuditByToken(ctx: PublicContext, token: string): Promise<void> {
-    const request = await requireRequestByToken(ctx, token);
+export async function reopenSelfAuditByToken(
+    ctx: PublicContext,
+    link: SelfAuditLink,
+): Promise<void> {
+    const request = await requireRequestByToken(ctx, link);
     if (request.formInstance.formStatus !== "Submitted") return;
 
     const logCtx = await memberLogContext(ctx, request);
