@@ -129,7 +129,7 @@ Every detail page's actions move: guides that say "open the ⋮ / Actions menu" 
 
 ## Parked
 
-- Person page: `AdminModule_Person_LinkedUser_Card` reads `personnel.getLinkedUser` with `useSuspenseQuery` and the page doesn't prefetch it, so the server render errors ("called during the server render, where nothing was hydrated") and the page falls back to client rendering. Same on integration; the prefetch needs gating on `member: ["view"]`.
+- Person page: `AdminModule_Person_LinkedUser_Card` reads `personnel.getLinkedUser` with `useSuspenseQuery` and the page doesn't prefetch it, so the server render errors ("called during the server render, where nothing was hydrated") and the page falls back to client rendering. Same on integration; the prefetch needs gating on `member: ["view"]`. Filed as #605.
 
 ## Review notes
 
