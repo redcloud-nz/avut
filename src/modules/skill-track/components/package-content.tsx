@@ -28,7 +28,7 @@ import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { SkillPackageAvailabilityBadge } from "@/components/ui/status-badge";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
+import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { SkillPackage, SkillPackageId } from "@/lib/schemas/skill-package";
 import { SkillTrack_SkillList } from "@/modules/skill-track/components/skill-list";
 import { SkillTrack_SubscribeToPackage_Dialog } from "@/modules/skill-track/components/subscribe-package";
@@ -39,6 +39,7 @@ type PackageGroupData = RouterOutput["skillPackageSubscriptions"]["getPackage"][
 
 export function SkillTrack_Package_Content({ skillPackageId }: { skillPackageId: SkillPackageId }) {
     const organization = useOrganization();
+    const scopedRoute = useScopedRoute();
 
     const { data: skillPackage } = useSuspenseQuery(
         trpc.skillPackageSubscriptions.getPackage.queryOptions({
@@ -68,9 +69,13 @@ export function SkillTrack_Package_Content({ skillPackageId }: { skillPackageId:
                     items={[
                         {
                             label: "Packages",
-                            href: route("/orgs/[slug]/skill-track/packages", {
-                                slug: organization.slug,
-                            }),
+                            href: scopedRoute(
+                                {
+                                    organization: "/orgs/[slug]/skill-track/packages",
+                                    team: "/teams/[slug]/skill-track/packages",
+                                },
+                                {},
+                            ),
                         },
                     ]}
                 />

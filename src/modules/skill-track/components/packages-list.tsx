@@ -20,7 +20,7 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
+import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { SkillPackage } from "@/lib/schemas/skill-package";
 import { trpc, type RouterOutput } from "@/trpc/client";
 
@@ -91,7 +91,7 @@ function EmptyMessage({ children }: { children: ReactNode }) {
 
 /** Subscribed packages can get a Status column for the Withdrawn badge; available ones get search. */
 function PackagesTable({ packages, subscribed }: { packages: PackageRow[]; subscribed: boolean }) {
-    const organization = useOrganization();
+    const scopedRoute = useScopedRoute();
 
     // The Status column only carries the Withdrawn badge, so leave it out when nothing has one.
     const showStatus = subscribed && packages.some((pkg) => !SkillPackage.isAvailable(pkg));
@@ -103,10 +103,13 @@ function PackagesTable({ packages, subscribed }: { packages: PackageRow[]; subsc
                     header: "Package Name",
                     cell: (ctx) => (
                         <Link
-                            href={route("/orgs/[slug]/skill-track/packages/[package_id]", {
-                                slug: organization.slug,
-                                package_id: ctx.row.original.id,
-                            })}
+                            href={scopedRoute(
+                                {
+                                    organization: "/orgs/[slug]/skill-track/packages/[package_id]",
+                                    team: "/teams/[slug]/skill-track/packages/[package_id]",
+                                },
+                                { package_id: ctx.row.original.id },
+                            )}
                         >
                             {ctx.getValue()}
                         </Link>
@@ -153,7 +156,7 @@ function PackagesTable({ packages, subscribed }: { packages: PackageRow[]; subsc
                       })
                     : null,
             ]),
-        [organization.slug, subscribed, showStatus],
+        [scopedRoute, subscribed, showStatus],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions

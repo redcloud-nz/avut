@@ -26,7 +26,7 @@ import { Show } from "@/components/show";
 import { Badge } from "@/components/ui/badge";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
+import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { Skill } from "@/lib/schemas/skill";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
@@ -41,6 +41,7 @@ type SkillRow = Skill & { group: SkillGroup; skillPackage: SkillPackage };
  */
 export function SkillTrack_SkillsList() {
     const organization = useOrganization();
+    const scopedRoute = useScopedRoute();
 
     const { data: assessable } = useSuspenseQuery(
         trpc.skillPackageSubscriptions.listAssessableSkills.queryOptions({
@@ -164,9 +165,13 @@ export function SkillTrack_SkillsList() {
                         <EmptyDescription>
                             No skills yet.{" "}
                             <Link
-                                href={route("/orgs/[slug]/skill-track/packages", {
-                                    slug: organization.slug,
-                                })}
+                                href={scopedRoute(
+                                    {
+                                        organization: "/orgs/[slug]/skill-track/packages",
+                                        team: "/teams/[slug]/skill-track/packages",
+                                    },
+                                    {},
+                                )}
                             >
                                 Subscribe to a package
                             </Link>{" "}

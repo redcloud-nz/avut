@@ -34,7 +34,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
+import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
 
@@ -49,6 +49,7 @@ import {
 
 export function SkillTrack_CreateSession_Dialog() {
     const organization = useOrganization();
+    const scopedRoute = useScopedRoute();
     const router = useRouter();
 
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["create"] as const));
@@ -105,10 +106,13 @@ export function SkillTrack_CreateSession_Dialog() {
                 // Don't clear the dialog param here — the navigation unmounts the
                 // dialog, and a competing URL write races the push.
                 router.push(
-                    route("/orgs/[slug]/skill-track/sessions/[session_id]", {
-                        slug: organization.slug,
-                        session_id: created.id,
-                    }),
+                    scopedRoute(
+                        {
+                            organization: "/orgs/[slug]/skill-track/sessions/[session_id]",
+                            team: "/teams/[slug]/skill-track/sessions/[session_id]",
+                        },
+                        { session_id: created.id },
+                    ),
                 );
             },
         }),

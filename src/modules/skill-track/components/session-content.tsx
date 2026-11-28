@@ -27,7 +27,7 @@ import {
 import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { SkillCheckSessionStatusBadge } from "@/components/ui/status-badge";
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
+import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { SkillTrack_SessionConfigDialogs } from "@/modules/skill-track/components/session-config-dialogs";
 import { SkillsModule_Session_Contents_Card } from "@/modules/skill-track/components/session-contents";
@@ -38,6 +38,7 @@ import { trpc } from "@/trpc/client";
 
 export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillCheckSessionId }) {
     const organization = useOrganization();
+    const scopedRoute = useScopedRoute();
     const formatSessionWhen = useFormatSessionWhen();
 
     const { data: session } = useSuspenseQuery(
@@ -55,9 +56,13 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                     items={[
                         {
                             label: "Skill Check Sessions",
-                            href: route("/orgs/[slug]/skill-track/sessions", {
-                                slug: organization.slug,
-                            }),
+                            href: scopedRoute(
+                                {
+                                    organization: "/orgs/[slug]/skill-track/sessions",
+                                    team: "/teams/[slug]/skill-track/sessions",
+                                },
+                                {},
+                            ),
                         },
                     ]}
                 />
@@ -91,12 +96,13 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                                         <>
                                             <DropdownMenuItem asChild>
                                                 <Link
-                                                    href={route(
-                                                        "/orgs/[slug]/skill-track/sessions/[session_id]/by-person",
+                                                    href={scopedRoute(
                                                         {
-                                                            slug: organization.slug,
-                                                            session_id: session.id,
+                                                            organization:
+                                                                "/orgs/[slug]/skill-track/sessions/[session_id]/by-person",
+                                                            team: "/teams/[slug]/skill-track/sessions/[session_id]/by-person",
                                                         },
+                                                        { session_id: session.id },
                                                     )}
                                                 >
                                                     By Person
@@ -104,12 +110,13 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                                             </DropdownMenuItem>
                                             <DropdownMenuItem asChild>
                                                 <Link
-                                                    href={route(
-                                                        "/orgs/[slug]/skill-track/sessions/[session_id]/by-skill",
+                                                    href={scopedRoute(
                                                         {
-                                                            slug: organization.slug,
-                                                            session_id: session.id,
+                                                            organization:
+                                                                "/orgs/[slug]/skill-track/sessions/[session_id]/by-skill",
+                                                            team: "/teams/[slug]/skill-track/sessions/[session_id]/by-skill",
                                                         },
+                                                        { session_id: session.id },
                                                     )}
                                                 >
                                                     By Skill
@@ -128,9 +135,13 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                         <RecordCard
                             label="Session"
                             updatedAt={session.updatedAt}
-                            historyHref={route(
-                                "/orgs/[slug]/skill-track/sessions/[session_id]/history",
-                                { slug: organization.slug, session_id: session.id },
+                            historyHref={scopedRoute(
+                                {
+                                    organization:
+                                        "/orgs/[slug]/skill-track/sessions/[session_id]/history",
+                                    team: "/teams/[slug]/skill-track/sessions/[session_id]/history",
+                                },
+                                { session_id: session.id },
                             )}
                             action={
                                 // Not mounted when approved, so ?action=update can't open it either.

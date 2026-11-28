@@ -33,7 +33,7 @@ import {
     SheetTrigger,
 } from "@/components/ui/sheet";
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
+import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import {
     SessionConfigAction,
@@ -96,6 +96,7 @@ export function SkillTrack_RecordingOptionsSheet({
     view: SessionEntryView;
 }) {
     const organization = useOrganization();
+    const scopedRoute = useScopedRoute();
     const { open: openConfigDialog } = useSessionConfigAction();
     const { data: session } = useSuspenseQuery(
         trpc.skillCheckSessions.getSession.queryOptions({
@@ -108,10 +109,22 @@ export function SkillTrack_RecordingOptionsSheet({
     const [sheetOpen, setSheetOpen] = useState(false);
     const triggerRef = useRef<HTMLButtonElement>(null);
 
-    const routeParams = { slug: organization.slug, session_id: sessionId };
+    const routeParams = { session_id: sessionId };
     const modeHrefs: Record<SessionEntryMode, Route> = {
-        "by-person": route("/orgs/[slug]/skill-track/sessions/[session_id]/by-person", routeParams),
-        "by-skill": route("/orgs/[slug]/skill-track/sessions/[session_id]/by-skill", routeParams),
+        "by-person": scopedRoute(
+            {
+                organization: "/orgs/[slug]/skill-track/sessions/[session_id]/by-person",
+                team: "/teams/[slug]/skill-track/sessions/[session_id]/by-person",
+            },
+            routeParams,
+        ),
+        "by-skill": scopedRoute(
+            {
+                organization: "/orgs/[slug]/skill-track/sessions/[session_id]/by-skill",
+                team: "/teams/[slug]/skill-track/sessions/[session_id]/by-skill",
+            },
+            routeParams,
+        ),
     };
 
     const configureHeadingId = useId();

@@ -28,7 +28,7 @@ import {
 import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { RecordStatusBadge } from "@/components/ui/status-badge";
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
+import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { SkillId } from "@/lib/schemas/skill";
 import { SkillPackage } from "@/lib/schemas/skill-package";
 import { formatFrequency } from "@/modules/skill-track/lib/format-frequency";
@@ -36,6 +36,7 @@ import { trpc } from "@/trpc/client";
 
 export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
     const organization = useOrganization();
+    const scopedRoute = useScopedRoute();
 
     const { data: skill } = useSuspenseQuery(
         trpc.skillPackageSubscriptions.getSkill.queryOptions({
@@ -61,7 +62,13 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
                 items={[
                     {
                         label: "Skills",
-                        href: route("/orgs/[slug]/skill-track/skills", { slug: organization.slug }),
+                        href: scopedRoute(
+                            {
+                                organization: "/orgs/[slug]/skill-track/skills",
+                                team: "/teams/[slug]/skill-track/skills",
+                            },
+                            {},
+                        ),
                     },
                 ]}
             />
@@ -164,7 +171,14 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
                                 {coverageAvailable && (
                                     <Item variant="outline" role="listitem" asChild>
                                         <Link
-                                            href={`${route("/orgs/[slug]/skill-track/reports/skill", { slug: organization.slug })}?skill=${skill.id}`}
+                                            href={`${scopedRoute(
+                                                {
+                                                    organization:
+                                                        "/orgs/[slug]/skill-track/reports/skill",
+                                                    team: "/teams/[slug]/skill-track/reports/skill",
+                                                },
+                                                {},
+                                            )}?skill=${skill.id}`}
                                         >
                                             <ItemContent>
                                                 <ItemTitle>Skill Coverage</ItemTitle>
@@ -183,7 +197,13 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
                                 )}
                                 <Item variant="outline" role="listitem" asChild>
                                     <Link
-                                        href={`${route("/orgs/[slug]/skill-track/checks", { slug: organization.slug })}?skill=${skill.id}`}
+                                        href={`${scopedRoute(
+                                            {
+                                                organization: "/orgs/[slug]/skill-track/checks",
+                                                team: "/teams/[slug]/skill-track/checks",
+                                            },
+                                            {},
+                                        )}?skill=${skill.id}`}
                                     >
                                         <ItemContent>
                                             <ItemTitle>Recent checks</ItemTitle>

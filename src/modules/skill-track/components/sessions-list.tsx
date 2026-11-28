@@ -24,7 +24,7 @@ import { Show } from "@/components/show";
 import { Empty, EmptyDescription, EmptyHeader } from "@/components/ui/empty";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
-import { route } from "@/lib/routes";
+import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { PersonRef } from "@/lib/schemas/person";
 import { SKILL_CHECK_STATUS_LABELS } from "@/lib/schemas/skill-check";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
@@ -40,6 +40,7 @@ import { NO_SESSION_TEAM } from "./session-when-picker";
  */
 export default function SkillTrack_Sessions_List({ teamId }: { teamId?: TeamId } = {}) {
     const organization = useOrganization();
+    const scopedRoute = useScopedRoute();
     const { formatDate } = usePreferences();
     const formatSessionWhen = useFormatSessionWhen();
 
@@ -73,10 +74,13 @@ export default function SkillTrack_Sessions_List({ teamId }: { teamId?: TeamId }
                     header: "Name",
                     cell: (ctx) => (
                         <Link
-                            href={route("/orgs/[slug]/skill-track/sessions/[session_id]", {
-                                slug: organization.slug,
-                                session_id: ctx.row.original.id,
-                            })}
+                            href={scopedRoute(
+                                {
+                                    organization: "/orgs/[slug]/skill-track/sessions/[session_id]",
+                                    team: "/teams/[slug]/skill-track/sessions/[session_id]",
+                                },
+                                { session_id: ctx.row.original.id },
+                            )}
                         >
                             {ctx.getValue() || ctx.row.original.id}
                         </Link>
@@ -133,7 +137,7 @@ export default function SkillTrack_Sessions_List({ teamId }: { teamId?: TeamId }
                     },
                 }),
             ]),
-        [organization.slug, formatDate, formatSessionWhen, teamOptions],
+        [scopedRoute, formatDate, formatSessionWhen, teamOptions],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions

@@ -19,7 +19,7 @@ import {
     ItemTitle,
 } from "@/components/ui/item";
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
+import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { findConflicts, isConflictResolved } from "@/lib/skill-check-conflicts";
 import {
@@ -34,6 +34,7 @@ export function SkillsModule_Session_Contents_Card({
     sessionId: SkillCheckSessionId;
 }) {
     const organization = useOrganization();
+    const scopedRoute = useScopedRoute();
 
     const [{ data: session }, { data: skillChecks }, { data: assessees }, { data: skills }] =
         useSuspenseQueries({
@@ -88,10 +89,14 @@ export function SkillsModule_Session_Contents_Card({
                 />
                 <Item variant="outline" role="listitem" asChild>
                     <Link
-                        href={route("/orgs/[slug]/skill-track/sessions/[session_id]/checks", {
-                            slug: organization.slug,
-                            session_id: sessionId,
-                        })}
+                        href={scopedRoute(
+                            {
+                                organization:
+                                    "/orgs/[slug]/skill-track/sessions/[session_id]/checks",
+                                team: "/teams/[slug]/skill-track/sessions/[session_id]/checks",
+                            },
+                            { session_id: sessionId },
+                        )}
                     >
                         <ItemContent>
                             <ItemTitle>{skillChecks.length} Skill checks</ItemTitle>
@@ -105,12 +110,13 @@ export function SkillsModule_Session_Contents_Card({
                 {conflictCount > 0 && (
                     <Item variant="outline" role="listitem" asChild>
                         <Link
-                            href={`${route(
-                                "/orgs/[slug]/skill-track/sessions/[session_id]/review",
+                            href={`${scopedRoute(
                                 {
-                                    slug: organization.slug,
-                                    session_id: sessionId,
+                                    organization:
+                                        "/orgs/[slug]/skill-track/sessions/[session_id]/review",
+                                    team: "/teams/[slug]/skill-track/sessions/[session_id]/review",
                                 },
+                                { session_id: sessionId },
                             )}#conflicts`}
                         >
                             <ItemContent>

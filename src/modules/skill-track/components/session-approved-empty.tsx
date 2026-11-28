@@ -16,8 +16,7 @@ import {
     EmptyMedia,
     EmptyTitle,
 } from "@/components/ui/empty";
-import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
+import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 
 /**
@@ -26,7 +25,7 @@ import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
  * session page.
  */
 export function SkillTrack_SessionApprovedEmpty({ sessionId }: { sessionId: SkillCheckSessionId }) {
-    const organization = useOrganization();
+    const scopedRoute = useScopedRoute();
 
     return (
         <Empty>
@@ -40,10 +39,13 @@ export function SkillTrack_SessionApprovedEmpty({ sessionId }: { sessionId: Skil
             <EmptyContent>
                 <Button variant="outline" asChild>
                     <Link
-                        href={route("/orgs/[slug]/skill-track/sessions/[session_id]", {
-                            slug: organization.slug,
-                            session_id: sessionId,
-                        })}
+                        href={scopedRoute(
+                            {
+                                organization: "/orgs/[slug]/skill-track/sessions/[session_id]",
+                                team: "/teams/[slug]/skill-track/sessions/[session_id]",
+                            },
+                            { session_id: sessionId },
+                        )}
                     >
                         Back to session
                     </Link>

@@ -17,15 +17,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
 import { useHasPermission } from "@/hooks/use-has-permission";
-import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
+import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 
 import { SkillsModule_DeleteSession_Dialog } from "./delete-session";
 import { SkillsModule_ReopenSession_Dialog } from "./reopen-session";
 
 export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSession }) {
-    const organization = useOrganization();
+    const scopedRoute = useScopedRoute();
     const [action, setAction] = useQueryState(
         "action",
         parseAsStringLiteral(["update", "reopen", "delete"] as const),
@@ -85,12 +84,13 @@ export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSessi
                         <DropdownMenuGroup>
                             <DropdownMenuItem asChild>
                                 <Link
-                                    href={route(
-                                        "/orgs/[slug]/skill-track/sessions/[session_id]/history",
+                                    href={scopedRoute(
                                         {
-                                            slug: organization.slug,
-                                            session_id: session.id,
+                                            organization:
+                                                "/orgs/[slug]/skill-track/sessions/[session_id]/history",
+                                            team: "/teams/[slug]/skill-track/sessions/[session_id]/history",
                                         },
+                                        { session_id: session.id },
                                     )}
                                 >
                                     <ObjectIcons.History /> History
@@ -98,12 +98,13 @@ export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSessi
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
                                 <Link
-                                    href={route(
-                                        "/orgs/[slug]/skill-track/sessions/[session_id]/review",
+                                    href={scopedRoute(
                                         {
-                                            slug: organization.slug,
-                                            session_id: session.id,
+                                            organization:
+                                                "/orgs/[slug]/skill-track/sessions/[session_id]/review",
+                                            team: "/teams/[slug]/skill-track/sessions/[session_id]/review",
                                         },
+                                        { session_id: session.id },
                                     )}
                                 >
                                     <SessionReviewIcon /> Review

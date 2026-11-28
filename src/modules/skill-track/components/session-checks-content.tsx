@@ -21,7 +21,7 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Show } from "@/components/show";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
+import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { PersonId, PersonRef } from "@/lib/schemas/person";
 import { SkillId, SkillRef } from "@/lib/schemas/skill";
 import {
@@ -39,6 +39,7 @@ export function SkillTrack_SessionChecks_Content({
     sessionId: SkillCheckSessionId;
 }) {
     const organization = useOrganization();
+    const scopedRoute = useScopedRoute();
 
     const [
         { data: session },
@@ -185,16 +186,23 @@ export function SkillTrack_SessionChecks_Content({
                 items={[
                     {
                         label: "Skill Check Sessions",
-                        href: route("/orgs/[slug]/skill-track/sessions", {
-                            slug: organization.slug,
-                        }),
+                        href: scopedRoute(
+                            {
+                                organization: "/orgs/[slug]/skill-track/sessions",
+                                team: "/teams/[slug]/skill-track/sessions",
+                            },
+                            {},
+                        ),
                     },
                     {
                         label: session.name || session.id,
-                        href: route("/orgs/[slug]/skill-track/sessions/[session_id]", {
-                            slug: organization.slug,
-                            session_id: sessionId,
-                        }),
+                        href: scopedRoute(
+                            {
+                                organization: "/orgs/[slug]/skill-track/sessions/[session_id]",
+                                team: "/teams/[slug]/skill-track/sessions/[session_id]",
+                            },
+                            { session_id: sessionId },
+                        ),
                     },
                 ]}
             />

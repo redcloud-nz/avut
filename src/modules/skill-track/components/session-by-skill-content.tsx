@@ -29,7 +29,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
+import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { PersonId } from "@/lib/schemas/person";
 import { SkillId } from "@/lib/schemas/skill";
 import {
@@ -66,6 +66,7 @@ export function SkillTrack_SessionBySkill_Content({
     sessionId: SkillCheckSessionId;
 }) {
     const organization = useOrganization();
+    const scopedRoute = useScopedRoute();
 
     const resultOptions = getEnabledSkillCheckResultOptions(organization.settings);
 
@@ -224,16 +225,23 @@ export function SkillTrack_SessionBySkill_Content({
             items={[
                 {
                     label: "Skill Check Sessions",
-                    href: route("/orgs/[slug]/skill-track/sessions", {
-                        slug: organization.slug,
-                    }),
+                    href: scopedRoute(
+                        {
+                            organization: "/orgs/[slug]/skill-track/sessions",
+                            team: "/teams/[slug]/skill-track/sessions",
+                        },
+                        {},
+                    ),
                 },
                 {
                     label: session.name || session.id,
-                    href: route("/orgs/[slug]/skill-track/sessions/[session_id]", {
-                        slug: organization.slug,
-                        session_id: sessionId,
-                    }),
+                    href: scopedRoute(
+                        {
+                            organization: "/orgs/[slug]/skill-track/sessions/[session_id]",
+                            team: "/teams/[slug]/skill-track/sessions/[session_id]",
+                        },
+                        { session_id: sessionId },
+                    ),
                 },
             ]}
         />
