@@ -4,6 +4,8 @@
  */
 "use client";
 
+import { ClipboardListIcon, GitCompareIcon } from "lucide-react";
+import Link from "next/link";
 import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
 import { useEffect, useMemo } from "react";
 
@@ -287,6 +289,32 @@ export function D4HI3Module_SelfAuditCampaign_Content({
             <Saratoga.Header>
                 <Saratoga.Title>{campaign.name}</Saratoga.Title>
                 <Saratoga.Actions>
+                    {!isDraft && (
+                        <Button asChild variant="outline">
+                            <Link
+                                href={route(
+                                    "/orgs/[slug]/d4h-i3/self-audit-campaigns/[campaign_id]/needs",
+                                    { slug: organization.slug, campaign_id: campaign.id },
+                                )}
+                            >
+                                <ClipboardListIcon />
+                                <span className="sr-only md:not-sr-only">Needs Report</span>
+                            </Link>
+                        </Button>
+                    )}
+                    {!isDraft && (
+                        <Button asChild variant="outline">
+                            <Link
+                                href={route(
+                                    "/orgs/[slug]/d4h-i3/self-audit-campaigns/[campaign_id]/differences",
+                                    { slug: organization.slug, campaign_id: campaign.id },
+                                )}
+                            >
+                                <GitCompareIcon />
+                                <span className="sr-only md:not-sr-only">Differences from D4H</span>
+                            </Link>
+                        </Button>
+                    )}
                     {isDraft && (
                         <Button
                             variant="destructive"

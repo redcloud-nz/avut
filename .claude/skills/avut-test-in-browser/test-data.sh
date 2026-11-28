@@ -9,6 +9,7 @@
 #   bash .claude/skills/avut-test-in-browser/test-data.sh new-users   # newest accounts, with "What's new" cursor
 #   bash .claude/skills/avut-test-in-browser/test-data.sh sessions [--org <slug>]
 #   bash .claude/skills/avut-test-in-browser/test-data.sh teams    [--org <slug>]
+#   bash .claude/skills/avut-test-in-browser/test-data.sh self-audits [--org <slug>]  # campaigns, with submitted counts
 #
 # It exists so these lookups are one fixed, allow-listed command. Inside a worktree, the
 # harness refuses an inline `psql "$POSTGRES_URL_NON_POOLING" …`, since it can't verify a
@@ -29,7 +30,7 @@ url="${url%\'}"; url="${url#\'}"
 [[ -n "$url" ]] || { echo "error: POSTGRES_URL_NON_POOLING not set in .env.local" >&2; exit 1; }
 
 usage() {
-    echo "usage: test-data.sh orgs | admins | new-users | users|sessions|teams|forms [--org <slug>]" >&2
+    echo "usage: test-data.sh orgs | admins | new-users | users|sessions|teams|forms|self-audits [--org <slug>]" >&2
     exit 1
 }
 
@@ -99,6 +100,16 @@ FROM form_instances f JOIN organizations o ON o.id = f."organizationId"
 LEFT JOIN users u ON u.id = f."userId"
 WHERE (:'org' = '' OR o.slug = :'org')
 ORDER BY f."updatedAt" DESC LIMIT 30;
+SQL
+) ;;
+    self-audits) sql=$(cat <<'SQL'
+SELECT c.id, o.slug AS org, c.name, c."d4hTeamName" AS d4h_team, c."sentAt"::date AS sent,
+    (SELECT count(*) FROM self_audit_requests r WHERE r."campaignId" = c.id) AS members,
+    (SELECT count(*) FROM self_audit_requests r
+        WHERE r."campaignId" = c.id AND r."submittedAt" IS NOT NULL AND r."withdrawnAt" IS NULL) AS submitted
+FROM self_audit_campaigns c JOIN organizations o ON o.id = c."organizationId"
+WHERE (:'org' = '' OR o.slug = :'org')
+ORDER BY c."createdAt" DESC LIMIT 20;
 SQL
 ) ;;
     *) usage ;;

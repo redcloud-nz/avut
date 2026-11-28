@@ -14,7 +14,7 @@ import { createEffects, invalidate } from "@/trpc/mutation-effector";
 export const d4hTasksEffects = createEffects<"d4hTasks">()({
     checkTask: (vars, data) => [
         ...invalidateTaskLists(vars.organizationId),
-        // An applied task means D4H retired the item, so its D4H status changed too.
+        // An applied task means the item changed in D4H (retired, serial, brand/model or LOST).
         ...(data.result === "applied"
             ? [
                   invalidate(

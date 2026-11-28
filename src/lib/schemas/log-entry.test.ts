@@ -122,6 +122,7 @@ describe("Operations", () => {
             "public-form-submission",
             "rubbish-purge",
             "self-audit-add-members",
+            "self-audit-apply-fixes",
             "self-audit-campaign-send",
             "skill-package-import",
         ]);

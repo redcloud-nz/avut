@@ -30,9 +30,12 @@ export const D4HTaskStatus = {
 
 export type D4HTaskStatus = z.infer<typeof D4HTaskStatus.schema>;
 
-/** What the task does to its D4H resource. v1 has only `Retire`. */
+/**
+ * What the task does to its D4H resource: `Retire` (queued by an I3 Return), or `SetSerial`,
+ * `SetVariant` and `MarkLost` (queued by a Self Audit Campaign's fixes).
+ */
 export const D4HTaskKind = {
-    schema: z.enum(["Retire"]),
+    schema: z.enum(["Retire", "SetSerial", "SetVariant", "MarkLost"]),
 } as const;
 
 export type D4HTaskKind = z.infer<typeof D4HTaskKind.schema>;
@@ -61,18 +64,55 @@ const retirePayloadSchema = z.object({
     note: z.string().min(1).optional(),
 });
 
+/** Context for whoever applies the task, e.g. which self-audit reported the change. */
+const taskNoteSchema = z.string().min(1).optional();
+
+const setSerialPayloadSchema = z.object({
+    /** The serial to set, trimmed. */
+    serial: z.string().min(1),
+    note: taskNoteSchema,
+});
+
+const setVariantPayloadSchema = z.object({
+    /**
+     * D4H's brand id, which Check compares. Optional only because tasks queued before it was
+     * stored lack it; Check falls back to the titles for those.
+     */
+    brandId: z.number().optional(),
+    /** D4H's brand title, as D4H's edit form lists it, for display. */
+    brand: z.string().min(1),
+    /** D4H's model id, which Check compares (optional as `brandId` is). */
+    modelId: z.number().optional(),
+    /** D4H's model title, as D4H's edit form lists it, for display. */
+    model: z.string().min(1),
+    note: taskNoteSchema,
+});
+
+const markLostPayloadSchema = z.object({
+    note: taskNoteSchema,
+});
+
 /** A task's `kind` paired with the `payload` that kind carries. */
 export const D4HTaskPayload = {
     schema: z.discriminatedUnion("kind", [
         z.object({ kind: z.literal("Retire"), payload: retirePayloadSchema }),
+        z.object({ kind: z.literal("SetSerial"), payload: setSerialPayloadSchema }),
+        z.object({ kind: z.literal("SetVariant"), payload: setVariantPayloadSchema }),
+        z.object({ kind: z.literal("MarkLost"), payload: markLostPayloadSchema }),
     ]),
 
     retireSchema: retirePayloadSchema,
+    setSerialSchema: setSerialPayloadSchema,
+    setVariantSchema: setVariantPayloadSchema,
+    markLostSchema: markLostPayloadSchema,
 } as const;
 
 export type D4HTaskPayload = z.infer<typeof D4HTaskPayload.schema>;
 
 export type D4HRetireTaskPayload = z.infer<typeof D4HTaskPayload.retireSchema>;
+export type D4HSetSerialTaskPayload = z.infer<typeof D4HTaskPayload.setSerialSchema>;
+export type D4HSetVariantTaskPayload = z.infer<typeof D4HTaskPayload.setVariantSchema>;
+export type D4HMarkLostTaskPayload = z.infer<typeof D4HTaskPayload.markLostSchema>;
 
 const d4hTaskBaseSchema = z.object({
     id: D4HTaskId.schema,
@@ -97,6 +137,9 @@ const d4hTaskBaseSchema = z.object({
 
 const d4hTaskSchema = z.discriminatedUnion("kind", [
     d4hTaskBaseSchema.extend({ kind: z.literal("Retire"), payload: retirePayloadSchema }),
+    d4hTaskBaseSchema.extend({ kind: z.literal("SetSerial"), payload: setSerialPayloadSchema }),
+    d4hTaskBaseSchema.extend({ kind: z.literal("SetVariant"), payload: setVariantPayloadSchema }),
+    d4hTaskBaseSchema.extend({ kind: z.literal("MarkLost"), payload: markLostPayloadSchema }),
 ]);
 
 export const D4HTask = {

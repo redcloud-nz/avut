@@ -5,6 +5,8 @@
 
 import "server-only";
 
+import * as z from "zod";
+
 import { ForbiddenError } from "@/lib/errors";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import type { D4HAccessTokenMetadata } from "@/lib/schemas/d4h-provider-metadata";
@@ -193,6 +195,70 @@ export async function patchD4HEquipmentItem(
             { cause: error },
         );
     }
+}
+
+/** A D4H request that D4H answered with a non-ok status, which `status` carries. */
+export class D4HResponseError extends Error {
+    constructor(
+        message: string,
+        readonly status: number,
+        options?: ErrorOptions,
+    ) {
+        super(message, options);
+        this.name = "D4HResponseError";
+    }
+}
+
+/** A new equipment item, located with a member, as {@link createD4HEquipmentItem} creates it. */
+export type D4HEquipmentItemCreate = {
+    categoryId: number;
+    kindId: number;
+    /** The D4H member it's issued to. */
+    memberId: number;
+    /** Left out when `null` or blank. */
+    serial?: string | null;
+    brandId?: number | null;
+    modelId?: number | null;
+};
+
+/**
+ * Create one equipment item in a team, located with a member, uncached. Returns the new item's
+ * id, or `null` when D4H created it but its response has no id we can read: the item exists either
+ * way, so that isn't a failure. Throws a {@link D4HResponseError} with D4H's status and body when
+ * D4H refuses it.
+ */
+export async function createD4HEquipmentItem(
+    token: D4HAccessToken_ServerOnly,
+    d4hTeamId: number,
+    item: D4HEquipmentItemCreate,
+): Promise<number | null> {
+    const { data, error, response } = await getD4HFetchClient(token).POST(
+        "/v3/{context}/{contextId}/equipment",
+        {
+            params: { path: { context: "team", contextId: d4hTeamId } },
+            body: {
+                ref: undefined,
+                categoryId: item.categoryId,
+                kindId: item.kindId,
+                location: { id: item.memberId, resourceType: "Member" },
+                serial: item.serial ? item.serial : undefined,
+                brandId: item.brandId ?? undefined,
+                modelId: item.modelId ?? undefined,
+            },
+        },
+    );
+
+    // `error` is undefined for a non-ok response with an empty body, so check the response.
+    if (!response.ok) {
+        const detail = error === undefined ? "" : ` ${JSON.stringify(error)}`;
+        throw new D4HResponseError(
+            `Failed to create a D4H equipment item in team ${d4hTeamId}: ${response.status} ${response.statusText}${detail}`,
+            response.status,
+            { cause: error },
+        );
+    }
+    const created = z.object({ id: z.number() }).safeParse(data);
+    return created.success ? created.data.id : null;
 }
 
 /** The parts of a token's metadata that {@link resolveCatalogueOwner} reads. */
