@@ -5,7 +5,6 @@
 
 "use client";
 
-import Link from "next/link";
 import { parseAsBoolean, parseAsStringLiteral, useQueryState } from "nuqs";
 import { toast } from "sonner";
 
@@ -19,13 +18,7 @@ import { NoteDetail } from "@/components/notes/note-detail";
 import { NoteEditor } from "@/components/notes/note-editor";
 import { isNoteNotFound, NoteGoneBoundary } from "@/components/notes/note-gone-boundary";
 import { notesBreadcrumbs } from "@/components/notes/notes-breadcrumbs";
-import { Button } from "@/components/ui/button";
-import {
-    DropdownMenuGroup,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { EntityActionMenu } from "@/components/ui/menu-action";
+import { RecordCardEditButton, RecordCardMenu } from "@/components/ui/record-card-actions";
 import { route } from "@/lib/routes";
 import { UserNoteData, UserNoteId } from "@/lib/schemas/user-note";
 import { trpc } from "@/trpc/client";
@@ -85,41 +78,20 @@ function UserNote_Body({ noteId }: { noteId: UserNoteId }) {
                 <NoteDetail
                     note={note}
                     breadcrumbs={breadcrumbs}
+                    historyHref={route("/user/notes/[note_id]/history", { note_id: note.id })}
                     actions={
                         <>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                aria-label="Edit note"
-                                onClick={openEditor}
-                            >
-                                <ObjectIcons.Edit />
-                            </Button>
-                            <EntityActionMenu
+                            {/* View mode only, so ⌥E can't fire while the editor is open. */}
+                            <RecordCardEditButton
+                                label="Edit note"
                                 category="Notes"
-                                before={
-                                    <>
-                                        <DropdownMenuGroup>
-                                            <DropdownMenuItem asChild>
-                                                <Link
-                                                    href={route("/user/notes/[note_id]/history", {
-                                                        note_id: note.id,
-                                                    })}
-                                                >
-                                                    <ObjectIcons.History /> History
-                                                </Link>
-                                            </DropdownMenuItem>
-                                        </DropdownMenuGroup>
-                                        <DropdownMenuSeparator />
-                                    </>
-                                }
+                                primary
+                                onClick={openEditor}
+                            />
+                            <RecordCardMenu
+                                category="Notes"
+                                primary
                                 actions={[
-                                    {
-                                        verb: "update",
-                                        label: "Edit",
-                                        icon: <ObjectIcons.Edit />,
-                                        onSelect: openEditor,
-                                    },
                                     {
                                         verb: "delete",
                                         label: "Delete",

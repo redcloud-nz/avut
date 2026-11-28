@@ -5,6 +5,7 @@
 
 "use client";
 
+import type { Route } from "next";
 import { ReactNode } from "react";
 
 import type { SaratogaBreadcrumb } from "@/components/blocks/saratoga";
@@ -17,18 +18,21 @@ interface NoteDetailProps {
     note: { title: string; content: string; updatedAt: string };
     /** Shown after the updated time, e.g. the author of an org note. Omit for personal notes. */
     byline?: ReactNode;
-    /** The controls the caller is allowed to show: the Edit button and the actions menu. */
+    /** The note's History page; the "updated" time links to it. */
+    historyHref: Route;
+    /** The controls the caller is allowed to show: the pencil and the ⋮. */
     actions?: ReactNode;
     /** The page's ancestors, shown above the note. */
     breadcrumbs?: SaratogaBreadcrumb[];
 }
 
 /** A note in view mode: its title, when it was last updated, and its rendered markdown. */
-export function NoteDetail({ note, byline, actions, breadcrumbs }: NoteDetailProps) {
+export function NoteDetail({ note, byline, historyHref, actions, breadcrumbs }: NoteDetailProps) {
     return (
         <NoteCard
             note={note}
             byline={byline}
+            historyHref={historyHref}
             actions={actions}
             breadcrumbs={breadcrumbs}
             title={<h1 className={cn(noteTitleClassName, "border-transparent")}>{note.title}</h1>}

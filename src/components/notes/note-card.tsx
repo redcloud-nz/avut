@@ -5,6 +5,8 @@
 
 "use client";
 
+import type { Route } from "next";
+import Link from "next/link";
 import { ComponentProps, ReactNode } from "react";
 
 import { Saratoga, type SaratogaBreadcrumb } from "@/components/blocks/saratoga";
@@ -26,7 +28,10 @@ interface NoteCardProps extends Omit<ComponentProps<"div">, "title"> {
     title: ReactNode;
     /** Shown after the updated time, e.g. the author of an org note. Omit for personal notes. */
     byline?: ReactNode;
-    /** Top-right controls: Edit/menu in view mode, Cancel/Save in edit mode. */
+    /** The note's History page, making the "updated" time a link to it. View mode only: in edit
+     *  mode the link would leave the editor and drop the draft. */
+    historyHref?: Route;
+    /** Top-right controls: the pencil and ⋮ in view mode, Cancel/Save in edit mode. */
     actions?: ReactNode;
     /** The page's ancestors, shown above the card in both modes. */
     breadcrumbs?: SaratogaBreadcrumb[];
@@ -44,6 +49,7 @@ export function NoteCard({
     note,
     title,
     byline,
+    historyHref,
     actions,
     breadcrumbs,
     children,
@@ -60,7 +66,16 @@ export function NoteCard({
                     <div className="min-w-0 flex-1">
                         {title}
                         <p className="mt-1 text-xs text-muted-foreground">
-                            updated {formatRelativeDateTime(note.updatedAt)}
+                            {historyHref ? (
+                                <Link
+                                    href={historyHref}
+                                    className="underline-offset-2 hover:text-foreground hover:underline"
+                                >
+                                    updated {formatRelativeDateTime(note.updatedAt)}
+                                </Link>
+                            ) : (
+                                <>updated {formatRelativeDateTime(note.updatedAt)}</>
+                            )}
                             {byline && <> · {byline}</>}
                         </p>
                     </div>

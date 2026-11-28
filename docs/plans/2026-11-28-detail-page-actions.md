@@ -104,7 +104,7 @@ Untouched: D4H catalogue/member/team pages (↗ only), self-audit campaign (out 
   - **Do:** Per the map. The equipment item's `extraActions` slot becomes a secondary-column slot: the I3 module renders its own titled action card and mounts the Return dialog itself (the item has no ⋮ to host it); the cross-module wiring stays in `equipment-item-page.tsx`. Return's focus return moves off `useEntityActionMenuTrigger` to `useReturnFocus` with a `fallbackRef`. Template menu moves to `RecordCardMenu`. Nag rule: Run card with a confirm dialog for Run now, hidden while paused.
   - **Done when:** map rows hold; Return works through the slot for an I3 user with a D4H token; `npm run check` passes.
 
-- [ ] **Task 8 — Notes (org and user)** `visual`
+- [x] **Task 8 — Notes (org and user)** `visual`
   - **Files:** `src/modules/notes/components/org-note-content.tsx`, `src/modules/user-notes/components/user-note-content.tsx`, `src/components/notes/note-card.tsx` (and `NoteDetail`), `content/help/notes.mdx`.
   - **Do:** The note header keeps the pencil (`RecordCardEditButton primary`) and a ⋮ with Delete (`primary`). `NoteCard` gets a `historyHref` prop that only `NoteDetail` (view mode) passes, making the "updated" timestamp the History link (`/orgs/[slug]/notes/[note_id]/history`, `/user/notes/[note_id]/history`).
   - **Done when:** ⌥E, `Mod+.`, ⌥⌫ work on a note; History reachable from the timestamp; the editor's timestamp isn't a link; `npm run check` passes.
