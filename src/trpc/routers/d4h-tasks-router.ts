@@ -29,7 +29,7 @@ export const d4hTasksRouter = createTrpcRouter({
     /**
      * Re-fetch the task's item from D4H and close the task if its change has been applied there:
      * `Retire` when the item is retired, `SetSerial` when its serial matches, `SetVariant` when its
-     * brand and model titles match, `MarkLost` when it's LOST. Checking needs the D4H permission
+     * brand and model ids match (titles, for a task queued before the ids were stored), `MarkLost` when it's LOST. Checking needs the D4H permission
      * the change itself needs: Equipment RETIRE for `Retire`, UPDATE for the other kinds.
      * @returns `missing` when D4H no longer has the item (suggest Dismiss), `applied` when the
      *   change is in D4H (the task is now `Done`), or `pending` with the item's current D4H status,
@@ -221,10 +221,14 @@ function isTaskApplied(task: D4HTask, item: D4HEquipmentItemDetail): boolean {
             return item.status === "RETIRED";
         case "SetSerial":
             return (item.serial ?? "").trim() === task.payload.serial.trim();
-        case "SetVariant":
-            return (
-                item.brand.title === task.payload.brand && item.model?.title === task.payload.model
-            );
+        case "SetVariant": {
+            const { brandId, modelId, brand, model } = task.payload;
+            // Tasks queued before the ids were stored compare the titles instead.
+            if (brandId === undefined || modelId === undefined) {
+                return item.brand.title === brand && item.model?.title === model;
+            }
+            return item.brand.id === brandId && item.model?.id === modelId;
+        }
         case "MarkLost":
             return item.status === "LOST";
     }

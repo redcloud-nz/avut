@@ -30,7 +30,7 @@ export type SelfAuditLiveItem = Pick<
     "id" | "ref" | "serial" | "kind" | "brand" | "model"
 >;
 
-/** An I3 variant's current D4H record, with the titles a `SetVariant` task names. */
+/** An I3 variant's current D4H record, with the ids and titles a `SetVariant` task names. */
 export const SelfAuditVariantD4H = z.object({
     brandId: z.number(),
     brandTitle: z.string(),
@@ -76,7 +76,9 @@ export const SelfAuditFix = z.discriminatedUnion("type", [
         z.object({
             type: z.literal("task"),
             taskKind: z.literal("SetVariant"),
+            brandId: z.number(),
             brand: z.string(),
+            modelId: z.number(),
             model: z.string(),
         }),
         z.object({ type: z.literal("task"), taskKind: z.literal("MarkLost") }),
@@ -219,7 +221,7 @@ export function fixFingerprint(fix: SelfAuditFix): string {
                 case "SetSerial":
                     return `task-serial=${text(fix.serial)}`;
                 case "SetVariant":
-                    return `task-variant=${text(fix.brand)}/${text(fix.model)}`;
+                    return `task-variant=${fix.brandId}/${fix.modelId}`;
             }
     }
 }
@@ -390,7 +392,9 @@ export function diffAnswers(input: SelfAuditDiffInput): SelfAuditDifference[] {
                             taskDifference(base, {
                                 type: "task",
                                 taskKind: "SetVariant",
+                                brandId: said.brandId,
                                 brand: said.brandTitle,
+                                modelId: said.modelId,
                                 model: said.modelTitle,
                             }),
                         );

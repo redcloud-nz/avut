@@ -2275,7 +2275,9 @@ export async function applyFixes(
                                 return {
                                     kind: "SetVariant",
                                     payload: {
+                                        brandId: fix.brandId,
                                         brand: fix.brand,
+                                        modelId: fix.modelId,
                                         model: fix.model,
                                         note: `${reported} ${fix.brand} ${fix.model}.`,
                                     },

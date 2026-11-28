@@ -230,12 +230,19 @@ describe("diffAnswers", () => {
     });
 
     describe("Variant", () => {
-        it("queues a SetVariant task with the variant's D4H titles", () => {
+        it("queues a SetVariant task with the variant's D4H ids and titles", () => {
             expect(diffAnswers(input({}, { ...yes, variantId: "falcon" }))).toEqual([
                 expect.objectContaining({
-                    key: "variant:1:task-variant=Petzl/Falcon",
+                    key: "variant:1:task-variant=1/12",
                     kind: "Variant",
-                    fix: { type: "task", taskKind: "SetVariant", brand: "Petzl", model: "Falcon" },
+                    fix: {
+                        type: "task",
+                        taskKind: "SetVariant",
+                        brandId: 1,
+                        brand: "Petzl",
+                        modelId: 12,
+                        model: "Falcon",
+                    },
                     state: "selectable",
                 }),
             ]);
@@ -274,7 +281,7 @@ describe("diffAnswers", () => {
             );
             expect(differences.map((difference) => difference.key)).toEqual([
                 "serial:1:task-serial=SN2",
-                "variant:1:task-variant=Petzl/Falcon",
+                "variant:1:task-variant=1/12",
             ]);
         });
     });

@@ -1756,7 +1756,7 @@ describe("campaigns", () => {
             lost: "notheld:11:lost",
             lostTask: "notheld:11:task-lost",
             serial: "serial:12:task-serial=SN-NEW",
-            variant: "variant:12:task-variant=Motorola/DP4400",
+            variant: "variant:12:task-variant=900/901",
             unrecorded: `unrecorded:${A.torch}:create=-/T-1`,
         };
         const template = (
@@ -2019,7 +2019,9 @@ describe("campaigns", () => {
                     kind: "SetVariant",
                     formInstanceId: A.johnForm,
                     payload: {
+                        brandId: 900,
                         brand: "Motorola",
+                        modelId: 901,
                         model: "DP4400",
                         note: `${NOTE} Motorola DP4400.`,
                     },

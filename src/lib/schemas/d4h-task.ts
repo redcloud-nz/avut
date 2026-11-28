@@ -74,9 +74,16 @@ const setSerialPayloadSchema = z.object({
 });
 
 const setVariantPayloadSchema = z.object({
-    /** D4H's brand title, as D4H's edit form lists it. */
+    /**
+     * D4H's brand id, which Check compares. Optional only because tasks queued before it was
+     * stored lack it; Check falls back to the titles for those.
+     */
+    brandId: z.number().optional(),
+    /** D4H's brand title, as D4H's edit form lists it, for display. */
     brand: z.string().min(1),
-    /** D4H's model title, as D4H's edit form lists it. */
+    /** D4H's model id, which Check compares (optional as `brandId` is). */
+    modelId: z.number().optional(),
+    /** D4H's model title, as D4H's edit form lists it, for display. */
     model: z.string().min(1),
     note: taskNoteSchema,
 });

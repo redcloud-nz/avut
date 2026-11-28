@@ -171,6 +171,11 @@ describe("d4hTasksRouter", () => {
         // 8xx: the self-audit kinds, one check test each.
         const variant = {
             kind: "SetVariant",
+            payload: { brandId: 1, brand: "Petzl", modelId: 2, model: "Vertex" },
+        } as const;
+        // Queued before the ids were stored: Check compares the titles.
+        const titlesOnlyVariant = {
+            kind: "SetVariant",
             payload: { brand: "Petzl", model: "Vertex" },
         } as const;
         const lost = { kind: "MarkLost", payload: {} } as const;
@@ -181,6 +186,8 @@ describe("d4hTasksRouter", () => {
         ids.serialNoRetire = await queue(OTHER_TEAM, 805, serial);
         ids.variantApplied = await queue(RETIRE_TEAM, 811, variant);
         ids.variantPending = await queue(RETIRE_TEAM, 812, variant);
+        ids.variantRenamed = await queue(RETIRE_TEAM, 813, variant);
+        ids.variantTitlesOnly = await queue(RETIRE_TEAM, 814, titlesOnlyVariant);
         ids.lostApplied = await queue(RETIRE_TEAM, 821, lost);
         ids.lostPending = await queue(RETIRE_TEAM, 822, lost);
     });
@@ -501,7 +508,7 @@ describe("d4hTasksRouter", () => {
             expect(fetchD4HEquipmentItem).not.toHaveBeenCalled();
         });
 
-        it("marks a SetVariant task Done when the brand and model titles match", async () => {
+        it("marks a SetVariant task Done when the brand and model ids match", async () => {
             vi.mocked(fetchD4HEquipmentItem).mockResolvedValue({
                 ...item(811, "OPERATIONAL"),
                 brand: { resourceType: "EquipmentBrand", id: 1, title: "Petzl" },
@@ -530,6 +537,36 @@ describe("d4hTasksRouter", () => {
 
             expect(result).toMatchObject({ result: "pending", brand: "Petzl", model: "Boreo" });
             await expectOpen(ids.variantPending);
+        });
+
+        it("marks a SetVariant task Done when the ids match after a rename in D4H", async () => {
+            vi.mocked(fetchD4HEquipmentItem).mockResolvedValue({
+                ...item(813, "OPERATIONAL"),
+                brand: { resourceType: "EquipmentBrand", id: 1, title: "Petzl Pro" },
+                model: { resourceType: "EquipmentModel", id: 2, title: "Vertex Vent" },
+            });
+
+            const result = await editor().checkTask({
+                organizationId: T.org,
+                taskId: ids.variantRenamed,
+            });
+
+            expect(result).toMatchObject({ result: "applied", task: { status: "Done" } });
+        });
+
+        it("compares the titles for a SetVariant task queued without ids", async () => {
+            vi.mocked(fetchD4HEquipmentItem).mockResolvedValue({
+                ...item(814, "OPERATIONAL"),
+                brand: { resourceType: "EquipmentBrand", id: 9, title: "Petzl" },
+                model: { resourceType: "EquipmentModel", id: 8, title: "Vertex" },
+            });
+
+            const result = await editor().checkTask({
+                organizationId: T.org,
+                taskId: ids.variantTitlesOnly,
+            });
+
+            expect(result).toMatchObject({ result: "applied", task: { status: "Done" } });
         });
 
         it("marks a MarkLost task Done when the item is LOST", async () => {
