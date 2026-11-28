@@ -5,7 +5,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect, useId } from "react";
+import { useEffect, useId, type RefObject } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -15,8 +15,7 @@ import { useMutation } from "@tanstack/react-query";
 
 import { d4hApiEffects } from "@/client/d4h-api-effects";
 import { D4HItemRef } from "@/components/d4h/d4h-item-ref";
-import { ObjectIcons } from "@/components/icons";
-import { Button, MutationButton } from "@/components/ui/button";
+import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogBody,
@@ -30,6 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { RecordCardEditButton } from "@/components/ui/record-card-actions";
 import {
     Select,
     SelectContent,
@@ -93,19 +93,26 @@ export function updateEquipmentItemDisabledReason({
 }
 
 /**
- * Edit the fields of a D4H equipment item that D4H's PATCH accepts. Opened by `?action=update`.
+ * The D4H Item card's pencil (⌥E: the page's primary record card) and the `?action=update` dialog
+ * it opens, editing the fields of a D4H equipment item that D4H's PATCH accepts.
  *
- * With a `disabledReason`, the trigger is disabled with the reason in a tooltip, and the param
- * doesn't open the dialog.
+ * With a `disabledReason`, the pencil is disabled with the reason in a tooltip, and the param
+ * doesn't open the dialog. It's the one disabled pencil on a detail page: the reason is what the
+ * viewer needs to know.
+ *
+ * Every viewer sees the pencil, so another dialog on the page can return focus to it: `focusRef`
+ * is set to whichever element takes focus (the pencil, or its tooltip wrapper when disabled).
  */
 export function D4HModule_UpdateEquipmentItem_Dialog({
     teamId,
     item,
     disabledReason,
+    focusRef,
 }: {
     teamId: number;
     item: D4HEquipmentItemDetail;
     disabledReason: string | null;
+    focusRef?: RefObject<HTMLElement | null>;
 }) {
     const organization = useOrganization();
 
@@ -177,16 +184,9 @@ export function D4HModule_UpdateEquipmentItem_Dialog({
         (errors) => console.warn("Form validation errors:", errors),
     );
 
-    const trigger = (
-        <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Edit item"
-            disabled={disabledReason !== null}
-        >
-            <ObjectIcons.Edit />
-        </Button>
-    );
+    function setFocusTarget(node: HTMLElement | null) {
+        if (focusRef) focusRef.current = node;
+    }
 
     if (disabledReason !== null) {
         return (
@@ -194,7 +194,17 @@ export function D4HModule_UpdateEquipmentItem_Dialog({
                 <TooltipTrigger asChild>
                     {/* A disabled button gets no pointer events, so the wrapper takes the hover
                         and focus instead. */}
-                    <span tabIndex={0}>{trigger}</span>
+                    <span ref={setFocusTarget} tabIndex={0}>
+                        <RecordCardEditButton
+                            label="Edit item"
+                            category="Equipment"
+                            primary
+                            disabled
+                            // The tooltip gives the reason; a native title would only repeat
+                            // the label over it.
+                            title={undefined}
+                        />
+                    </span>
                 </TooltipTrigger>
                 <TooltipContent>{disabledReason}</TooltipContent>
             </Tooltip>
@@ -203,7 +213,14 @@ export function D4HModule_UpdateEquipmentItem_Dialog({
 
     return (
         <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
-            <DialogTrigger asChild>{trigger}</DialogTrigger>
+            <DialogTrigger asChild>
+                <RecordCardEditButton
+                    ref={setFocusTarget}
+                    label="Edit item"
+                    category="Equipment"
+                    primary
+                />
+            </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>

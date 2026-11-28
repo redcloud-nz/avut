@@ -7,59 +7,50 @@
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { ObjectIcons } from "@/components/icons";
-import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
+import { type MenuActionProps } from "@/components/ui/menu-action";
+import { RecordCardMenu } from "@/components/ui/record-card-actions";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { I3Bundle } from "@/lib/schemas/i3-bundle";
 
 import { D4HI3Module_DeleteBundle_Dialog } from "./delete-bundle";
 import { D4HI3Module_RecoverBundle_Dialog } from "./recover-bundle";
 
-const ACTIONS = ["update", "delete", "recover"] as const;
+const ACTIONS = ["delete", "recover"] as const;
 
 /**
- * The bundle page's Actions menu. Edit opens the `?action=update` dialog that the Bundle record
- * card's header hosts, so it only works while the bundle isn't deleted (the card hides the dialog
- * then).
+ * The I3 Bundle card's ⋮ (the page's primary record card): Delete, or Recover once it's in the
+ * Rubbish bin. Edit is the card's pencil.
+ *
+ * Mounts the delete and recover dialogs; the Rubbish-bin banner's Recover opens the same one.
  */
 export function D4HI3Module_Bundle_Menu({ bundle }: { bundle: I3Bundle }) {
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(ACTIONS));
 
-    const canUpdate = useHasPermission({ i3Bundle: ["update"] });
     const canDelete = useHasPermission({ i3Bundle: ["delete"] });
     const deleted = bundle.status === "Deleted";
 
     const actions: MenuActionProps[] = [];
-    if (deleted) {
+    if (deleted && canDelete) {
         actions.push({
             verb: "recover",
             label: "Recover from rubbish",
             icon: <ObjectIcons.Recover />,
             onSelect: () => void setAction("recover", { history: "push" }),
-            disabled: !canDelete,
         });
-    } else {
-        actions.push(
-            {
-                verb: "update",
-                label: "Edit",
-                icon: <ObjectIcons.Edit />,
-                onSelect: () => void setAction("update", { history: "push" }),
-                disabled: !canUpdate,
-            },
-            {
-                verb: "delete",
-                label: "Delete",
-                icon: <ObjectIcons.Delete />,
-                onSelect: () => void setAction("delete", { history: "push" }),
-                disabled: !canDelete,
-                destructive: true,
-            },
-        );
+    }
+    if (!deleted && canDelete) {
+        actions.push({
+            verb: "delete",
+            label: "Delete",
+            icon: <ObjectIcons.Delete />,
+            onSelect: () => void setAction("delete", { history: "push" }),
+            destructive: true,
+        });
     }
 
     return (
         <>
-            <EntityActionMenu actions={actions} category="Bundles" />
+            <RecordCardMenu actions={actions} category="Bundles" primary />
 
             <D4HI3Module_DeleteBundle_Dialog
                 bundle={bundle}

@@ -73,87 +73,86 @@ export function D4HI3Module_Template_Content({ templateId }: { templateId: I3Tem
                 >
                     {template.name}
                 </Saratoga.Title>
-                <Saratoga.Actions>
-                    <D4HI3Module_Template_Menu template={template} />
-                </Saratoga.Actions>
             </Saratoga.Header>
 
-            <Saratoga.Columns>
-                <Saratoga.Column slot="main">
-                    <RecordCard
-                        label="I3 Template"
-                        updatedAt={template.updatedAt}
-                        action={
+            {/* Nothing for a secondary column: full width. */}
+            <div className="space-y-4">
+                <RecordCard
+                    label="I3 Template"
+                    updatedAt={template.updatedAt}
+                    action={
+                        <>
                             <Protect permissions={{ i3Template: ["update"] }}>
-                                <D4HI3Module_UpdateTemplate_Dialog template={template} />
+                                <D4HI3Module_UpdateTemplate_Dialog template={template} primary />
                             </Protect>
-                        }
-                    >
-                        <CardContent>
-                            <DataList>
-                                <RecordCardId label="Template ID" id={template.id} />
+                            <D4HI3Module_Template_Menu template={template} />
+                        </>
+                    }
+                >
+                    <CardContent>
+                        <DataList>
+                            <RecordCardId label="Template ID" id={template.id} />
+                            <DataItem>
+                                <DataItemTitle>Name</DataItemTitle>
+                                <DataItemValue>{template.name}</DataItemValue>
+                            </DataItem>
+                            {template.description && (
                                 <DataItem>
-                                    <DataItemTitle>Name</DataItemTitle>
-                                    <DataItemValue>{template.name}</DataItemValue>
+                                    <DataItemTitle>Description</DataItemTitle>
+                                    <DataItemValue>{template.description}</DataItemValue>
                                 </DataItem>
-                                {template.description && (
-                                    <DataItem>
-                                        <DataItemTitle>Description</DataItemTitle>
-                                        <DataItemValue>{template.description}</DataItemValue>
-                                    </DataItem>
-                                )}
-                                <DataItem>
-                                    <DataItemTitle>D4H Category</DataItemTitle>
-                                    <DataItemValue>
-                                        {template.d4h ? (
-                                            <D4HEquipmentCategoryLink
-                                                category={{
-                                                    id: template.d4h.categoryId,
-                                                    title: template.d4h.categoryTitle,
-                                                    owner: categoryOwner,
-                                                }}
-                                            />
-                                        ) : (
-                                            "—"
-                                        )}
-                                    </DataItemValue>
-                                </DataItem>
-                                <DataItem>
-                                    <DataItemTitle>D4H Type</DataItemTitle>
-                                    <DataItemValue>
-                                        {template.d4h ? (
-                                            <D4HEquipmentTypeLink
-                                                type={{
-                                                    id: template.d4h.kindId,
-                                                    title: template.d4h.kindTitle,
-                                                    owner: kindOwner,
-                                                }}
-                                            />
-                                        ) : (
-                                            "—"
-                                        )}
-                                    </DataItemValue>
-                                </DataItem>
-                                <DataItem>
-                                    <DataItemTitle>Require Serial Number</DataItemTitle>
-                                    <DataItemValue>
-                                        {template.d4h?.requireSN ? "Yes" : "No"}
-                                    </DataItemValue>
-                                </DataItem>
-                                <DataItem>
-                                    <DataItemTitle>Brand &amp; Model</DataItemTitle>
-                                    <DataItemValue>
-                                        {template.d4h
-                                            ? I3BrandModelRule.label[template.d4h.brandModelRule]
-                                            : "—"}
-                                    </DataItemValue>
-                                </DataItem>
-                            </DataList>
-                        </CardContent>
-                    </RecordCard>
-                    <D4HI3Module_Template_Variants_List template={template} />
-                </Saratoga.Column>
-            </Saratoga.Columns>
+                            )}
+                            <DataItem>
+                                <DataItemTitle>D4H Category</DataItemTitle>
+                                <DataItemValue>
+                                    {template.d4h ? (
+                                        <D4HEquipmentCategoryLink
+                                            category={{
+                                                id: template.d4h.categoryId,
+                                                title: template.d4h.categoryTitle,
+                                                owner: categoryOwner,
+                                            }}
+                                        />
+                                    ) : (
+                                        "—"
+                                    )}
+                                </DataItemValue>
+                            </DataItem>
+                            <DataItem>
+                                <DataItemTitle>D4H Type</DataItemTitle>
+                                <DataItemValue>
+                                    {template.d4h ? (
+                                        <D4HEquipmentTypeLink
+                                            type={{
+                                                id: template.d4h.kindId,
+                                                title: template.d4h.kindTitle,
+                                                owner: kindOwner,
+                                            }}
+                                        />
+                                    ) : (
+                                        "—"
+                                    )}
+                                </DataItemValue>
+                            </DataItem>
+                            <DataItem>
+                                <DataItemTitle>Require Serial Number</DataItemTitle>
+                                <DataItemValue>
+                                    {template.d4h?.requireSN ? "Yes" : "No"}
+                                </DataItemValue>
+                            </DataItem>
+                            <DataItem>
+                                <DataItemTitle>Brand &amp; Model</DataItemTitle>
+                                <DataItemValue>
+                                    {template.d4h
+                                        ? I3BrandModelRule.label[template.d4h.brandModelRule]
+                                        : "—"}
+                                </DataItemValue>
+                            </DataItem>
+                        </DataList>
+                    </CardContent>
+                </RecordCard>
+                <D4HI3Module_Template_Variants_List template={template} />
+            </div>
         </Saratoga.Root>
     );
 }

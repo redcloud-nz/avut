@@ -13,8 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
 import { i3BundlesEffects } from "@/client/i3-bundles-effects";
-import { ObjectIcons } from "@/components/icons";
-import { Button, MutationButton } from "@/components/ui/button";
+import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogBody,
@@ -29,13 +28,24 @@ import {
 import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { RecordCardEditButton } from "@/components/ui/record-card-actions";
 import { Textarea } from "@/components/ui/textarea";
 import { ObjectName } from "@/components/ui/typography";
 import { useOrganization } from "@/hooks/use-organization";
 import { I3Bundle } from "@/lib/schemas/i3-bundle";
 import { trpc } from "@/trpc/client";
 
-export function D4HI3Module_UpdateBundle_Dialog({ bundle }: { bundle: I3Bundle }) {
+/**
+ * The I3 Bundle card's pencil and the `?action=update` dialog it opens. `primary` on the page's
+ * primary record card, so ⌥E opens it.
+ */
+export function D4HI3Module_UpdateBundle_Dialog({
+    bundle,
+    primary = false,
+}: {
+    bundle: I3Bundle;
+    primary?: boolean;
+}) {
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
     const dialogOpen = action === "update";
 
@@ -46,9 +56,7 @@ export function D4HI3Module_UpdateBundle_Dialog({ bundle }: { bundle: I3Bundle }
     return (
         <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Update bundle">
-                    <ObjectIcons.Edit />
-                </Button>
+                <RecordCardEditButton label="Edit bundle" category="Bundles" primary={primary} />
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>

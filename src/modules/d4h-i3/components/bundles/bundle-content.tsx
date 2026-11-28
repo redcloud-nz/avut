@@ -17,10 +17,12 @@ import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import { RecordCard, RecordCardId } from "@/components/ui/record-card";
+import { ActionsCard } from "@/components/ui/record-card-actions";
 import { RecordStatusBadge } from "@/components/ui/status-badge";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-import { I3BundleId } from "@/lib/schemas/i3-bundle";
+import { I3Bundle, I3BundleId } from "@/lib/schemas/i3-bundle";
 import { trpc } from "@/trpc/client";
 
 import { D4HI3Module_Bundle_Lines } from "./bundle-lines";
@@ -54,29 +56,6 @@ export function D4HI3Module_Bundle_Content({ bundleId }: { bundleId: I3BundleId 
                 <Saratoga.Title badges={<RecordStatusBadge status={bundle.status} />}>
                     {bundle.name}
                 </Saratoga.Title>
-                <Saratoga.Actions>
-                    {!deleted && (
-                        // Always the picker, never a one-team shortcut: knowing the teams
-                        // would need a D4H read, and this page has to work without a token.
-                        // The picker only queries D4H once it's opened.
-                        <Protect permissions={{ d4hEquipment: ["view"], i3Item: ["issue"] }}>
-                            <D4HTeamPickerDialog
-                                label="Compare with a team"
-                                section={(teamId) =>
-                                    route(
-                                        "/orgs/[slug]/d4h-i3/bundles/[bundle_id]/teams/[d4h_team_id]",
-                                        {
-                                            slug,
-                                            bundle_id: bundle.id,
-                                            d4h_team_id: String(teamId),
-                                        },
-                                    )
-                                }
-                            />
-                        </Protect>
-                    )}
-                    <D4HI3Module_Bundle_Menu bundle={bundle} />
-                </Saratoga.Actions>
             </Saratoga.Header>
 
             {deleted && (
@@ -103,11 +82,14 @@ export function D4HI3Module_Bundle_Content({ bundleId }: { bundleId: I3BundleId 
                         label="I3 Bundle"
                         updatedAt={bundle.updatedAt}
                         action={
-                            !deleted && (
-                                <Protect permissions={{ i3Bundle: ["update"] }}>
-                                    <D4HI3Module_UpdateBundle_Dialog bundle={bundle} />
-                                </Protect>
-                            )
+                            <>
+                                {!deleted && (
+                                    <Protect permissions={{ i3Bundle: ["update"] }}>
+                                        <D4HI3Module_UpdateBundle_Dialog bundle={bundle} primary />
+                                    </Protect>
+                                )}
+                                <D4HI3Module_Bundle_Menu bundle={bundle} />
+                            </>
                         }
                     >
                         <CardContent>
@@ -128,7 +110,45 @@ export function D4HI3Module_Bundle_Content({ bundleId }: { bundleId: I3BundleId 
                     </RecordCard>
                     <D4HI3Module_Bundle_Lines bundle={bundle} lines={lines} />
                 </Saratoga.Column>
+                <Saratoga.Column slot="secondary">
+                    <D4HI3Module_Bundle_CompareCard bundle={bundle} />
+                </Saratoga.Column>
             </Saratoga.Columns>
         </Saratoga.Root>
+    );
+}
+
+/**
+ * The titled Compare card at the top of the bundle's secondary column: Compare with a team, for a
+ * viewer who can see D4H equipment and issue items, while the bundle isn't deleted. Renders
+ * nothing otherwise.
+ *
+ * Always the picker, never a one-team shortcut: knowing the teams would need a D4H read, and this
+ * page has to work without a token. The picker only queries D4H once it's opened, and reports a
+ * missing token then.
+ */
+function D4HI3Module_Bundle_CompareCard({ bundle }: { bundle: I3Bundle }) {
+    const organization = useOrganization();
+
+    const canCompare = useHasPermission({ d4hEquipment: ["view"], i3Item: ["issue"] });
+
+    return (
+        <ActionsCard
+            title="Compare"
+            description="See which of a D4H team's members hold each of this bundle's templates."
+        >
+            {canCompare && bundle.status !== "Deleted" ? (
+                <D4HTeamPickerDialog
+                    label="Compare with a team"
+                    section={(teamId) =>
+                        route("/orgs/[slug]/d4h-i3/bundles/[bundle_id]/teams/[d4h_team_id]", {
+                            slug: organization.slug,
+                            bundle_id: bundle.id,
+                            d4h_team_id: String(teamId),
+                        })
+                    }
+                />
+            ) : null}
+        </ActionsCard>
     );
 }

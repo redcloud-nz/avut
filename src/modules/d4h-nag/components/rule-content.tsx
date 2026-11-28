@@ -5,9 +5,10 @@
 
 "use client";
 
-import { ChevronDownIcon, PlayIcon, ToggleLeftIcon, ToggleRightIcon } from "lucide-react";
+import { FlaskConicalIcon, PlayIcon, ToggleLeftIcon, ToggleRightIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { ComponentProps, useEffect } from "react";
 import { toast } from "sonner";
 
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
@@ -18,23 +19,26 @@ import { TeamLink } from "@/components/entity-links/team-link";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import {
+    AlertDialog,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button, MutationButton } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuGroup,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
+import { type MenuActionProps } from "@/components/ui/menu-action";
 import { RecordCard, RecordCardId } from "@/components/ui/record-card";
+import { ActionsCard, RecordCardMenu } from "@/components/ui/record-card-actions";
 import { D4HNagRuleStatusBadge } from "@/components/ui/status-badge";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ObjectName } from "@/components/ui/typography";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
+import { useReturnFocus } from "@/hooks/use-return-focus";
 import { route } from "@/lib/routes";
 import type { D4HNagRuleId, D4HNagRuleListItem } from "@/lib/schemas/d4h-nag";
 import { describeWindow } from "@/modules/d4h-nag/lib/describe-window";
@@ -72,12 +76,6 @@ export function D4HNag_Rule_Content({ ruleId }: { ruleId: D4HNagRuleId }) {
                 >
                     {title}
                 </Saratoga.Title>
-                <Saratoga.Actions>
-                    <Protect permissions={{ d4hNag: ["run"] }}>
-                        <RunRule_Buttons rule={rule} />
-                    </Protect>
-                    <D4HNag_Rule_Menu rule={rule} />
-                </Saratoga.Actions>
             </Saratoga.Header>
 
             {paused && (
@@ -92,9 +90,12 @@ export function D4HNag_Rule_Content({ ruleId }: { ruleId: D4HNagRuleId }) {
                     <RecordCard
                         label="Rule"
                         action={
-                            <Protect permissions={{ d4hNag: ["update"] }}>
-                                <D4HNag_UpdateRule_Dialog rule={rule} />
-                            </Protect>
+                            <>
+                                <Protect permissions={{ d4hNag: ["update"] }}>
+                                    <D4HNag_UpdateRule_Dialog rule={rule} primary />
+                                </Protect>
+                                <D4HNag_Rule_Menu rule={rule} />
+                            </>
                         }
                     >
                         <CardContent>
@@ -130,6 +131,9 @@ export function D4HNag_Rule_Content({ ruleId }: { ruleId: D4HNagRuleId }) {
                         </CardContent>
                     </RecordCard>
                 </Saratoga.Column>
+                <Saratoga.Column slot="secondary">
+                    <D4HNag_Rule_RunCard rule={rule} />
+                </Saratoga.Column>
             </Saratoga.Columns>
 
             <section className="space-y-3 pt-4">
@@ -140,17 +144,21 @@ export function D4HNag_Rule_Content({ ruleId }: { ruleId: D4HNagRuleId }) {
     );
 }
 
-const MENU_ACTIONS = ["update", "enable", "disable", "delete"] as const;
+/** Every `?action=` the rule page's dialogs answer to. Edit's dialog owns `update` itself. */
+const RULE_ACTIONS = ["enable", "disable", "delete", "run-now"] as const;
 
 /**
- * The rule's actions menu: Edit, Enable or Disable, and Delete. Hosts the enable, disable and
- * delete dialogs; the update dialog owns its own param (it has a card trigger too).
+ * The Rule card's ⋮ (the page's primary record card): Enable or Disable, and Delete. Edit is the
+ * card's pencil, Dry run and Run now the {@link D4HNag_Rule_RunCard}.
+ *
+ * Mounts every dialog on the page, whichever card or button opens it.
  */
 function D4HNag_Rule_Menu({ rule }: { rule: D4HNagRuleListItem }) {
-    const [action, setAction] = useQueryState("action", parseAsStringLiteral(MENU_ACTIONS));
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(RULE_ACTIONS));
     const canUpdate = useHasPermission({ d4hNag: ["update"] });
+    const canRun = useHasPermission({ d4hNag: ["run"] });
 
-    function dialogProps(verb: (typeof MENU_ACTIONS)[number]) {
+    function dialogProps(verb: (typeof RULE_ACTIONS)[number]) {
         return {
             open: action === verb,
             onOpenChange: (open: boolean) =>
@@ -158,65 +166,55 @@ function D4HNag_Rule_Menu({ rule }: { rule: D4HNagRuleListItem }) {
         };
     }
 
-    const actions: MenuActionProps[] = [
-        {
-            verb: "update",
-            label: "Edit",
-            icon: <ObjectIcons.Edit />,
-            onSelect: () => void setAction("update", { history: "push" }),
-            disabled: !canUpdate,
-        },
-        {
-            verb: "delete",
-            label: "Delete",
-            icon: <ObjectIcons.Delete />,
-            onSelect: () => void setAction("delete", { history: "push" }),
-            disabled: !canUpdate,
-            destructive: true,
-        },
-    ];
+    const actions: MenuActionProps[] = [];
+    if (canUpdate) {
+        actions.push(
+            rule.enabled
+                ? {
+                      verb: "disable",
+                      label: "Disable",
+                      icon: <ToggleLeftIcon />,
+                      onSelect: () => void setAction("disable", { history: "push" }),
+                  }
+                : {
+                      verb: "enable",
+                      label: "Enable",
+                      icon: <ToggleRightIcon />,
+                      onSelect: () => void setAction("enable", { history: "push" }),
+                  },
+            {
+                verb: "delete",
+                label: "Delete",
+                icon: <ObjectIcons.Delete />,
+                onSelect: () => void setAction("delete", { history: "push" }),
+                destructive: true,
+            },
+        );
+    }
+
+    const { open: runNowOpen, onOpenChange: onRunNowOpenChange } = dialogProps("run-now");
 
     return (
         <>
-            <EntityActionMenu
-                actions={actions}
-                category="D4H Attendance Reminders"
-                after={
-                    <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuGroup>
-                            {rule.enabled ? (
-                                <DropdownMenuItem
-                                    disabled={!canUpdate}
-                                    onClick={() => void setAction("disable", { history: "push" })}
-                                >
-                                    <ToggleLeftIcon /> Disable
-                                </DropdownMenuItem>
-                            ) : (
-                                <DropdownMenuItem
-                                    disabled={!canUpdate}
-                                    onClick={() => void setAction("enable", { history: "push" })}
-                                >
-                                    <ToggleRightIcon /> Enable
-                                </DropdownMenuItem>
-                            )}
-                        </DropdownMenuGroup>
-                    </>
-                }
-            />
+            <RecordCardMenu actions={actions} category="D4H Attendance Reminders" primary />
 
             <D4HNag_SetRuleEnabled_Dialog rule={rule} enabled {...dialogProps("enable")} />
             <D4HNag_SetRuleEnabled_Dialog rule={rule} enabled={false} {...dialogProps("disable")} />
             <D4HNag_DeleteRule_Dialog rule={rule} {...dialogProps("delete")} />
+            <D4HNag_RunRuleNow_Dialog
+                rule={rule}
+                // A paused rule refuses to run, and the Run card is hidden then: a hand-typed
+                // `?action=run-now` does nothing.
+                open={runNowOpen && canRun && !rule.pausedReason}
+                onOpenChange={onRunNowOpenChange}
+            />
         </>
     );
 }
 
-/**
- * The Run menu: Dry run and Run now. Both are refused for a paused rule, so they're disabled with the reason.
- * Both navigate to the new run, which finishes in the background; its page refetches until then.
- */
-function RunRule_Buttons({ rule }: { rule: D4HNagRuleListItem }) {
+/** Starts a run of the rule, then goes to the run's page (it finishes in the background, and its
+ *  page refetches until then). */
+function useRunRule(rule: Pick<D4HNagRuleListItem, "id">) {
     const organization = useOrganization();
     const router = useRouter();
 
@@ -229,6 +227,7 @@ function RunRule_Buttons({ rule }: { rule: D4HNagRuleListItem }) {
             },
             onSuccess({ runId }, { dryRun }) {
                 toast.success(dryRun ? "Dry run started. Nothing will be sent." : "Run started.");
+                // Navigation is the whole close of the Run now dialog: don't also clear the param.
                 router.push(
                     route("/orgs/[slug]/d4h-nag/runs/[run_id]", {
                         slug: organization.slug,
@@ -239,43 +238,90 @@ function RunRule_Buttons({ rule }: { rule: D4HNagRuleListItem }) {
         }),
     );
 
-    const pausedReason = rule.pausedReason ? describePausedReason(rule.pausedReason) : null;
-    const disabled = pausedReason !== null || mutation.isPending;
-
     function run(dryRun: boolean) {
         mutation.mutate({ organizationId: organization.id, ruleId: rule.id, dryRun });
     }
 
-    const trigger = (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="outline" disabled={disabled}>
-                    <PlayIcon />
-                    <span className="sr-only sm:not-sr-only">Run</span>
-                    <ChevronDownIcon className="max-sm:hidden" />
+    return { mutation, run };
+}
+
+/**
+ * The titled Run card at the top of the rule's secondary column, for a viewer who can run rules:
+ * Dry run starts one straight away, Run now asks first (it sends real email). Hidden while the
+ * rule is paused, which refuses both (the paused banner says why). The Run now dialog is in
+ * {@link D4HNag_Rule_Menu}.
+ */
+function D4HNag_Rule_RunCard({ rule }: { rule: D4HNagRuleListItem }) {
+    const [, setAction] = useQueryState("action", parseAsStringLiteral(RULE_ACTIONS));
+    const canRun = useHasPermission({ d4hNag: ["run"] });
+    const { mutation, run } = useRunRule(rule);
+
+    const show = canRun && !rule.pausedReason;
+
+    return (
+        <ActionsCard
+            title="Run"
+            description="Remind the team now instead of waiting for the schedule. A dry run shows who would be reminded without sending anything."
+        >
+            {show ? (
+                <Button variant="outline" disabled={mutation.isPending} onClick={() => run(true)}>
+                    <FlaskConicalIcon /> Dry run
                 </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                <DropdownMenuGroup>
-                    <DropdownMenuItem onClick={() => run(true)}>Dry Run</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => run(false)}>Run Now</DropdownMenuItem>
-                </DropdownMenuGroup>
-            </DropdownMenuContent>
-        </DropdownMenu>
+            ) : null}
+            {show ? (
+                <Button
+                    variant="outline"
+                    disabled={mutation.isPending}
+                    onClick={() => void setAction("run-now", { history: "push" })}
+                >
+                    <PlayIcon /> Run now
+                </Button>
+            ) : null}
+        </ActionsCard>
     );
+}
 
-    if (pausedReason) {
-        return (
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    {/* A disabled button gets no pointer events, so the wrapper takes the hover
-                        and focus instead. */}
-                    <span tabIndex={0}>{trigger}</span>
-                </TooltipTrigger>
-                <TooltipContent>Paused: {pausedReason.label}</TooltipContent>
-            </Tooltip>
-        );
-    }
+/**
+ * `?action=run-now` confirm: Run now emails the team's members, so it asks first. Host-driven
+ * from {@link D4HNag_Rule_Menu}; opened from the Run card's button, which stays put, so
+ * `useReturnFocus` returns focus to it on Cancel. On success the page goes to the new run.
+ */
+function D4HNag_RunRuleNow_Dialog({
+    rule,
+    ...props
+}: ComponentProps<typeof AlertDialog> & {
+    rule: Pick<D4HNagRuleListItem, "id" | "team" | "lookAheadHours">;
+}) {
+    const returnFocus = useReturnFocus();
+    const { mutation, run } = useRunRule(rule);
 
-    return trigger;
+    useEffect(() => {
+        if (props.open) mutation.reset();
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [props.open]);
+
+    return (
+        <AlertDialog {...props}>
+            <AlertDialogContent {...returnFocus}>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Run Now</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Email the members of <ObjectName>{rule.team.name}</ObjectName> whose
+                        attendance on a D4H exercise in the{" "}
+                        {describeWindow(rule.lookAheadHours).toLowerCase()} is still Requested. No
+                        one is reminded about the same exercise twice.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <MutationButton
+                        type="button"
+                        status={mutation.status}
+                        text={{ idle: "Send reminders", pending: "Starting", success: "Started" }}
+                        onClick={() => run(false)}
+                    />
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    );
 }

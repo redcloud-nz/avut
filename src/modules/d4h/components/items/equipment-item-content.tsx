@@ -6,7 +6,15 @@
 
 import { CornerDownRightIcon } from "lucide-react";
 import { notFound } from "next/navigation";
-import { Suspense, useMemo, type ReactNode } from "react";
+import {
+    Suspense,
+    useMemo,
+    useRef,
+    type ComponentType,
+    type ReactElement,
+    type ReactNode,
+    type RefObject,
+} from "react";
 import { ErrorBoundary } from "react-error-boundary";
 
 import { useQuery, useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
@@ -42,18 +50,24 @@ import { trpc } from "@/trpc/client";
 import { D4HModule_OpenInD4H_Button } from "../open-in-d4h-button";
 import { D4HModule_ItemTasks_Card } from "../tasks/item-tasks-card";
 
-import { D4HModule_EquipmentItem_Menu } from "./equipment-item-menu";
 import {
     D4HModule_UpdateEquipmentItem_Dialog,
     updateEquipmentItemDisabledReason,
 } from "./update-equipment-item";
 
+/** Props the item page gives its {@link D4HModule_EquipmentItem_Content}'s `actionCard`. */
+export interface D4HModule_EquipmentItem_ActionCardProps {
+    /** The D4H Item card's pencil (or its tooltip wrapper), which every viewer sees: where a
+     *  dialog the card opens returns focus once its button has gone. */
+    returnFocusRef?: RefObject<HTMLElement | null>;
+}
+
 /**
  * A D4H equipment item, read live from D4H with the viewer's token.
  *
- * Other modules add to the page through slots that `page.tsx` fills: `menuActions` and
- * `menuDialogs` go to the Actions menu (see `EntityActionMenu`), and `statusBadge` sits beside the
- * D4H Status value.
+ * Other modules add to the page through slots that `page.tsx` fills: `actionCard` goes at the top
+ * of the secondary column (an action card that mounts its own dialogs, since the item has no ⋮ to
+ * host them), and `statusBadge` sits beside the D4H Status value.
  *
  * `memberId` is set on the member-scoped route, and only changes the breadcrumbs.
  */
@@ -61,20 +75,26 @@ export function D4HModule_EquipmentItem_Content({
     teamId,
     itemId,
     memberId,
-    menuActions,
-    menuDialogs,
+    actionCard,
     statusBadge,
 }: {
     teamId: number;
     itemId: number;
     memberId?: number;
-    menuActions?: ReactNode;
-    menuDialogs?: ReactNode;
+    actionCard?: ReactElement<
+        D4HModule_EquipmentItem_ActionCardProps,
+        ComponentType<D4HModule_EquipmentItem_ActionCardProps>
+    > | null;
     statusBadge?: ReactNode;
 }) {
     const organization = useOrganization();
     const slug = organization.slug;
     const { formatDate } = usePreferences();
+
+    // The slot arrives as an element from the server page, which can't hold a ref: render its
+    // component here with the pencil's ref added.
+    const editFocusRef = useRef<HTMLElement>(null);
+    const ActionCard = actionCard?.type;
 
     const [
         {
@@ -161,11 +181,6 @@ export function D4HModule_EquipmentItem_Content({
                 </Saratoga.Title>
                 <Saratoga.Actions>
                     <D4HModule_OpenInD4H_Button href={d4hUrl} />
-                    <D4HModule_EquipmentItem_Menu
-                        canUpdateInD4H={canUpdateInD4H}
-                        extraActions={menuActions}
-                        dialogs={menuDialogs}
-                    />
                 </Saratoga.Actions>
             </Saratoga.Header>
 
@@ -180,6 +195,7 @@ export function D4HModule_EquipmentItem_Content({
                                     <D4HModule_UpdateEquipmentItem_Dialog
                                         teamId={teamId}
                                         item={item}
+                                        focusRef={editFocusRef}
                                         disabledReason={updateEquipmentItemDisabledReason({
                                             hasPermission,
                                             canUpdateInD4H,
@@ -321,6 +337,9 @@ export function D4HModule_EquipmentItem_Content({
                     </ItemContentsBoundary>
                 </Saratoga.Column>
                 <Saratoga.Column slot="secondary">
+                    {ActionCard && (
+                        <ActionCard {...actionCard?.props} returnFocusRef={editFocusRef} />
+                    )}
                     <Protect permissions={{ d4hTask: ["view"] }}>
                         <Suspense fallback={<CardLoadingFallback />}>
                             <D4HModule_ItemTasks_Card

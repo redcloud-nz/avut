@@ -16,6 +16,8 @@ export type ActionVerb =
     | "publish"
     | "unpublish"
     | "unsubscribe"
+    | "enable"
+    | "disable"
     | "move"
     | "export"
     | "import"
