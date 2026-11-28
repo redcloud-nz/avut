@@ -7,40 +7,77 @@
 
 import { NavSubItem } from "@/components/nav/nav-section";
 import { Protect } from "@/components/protect";
-import { useOrganization } from "@/hooks/use-organization";
+import { useCurrentScope } from "@/hooks/use-current-scope";
+import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { route } from "@/lib/routes";
 
-/** Nested pages for the Skill Track module's `NavCollapsible` section — not a standalone sidebar group. */
+/**
+ * Nested pages for the Skill Track module's `NavCollapsible` section — not a standalone sidebar
+ * group. Serves the org and team scopes; Assessors exist only in the org scope.
+ */
 export function SkillTrack_Sidebar_Menu() {
-    const organization = useOrganization();
+    const scopedRoute = useScopedRoute();
+    const current = useCurrentScope();
 
     return (
         <>
-            <Protect permissions={{ roleGrant: ["skills-assessor"] }}>
-                <NavSubItem
-                    label="Assessors"
-                    href={route("/orgs/[slug]/skill-track/assessors", { slug: organization.slug })}
-                />
-            </Protect>
+            {current?.scope === "organization" && (
+                <Protect permissions={{ roleGrant: ["skills-assessor"] }}>
+                    <NavSubItem
+                        label="Assessors"
+                        href={route("/orgs/[slug]/skill-track/assessors", { slug: current.slug })}
+                    />
+                </Protect>
+            )}
             <NavSubItem
                 label="Packages"
-                href={route("/orgs/[slug]/skill-track/packages", { slug: organization.slug })}
+                href={scopedRoute(
+                    {
+                        organization: "/orgs/[slug]/skill-track/packages",
+                        team: "/teams/[slug]/skill-track/packages",
+                    },
+                    {},
+                )}
             />
             <NavSubItem
                 label="Skills"
-                href={route("/orgs/[slug]/skill-track/skills", { slug: organization.slug })}
+                href={scopedRoute(
+                    {
+                        organization: "/orgs/[slug]/skill-track/skills",
+                        team: "/teams/[slug]/skill-track/skills",
+                    },
+                    {},
+                )}
             />
             <NavSubItem
                 label="Checks"
-                href={route("/orgs/[slug]/skill-track/checks", { slug: organization.slug })}
+                href={scopedRoute(
+                    {
+                        organization: "/orgs/[slug]/skill-track/checks",
+                        team: "/teams/[slug]/skill-track/checks",
+                    },
+                    {},
+                )}
             />
             <NavSubItem
                 label="Sessions"
-                href={route("/orgs/[slug]/skill-track/sessions", { slug: organization.slug })}
+                href={scopedRoute(
+                    {
+                        organization: "/orgs/[slug]/skill-track/sessions",
+                        team: "/teams/[slug]/skill-track/sessions",
+                    },
+                    {},
+                )}
             />
             <NavSubItem
                 label="Reports"
-                href={route("/orgs/[slug]/skill-track/reports", { slug: organization.slug })}
+                href={scopedRoute(
+                    {
+                        organization: "/orgs/[slug]/skill-track/reports",
+                        team: "/teams/[slug]/skill-track/reports",
+                    },
+                    {},
+                )}
             />
         </>
     );

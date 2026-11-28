@@ -35,6 +35,11 @@ interface SessionReviewConflictsProps {
     assessorById: Map<PersonId, PersonRef>;
     /** The session is approved: each conflict's included check is the approval's record of it. */
     isApproved: boolean;
+    /**
+     * The session can't be changed here (`useSessionAccess`): approved, or foreign in team scope.
+     * The rows then have no Resolve button.
+     */
+    locked: boolean;
 }
 
 /**
@@ -50,6 +55,7 @@ export function SkillTrack_SessionReview_Conflicts({
     skillById,
     assessorById,
     isApproved,
+    locked,
 }: SessionReviewConflictsProps) {
     const organization = useOrganization();
     const resultLabel = (result: SkillCheck["result"]) =>
@@ -97,7 +103,7 @@ export function SkillTrack_SessionReview_Conflicts({
                                             />
                                         </ItemDescription>
                                     </ItemContent>
-                                    {!isApproved && (
+                                    {!locked && (
                                         <Protect permissions={{ skillCheckSession: ["approve"] }}>
                                             <ItemActions>
                                                 <Button

@@ -28,17 +28,19 @@ import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { SkillPackageAvailabilityBadge } from "@/components/ui/status-badge";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
+import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { SkillPackage, SkillPackageId } from "@/lib/schemas/skill-package";
 import { SkillTrack_SkillList } from "@/modules/skill-track/components/skill-list";
 import { SkillTrack_SubscribeToPackage_Dialog } from "@/modules/skill-track/components/subscribe-package";
 import { SkillTrack_UnsubscribeFromPackage_Dialog } from "@/modules/skill-track/components/unsubscribe-package";
+import { useSkillTrackScope } from "@/modules/skill-track/lib/use-skill-track-scope";
 import { trpc, type RouterOutput } from "@/trpc/client";
 
 type PackageGroupData = RouterOutput["skillPackageSubscriptions"]["getPackage"]["groups"][number];
 
 export function SkillTrack_Package_Content({ skillPackageId }: { skillPackageId: SkillPackageId }) {
     const organization = useOrganization();
+    const scopedRoute = useScopedRoute();
 
     const { data: skillPackage } = useSuspenseQuery(
         trpc.skillPackageSubscriptions.getPackage.queryOptions({
@@ -60,6 +62,8 @@ export function SkillTrack_Package_Content({ skillPackageId }: { skillPackageId:
     );
 
     const canSubscribe = useHasPermission({ skillPackageSubscription: ["subscribe"] });
+    // The catalogue is read-only in team scope: subscribing is an org-scope action.
+    const readOnly = useSkillTrackScope().scope === "team";
 
     return (
         <>
@@ -68,9 +72,13 @@ export function SkillTrack_Package_Content({ skillPackageId }: { skillPackageId:
                     items={[
                         {
                             label: "Packages",
-                            href: route("/orgs/[slug]/skill-track/packages", {
-                                slug: organization.slug,
-                            }),
+                            href: scopedRoute(
+                                {
+                                    organization: "/orgs/[slug]/skill-track/packages",
+                                    team: "/teams/[slug]/skill-track/packages",
+                                },
+                                {},
+                            ),
                         },
                     ]}
                 />
@@ -81,7 +89,7 @@ export function SkillTrack_Package_Content({ skillPackageId }: { skillPackageId:
                         {skillPackage.name}
                     </Saratoga.Title>
                     <Saratoga.Actions>
-                        {!skillPackage.subscription && !withdrawn && (
+                        {!readOnly && !skillPackage.subscription && !withdrawn && (
                             <Protect permissions={{ skillPackageSubscription: ["subscribe"] }}>
                                 <Button
                                     variant="outline"
@@ -91,7 +99,7 @@ export function SkillTrack_Package_Content({ skillPackageId }: { skillPackageId:
                                 </Button>
                             </Protect>
                         )}
-                        {skillPackage.subscription && (
+                        {!readOnly && skillPackage.subscription && (
                             <EntityActionMenu
                                 category="Packages"
                                 actions={[
@@ -195,24 +203,28 @@ export function SkillTrack_Package_Content({ skillPackageId }: { skillPackageId:
                 </Saratoga.Columns>
             </Saratoga.Root>
 
-            <SkillTrack_SubscribeToPackage_Dialog
-                skillPackage={skillPackage}
-                open={action === "subscribe"}
-                onOpenChange={(open) =>
-                    void setAction(open ? "subscribe" : null, {
-                        history: open ? "push" : "replace",
-                    })
-                }
-            />
-            <SkillTrack_UnsubscribeFromPackage_Dialog
-                skillPackage={skillPackage}
-                open={action === "unsubscribe"}
-                onOpenChange={(open) =>
-                    void setAction(open ? "unsubscribe" : null, {
-                        history: open ? "push" : "replace",
-                    })
-                }
-            />
+            {!readOnly && (
+                <>
+                    <SkillTrack_SubscribeToPackage_Dialog
+                        skillPackage={skillPackage}
+                        open={action === "subscribe"}
+                        onOpenChange={(open) =>
+                            void setAction(open ? "subscribe" : null, {
+                                history: open ? "push" : "replace",
+                            })
+                        }
+                    />
+                    <SkillTrack_UnsubscribeFromPackage_Dialog
+                        skillPackage={skillPackage}
+                        open={action === "unsubscribe"}
+                        onOpenChange={(open) =>
+                            void setAction(open ? "unsubscribe" : null, {
+                                history: open ? "push" : "replace",
+                            })
+                        }
+                    />
+                </>
+            )}
         </>
     );
 }

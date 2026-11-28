@@ -22,6 +22,7 @@ import { useOrganization } from "@/hooks/use-organization";
 import { useTeamSlug } from "@/hooks/use-team";
 import { teamModules, type TeamScopedModule } from "@/lib/modules";
 import { route } from "@/lib/routes";
+import { SkillTrack_Sidebar_Menu } from "@/modules/skill-track/components/sidebar-menu";
 import { TeamAdmin_Sidebar_Menu } from "@/modules/team-admin/components/sidebar-menu";
 
 /**
@@ -29,6 +30,7 @@ import { TeamAdmin_Sidebar_Menu } from "@/modules/team-admin/components/sidebar-
  * renders as a plain `NavItem`.
  */
 const TEAM_MODULE_SIDEBAR: Partial<Record<TeamScopedModule["id"], ReactNode>> = {
+    "skill-track": <SkillTrack_Sidebar_Menu />,
     "team-admin": <TeamAdmin_Sidebar_Menu />,
 };
 

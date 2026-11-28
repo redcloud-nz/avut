@@ -818,9 +818,15 @@ describe("skillCheckSessions.createSession", () => {
 });
 
 describe("skillCheckSessions.listSessions", () => {
+    // Dataset: sessionA (no team), rescueSession (rescue), swiftSession (swift).
     const T = {
         org: OrganizationId.create(),
         user: UserId.create(),
+        rescue: TeamId.create(),
+        swift: TeamId.create(),
+        sessionA: SkillCheckSessionId.create(),
+        rescueSession: SkillCheckSessionId.create(),
+        swiftSession: SkillCheckSessionId.create(),
     };
 
     const db = createMockPrisma();
@@ -829,18 +835,31 @@ describe("skillCheckSessions.listSessions", () => {
         await db.organization.create({
             data: { id: T.org, name: "Test Org", slug: T.org, createdAt: new Date() },
         });
+        for (const [id, name] of [
+            [T.rescue, "Rescue"],
+            [T.swift, "Swiftwater"],
+        ] as const) {
+            await db.team.create({ data: { id, organizationId: T.org, name } });
+        }
 
-        await db.skillCheckSession.create({
-            data: {
-                id: SkillCheckSessionId.create(),
-                organizationId: T.org,
-                name: "Session A",
-                sessionNumber: 1,
-                status: "Draft",
-                startsAt: new Date(),
-                notes: "",
-            },
-        });
+        for (const [id, name, sessionNumber, teamId] of [
+            [T.sessionA, "Session A", 1, null],
+            [T.rescueSession, "Rescue session", 2, T.rescue],
+            [T.swiftSession, "Swift session", 3, T.swift],
+        ] as const) {
+            await db.skillCheckSession.create({
+                data: {
+                    id,
+                    organizationId: T.org,
+                    name,
+                    sessionNumber,
+                    status: "Draft",
+                    startsAt: new Date(),
+                    notes: "",
+                    teamId,
+                },
+            });
+        }
     });
 
     function makeCaller(
@@ -861,7 +880,33 @@ describe("skillCheckSessions.listSessions", () => {
             skillCheckSession: ["view"],
         }).listSessions({ organizationId: T.org });
 
-        expect(sessions).toHaveLength(1);
+        expect(sessions).toHaveLength(3);
+    });
+
+    it("lists every session in the organization without a teamId", async () => {
+        const sessions = await makeCaller({
+            organization: ["view"],
+            skillCheckSession: ["view"],
+        }).listSessions({
+            organizationId: T.org,
+        });
+
+        expect(sessions.map(({ id }) => id).sort()).toEqual(
+            [T.sessionA, T.rescueSession, T.swiftSession].sort(),
+        );
+    });
+
+    it("lists only the team's sessions with a teamId", async () => {
+        const sessions = await makeCaller({
+            organization: ["view"],
+            skillCheckSession: ["view"],
+        }).listSessions({
+            organizationId: T.org,
+            teamId: T.rescue,
+        });
+
+        expect(sessions.map(({ id }) => id)).toEqual([T.rescueSession]);
+        expect(sessions[0].team).toEqual({ id: T.rescue, name: "Rescue" });
     });
 
     it("throws FORBIDDEN with only skillPackageSubscription:view", async () => {

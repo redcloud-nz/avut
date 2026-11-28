@@ -543,13 +543,14 @@ describe("skillCheckSessionsEffects (session status changes)", () => {
             ).toEqual({ ...old, teamId: swift.id, team: swift });
         });
 
-        it("invalidates only the sessions list when the start is unchanged", () => {
+        it("invalidates the sessions list and check searches when the start is unchanged", () => {
+            // Search rows carry the session's name and team, which any update can change.
             const effects = skillCheckSessionsEffects.updateSession(vars, {
                 updated: { ...updated, team: null },
                 startChanged: false,
             });
 
-            expect(invalidatedKeys(effects)).toEqual(["sessions"]);
+            expect(invalidatedKeys(effects)).toEqual(["searchChecks", "sessions"]);
         });
 
         it("also invalidates the checkedAt readers when the start changed", () => {

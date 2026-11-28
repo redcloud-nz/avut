@@ -15,7 +15,7 @@ import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/u
 import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { RecordStatusBadge } from "@/components/ui/status-badge";
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
+import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackage, SkillPackageId } from "@/lib/schemas/skill-package";
 import { SkillTrack_SkillList } from "@/modules/skill-track/components/skill-list";
@@ -29,6 +29,7 @@ export function SkillTrack_SkillGroup_Content({
     skillGroupId: SkillGroupId;
 }) {
     const organization = useOrganization();
+    const scopedRoute = useScopedRoute();
 
     const { data: group } = useSuspenseQuery(
         trpc.skillPackageSubscriptions.getGroup.queryOptions({
@@ -41,10 +42,13 @@ export function SkillTrack_SkillGroup_Content({
     // Only a subscriber can see a group in a withdrawn (unpublished, archived or deleted) package.
     const withdrawn = !SkillPackage.isAvailable(group.skillPackage);
 
-    const packageHref = route("/orgs/[slug]/skill-track/packages/[package_id]", {
-        slug: organization.slug,
-        package_id: group.skillPackageId,
-    });
+    const packageHref = scopedRoute(
+        {
+            organization: "/orgs/[slug]/skill-track/packages/[package_id]",
+            team: "/teams/[slug]/skill-track/packages/[package_id]",
+        },
+        { package_id: group.skillPackageId },
+    );
 
     return (
         <Saratoga.Root>
@@ -52,9 +56,13 @@ export function SkillTrack_SkillGroup_Content({
                 items={[
                     {
                         label: "Packages",
-                        href: route("/orgs/[slug]/skill-track/packages", {
-                            slug: organization.slug,
-                        }),
+                        href: scopedRoute(
+                            {
+                                organization: "/orgs/[slug]/skill-track/packages",
+                                team: "/teams/[slug]/skill-track/packages",
+                            },
+                            {},
+                        ),
                     },
                     { label: group.skillPackage.name, href: packageHref },
                 ]}

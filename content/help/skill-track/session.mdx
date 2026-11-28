@@ -5,6 +5,9 @@ routes:
   - "/orgs/[slug]/skill-track/sessions/[session_id]"
   - "/orgs/[slug]/skill-track/sessions/[session_id]/checks"
   - "/orgs/[slug]/skill-track/sessions/[session_id]/history"
+  - "/teams/[slug]/skill-track/sessions/[session_id]"
+  - "/teams/[slug]/skill-track/sessions/[session_id]/checks"
+  - "/teams/[slug]/skill-track/sessions/[session_id]/history"
 keyTerms: ["skill-check-session", "assessor", "assessee"]
 ---
 
@@ -20,6 +23,10 @@ tile for each part of the session. Click one to change it:
 - **Skill checks**: a read-only log of every check recorded, by every assessor.
 - **Conflicts**: only shown while two assessors' checks of the same person and
   skill are still unresolved. Resolve them on the review page.
+
+Opened from a team, another team's session (or one with no team) is read-only:
+a notice says so, and nothing on it can be changed from there. Open it from the
+organisation to change it.
 
 **Record** opens the two recording views. The menu (⋮) holds **History**,
 **Review**, **Edit** and **Delete**, plus **Reopen** once the session is

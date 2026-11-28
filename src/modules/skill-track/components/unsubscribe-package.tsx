@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { ObjectName } from "@/components/ui/typography";
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
+import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { SkillPackage } from "@/lib/schemas/skill-package";
 import { trpc } from "@/trpc/client";
 
@@ -35,6 +35,7 @@ export function SkillTrack_UnsubscribeFromPackage_Dialog({
     skillPackage: Pick<SkillPackage, "id" | "name" | "published" | "status">;
 }) {
     const organization = useOrganization();
+    const scopedRoute = useScopedRoute();
     const router = useRouter();
 
     // Once unsubscribed, a withdrawn package is no longer visible to this organisation
@@ -60,7 +61,13 @@ export function SkillTrack_UnsubscribeFromPackage_Dialog({
                 if (leavesPage) {
                     // The navigation is the whole close: don't also clear the dialog param.
                     router.push(
-                        route("/orgs/[slug]/skill-track/packages", { slug: organization.slug }),
+                        scopedRoute(
+                            {
+                                organization: "/orgs/[slug]/skill-track/packages",
+                                team: "/teams/[slug]/skill-track/packages",
+                            },
+                            {},
+                        ),
                     );
                 } else {
                     props.onOpenChange?.(false);

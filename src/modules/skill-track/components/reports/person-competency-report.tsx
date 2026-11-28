@@ -29,6 +29,7 @@ import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
 import { PersonId } from "@/lib/schemas/person";
+import type { TeamId } from "@/lib/schemas/team";
 import { cn } from "@/lib/utils";
 import {
     deriveStatus,
@@ -36,7 +37,10 @@ import {
     tallyStatuses,
     type CompetencyStatus,
 } from "@/modules/skill-track/components/reports/competency-status";
-import { SkillTrack_PersonScopeDialog } from "@/modules/skill-track/components/reports/person-scope-dialog";
+import {
+    SkillTrack_PersonScopeDialog,
+    useTeamRosterPeople,
+} from "@/modules/skill-track/components/reports/person-scope-dialog";
 import {
     CheckDetailsTrigger,
     ReportCellPopoversProvider,
@@ -50,41 +54,95 @@ import { trpc } from "@/trpc/client";
 export function SkillTrack_PersonCompetencyReport({
     syntheticChecksEnabled,
     breadcrumbs,
+    team,
 }: {
     syntheticChecksEnabled: boolean;
     /** The page's ancestors, shown above the title. */
     breadcrumbs?: SaratogaBreadcrumb[];
+    /** Team scope: pick only from this team's roster. */
+    team?: { id: TeamId; name: string };
 }) {
     const [personParam] = useQueryState("person");
     const parsedPersonId = personParam ? PersonId.schema.safeParse(personParam) : undefined;
+    const personId = parsedPersonId?.success ? parsedPersonId.data : null;
+
+    if (team) {
+        return (
+            <TeamPersonCompetencyReport
+                personId={personId}
+                team={team}
+                syntheticChecksEnabled={syntheticChecksEnabled}
+                breadcrumbs={breadcrumbs}
+            />
+        );
+    }
 
     // An absent — or malformed — `?person=` means "nothing picked yet"; show the blank
     // report shell with the scope dialog forced open.
-    if (!parsedPersonId?.success) {
-        return (
-            <Glorious.Root className="mx-auto w-full max-w-4xl">
-                <Glorious.Header>
-                    {breadcrumbs && <Glorious.Breadcrumbs items={breadcrumbs} />}
-                    <Glorious.Title>Personnel Competency Report</Glorious.Title>
-                    <Glorious.Actions>
-                        <SkillTrack_PersonScopeDialog forceOpen label="Select a person" />
-                    </Glorious.Actions>
-                </Glorious.Header>
-                <Empty>
-                    <EmptyDescription>
-                        Select a person to view their competency report.
-                    </EmptyDescription>
-                </Empty>
-            </Glorious.Root>
-        );
+    if (!personId) {
+        return <PersonCompetencyReportPicker breadcrumbs={breadcrumbs} />;
     }
 
     return (
         <PersonCompetencyReportView
-            personId={parsedPersonId.data}
+            personId={personId}
             syntheticChecksEnabled={syntheticChecksEnabled}
             breadcrumbs={breadcrumbs}
         />
+    );
+}
+
+/** Team scope: a `?person=` not on the team's roster shows the picker, like a malformed one. */
+function TeamPersonCompetencyReport({
+    personId,
+    team,
+    syntheticChecksEnabled,
+    breadcrumbs,
+}: {
+    personId: PersonId | null;
+    team: { id: TeamId; name: string };
+    syntheticChecksEnabled: boolean;
+    breadcrumbs?: SaratogaBreadcrumb[];
+}) {
+    const roster = useTeamRosterPeople(team.id);
+
+    if (!personId || !roster.some((person) => person.id === personId)) {
+        return <PersonCompetencyReportPicker breadcrumbs={breadcrumbs} team={team} />;
+    }
+
+    return (
+        <PersonCompetencyReportView
+            personId={personId}
+            team={team}
+            syntheticChecksEnabled={syntheticChecksEnabled}
+            breadcrumbs={breadcrumbs}
+        />
+    );
+}
+
+/** The blank report shell with the scope dialog forced open: nothing picked yet. */
+function PersonCompetencyReportPicker({
+    breadcrumbs,
+    team,
+}: {
+    breadcrumbs?: SaratogaBreadcrumb[];
+    team?: { id: TeamId; name: string };
+}) {
+    return (
+        <Glorious.Root className="mx-auto w-full max-w-4xl">
+            <Glorious.Header>
+                {breadcrumbs && <Glorious.Breadcrumbs items={breadcrumbs} />}
+                <Glorious.Title>Personnel Competency Report</Glorious.Title>
+                <Glorious.Actions>
+                    <SkillTrack_PersonScopeDialog forceOpen label="Select a person" team={team} />
+                </Glorious.Actions>
+            </Glorious.Header>
+            <Empty>
+                <EmptyDescription>
+                    Select a person to view their competency report.
+                </EmptyDescription>
+            </Empty>
+        </Glorious.Root>
     );
 }
 
@@ -101,10 +159,13 @@ const headCell =
 
 function PersonCompetencyReportView({
     personId,
+    team,
     syntheticChecksEnabled,
     breadcrumbs,
 }: {
     personId: PersonId;
+    /** Team scope: the scope dialog lists this team's roster. */
+    team?: { id: TeamId; name: string };
     syntheticChecksEnabled: boolean;
     breadcrumbs?: SaratogaBreadcrumb[];
 }) {
@@ -183,7 +244,7 @@ function PersonCompetencyReportView({
                     {breadcrumbs && <Glorious.Breadcrumbs items={breadcrumbs} />}
                     <Glorious.Title>Personnel Competency Report</Glorious.Title>
                     <Glorious.Actions>
-                        <SkillTrack_PersonScopeDialog label="Select a person" />
+                        <SkillTrack_PersonScopeDialog label="Select a person" team={team} />
                     </Glorious.Actions>
                 </Glorious.Header>
                 <Empty>
@@ -220,7 +281,7 @@ function PersonCompetencyReportView({
                         )}
                     </Glorious.Subtitle>
                     <Glorious.Actions>
-                        <SkillTrack_PersonScopeDialog compact />
+                        <SkillTrack_PersonScopeDialog compact team={team} />
                         {syntheticActions}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>

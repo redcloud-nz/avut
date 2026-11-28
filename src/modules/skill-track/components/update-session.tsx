@@ -35,6 +35,7 @@ import { useOrganization } from "@/hooks/use-organization";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 import type { TeamRef } from "@/lib/schemas/team";
 import { sessionFormState } from "@/lib/session-timing";
+import { useSkillTrackScope } from "@/modules/skill-track/lib/use-skill-track-scope";
 import { trpc } from "@/trpc/client";
 
 import { SkillTrack_SessionTeamSelect } from "./session-team-select";
@@ -53,6 +54,10 @@ export function SkillsModule_UpdateSession_Dialog({
 }) {
     const organization = useOrganization();
     const router = useRouter();
+    // In team scope a session stays with this team: the Team field is hidden and pinned. Moving a
+    // session to another team (or to none) is an org-scope action.
+    const scope = useSkillTrackScope();
+    const pinnedTeamId = scope.scope === "team" ? scope.team.id : null;
 
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
     const dialogOpen = action === "update";
@@ -65,7 +70,7 @@ export function SkillsModule_UpdateSession_Dialog({
     const formValues = () => ({
         name: session.name,
         notes: session.notes,
-        teamId: session.teamId ?? NO_SESSION_TEAM,
+        teamId: pinnedTeamId ?? session.teamId ?? NO_SESSION_TEAM,
         when: withSessionEndTime(sessionFormState(session.startsAt, session.endsAt, orgZone)),
     });
 
@@ -136,7 +141,12 @@ export function SkillsModule_UpdateSession_Dialog({
                                 mutation.mutate({
                                     organizationId: organization.id,
                                     skillCheckSessionId: session.id,
-                                    update: parsed.data,
+                                    // The hidden field's default already holds the pinned team;
+                                    // send it explicitly so the pin doesn't rest on that.
+                                    update: {
+                                        ...parsed.data,
+                                        teamId: pinnedTeamId ?? parsed.data.teamId,
+                                    },
                                 });
                             },
                             (errors) => {
@@ -158,25 +168,27 @@ export function SkillsModule_UpdateSession_Dialog({
                                     </Field>
                                 )}
                             />
-                            <Controller
-                                name="teamId"
-                                control={form.control}
-                                render={({ field, fieldState }) => (
-                                    <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor={teamFieldId}>Team</FieldLabel>
-                                        <SkillTrack_SessionTeamSelect
-                                            id={teamFieldId}
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            currentTeam={session.team}
-                                            invalid={fieldState.invalid}
-                                        />
-                                        {fieldState.error && (
-                                            <FieldError errors={[fieldState.error]} />
-                                        )}
-                                    </Field>
-                                )}
-                            />
+                            {pinnedTeamId === null && (
+                                <Controller
+                                    name="teamId"
+                                    control={form.control}
+                                    render={({ field, fieldState }) => (
+                                        <Field data-invalid={fieldState.invalid}>
+                                            <FieldLabel htmlFor={teamFieldId}>Team</FieldLabel>
+                                            <SkillTrack_SessionTeamSelect
+                                                id={teamFieldId}
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                currentTeam={session.team}
+                                                invalid={fieldState.invalid}
+                                            />
+                                            {fieldState.error && (
+                                                <FieldError errors={[fieldState.error]} />
+                                            )}
+                                        </Field>
+                                    )}
+                                />
+                            )}
                             <Controller
                                 name="when"
                                 control={form.control}

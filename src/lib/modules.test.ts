@@ -125,8 +125,11 @@ describe("deriveTeamModules", () => {
         });
     });
 
-    it("is just team-admin on the real registry", () => {
-        expect(teamModules.map((m) => m.id)).toEqual(["team-admin"]);
+    it("is skill-track then team-admin on the real registry", () => {
+        expect(teamModules.map((m) => m.id)).toEqual(["skill-track", "team-admin"]);
+        expect(teamModules.find((m) => m.id === "skill-track")).toMatchObject({
+            alwaysOn: false,
+        });
     });
 });
 
@@ -166,6 +169,12 @@ describe("moduleHref", () => {
             "/teams/rescue/admin",
         );
         expect(moduleHref("team-admin", { scope: "organization", slug: "acme" })).toBeUndefined();
+    });
+
+    it("gives skill-track's team href in team scope", () => {
+        expect(moduleHref("skill-track", { scope: "team", slug: "rescue" })).toBe(
+            "/teams/rescue/skill-track",
+        );
     });
 
     it("is undefined for a module that isn't in team scope", () => {

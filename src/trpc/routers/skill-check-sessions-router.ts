@@ -22,7 +22,7 @@ import {
     SkillCheckResultValue,
 } from "@/lib/schemas/skill-check";
 import { SkillCheckSession, SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
-import { TeamRef } from "@/lib/schemas/team";
+import { TeamId, TeamRef } from "@/lib/schemas/team";
 import { isPrismaRecordNotFound } from "@/server/prisma-errors";
 import * as SkillChecks from "@/server/services/skill-checks";
 
@@ -723,18 +723,22 @@ export const skillCheckSessionsRouter = createTrpcRouter({
         }),
 
     /**
-     * List all skill check sessions for the organization. Requires "view" skill on "Skills" module.
+     * List all skill check sessions for the organization, or only one team's when `teamId` is
+     * given (another team's and team-less sessions are left out). Requires "view" skill on
+     * "Skills" module.
      * @returns An array of skill check sessions associated with the organization, each with its
      *   assessors and its team (`null` for none).
      */
     listSessions: organizationProcedure({
         skillCheckSession: ["view"],
     })
+        .input(z.object({ teamId: TeamId.schema.optional() }))
         .output(z.array(sessionWithAssessorsSchema))
-        .query(async ({ ctx, input: { organizationId } }) => {
+        .query(async ({ ctx, input: { organizationId, teamId } }) => {
             const sessions = await ctx.prisma.skillCheckSession.findMany({
                 where: {
                     organizationId,
+                    ...(teamId && { teamId }),
                 },
                 include: sessionWithAssessorsInclude,
             });

@@ -34,8 +34,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
+import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { useSkillTrackScope } from "@/modules/skill-track/lib/use-skill-track-scope";
 import { trpc } from "@/trpc/client";
 
 import { SkillTrack_SessionTeamSelect } from "./session-team-select";
@@ -49,7 +50,11 @@ import {
 
 export function SkillTrack_CreateSession_Dialog() {
     const organization = useOrganization();
+    const scopedRoute = useScopedRoute();
     const router = useRouter();
+    // In team scope the session belongs to this team, so the Team field is hidden and pinned.
+    const scope = useSkillTrackScope();
+    const pinnedTeamId = scope.scope === "team" ? scope.team.id : null;
 
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["create"] as const));
     const dialogOpen = action === "create";
@@ -81,7 +86,7 @@ export function SkillTrack_CreateSession_Dialog() {
     const formValues = () => ({
         name: "",
         notes: "",
-        teamId: NO_SESSION_TEAM,
+        teamId: pinnedTeamId ?? NO_SESSION_TEAM,
         when: defaultSessionWhen(orgZone),
     });
 
@@ -105,10 +110,13 @@ export function SkillTrack_CreateSession_Dialog() {
                 // Don't clear the dialog param here — the navigation unmounts the
                 // dialog, and a competing URL write races the push.
                 router.push(
-                    route("/orgs/[slug]/skill-track/sessions/[session_id]", {
-                        slug: organization.slug,
-                        session_id: created.id,
-                    }),
+                    scopedRoute(
+                        {
+                            organization: "/orgs/[slug]/skill-track/sessions/[session_id]",
+                            team: "/teams/[slug]/skill-track/sessions/[session_id]",
+                        },
+                        { session_id: created.id },
+                    ),
                 );
             },
         }),
@@ -155,7 +163,12 @@ export function SkillTrack_CreateSession_Dialog() {
                                 mutation.mutate({
                                     organizationId: organization.id,
                                     skillCheckSessionId: SkillCheckSessionId.create(),
-                                    create: parsed.data,
+                                    // The hidden field's default already holds the pinned team;
+                                    // send it explicitly so the pin doesn't rest on that.
+                                    create: {
+                                        ...parsed.data,
+                                        teamId: pinnedTeamId ?? parsed.data.teamId,
+                                    },
                                 });
                             },
                             (errors) => {
@@ -177,28 +190,30 @@ export function SkillTrack_CreateSession_Dialog() {
                                     </Field>
                                 )}
                             />
-                            <Controller
-                                name="teamId"
-                                control={form.control}
-                                render={({ field, fieldState }) => (
-                                    <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor={teamFieldId}>Team</FieldLabel>
-                                        <SkillTrack_SessionTeamSelect
-                                            id={teamFieldId}
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            invalid={fieldState.invalid}
-                                        />
-                                        <FieldDescription>
-                                            Everyone in the team is added to the session&apos;s
-                                            personnel.
-                                        </FieldDescription>
-                                        {fieldState.error && (
-                                            <FieldError errors={[fieldState.error]} />
-                                        )}
-                                    </Field>
-                                )}
-                            />
+                            {pinnedTeamId === null && (
+                                <Controller
+                                    name="teamId"
+                                    control={form.control}
+                                    render={({ field, fieldState }) => (
+                                        <Field data-invalid={fieldState.invalid}>
+                                            <FieldLabel htmlFor={teamFieldId}>Team</FieldLabel>
+                                            <SkillTrack_SessionTeamSelect
+                                                id={teamFieldId}
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                invalid={fieldState.invalid}
+                                            />
+                                            <FieldDescription>
+                                                Everyone in the team is added to the session&apos;s
+                                                personnel.
+                                            </FieldDescription>
+                                            {fieldState.error && (
+                                                <FieldError errors={[fieldState.error]} />
+                                            )}
+                                        </Field>
+                                    )}
+                                />
+                            )}
                             <Controller
                                 name="when"
                                 control={form.control}

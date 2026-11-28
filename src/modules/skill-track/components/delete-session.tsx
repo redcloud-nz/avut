@@ -23,7 +23,7 @@ import {
 import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
+import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
 
@@ -32,6 +32,7 @@ export function SkillsModule_DeleteSession_Dialog({
     ...props
 }: ComponentProps<typeof AlertDialog> & { session: SkillCheckSession }) {
     const organization = useOrganization();
+    const scopedRoute = useScopedRoute();
     const router = useRouter();
 
     const mutation = useMutation(
@@ -52,7 +53,13 @@ export function SkillsModule_DeleteSession_Dialog({
                 // clear the dialog param / reset the mutation here — the navigation
                 // unmounts the dialog, and a competing URL write races the push.
                 router.push(
-                    route("/orgs/[slug]/skill-track/sessions", { slug: organization.slug }),
+                    scopedRoute(
+                        {
+                            organization: "/orgs/[slug]/skill-track/sessions",
+                            team: "/teams/[slug]/skill-track/sessions",
+                        },
+                        {},
+                    ),
                 );
             },
         }),

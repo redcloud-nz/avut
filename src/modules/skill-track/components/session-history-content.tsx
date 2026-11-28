@@ -8,7 +8,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { ObjectHistory } from "@/components/history/object-history";
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
+import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
 
@@ -18,6 +18,7 @@ export function SkillTrack_SessionHistory_Content({
     sessionId: SkillCheckSessionId;
 }) {
     const organization = useOrganization();
+    const scopedRoute = useScopedRoute();
 
     const { data: session } = useSuspenseQuery(
         trpc.skillCheckSessions.getSession.queryOptions({
@@ -36,14 +37,23 @@ export function SkillTrack_SessionHistory_Content({
             breadcrumbs={[
                 {
                     label: "Skill Check Sessions",
-                    href: route("/orgs/[slug]/skill-track/sessions", { slug: organization.slug }),
+                    href: scopedRoute(
+                        {
+                            organization: "/orgs/[slug]/skill-track/sessions",
+                            team: "/teams/[slug]/skill-track/sessions",
+                        },
+                        {},
+                    ),
                 },
                 {
                     label: sessionName,
-                    href: route("/orgs/[slug]/skill-track/sessions/[session_id]", {
-                        slug: organization.slug,
-                        session_id: sessionId,
-                    }),
+                    href: scopedRoute(
+                        {
+                            organization: "/orgs/[slug]/skill-track/sessions/[session_id]",
+                            team: "/teams/[slug]/skill-track/sessions/[session_id]",
+                        },
+                        { session_id: sessionId },
+                    ),
                 },
             ]}
         />
