@@ -8,7 +8,7 @@ import { ChevronDownIcon } from "lucide-react";
 import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
 import { Suspense, useEffect, useId, useState } from "react";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useIsMutating, useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -116,10 +116,14 @@ function DifferencesBody({ campaignId }: { campaignId: SelfAuditCampaignId }) {
 
     /** Per request id, the selected difference keys. */
     const [selected, setSelected] = useState<Record<string, readonly string[]>>({});
-    /** What the open (or last opened) apply dialog confirms. */
+    /**
+     * What the open (or last opened) apply dialog confirms. Kept after an apply (marked `applied`)
+     * so the dialog stays mounted through its close, and a param that comes back to it is stranded.
+     */
     const [confirming, setConfirming] = useState<{
         member: { requestId: SelfAuditRequestId; memberName: string };
         differences: SelfAuditDifference[];
+        applied: boolean;
     } | null>(null);
 
     /** A member's selected differences that are still there and still selectable. */
@@ -144,6 +148,7 @@ function DifferencesBody({ campaignId }: { campaignId: SelfAuditCampaignId }) {
         setConfirming({
             member: { requestId: member.requestId, memberName: member.memberName },
             differences: selectedOf(member),
+            applied: false,
         });
         void setRequestId(member.requestId, { history: "push" });
         void setAction("apply", { history: "push" });
@@ -155,7 +160,8 @@ function DifferencesBody({ campaignId }: { campaignId: SelfAuditCampaignId }) {
 
     // Opened with nothing confirmed (a reload, a pasted link, Forward after an apply): clear it.
     const strandedAction =
-        action === "apply" && (confirming === null || confirming.member.requestId !== requestId);
+        action === "apply" &&
+        (confirming === null || confirming.applied || confirming.member.requestId !== requestId);
     useEffect(() => {
         if (strandedAction) closeApply();
         // eslint-disable-next-line react-hooks/exhaustive-deps -- runs when the param becomes stranded
@@ -246,9 +252,13 @@ function DifferencesBody({ campaignId }: { campaignId: SelfAuditCampaignId }) {
                     differences={confirming.differences}
                     onApplied={() => {
                         setSelected({ ...selected, [confirming.member.requestId]: [] });
-                        setConfirming(null);
+                        setConfirming({ ...confirming, applied: true });
                     }}
-                    open={action === "apply" && requestId === confirming.member.requestId}
+                    open={
+                        action === "apply" &&
+                        requestId === confirming.member.requestId &&
+                        !confirming.applied
+                    }
                     onOpenChange={(open) => (open ? undefined : closeApply())}
                 />
             )}
@@ -269,6 +279,13 @@ function MemberCard({
     onApply: () => void;
 }) {
     const idPrefix = useId();
+    const applying =
+        useIsMutating({
+            mutationKey: trpc.selfAuditCampaigns.applyFixes.mutationKey(),
+            predicate: (mutation) =>
+                (mutation.state.variables as { requestId?: string } | undefined)?.requestId ===
+                member.requestId,
+        }) > 0;
     const selectedKeys = selected.map((difference) => difference.key);
 
     return (
@@ -317,7 +334,7 @@ function MemberCard({
                 </ul>
             </CardContent>
             <CardFooter className="justify-end">
-                <Button disabled={selected.length === 0} onClick={onApply}>
+                <Button disabled={selected.length === 0 || applying} onClick={onApply}>
                     Apply selected ({selected.length})
                 </Button>
             </CardFooter>

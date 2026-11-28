@@ -89,14 +89,13 @@ export function D4HI3Module_SelfAuditCampaignNeeds({
                 <Saratoga.Title>Needs Report</Saratoga.Title>
                 {!isEmpty && (
                     <Saratoga.Actions>
-                        {/* A route handler, which typed routes don't cover: its path is this
-                            page's plus `/csv`. */}
+                        {/* A route handler, so a plain `<a download>` rather than a `Link`. */}
                         <Button asChild variant="outline">
                             <a
-                                href={`${route(
-                                    "/orgs/[slug]/d4h-i3/self-audit-campaigns/[campaign_id]/needs",
+                                href={route(
+                                    "/orgs/[slug]/d4h-i3/self-audit-campaigns/[campaign_id]/needs/csv",
                                     { slug, campaign_id: campaign.id },
-                                )}/csv`}
+                                )}
                                 download
                             >
                                 <ObjectIcons.Export />

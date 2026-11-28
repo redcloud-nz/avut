@@ -40,7 +40,10 @@ import { describeFix } from "./campaign-labels";
  * plain `Dialog`.
  *
  * Apply stays disabled while the mutation is pending: two applies racing for one member could
- * create the same item twice (accepted in the plan's review notes).
+ * create the same item twice (accepted in the plan's review notes). So the dialog can't be closed
+ * while it's pending either (Cancel, Escape and an outside click are ignored), and reopening it
+ * never resets a mutation in flight; the differences page also disables the member's "Apply
+ * selected" until the apply settles.
  */
 export function D4HI3Module_ApplySelfAuditFixes_Dialog({
     member,
@@ -74,12 +77,18 @@ export function D4HI3Module_ApplySelfAuditFixes_Dialog({
     );
 
     useEffect(() => {
-        if (props.open) mutation.reset();
+        if (props.open && !mutation.isPending) mutation.reset();
         // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
     }, [props.open, member.requestId]);
 
     return (
-        <Dialog {...props}>
+        <Dialog
+            {...props}
+            onOpenChange={(open) => {
+                if (!open && mutation.isPending) return;
+                props.onOpenChange?.(open);
+            }}
+        >
             <DialogContent {...returnFocus}>
                 <DialogHeader>
                     <DialogTitle>Apply fixes</DialogTitle>
@@ -105,7 +114,9 @@ export function D4HI3Module_ApplySelfAuditFixes_Dialog({
                     </p>
                 </DialogBody>
                 <DialogFooter>
-                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                    <DialogCloseButton variant="outline" disabled={mutation.isPending}>
+                        Cancel
+                    </DialogCloseButton>
                     <MutationButton
                         type="button"
                         status={mutation.status}
