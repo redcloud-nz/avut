@@ -32,6 +32,13 @@ const effectExpressionBody = {
   message: "Give an effect a block body; an expression body becomes its cleanup.",
 };
 
+// An async effect returns a Promise, which React then treats as the cleanup the same way.
+const effectAsync = {
+  selector:
+    "CallExpression:matches([callee.name=/^use(Layout|Insertion)?Effect$/], [callee.property.name=/^use(Layout|Insertion)?Effect$/]) > :matches(ArrowFunctionExpression, FunctionExpression)[async=true]:first-child",
+  message: "An effect can't be async: define the async function inside it and call it.",
+};
+
 // One shared plugin object: flat config rejects redefining a plugin name with a different object
 // when two blocks match the same file.
 const avut = {
@@ -451,7 +458,7 @@ const config = [
   {
     files: ["src/**/*.{ts,tsx}"],
     rules: {
-      "no-restricted-syntax": ["error", effectExpressionBody],
+      "no-restricted-syntax": ["error", effectExpressionBody, effectAsync],
     },
   },
   {
@@ -468,6 +475,7 @@ const config = [
             "Use useSession() from @/client/auth-queries instead of authClient.useSession().",
         },
         effectExpressionBody,
+        effectAsync,
       ],
     },
   },
