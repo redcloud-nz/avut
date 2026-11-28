@@ -48,6 +48,15 @@ export function useTeam(): TeamData {
     return useTeamScope().team;
 }
 
+/**
+ * The current team-scope page's team, or null outside a `TeamProvider` (in org scope, or
+ * outside both scopes). Never throws, so a component shared between the org and team scopes
+ * can ask which one it's in.
+ */
+export function useOptionalTeam(): TeamData | null {
+    return useContext(TeamContext)?.team ?? null;
+}
+
 /** The current team scope's slug, from the URL (never null, unlike `TeamData.slug`). */
 export function useTeamSlug(): string {
     return useTeamScope().teamSlug;
