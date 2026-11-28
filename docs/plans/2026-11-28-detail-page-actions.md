@@ -77,7 +77,7 @@ Untouched: D4H catalogue/member/team pages (↗ only), self-audit campaign (out 
 
 ### Group B — admin pages (visual checkpoint)
 
-- [ ] **Task 3 — org-admin user, team, team membership; team-admin team; D4H link card** `visual`
+- [x] **Task 3 — org-admin user, team, team membership; team-admin team; D4H link card** `visual`
   - **Files:** `src/modules/org-admin/components/users/{user-menu,user-content,update-user}.tsx`, `src/modules/org-admin/components/teams/{team-menu,team-content,team-membership-menu,team-membership-content}.tsx`, `src/modules/team-admin/components/{team-menu,team-admin-content}.tsx`, `src/components/teams/{d4h-link-card,team-details-card,update-team}.tsx`, `content/help/admin/teams.mdx`, `content/help/admin/users.mdx`.
   - **Do:** Per the map. `Teams_D4HMenuGroup` splits: Sync stays the Linked D4H Team card's icon, Unlink goes to that card's ⋮, Link becomes a bare action card in the secondary column (both team pages). Make owner gets the `member: ["owner"]` gate. Team membership: D4H Member card moves to the secondary column; full width when there's none.
   - **Done when:** map rows hold as owner, admin and member; `npm run check` passes.
@@ -128,3 +128,5 @@ Every detail page's actions move: guides that say "open the ⋮ / Actions menu" 
 - Mobile-specific layouts beyond checking 390px at each checkpoint.
 
 ## Parked
+
+- Person page: `AdminModule_Person_LinkedUser_Card` reads `personnel.getLinkedUser` with `useSuspenseQuery` and the page doesn't prefetch it, so the server render errors ("called during the server render, where nothing was hydrated") and the page falls back to client rendering. Same on integration; the prefetch needs gating on `member: ["view"]`.

@@ -27,10 +27,9 @@ import { trpc } from "@/trpc/client";
 
 /**
  * `?action=remove-owner` confirm dialog on the org-admin Users page — strips ownership from a
- * member, keeping any other roles they hold. The menu item that opens this is always visible
- * (not `<Protect>`-gated); `member: ["owner"]`, the last-owner guard, and the self-removal block
- * are all enforced by the mutation itself, and a caller who fails one of them sees the error
- * surface inside this dialog.
+ * member, keeping any other roles they hold. The User card's menu offers it only to a viewer
+ * with `member: ["owner"]`, and not on their own user. The mutation enforces both, as well as
+ * the last-owner guard, and a caller who fails one sees the error surface inside this dialog.
  */
 export function AdminModule_RemoveOwner_Dialog({
     organizationUser,

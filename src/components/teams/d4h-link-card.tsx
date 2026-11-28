@@ -5,7 +5,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect, useId, useRef, useState } from "react";
+import { RefObject, useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useMutation, useQuery, useSuspenseQuery } from "@tanstack/react-query";
@@ -34,14 +34,10 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { DialogBoundary } from "@/components/ui/dialog-boundary";
-import {
-    DropdownMenuGroup,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
 import { Field, FieldGroup, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field";
+import { type MenuActionProps } from "@/components/ui/menu-action";
 import { RecordCard, RecordCardId } from "@/components/ui/record-card";
+import { ActionsCard, RecordCardMenu } from "@/components/ui/record-card-actions";
 import {
     Select,
     SelectContent,
@@ -51,6 +47,7 @@ import {
 } from "@/components/ui/select";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
+import { useReturnFocus } from "@/hooks/use-return-focus";
 import { getD4HServer } from "@/lib/d4h-servers";
 import {
     D4HSyncPlan,
@@ -66,67 +63,45 @@ import { trpc, trpcClient } from "@/trpc/client";
 
 const ACTIONS = ["d4h-link", "d4h-sync", "d4h-unlink"] as const;
 
-export type Teams_D4HAction = (typeof ACTIONS)[number];
-
 /**
- * The D4H group of a team's action menu (Link / Sync / Unlink), for an `EntityActionMenu`'s
- * `after`. Each item sets `?action=` through the menu's own `setAction`; `Teams_D4HCard`
- * renders the dialogs.
+ * The bare action card for a team's secondary column: Link to D4H team, for an Active team
+ * with no link while the D4H integration is on. Renders nothing otherwise. The button only sets
+ * `?action=`; `Teams_D4HCard` renders the dialog (which reports a missing personal D4H token
+ * when it opens).
  */
-export function Teams_D4HMenuGroup({
-    team,
-    setAction,
-}: {
-    team: TeamData;
-    setAction: (action: Teams_D4HAction, options: { history: "push" }) => unknown;
-}) {
+export function Teams_D4HLink_ActionsCard({ team }: { team: TeamData }) {
     const organization = useOrganization();
-    const d4hEnabled = organization.settings.integrations.d4h.enabled;
+    const [, setAction] = useQueryState("action", parseAsStringLiteral(ACTIONS));
     const canUpdate = useHasPermission({ team: ["update"] });
-    const linked = team.d4h !== null;
-    const isActive = team.status === "Active";
 
-    // An unlinked archived team has no D4H action left to offer.
-    if (!d4hEnabled || !(linked || isActive)) return null;
+    const canLink =
+        organization.settings.integrations.d4h.enabled &&
+        team.d4h === null &&
+        team.status === "Active" &&
+        canUpdate;
 
     return (
-        <>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel>D4H</DropdownMenuLabel>
-            <DropdownMenuGroup>
-                {!linked && isActive && (
-                    <DropdownMenuItem
-                        disabled={!canUpdate}
-                        onClick={() => void setAction("d4h-link", { history: "push" })}
-                    >
-                        <D4HIcons.Link /> Link to D4H
-                    </DropdownMenuItem>
-                )}
-                {linked && isActive && (
-                    <DropdownMenuItem
-                        disabled={!canUpdate}
-                        onClick={() => void setAction("d4h-sync", { history: "push" })}
-                    >
-                        <D4HIcons.Sync /> Sync with D4H
-                    </DropdownMenuItem>
-                )}
-                {linked && (
-                    <DropdownMenuItem
-                        disabled={!canUpdate}
-                        className="text-destructive focus:text-destructive"
-                        onClick={() => void setAction("d4h-unlink", { history: "push" })}
-                    >
-                        <D4HIcons.Unlink /> Unlink from D4H
-                    </DropdownMenuItem>
-                )}
-            </DropdownMenuGroup>
-        </>
+        <ActionsCard>
+            {canLink ? (
+                <Button
+                    variant="outline"
+                    onClick={() => void setAction("d4h-link", { history: "push" })}
+                >
+                    <D4HIcons.Link /> Link to D4H team
+                </Button>
+            ) : null}
+        </ActionsCard>
     );
 }
 
+/**
+ * The Linked D4H Team card (a sync icon and a ⋮ with Unlink), shown while the team is linked,
+ * and the D4H link, sync and unlink dialogs, mounted whether or not it is.
+ */
 export function Teams_D4HCard({
     team,
     onChanged,
+    returnFocusRef,
 }: {
     team: TeamData;
     /**
@@ -134,6 +109,12 @@ export function Teams_D4HCard({
      * (for a sync, when its dialog closes), so a `router.refresh()` here can't reopen a dialog.
      */
     onChanged?: () => void;
+    /**
+     * Where the dialogs return focus once the control that opened them is gone (Link's action
+     * card after a link, this card's ⋮ after an unlink): the Team card's pencil, which everyone
+     * who can open them (`team: ["update"]`) sees.
+     */
+    returnFocusRef?: RefObject<HTMLElement | null>;
 }) {
     const organization = useOrganization();
     const settings = organization.settings;
@@ -141,23 +122,41 @@ export function Teams_D4HCard({
 
     if (!settings.integrations.d4h.enabled) return null;
 
+    // The whole card is behind `team: ["update"]`, so Unlink is always there to offer.
+    const menuActions: MenuActionProps[] = [
+        {
+            verb: "unlink",
+            label: "Unlink from D4H",
+            icon: <D4HIcons.Unlink />,
+            onSelect: () => void setAction("d4h-unlink", { history: "push" }),
+            destructive: true,
+        },
+    ];
+
     return (
         <Protect permissions={{ team: ["update"] }}>
             {/* A related record's card, like the person page's Linked User: shown only when
-                there is a link. Linking is in the team's action menu. */}
+                there is a link. Linking is the secondary column's action card. */}
             {team.d4h && (
                 <RecordCard
                     label="Linked D4H Team"
                     action={
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Sync with D4H"
-                            title="Sync with D4H"
-                            onClick={() => void setAction("d4h-sync", { history: "push" })}
-                        >
-                            <D4HIcons.Sync />
-                        </Button>
+                        <>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label="Sync with D4H"
+                                title="Sync with D4H"
+                                onClick={() => void setAction("d4h-sync", { history: "push" })}
+                            >
+                                <D4HIcons.Sync />
+                            </Button>
+                            <RecordCardMenu
+                                actions={menuActions}
+                                category="Teams"
+                                label="Linked D4H team actions"
+                            />
+                        </>
                     }
                 >
                     <CardContent>
@@ -204,6 +203,7 @@ export function Teams_D4HCard({
 
             <LinkDialog
                 team={team}
+                returnFocusRef={returnFocusRef}
                 open={action === "d4h-link"}
                 onClose={() => void setAction(null, { history: "replace" })}
                 // The link imports nobody: the sync preview takes over, in place of the link
@@ -215,12 +215,14 @@ export function Teams_D4HCard({
             />
             <SyncDialog
                 team={team}
+                returnFocusRef={returnFocusRef}
                 open={action === "d4h-sync"}
                 onClose={() => setAction(null, { history: "replace" })}
                 onSynced={onChanged}
             />
             <UnlinkDialog
                 team={team}
+                returnFocusRef={returnFocusRef}
                 open={action === "d4h-unlink"}
                 onClose={() => void setAction(null, { history: "replace" })}
                 onUnlinked={async () => {
@@ -234,17 +236,20 @@ export function Teams_D4HCard({
 
 function UnlinkDialog({
     team,
+    returnFocusRef,
     open,
     onClose,
     onUnlinked,
 }: {
     team: TeamData;
+    returnFocusRef?: RefObject<HTMLElement | null>;
     open: boolean;
     onClose: () => void;
     /** Closes the dialog after a successful unlink, in place of `onClose`. */
     onUnlinked: () => void;
 }) {
     const organization = useOrganization();
+    const returnFocus = useReturnFocus(returnFocusRef);
 
     const mutation = useMutation(
         trpc.teams.unlinkTeamFromD4H.mutationOptions({
@@ -264,7 +269,7 @@ function UnlinkDialog({
 
     return (
         <Dialog open={open} onOpenChange={(o) => (o ? undefined : onClose())}>
-            <DialogContent>
+            <DialogContent {...returnFocus}>
                 <DialogHeader>
                     <DialogTitle>Unlink {team.name} from D4H</DialogTitle>
                     <DialogDescription>
@@ -290,18 +295,22 @@ function UnlinkDialog({
 
 function LinkDialog({
     team,
+    returnFocusRef,
     open,
     onClose,
     onLinked,
 }: {
     team: TeamData;
+    returnFocusRef?: RefObject<HTMLElement | null>;
     open: boolean;
     onClose: () => void;
     onLinked: () => void;
 }) {
+    const returnFocus = useReturnFocus(returnFocusRef);
+
     return (
         <Dialog open={open} onOpenChange={(o) => (o ? undefined : onClose())}>
-            <DialogContent>
+            <DialogContent {...returnFocus}>
                 <DialogHeader>
                     <DialogTitle>Link {team.name} to D4H</DialogTitle>
                     <DialogDescription>
@@ -381,11 +390,14 @@ function LinkDialog_Body({ team, onLinked }: { team: TeamData; onLinked: () => v
 
 function SyncDialog({
     team,
+    returnFocusRef,
     open,
     onClose,
     onSynced,
 }: {
     team: TeamData;
+    /** Opened by a link, the sync takes over from the Link dialog, whose button is gone. */
+    returnFocusRef?: RefObject<HTMLElement | null>;
     open: boolean;
     /** Clears `?action`; resolves once the URL has changed. */
     onClose: () => Promise<unknown>;
@@ -393,6 +405,7 @@ function SyncDialog({
     onSynced?: () => void;
 }) {
     const organization = useOrganization();
+    const returnFocus = useReturnFocus(returnFocusRef);
 
     // Each open (and each "Refresh preview") is a new attempt, and so a new plan. 0 = not yet opened.
     const [attempt, setAttempt] = useState(0);
@@ -535,7 +548,7 @@ function SyncDialog({
             // Not dismissable while applying: closing would hide the run, not stop it.
             onOpenChange={(o) => (o || applying ? undefined : void close())}
         >
-            <DialogContent showCloseButton={!applying}>
+            <DialogContent showCloseButton={!applying} {...returnFocus}>
                 <DialogHeader>
                     <DialogTitle>Sync {team.name} with D4H</DialogTitle>
                     <DialogDescription>

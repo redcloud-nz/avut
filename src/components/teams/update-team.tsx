@@ -5,7 +5,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect, useId } from "react";
+import { RefObject, useEffect, useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -13,8 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
 import { teamsEffects } from "@/client/teams-effects";
-import { ObjectIcons } from "@/components/icons";
-import { Button, MutationButton } from "@/components/ui/button";
+import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogBody,
@@ -29,17 +28,27 @@ import {
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 import { Input } from "@/components/ui/input";
+import { RecordCardEditButton } from "@/components/ui/record-card-actions";
 import { Textarea } from "@/components/ui/textarea";
 import { useOrganization } from "@/hooks/use-organization";
 import { ModifiableTeamData, TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
+/**
+ * The Team card's pencil and the `?action=update` dialog it opens. `primary` on the page's
+ * primary record card, so ⌥E opens it.
+ */
 export function Teams_UpdateTeam_Dialog({
     team,
     requireSlug = false,
     onUpdated,
+    primary = false,
+    triggerRef,
 }: {
     team: TeamData;
+    primary?: boolean;
+    /** Ref on the pencil, for the page's other dialogs to return focus to. */
+    triggerRef?: RefObject<HTMLButtonElement | null>;
     /** The slug can be changed but not cleared (editing from the team's own space). */
     requireSlug?: boolean;
     /** Called after a successful update in place of closing the dialog — e.g. to navigate away. */
@@ -92,9 +101,12 @@ export function Teams_UpdateTeam_Dialog({
     return (
         <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Update team">
-                    <ObjectIcons.Edit />
-                </Button>
+                <RecordCardEditButton
+                    ref={triggerRef}
+                    label="Edit team"
+                    category="Teams"
+                    primary={primary}
+                />
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>

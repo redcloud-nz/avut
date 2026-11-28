@@ -4,11 +4,13 @@
  */
 "use client";
 
+import { useRef } from "react";
+
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Protect } from "@/components/protect";
-import { Teams_D4HCard } from "@/components/teams/d4h-link-card";
+import { Teams_D4HCard, Teams_D4HLink_ActionsCard } from "@/components/teams/d4h-link-card";
 import { Teams_TeamAccess_Card } from "@/components/teams/team-access-card";
 import { Teams_Details_Card } from "@/components/teams/team-details-card";
 import { RecordStatusBadge } from "@/components/ui/status-badge";
@@ -27,6 +29,9 @@ export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
         trpc.teams.getTeam.queryOptions({ organizationId: organization.id, teamId }),
     );
 
+    // The Team card's pencil: where the D4H dialogs return focus once their button is gone.
+    const editButtonRef = useRef<HTMLButtonElement>(null);
+
     return (
         <Saratoga.Root>
             <Saratoga.Breadcrumbs
@@ -41,9 +46,6 @@ export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
                 <Saratoga.Title badges={<RecordStatusBadge status={team.status} />}>
                     {team.name}
                 </Saratoga.Title>
-                <Saratoga.Actions>
-                    <AdminModule_Team_Menu team={team} />
-                </Saratoga.Actions>
             </Saratoga.Header>
 
             <Saratoga.Columns>
@@ -54,16 +56,19 @@ export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
                             slug: organization.slug,
                             team_id: team.id,
                         })}
+                        triggerRef={editButtonRef}
+                        menu={<AdminModule_Team_Menu team={team} />}
                     />
 
                     <Protect permissions={{ member: ["view"] }}>
                         <Teams_TeamAccess_Card team={team} />
                     </Protect>
 
-                    <Teams_D4HCard team={team} />
+                    <Teams_D4HCard team={team} returnFocusRef={editButtonRef} />
                 </Saratoga.Column>
 
                 <Saratoga.Column slot="secondary">
+                    <Teams_D4HLink_ActionsCard team={team} />
                     <AdminModule_TeamLinks_Card team={team} />
                 </Saratoga.Column>
             </Saratoga.Columns>
