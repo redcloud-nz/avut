@@ -10,12 +10,15 @@
  * `docs/plans/2026-11-28-self-audit-needs-and-fixes.md`.
  */
 
+import * as z from "zod";
+
 import type { D4HTaskKind } from "@/lib/schemas/d4h-task";
 import type { D4HEquipmentListItem } from "@/lib/schemas/d4h/equipment-item";
-import type {
-    SelfAuditHeldItem,
-    SelfAuditResponseData,
-    SelfAuditTemplate,
+import {
+    SelfAuditRequestId,
+    type SelfAuditHeldItem,
+    type SelfAuditResponseData,
+    type SelfAuditTemplate,
 } from "@/lib/schemas/self-audit";
 import { OTHER_VARIANT } from "@/lib/self-audit-types";
 import { ANY_VARIANT } from "@/lib/self-audit-validate";
@@ -27,43 +30,58 @@ export type SelfAuditLiveItem = Pick<
 >;
 
 /** An I3 variant's current D4H record, with the titles a `SetVariant` task names. */
-export type SelfAuditVariantD4H = {
-    brandId: number;
-    brandTitle: string;
-    modelId: number;
-    modelTitle: string;
-};
+export const SelfAuditVariantD4H = z.object({
+    brandId: z.number(),
+    brandTitle: z.string(),
+    modelId: z.number(),
+    modelTitle: z.string(),
+});
+export type SelfAuditVariantD4H = z.infer<typeof SelfAuditVariantD4H>;
 
 /** An I3 template's current D4H record, as far as the differences read it. */
 export type SelfAuditTemplateD4H = { kindTitle: string };
 
-export type SelfAuditDifferenceKind =
-    | "NotHeld"
-    | "Serial"
-    | "Variant"
-    | "Unrecorded"
-    | "Gone"
-    /** A stored template no longer linked to D4H: its lines can't be compared. */
-    | "Unlinked";
+/** `Unlinked`: a stored template no longer linked to D4H, so its lines can't be compared. */
+export const SelfAuditDifferenceKind = z.enum([
+    "NotHeld",
+    "Serial",
+    "Variant",
+    "Unrecorded",
+    "Gone",
+    "Unlinked",
+]);
+export type SelfAuditDifferenceKind = z.infer<typeof SelfAuditDifferenceKind>;
 
 /** The task kinds a difference's fix can queue. */
 export type SelfAuditFixTaskKind = Extract<D4HTaskKind, "SetSerial" | "SetVariant" | "MarkLost">;
 
-/** How a difference is fixed: a D4H write, or a task queued for someone to apply by hand. */
-export type SelfAuditFix =
-    /** `PATCH` the item's status to `LOST`. */
-    | { type: "patch-lost" }
-    /** `POST` a new item located with the member. */
-    | {
-          type: "create";
-          /** Brand and model, when the member picked a variant with a D4H record. */
-          variant: SelfAuditVariantD4H | null;
-          /** Trimmed; `null` when the member gave none. */
-          serial: string | null;
-      }
-    | { type: "task"; taskKind: "SetSerial"; serial: string }
-    | { type: "task"; taskKind: "SetVariant"; brand: string; model: string }
-    | { type: "task"; taskKind: "MarkLost" };
+/**
+ * How a difference is fixed: a D4H write, or a task queued for someone to apply by hand.
+ *
+ * - `patch-lost`: `PATCH` the item's status to `LOST`.
+ * - `create`: `POST` a new item located with the member: `variant` is the brand and model of the
+ *   variant they picked, when it has a D4H record; `serial` is trimmed, `null` when they gave none.
+ * - `task`: queue a `SetSerial`, `SetVariant` or `MarkLost` task.
+ */
+export const SelfAuditFix = z.discriminatedUnion("type", [
+    z.object({ type: z.literal("patch-lost") }),
+    z.object({
+        type: z.literal("create"),
+        variant: SelfAuditVariantD4H.nullable(),
+        serial: z.string().nullable(),
+    }),
+    z.discriminatedUnion("taskKind", [
+        z.object({ type: z.literal("task"), taskKind: z.literal("SetSerial"), serial: z.string() }),
+        z.object({
+            type: z.literal("task"),
+            taskKind: z.literal("SetVariant"),
+            brand: z.string(),
+            model: z.string(),
+        }),
+        z.object({ type: z.literal("task"), taskKind: z.literal("MarkLost") }),
+    ]),
+]);
+export type SelfAuditFix = z.infer<typeof SelfAuditFix>;
 
 /**
  * - `selectable`: can be applied.
@@ -71,23 +89,42 @@ export type SelfAuditFix =
  * - `unavailable`: has a fix, but it can't be applied (`reason` says why).
  * - `info`: information only, nothing to apply.
  */
-export type SelfAuditDifferenceState = "selectable" | "queued" | "unavailable" | "info";
+export const SelfAuditDifferenceState = z.enum(["selectable", "queued", "unavailable", "info"]);
+export type SelfAuditDifferenceState = z.infer<typeof SelfAuditDifferenceState>;
 
-export type SelfAuditDifference = {
+export const SelfAuditDifference = z.object({
     /** Stable across recomputes: `<kind>:<itemId>`, or `<kind>:<templateId>` with no item. */
-    key: string;
-    kind: SelfAuditDifferenceKind;
-    templateId: string;
+    key: z.string(),
+    kind: SelfAuditDifferenceKind,
+    templateId: z.string(),
     /** The D4H item it's about; `null` for `Unrecorded` and `Unlinked`. */
-    itemId: number | null;
+    itemId: z.number().nullable(),
     /** What it's about, `#<ref> <kind>` style like `D4HTask.itemLabel`. */
-    label: string;
+    label: z.string(),
     /** What D4H has against what the member said. */
-    detail: string;
-    fix: SelfAuditFix | null;
-    state: SelfAuditDifferenceState;
-    reason?: string;
-};
+    detail: z.string(),
+    fix: SelfAuditFix.nullable(),
+    state: SelfAuditDifferenceState,
+    reason: z.string().optional(),
+});
+export type SelfAuditDifference = z.infer<typeof SelfAuditDifference>;
+
+/** A campaign's differences from D4H: an entry per submitted, not withdrawn, member. */
+export const SelfAuditDifferences = z.object({
+    /** The token's D4H Equipment permissions on the campaign's D4H team. */
+    permissions: z.object({ update: z.boolean(), create: z.boolean() }),
+    /** By member name; members with no differences included. */
+    members: z.array(
+        z.object({
+            requestId: SelfAuditRequestId.schema,
+            memberName: z.string(),
+            /** Whether the member is still in the campaign's D4H team. */
+            inTeam: z.boolean(),
+            differences: z.array(SelfAuditDifference),
+        }),
+    ),
+});
+export type SelfAuditDifferences = z.infer<typeof SelfAuditDifferences>;
 
 export type SelfAuditDiffInput = {
     /** The campaign's stored templates, in their stored order. */

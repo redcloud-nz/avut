@@ -22,6 +22,7 @@ import * as z from "zod";
 import { baseUrl } from "@/emails/base-url";
 import SelfAuditRequestEmail, { selfAuditRequestSubject } from "@/emails/self-audit-request";
 import type { Prisma } from "@/generated/prisma/client";
+import { hasD4HTeamPermission } from "@/lib/d4h-permissions";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
 import { SelfAuditForm } from "@/lib/forms";
 import { compareBundle, type BundleRow, type ComparableLine } from "@/lib/i3-bundle-compare";
@@ -51,6 +52,12 @@ import {
 import { TeamId } from "@/lib/schemas/team";
 import { defaultCampaignName } from "@/lib/self-audit-campaign-name";
 import {
+    diffAnswers,
+    type SelfAuditDifferences,
+    type SelfAuditTemplateD4H,
+    type SelfAuditVariantD4H,
+} from "@/lib/self-audit-differences";
+import {
     buildNeedsReport,
     needsReportCsv,
     type SelfAuditNeedsReport,
@@ -60,6 +67,7 @@ import { EMPTY_ANSWER } from "@/lib/self-audit-validate";
 import { toD4HCredentialRef } from "@/server/d4h-access-token";
 import {
     expireD4HTeamMembers,
+    fetchD4HWhoamiCached,
     getD4HTeamMembers,
     getD4HTokenMetadata,
 } from "@/server/d4h-api/client";
@@ -68,6 +76,7 @@ import { NoReplyEmailAddress, orgReplyTo, sendEmail } from "@/server/email";
 import { createLinkToken } from "@/server/link-token";
 import { createLogBatch } from "@/server/log-entry";
 
+import * as D4HTasks from "./d4h-tasks";
 import * as I3Bundles from "./i3-bundles";
 import * as I3Templates from "./i3-templates";
 import * as OrgSettings from "./organization-settings";
@@ -1224,6 +1233,10 @@ export type SelfAuditLiveComparison<M extends SelfAuditMemberSource> = {
      * or since unlinked from D4H) matches no items.
      */
     liveTemplateIds: string[];
+    /** Per stored template id, its I3 template's current D4H record; absent when it has none. */
+    templateD4H: Record<string, SelfAuditTemplateD4H>;
+    /** Per variant id of the stored templates, its current D4H record; absent when it has none. */
+    variantD4H: Record<string, SelfAuditVariantD4H>;
 };
 
 /**
@@ -1342,6 +1355,30 @@ export async function snapshotCampaignMembers<M extends SelfAuditMemberSource>(
             }),
         ),
         liveTemplateIds: comparison.columns.map((column) => column.template.id),
+        templateD4H: Object.fromEntries(
+            records.flatMap((record) =>
+                record.d4h ? [[record.id, { kindTitle: record.d4h.kindTitle }]] : [],
+            ),
+        ),
+        variantD4H: Object.fromEntries(
+            records.flatMap((record) =>
+                record.variants.flatMap(({ id, d4h }) =>
+                    d4h
+                        ? [
+                              [
+                                  id,
+                                  {
+                                      brandId: d4h.brandId,
+                                      brandTitle: d4h.brandTitle,
+                                      modelId: d4h.modelId,
+                                      modelTitle: d4h.modelTitle,
+                                  },
+                              ],
+                          ]
+                        : [],
+                ),
+            ),
+        ),
     };
 }
 
@@ -1805,4 +1842,111 @@ export async function discardCampaign(
         );
     });
     return { campaignId };
+}
+
+// Differences from D4H
+
+/**
+ * The campaign's differences from D4H, per submitted (and not withdrawn) member, by member name
+ * (decisions 4–6 of `docs/plans/2026-11-28-self-audit-needs-and-fixes.md`): each member's last
+ * submitted answer against their snapshotted held items and what D4H records as issued to them
+ * now, read live. A member no longer in the D4H team is still compared. Members with no
+ * differences are included. The token's permissions come from a cached whoami: they decide what's
+ * shown, and an apply re-reads them.
+ *
+ * @throws NotFoundError if the campaign isn't in the organization, or the token doesn't reach its
+ * D4H team.
+ */
+export async function listDifferences(
+    ctx: OrgServiceContext,
+    {
+        accessToken,
+        campaignId,
+    }: { accessToken: D4HAccessToken_ServerOnly; campaignId: SelfAuditCampaignId },
+): Promise<SelfAuditDifferences> {
+    const campaign = await ctx.prisma.selfAuditCampaign.findFirst({
+        where: { id: campaignId, organizationId: ctx.organizationId },
+        select: {
+            d4hTeamId: true,
+            templates: true,
+            requests: {
+                where: { submittedAt: { not: null }, withdrawnAt: null },
+                select: {
+                    id: true,
+                    d4hMemberId: true,
+                    memberName: true,
+                    heldItems: true,
+                    submittedData: true,
+                },
+            },
+        },
+    });
+    if (!campaign) throw new NotFoundError(`SelfAuditCampaign(id=${campaignId}) not found.`);
+    const { d4hTeamId } = campaign;
+    const templates = z.array(SelfAuditTemplate).parse(campaign.templates);
+    const requests = campaign.requests
+        .flatMap((request) =>
+            request.submittedData === null
+                ? []
+                : [
+                      {
+                          id: SelfAuditRequestId.schema.parse(request.id),
+                          d4hMemberId: request.d4hMemberId,
+                          memberName: request.memberName,
+                          heldItems: z.array(SelfAuditHeldItem).parse(request.heldItems),
+                          answer: SelfAuditResponseData.parse(request.submittedData),
+                      },
+                  ],
+        )
+        .toSorted((a, b) => a.memberName.localeCompare(b.memberName));
+
+    // Checks the token reaches the team, before the rest reads it.
+    const recipients = await readTeamRecipients(accessToken, d4hTeamId);
+    const [whoami, openTasks, comparison] = await Promise.all([
+        fetchD4HWhoamiCached(toD4HCredentialRef(accessToken)),
+        D4HTasks.listOpen(ctx, { d4hTeamIds: [d4hTeamId] }),
+        snapshotCampaignMembers(ctx, {
+            accessToken,
+            d4hTeamId,
+            templates,
+            members: requests.map((request) => ({
+                id: request.d4hMemberId,
+                name: request.memberName,
+            })),
+        }),
+    ]);
+
+    const teamPermissions = whoami.members.find(
+        (membership) => membership.owner.id === d4hTeamId,
+    )?.permissions;
+    const permissions = {
+        update: hasD4HTeamPermission(teamPermissions, "Equipment", "UPDATE"),
+        create: hasD4HTeamPermission(teamPermissions, "Equipment", "CREATE"),
+    };
+    const inTeam = new Set(recipients.map((recipient) => recipient.id));
+    const liveByMember = new Map(
+        comparison.members.map((snapshot) => [snapshot.member.id, snapshot.live]),
+    );
+    const tasks = openTasks.map(({ task }) => ({ resourceId: task.resourceId, kind: task.kind }));
+
+    return {
+        permissions,
+        members: requests.map((request) => ({
+            requestId: request.id,
+            memberName: request.memberName,
+            inTeam: inTeam.has(request.d4hMemberId),
+            differences: diffAnswers({
+                templates,
+                liveTemplateIds: comparison.liveTemplateIds,
+                snapshotHeld: request.heldItems,
+                live: liveByMember.get(request.d4hMemberId) ?? {},
+                answer: request.answer,
+                openTasks: tasks,
+                permissions,
+                inTeam: inTeam.has(request.d4hMemberId),
+                variantD4H: comparison.variantD4H,
+                templateD4H: comparison.templateD4H,
+            }),
+        })),
+    };
 }

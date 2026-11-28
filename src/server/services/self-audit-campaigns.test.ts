@@ -13,6 +13,7 @@ import { render } from "@react-email/components";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
 import { compareBundle } from "@/lib/i3-bundle-compare";
 import type { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
+import { D4HTaskId } from "@/lib/schemas/d4h-task";
 import type { D4HEquipmentListItem } from "@/lib/schemas/d4h/equipment-item";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { I3BundleId, type I3BundleLine } from "@/lib/schemas/i3-bundle";
@@ -20,9 +21,10 @@ import { I3TemplateId } from "@/lib/schemas/i3-template";
 import { OrganizationId } from "@/lib/schemas/organization";
 import {
     SELF_AUDIT_TOKEN_DAYS,
+    SelfAuditCampaignId,
     SelfAuditRequestId,
     SelfAuditResponseData,
-    type SelfAuditCampaignId,
+    type SelfAuditHeldItem,
     type SelfAuditTemplate,
 } from "@/lib/schemas/self-audit";
 import { TeamId } from "@/lib/schemas/team";
@@ -45,6 +47,7 @@ import {
     createCampaign,
     discardCampaign,
     listAddableMembers,
+    listDifferences,
     listTeams,
     removeRequest,
     requireCampaignById,
@@ -76,6 +79,20 @@ vi.mock("@/server/d4h-access-token", () => ({
 
 vi.mock("@/server/d4h-api/client", () => ({
     expireD4HTeamMembers: vi.fn(),
+    // Equipment UPDATE on the team, not CREATE.
+    fetchD4HWhoamiCached: vi.fn(async () => ({
+        account: { id: 1, resourceType: "Account" },
+        members: [
+            {
+                id: 500,
+                resourceType: "Member",
+                hasAccess: true,
+                name: "Ana Admin",
+                owner: { id: TEAM_ID, resourceType: "Team", title: "Rescue Team" },
+                permissions: { Equipment: { UPDATE: true, CREATE: false } },
+            },
+        ],
+    })),
     getD4HTokenMetadata: vi.fn(async () => ({
         d4HTeams: [{ id: TEAM_ID, resourceType: "Team", title: "Rescue Team", permissions: {} }],
         d4HOrganisations: [],
@@ -1461,6 +1478,252 @@ describe("campaigns", () => {
                 await db.i3Template_D4H.deleteMany({ where: { templateId: otherHelmet } });
                 await db.i3Template.delete({ where: { id: otherHelmet } });
             }
+        });
+    });
+
+    describe("listDifferences", () => {
+        const campaignId = SelfAuditCampaignId.create();
+        const otherOrgCampaignId = SelfAuditCampaignId.create();
+        const submittedAt = new Date("2026-11-22T09:00:00Z");
+        const helmetTemplate: SelfAuditTemplate = {
+            id: S.helmet,
+            category: "PPE",
+            name: "Helmet",
+            variants: [],
+            requireSN: false,
+            sized: true,
+            sizeOptional: true,
+            sizeOptions: [],
+        };
+        /** A stored template whose I3 template has since been deleted. */
+        const deletedTemplate: SelfAuditTemplate = {
+            ...helmetTemplate,
+            id: I3TemplateId.create(),
+            name: "Gone",
+        };
+        const heldHelmet = (id: number): SelfAuditHeldItem => ({
+            id: String(id),
+            templateId: S.helmet,
+            description: "Helmet",
+            serial: null,
+            variantId: null,
+            problems: [],
+        });
+        const answer = (overrides: Partial<SelfAuditResponseData>): SelfAuditResponseData => ({
+            held: {},
+            missing: {},
+            extras: [],
+            comments: "",
+            ...overrides,
+        });
+
+        beforeAll(async () => {
+            for (const [id, organizationId] of [
+                [campaignId, S.org],
+                [otherOrgCampaignId, S.otherOrg],
+            ] as const) {
+                await db.selfAuditCampaign.create({
+                    data: {
+                        id,
+                        organizationId,
+                        name: "Differences",
+                        teamId: organizationId === S.org ? S.team : S.otherOrgTeam,
+                        d4hTeamId: TEAM_ID,
+                        d4hTeamName: "Rescue Team",
+                        bundleName: "Responder",
+                        templates: [helmetTemplate, deletedTemplate],
+                        sentAt: submittedAt,
+                    },
+                });
+            }
+
+            const requests: {
+                memberId: number;
+                memberName: string;
+                heldItems: SelfAuditHeldItem[];
+                submittedData: SelfAuditResponseData | null;
+                withdrawn?: boolean;
+            }[] = [
+                // Says they don't have item 1, which D4H still has with them: mark it LOST.
+                {
+                    memberId: 42,
+                    memberName: "John Smith",
+                    heldItems: [heldHelmet(1)],
+                    submittedData: answer({ held: { "1": { ...EMPTY_ANSWER, has: "no" } } }),
+                },
+                // Has one D4H doesn't record (no CREATE), and answered the deleted template.
+                {
+                    memberId: 44,
+                    memberName: "Kim Tan",
+                    heldItems: [],
+                    submittedData: answer({
+                        missing: {
+                            [S.helmet]: { ...EMPTY_ANSWER, has: "yes" },
+                            [deletedTemplate.id]: { ...EMPTY_ANSWER, has: "yes" },
+                        },
+                    }),
+                },
+                // Left the team; a serial fix already queued.
+                {
+                    memberId: 99,
+                    memberName: "Lee Gone",
+                    heldItems: [heldHelmet(3)],
+                    submittedData: answer({
+                        held: { "3": { ...EMPTY_ANSWER, has: "yes", serial: " SN-9 " } },
+                    }),
+                },
+                // Agrees with D4H: listed, with no differences.
+                {
+                    memberId: 43,
+                    memberName: "Ana Lee",
+                    heldItems: [],
+                    submittedData: answer({
+                        missing: { [S.helmet]: { ...EMPTY_ANSWER, has: "no" } },
+                    }),
+                },
+                // Withdrawn after submitting, and never submitted: left out.
+                {
+                    memberId: 45,
+                    memberName: "Bo Withdrawn",
+                    heldItems: [heldHelmet(5)],
+                    submittedData: answer({ held: { "5": { ...EMPTY_ANSWER, has: "no" } } }),
+                    withdrawn: true,
+                },
+                { memberId: 46, memberName: "Cy Unsent", heldItems: [], submittedData: null },
+            ];
+            for (const request of requests) {
+                const formInstanceId = FormInstanceId.create();
+                await db.formInstance.create({
+                    data: {
+                        id: formInstanceId,
+                        formKey: "d4h-i3-self-audit",
+                        organizationId: S.org,
+                        userId: null,
+                        formData: answer({}),
+                        formStatus: request.submittedData ? "Submitted" : "Draft",
+                    },
+                });
+                await db.selfAuditRequest.create({
+                    data: {
+                        id: SelfAuditRequestId.create(),
+                        organizationId: S.org,
+                        campaignId,
+                        d4hMemberId: request.memberId,
+                        memberName: request.memberName,
+                        heldItems: request.heldItems,
+                        deliveryStatus: "Sent",
+                        submittedAt: request.submittedData ? submittedAt : null,
+                        withdrawnAt: request.withdrawn ? submittedAt : null,
+                        submittedData: request.submittedData ?? undefined,
+                        formInstanceId,
+                    },
+                });
+            }
+
+            await db.d4HTask.create({
+                data: {
+                    id: D4HTaskId.create(),
+                    organizationId: S.org,
+                    d4hTeamId: TEAM_ID,
+                    resourceType: "Equipment",
+                    resourceId: 3,
+                    itemLabel: "#000003 Helmet",
+                    kind: "SetSerial",
+                    payload: { serial: "SN-9" },
+                },
+            });
+        });
+
+        beforeEach(() => {
+            vi.mocked(fetchD4HTeamEquipmentItems).mockResolvedValue([
+                item(1, 42, HELMET_KIND),
+                item(3, 99, HELMET_KIND, { serial: "SN-1" }),
+                item(5, 45, HELMET_KIND),
+            ]);
+        });
+
+        it("lists each submitted member's differences, by name", async () => {
+            const result = await listDifferences(ctx(), { accessToken, campaignId });
+
+            expect(result.permissions).toEqual({ update: true, create: false });
+            expect(
+                result.members.map(({ memberName, inTeam, differences }) => ({
+                    memberName,
+                    inTeam,
+                    differences: differences.map(({ key, kind, fix, state, reason }) => ({
+                        key,
+                        kind,
+                        fix,
+                        state,
+                        reason,
+                    })),
+                })),
+            ).toEqual([
+                { memberName: "Ana Lee", inTeam: true, differences: [] },
+                {
+                    memberName: "John Smith",
+                    inTeam: true,
+                    differences: [
+                        {
+                            key: "notheld:1",
+                            kind: "NotHeld",
+                            fix: { type: "patch-lost" },
+                            state: "selectable",
+                            reason: undefined,
+                        },
+                    ],
+                },
+                {
+                    memberName: "Kim Tan",
+                    inTeam: true,
+                    differences: [
+                        {
+                            key: "unrecorded:" + S.helmet,
+                            kind: "Unrecorded",
+                            fix: { type: "create", variant: null, serial: null },
+                            state: "unavailable",
+                            reason: "Needs D4H Equipment CREATE",
+                        },
+                        {
+                            key: "unlinked:" + deletedTemplate.id,
+                            kind: "Unlinked",
+                            fix: null,
+                            state: "info",
+                            reason: undefined,
+                        },
+                    ],
+                },
+                {
+                    memberName: "Lee Gone",
+                    inTeam: false,
+                    differences: [
+                        {
+                            key: "serial:3",
+                            kind: "Serial",
+                            fix: { type: "task", taskKind: "SetSerial", serial: "SN-9" },
+                            state: "queued",
+                            reason: "Task already queued",
+                        },
+                    ],
+                },
+            ]);
+            expect(fetchD4HTeamEquipmentItems).toHaveBeenCalledWith(accessToken, TEAM_ID);
+        });
+
+        it("throws NotFoundError for another org's campaign", async () => {
+            await expect(
+                listDifferences(ctx(), { accessToken, campaignId: otherOrgCampaignId }),
+            ).rejects.toThrow(NotFoundError);
+        });
+
+        it("throws NotFoundError when the token doesn't reach the D4H team", async () => {
+            vi.mocked(getD4HTokenMetadata).mockResolvedValueOnce({
+                d4HTeams: [],
+                d4HOrganisations: [],
+            });
+            await expect(listDifferences(ctx(), { accessToken, campaignId })).rejects.toThrow(
+                NotFoundError,
+            );
         });
     });
 

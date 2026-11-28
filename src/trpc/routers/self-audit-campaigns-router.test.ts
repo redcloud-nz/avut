@@ -50,6 +50,19 @@ vi.mock("@/server/d4h-access-token", () => ({
 
 vi.mock("@/server/d4h-api/client", () => ({
     expireD4HTeamMembers: vi.fn(),
+    fetchD4HWhoamiCached: vi.fn(async () => ({
+        account: { id: 1, resourceType: "Account" },
+        members: [
+            {
+                id: 500,
+                resourceType: "Member",
+                hasAccess: true,
+                name: "Ana Admin",
+                owner: { id: TEAM_ID, resourceType: "Team", title: "Rescue Team" },
+                permissions: { Equipment: { UPDATE: true, CREATE: true } },
+            },
+        ],
+    })),
     getD4HTokenMetadata: vi.fn(async () => ({
         d4HTeams: [
             { id: TEAM_ID, resourceType: "Team", title: "Rescue Team", permissions: {} },
@@ -1102,6 +1115,147 @@ describe("selfAuditCampaignsRouter", () => {
         it("refuses an org owner without the system admin role", async () => {
             await expect(
                 owner().getNeedsReport({ organizationId: T.org, campaignId }),
+            ).rejects.toMatchObject({ code: "FORBIDDEN" });
+        });
+    });
+
+    describe("listDifferences", () => {
+        const campaignId = SelfAuditCampaignId.create();
+        const elsewhereOrg = OrganizationId.create();
+        const elsewhereCampaignId = SelfAuditCampaignId.create();
+        const johnRequestId = SelfAuditRequestId.create();
+        const submittedAt = new Date("2026-11-22T09:00:00Z");
+
+        const template: SelfAuditTemplate = {
+            id: T.helmet,
+            category: "PPE",
+            name: "Helmet",
+            variants: [{ id: T.helmetVariant, label: "Petzl Vertex" }],
+            requireSN: false,
+            sized: false,
+            sizeOptional: true,
+            sizeOptions: [],
+        };
+        const heldHelmet: SelfAuditHeldItem = {
+            id: "1",
+            templateId: T.helmet,
+            description: "Helmet",
+            serial: null,
+            variantId: null,
+            problems: [],
+        };
+        /** Has item 1, with a serial D4H doesn't have. */
+        const newSerial: SelfAuditResponseData = {
+            held: { "1": { ...EMPTY_ANSWER, has: "yes", serial: "SN-2" } },
+            missing: {},
+            extras: [],
+            comments: "",
+        };
+
+        beforeAll(async () => {
+            await db.organization.create({
+                data: {
+                    id: elsewhereOrg,
+                    name: "Elsewhere 2",
+                    slug: "elsewhere-2",
+                    createdAt: new Date(),
+                },
+            });
+            for (const [id, organizationId] of [
+                [campaignId, T.org],
+                [elsewhereCampaignId, elsewhereOrg],
+            ] as const) {
+                await db.selfAuditCampaign.create({
+                    data: {
+                        id,
+                        organizationId,
+                        name: "Differences",
+                        teamId: T.team,
+                        d4hTeamId: TEAM_ID,
+                        d4hTeamName: "Rescue Team",
+                        bundleName: "Responder",
+                        templates: [template],
+                        sentAt: submittedAt,
+                    },
+                });
+            }
+
+            for (const request of [
+                { id: johnRequestId, memberId: 42, memberName: "John Smith" },
+                { memberId: 43, memberName: "Ana Lee", withdrawn: true },
+                { memberId: 44, memberName: "Kim Park", unsubmitted: true },
+            ]) {
+                const formInstanceId = FormInstanceId.create();
+                await db.formInstance.create({
+                    data: {
+                        id: formInstanceId,
+                        formKey: "d4h-i3-self-audit",
+                        organizationId: T.org,
+                        formData: newSerial,
+                        formStatus: "Draft",
+                    },
+                });
+                await db.selfAuditRequest.create({
+                    data: {
+                        id: request.id ?? SelfAuditRequestId.create(),
+                        organizationId: T.org,
+                        campaignId,
+                        d4hMemberId: request.memberId,
+                        memberName: request.memberName,
+                        heldItems: [heldHelmet],
+                        deliveryStatus: "Sent",
+                        submittedAt: request.unsubmitted ? null : submittedAt,
+                        withdrawnAt: request.withdrawn ? submittedAt : null,
+                        submittedData: request.unsubmitted ? undefined : newSerial,
+                        formInstanceId,
+                    },
+                });
+            }
+        });
+
+        it("lists the submitted, not withdrawn, members' differences", async () => {
+            expect(await admin().listDifferences({ organizationId: T.org, campaignId })).toEqual({
+                permissions: { update: true, create: true },
+                members: [
+                    {
+                        requestId: johnRequestId,
+                        memberName: "John Smith",
+                        inTeam: true,
+                        differences: [
+                            {
+                                key: "serial:1",
+                                kind: "Serial",
+                                templateId: T.helmet,
+                                itemId: 1,
+                                label: "#1 Helmet",
+                                detail: "D4H: no serial; they said SN-2",
+                                fix: { type: "task", taskKind: "SetSerial", serial: "SN-2" },
+                                state: "selectable",
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("is NOT_FOUND for another org's campaign", async () => {
+            await expect(
+                admin().listDifferences({ organizationId: T.org, campaignId: elsewhereCampaignId }),
+            ).rejects.toMatchObject({ code: "NOT_FOUND" });
+        });
+
+        it("is PRECONDITION_FAILED without a personal D4H token", async () => {
+            vi.mocked(getConfiguredD4HAccessToken).mockRejectedValue(
+                new NotConfiguredError("No personal D4H access token."),
+            );
+            await expect(
+                admin().listDifferences({ organizationId: T.org, campaignId }),
+            ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+        });
+
+        it("refuses an org owner without the system admin role", async () => {
+            await expect(
+                owner().listDifferences({ organizationId: T.org, campaignId }),
             ).rejects.toMatchObject({ code: "FORBIDDEN" });
         });
     });

@@ -19,6 +19,7 @@ import {
     SelfAuditTemplate,
 } from "@/lib/schemas/self-audit";
 import { TeamId } from "@/lib/schemas/team";
+import { SelfAuditDifferences } from "@/lib/self-audit-differences";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import * as SelfAuditCampaigns from "@/server/services/self-audit-campaigns";
 
@@ -258,6 +259,23 @@ export const selfAuditCampaignsRouter = createTrpcRouter({
         .output(z.array(SelfAuditCampaignSummary))
         .query(async ({ ctx }) => {
             return SelfAuditCampaigns.listCampaigns(ctx);
+        }),
+
+    /**
+     * The campaign's differences from D4H, read live, per submitted (and not withdrawn) member:
+     * each with its fix and whether it can be applied, and the token's D4H Equipment UPDATE and
+     * CREATE on the campaign's D4H team.
+     *
+     * @throws TRPCError(PRECONDITION_FAILED) if the caller has no personal D4H token here.
+     * @throws TRPCError(NOT_FOUND) if the campaign isn't in the organization, or the token doesn't
+     * reach its D4H team.
+     */
+    listDifferences: selfAuditProcedure
+        .input(z.object({ campaignId: SelfAuditCampaignId.schema }))
+        .output(SelfAuditDifferences)
+        .query(async ({ ctx, input: { campaignId } }) => {
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
+            return SelfAuditCampaigns.listDifferences(ctx, { accessToken, campaignId });
         }),
 
     /**
