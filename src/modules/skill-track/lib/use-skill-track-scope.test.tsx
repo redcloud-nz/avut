@@ -42,9 +42,16 @@ describe("useSkillTrackScope", () => {
 
     // Org scope has no TeamProvider, and neither has a page outside both scopes (the `/docs`
     // demos): both read as org scope.
-    it.each(["org scope", "no scope"])("is org scope in %s", () => {
+    it("is org scope without a TeamProvider", () => {
         expect(renderHook(() => useSkillTrackScope()).result.current).toEqual({
             scope: "organization",
         });
+    });
+
+    it("returns the same object across renders", () => {
+        const { result, rerender } = renderHook(() => useSkillTrackScope());
+        const first = result.current;
+        rerender();
+        expect(result.current).toBe(first);
     });
 });

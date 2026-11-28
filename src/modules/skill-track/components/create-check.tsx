@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
 import { skillChecksEffects } from "@/client/skill-checks-effects";
 import { DatePicker } from "@/components/controls/date-picker";
@@ -45,6 +45,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
+import type { Permissions } from "@/lib/permissions";
+import type { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
 import { SkillId } from "@/lib/schemas/skill";
 import {
@@ -54,7 +56,10 @@ import {
 } from "@/lib/schemas/skill-check";
 import type { TeamId } from "@/lib/schemas/team";
 import { SkillCheckResultIcon } from "@/modules/skill-track/components/result-icon";
-import { useSkillTrackScope } from "@/modules/skill-track/lib/use-skill-track-scope";
+import {
+    useSkillTrackScope,
+    type SkillTrackScope,
+} from "@/modules/skill-track/lib/use-skill-track-scope";
 import { trpc } from "@/trpc/client";
 
 const CreateCheckSchema = z.object({
@@ -66,6 +71,16 @@ const CreateCheckSchema = z.object({
     notes: z.string(),
 });
 
+/**
+ * What adding a check needs in a scope: creating it, and reading the Assessee picker's list
+ * (the org's personnel, or in team scope the team's memberships).
+ */
+export function createCheckPermissions(scope: SkillTrackScope["scope"]): Permissions {
+    return scope === "team"
+        ? { skillCheck: ["create"], team: ["view"] }
+        : { skillCheck: ["create"], person: ["view"] };
+}
+
 export function SkillTrack_CreateCheck_Dialog() {
     const [action, setAction] = useQueryState(
         "action",
@@ -73,7 +88,8 @@ export function SkillTrack_CreateCheck_Dialog() {
     );
     const dialogOpen = action === "create-check";
 
-    const canCreateCheck = useHasPermission({ skillCheck: ["create"], person: ["view"] });
+    const skillTrackScope = useSkillTrackScope();
+    const canCreateCheck = useHasPermission(createCheckPermissions(skillTrackScope.scope));
     useActionHotkeys([
         {
             verb: "create",
@@ -116,55 +132,65 @@ export function SkillTrack_CreateCheck_Dialog() {
 /** The people a check can be recorded on, for the Assessee picker. */
 type Assessee = { id: PersonId; name: string };
 
-/** Picks the assessees for the scope, then renders the form with them. */
-function CreateCheck_Body({ onDone }: { onDone: () => void }) {
-    const skillTrackScope = useSkillTrackScope();
-    return skillTrackScope.scope === "team" ? (
-        <CreateCheck_TeamBody teamId={skillTrackScope.team.id} onDone={onDone} />
-    ) : (
-        <CreateCheck_OrgBody onDone={onDone} />
-    );
-}
-
-/** Org scope: anyone in the organisation's personnel. */
-function CreateCheck_OrgBody({ onDone }: { onDone: () => void }) {
-    const organization = useOrganization();
-    const { data: personnel } = useSuspenseQuery(
-        trpc.personnel.listPersonnel.queryOptions({ organizationId: organization.id }),
-    );
-    return <CreateCheck_Form assessees={personnel} onDone={onDone} />;
-}
-
 /**
- * Team scope: the team's people with an `Active` membership whose person isn't `Deleted`, the
- * rule a team session's assessees follow (`sessionTeamAssesseeIds`). The Checks page prefetches
- * the memberships.
+ * The query for the assessees in scope. Org scope: anyone in the organisation's personnel. Team
+ * scope: the team's people with an `Active` membership whose person isn't `Deleted`, the rule a
+ * team session's assessees follow (`sessionTeamAssesseeIds`); the Checks page prefetches the
+ * memberships.
  */
-function CreateCheck_TeamBody({ teamId, onDone }: { teamId: TeamId; onDone: () => void }) {
-    const organization = useOrganization();
-    const { data: memberships } = useSuspenseQuery(
-        trpc.teams.listTeamMemberships.queryOptions({ organizationId: organization.id, teamId }),
-    );
-    const assessees = memberships
-        .filter(
-            (membership) =>
-                membership.status === "Active" && membership.person.status !== "Deleted",
-        )
-        .map((membership) => membership.person);
-    return <CreateCheck_Form assessees={assessees} onDone={onDone} />;
+function assesseeQueryOptions(organizationId: OrganizationId, teamId: TeamId | null) {
+    return teamId
+        ? trpc.teams.listTeamMemberships.queryOptions(
+              { organizationId, teamId },
+              {
+                  select: (memberships): Assessee[] =>
+                      memberships
+                          .filter(
+                              (membership) =>
+                                  membership.status === "Active" &&
+                                  membership.person.status !== "Deleted",
+                          )
+                          .map((membership) => membership.person),
+              },
+          )
+        : trpc.personnel.listPersonnel.queryOptions(
+              { organizationId },
+              { select: (personnel): Assessee[] => personnel },
+          );
 }
 
-function CreateCheck_Form({ assessees, onDone }: { assessees: Assessee[]; onDone: () => void }) {
+/** Picks the assessee query for the scope, then renders the form with it. */
+function CreateCheck_Body({ onDone }: { onDone: () => void }) {
+    const organization = useOrganization();
+    const skillTrackScope = useSkillTrackScope();
+    const teamId = skillTrackScope.scope === "team" ? skillTrackScope.team.id : null;
+    return (
+        <CreateCheck_Form
+            assesseeQuery={assesseeQueryOptions(organization.id, teamId)}
+            onDone={onDone}
+        />
+    );
+}
+
+function CreateCheck_Form({
+    assesseeQuery,
+    onDone,
+}: {
+    assesseeQuery: ReturnType<typeof assesseeQueryOptions>;
+    onDone: () => void;
+}) {
     const organization = useOrganization();
 
     // The assessor is always the current user's linked person — mirrors the session
-    // check-taking flow, where the recorder can't stand in for someone else.
-    const [{ data: personSelf }, { data: skills }] = useSuspenseQueries({
+    // check-taking flow, where the recorder can't stand in for someone else. All three load
+    // together, rather than the assessees first.
+    const [{ data: personSelf }, { data: skills }, { data: assessees }] = useSuspenseQueries({
         queries: [
             trpc.personnel.getPersonSelf.queryOptions({ organizationId: organization.id }),
             trpc.skillPackageSubscriptions.listAssessableSkills.queryOptions({
                 organizationId: organization.id,
             }),
+            assesseeQuery,
         ],
     });
 

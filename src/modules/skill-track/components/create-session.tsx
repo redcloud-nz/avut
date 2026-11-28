@@ -163,7 +163,12 @@ export function SkillTrack_CreateSession_Dialog() {
                                 mutation.mutate({
                                     organizationId: organization.id,
                                     skillCheckSessionId: SkillCheckSessionId.create(),
-                                    create: parsed.data,
+                                    // The hidden field's default already holds the pinned team;
+                                    // send it explicitly so the pin doesn't rest on that.
+                                    create: {
+                                        ...parsed.data,
+                                        teamId: pinnedTeamId ?? parsed.data.teamId,
+                                    },
                                 });
                             },
                             (errors) => {

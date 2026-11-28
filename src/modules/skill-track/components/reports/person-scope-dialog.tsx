@@ -71,9 +71,10 @@ export function SkillTrack_PersonScopeDialog({
 }
 
 /**
- * The people on a team's roster (a non-`Deleted` membership), leaving out `Deleted` people,
- * sorted by name. The team-scope report reads it to check `?person=` too, so the page
- * prefetches it.
+ * The Active people on a team's roster (a non-`Deleted` membership), sorted by name. Like the
+ * org picker, it leaves out Archived people: the competency report only resolves Active
+ * personnel, so theirs would be empty. The team-scope report reads it to check `?person=` too,
+ * so the page prefetches it.
  */
 export function useTeamRosterPeople(teamId: TeamId) {
     const organization = useOrganization();
@@ -87,7 +88,7 @@ export function useTeamRosterPeople(teamId: TeamId) {
             R.pipe(
                 memberships,
                 R.map((membership) => membership.person),
-                R.filter((person) => person.status !== "Deleted"),
+                R.filter((person) => person.status === "Active"),
                 R.sortBy((person) => person.name),
             ),
         [memberships],

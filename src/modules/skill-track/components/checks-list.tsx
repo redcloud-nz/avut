@@ -24,9 +24,13 @@ import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { assessorDisplayName, getSkillCheckResultLabel } from "@/lib/schemas/skill-check";
 import { cn } from "@/lib/utils";
 import { SkillTrack_ChecksFilterBar } from "@/modules/skill-track/components/checks-filter-bar";
-import { SkillTrack_CreateCheck_Dialog } from "@/modules/skill-track/components/create-check";
+import {
+    createCheckPermissions,
+    SkillTrack_CreateCheck_Dialog,
+} from "@/modules/skill-track/components/create-check";
 import {
     CHECK_SEARCH_PAGE_SIZE,
+    checkSearchFilters,
     checkSearchInput,
     checkSearchPage,
     checkSearchParsers,
@@ -169,7 +173,8 @@ export default function SkillTrack_ChecksList() {
         },
     });
 
-    const hasFilters = Object.keys(input.filters).length > 0;
+    // The user's filters only: `input.filters` also holds the team scope's `teamId`.
+    const hasFilters = Object.keys(checkSearchFilters(deferredParams)).length > 0;
 
     let results: ReactNode;
     if (total === 0) {
@@ -207,7 +212,7 @@ export default function SkillTrack_ChecksList() {
             <Saratoga.Header>
                 <Saratoga.Title>Skill Checks</Saratoga.Title>
                 <Saratoga.Actions>
-                    <Protect permissions={{ skillCheck: ["create"], person: ["view"] }}>
+                    <Protect permissions={createCheckPermissions(skillTrackScope.scope)}>
                         <SkillTrack_CreateCheck_Dialog />
                     </Protect>
                 </Saratoga.Actions>

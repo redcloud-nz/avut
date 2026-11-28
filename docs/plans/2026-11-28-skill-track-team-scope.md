@@ -123,8 +123,11 @@ New: Skill Track in team scope (team's sessions, checks on the team's people, re
 
 ## Review notes
 
-- (group A) `use-skill-track-scope.test.tsx`: the `it.each(["org scope", "no scope"])` runs the same unwrapped render twice. Make the org case a real org-only wrapper, or keep one "no TeamProvider" case.
-- (group A) `useSkillTrackScope()` returns a new object every render. Hoist a module-level `ORG_SCOPE` constant and `useMemo` the team branch on `team`, since shared components will use it as an effect/memo dependency.
-- (group C) `create-session.tsx`: send `teamId: pinnedTeamId ?? parsed.data.teamId` explicitly, as `update-session.tsx` does, rather than relying on the hidden field's default.
-- (group C) `session-menu.tsx`: the foreign-session menu hand-copies `EntityActionMenu`'s trigger and loses its open-menu hotkey. Use `EntityActionMenu` with no actions if it supports that cleanly; otherwise leave it.
-- (Task 9) The team person picker (`useTeamRosterPeople`) lists Archived people, who then hit the "not an active member" empty state because `getCompetencyMatrix` returns Active people only. List only Active people there, matching the org picker.
+- (group A) `use-skill-track-scope.test.tsx`: the `it.each(["org scope", "no scope"])` runs the same unwrapped render twice. Make the org case a real org-only wrapper, or keep one "no TeamProvider" case. (fixed)
+- (group A) `useSkillTrackScope()` returns a new object every render. Hoist a module-level `ORG_SCOPE` constant and `useMemo` the team branch on `team`, since shared components will use it as an effect/memo dependency. (fixed)
+- (group C) `create-session.tsx`: send `teamId: pinnedTeamId ?? parsed.data.teamId` explicitly, as `update-session.tsx` does, rather than relying on the hidden field's default. (fixed)
+- (group C) `session-menu.tsx`: the foreign-session menu hand-copies `EntityActionMenu`'s trigger and loses its open-menu hotkey. Use `EntityActionMenu` with no actions if it supports that cleanly; otherwise leave it. (left: `EntityActionMenu` always renders the "Actions" label, so with no actions it shows an empty group; supporting that means changing the shared component)
+- (Task 9) The team person picker (`useTeamRosterPeople`) lists Archived people, who then hit the "not an active member" empty state because `getCompetencyMatrix` returns Active people only. List only Active people there, matching the org picker. (fixed)
+- (Task 8) `checks-list.tsx` `hasFilters` counts the `teamId` that `checkSearchInput` adds, so an empty team Checks page says "No skill checks match these filters." instead of "No skill checks have been recorded yet." Count only the user's filters. (fixed)
+- (Task 8) Add Check's `<Protect>` (`checks-list.tsx`) and the `canCreateCheck` hotkey gate (`create-check.tsx`) still name `person: ["view"]`; the team path reads `listTeamMemberships`. In team scope gate on `{ skillCheck: ["create"], team: ["view"] }`, both places. (fixed)
+- (Task 8) The org Add Check dialog now fetches in two steps (assessees suspend before `getPersonSelf`/`listAssessableSkills` start). Keep all three in one `useSuspenseQueries` again, e.g. by passing the assessee query options into `CreateCheck_Form`. (fixed)
