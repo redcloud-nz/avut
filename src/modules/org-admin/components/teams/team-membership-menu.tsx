@@ -9,13 +9,18 @@ import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { ObjectIcons } from "@/components/icons";
 import { Teams_RemoveTeamMember_Dialog } from "@/components/teams/remove-team-member";
-import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
+import { type MenuActionProps } from "@/components/ui/menu-action";
+import { RecordCardMenu } from "@/components/ui/record-card-actions";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonRef } from "@/lib/schemas/person";
 import { TeamData } from "@/lib/schemas/team";
 
+/**
+ * The Membership card's ⋮ (the page's primary record card): Remove from team, for a viewer with
+ * `team: ["delete"]`. Mounts its dialog, which goes back to the team's members on success.
+ */
 export function AdminModule_TeamMembership_Menu({
     team,
     person,
@@ -29,20 +34,20 @@ export function AdminModule_TeamMembership_Menu({
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["remove"] as const));
     const canDelete = useHasPermission({ team: ["delete"] });
 
-    const actions: MenuActionProps[] = [
-        {
+    const actions: MenuActionProps[] = [];
+    if (canDelete) {
+        actions.push({
             verb: "delete",
             label: "Remove from team",
             icon: <ObjectIcons.Delete />,
             onSelect: () => void setAction("remove", { history: "push" }),
-            disabled: !canDelete,
             destructive: true,
-        },
-    ];
+        });
+    }
 
     return (
         <>
-            <EntityActionMenu actions={actions} category="Team membership" />
+            <RecordCardMenu actions={actions} category="Team membership" primary />
 
             <Teams_RemoveTeamMember_Dialog
                 organizationId={organization.id}

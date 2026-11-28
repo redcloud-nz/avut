@@ -13,8 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
 import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
-import { ObjectIcons } from "@/components/icons";
-import { Button, MutationButton } from "@/components/ui/button";
+import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogBody,
@@ -35,6 +34,7 @@ import {
     InputGroupInput,
     InputGroupText,
 } from "@/components/ui/input-group";
+import { RecordCardEditButton } from "@/components/ui/record-card-actions";
 import {
     Select,
     SelectContent,
@@ -50,10 +50,16 @@ import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
 import { trpc } from "@/trpc/client";
 
+/**
+ * The Skill card's pencil and the `?action=update` dialog it opens. `primary` on the page's
+ * primary record card, so ⌥E opens it.
+ */
 export function SkillPackageBuilder_UpdateSkill_Dialog({
     skill,
+    primary = false,
 }: {
     skill: Skill & { skillGroup: SkillGroup; skillPackage: SkillPackage };
+    primary?: boolean;
 }) {
     const organization = useOrganization();
 
@@ -113,9 +119,7 @@ export function SkillPackageBuilder_UpdateSkill_Dialog({
     return (
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Update skill">
-                    <ObjectIcons.Edit />
-                </Button>
+                <RecordCardEditButton label="Edit skill" category="Skills" primary={primary} />
             </DialogTrigger>
             <DialogContent size="xl">
                 <DialogHeader>

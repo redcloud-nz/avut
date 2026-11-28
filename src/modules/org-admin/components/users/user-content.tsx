@@ -7,6 +7,7 @@
 
 import { ArrowUpRightIcon } from "lucide-react";
 import Link from "next/link";
+import { useRef } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
@@ -22,7 +23,11 @@ import { route } from "@/lib/routes";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { UserId } from "@/lib/schemas/user";
 import { AdminModule_UpdateUser_Dialog } from "@/modules/org-admin/components/users/update-user";
-import { AdminModule_User_Menu } from "@/modules/org-admin/components/users/user-menu";
+import {
+    AdminModule_User_ActionsCard,
+    AdminModule_User_LinkedPersonMenu,
+    AdminModule_User_Menu,
+} from "@/modules/org-admin/components/users/user-menu";
 import { AdminModule_UserTeams_Card } from "@/modules/org-admin/components/users/user-teams-card";
 import { trpc } from "@/trpc/client";
 
@@ -30,6 +35,9 @@ export function AdminModule_User_Content({ userId }: { userId: UserId }) {
     const organization = useOrganization();
     const slug = organization.slug;
     const { data: session } = useSession();
+
+    // The User card's pencil: where Link person and Unlink return focus once their button is gone.
+    const editButtonRef = useRef<HTMLButtonElement>(null);
 
     const { data: members } = useSuspenseQuery(
         trpc.organizations.listMembers.queryOptions({ organizationId: organization.id }),
@@ -53,23 +61,28 @@ export function AdminModule_User_Content({ userId }: { userId: UserId }) {
                 />
                 <Saratoga.Header>
                     <Saratoga.Title>{member.user.name}</Saratoga.Title>
-                    <Saratoga.Actions>
-                        <AdminModule_User_Menu
-                            userId={userId}
-                            member={member}
-                            linkedPerson={linkedPerson}
-                            currentUserId={session?.user.id}
-                        />
-                    </Saratoga.Actions>
                 </Saratoga.Header>
                 <Saratoga.Columns>
                     <Saratoga.Column slot="main">
                         <RecordCard
                             label="User"
                             action={
-                                <Protect permissions={{ member: ["update"] }}>
-                                    <AdminModule_UpdateUser_Dialog organizationUser={member} />
-                                </Protect>
+                                <>
+                                    <Protect permissions={{ member: ["update"] }}>
+                                        <AdminModule_UpdateUser_Dialog
+                                            organizationUser={member}
+                                            primary
+                                            triggerRef={editButtonRef}
+                                        />
+                                    </Protect>
+                                    <AdminModule_User_Menu
+                                        userId={userId}
+                                        member={member}
+                                        linkedPerson={linkedPerson}
+                                        currentUserId={session?.user.id}
+                                        returnFocusRef={editButtonRef}
+                                    />
+                                </>
                             }
                         >
                             <CardContent>
@@ -101,18 +114,21 @@ export function AdminModule_User_Content({ userId }: { userId: UserId }) {
                                     { slug, person_id: linkedPerson.id },
                                 )}
                                 action={
-                                    <Button variant="ghost" size="icon" asChild>
-                                        <Link
-                                            href={route(
-                                                "/orgs/[slug]/admin/personnel/[person_id]",
-                                                { slug, person_id: linkedPerson.id },
-                                            )}
-                                            aria-label="Open person"
-                                            title="Open person"
-                                        >
-                                            <ArrowUpRightIcon />
-                                        </Link>
-                                    </Button>
+                                    <>
+                                        <Button variant="ghost" size="icon" asChild>
+                                            <Link
+                                                href={route(
+                                                    "/orgs/[slug]/admin/personnel/[person_id]",
+                                                    { slug, person_id: linkedPerson.id },
+                                                )}
+                                                aria-label="Open person"
+                                                title="Open person"
+                                            >
+                                                <ArrowUpRightIcon />
+                                            </Link>
+                                        </Button>
+                                        <AdminModule_User_LinkedPersonMenu />
+                                    </>
                                 }
                             >
                                 <CardContent>
@@ -138,6 +154,7 @@ export function AdminModule_User_Content({ userId }: { userId: UserId }) {
                         )}
                     </Saratoga.Column>
                     <Saratoga.Column slot="secondary">
+                        <AdminModule_User_ActionsCard linkedPerson={linkedPerson} />
                         <AdminModule_UserTeams_Card userId={userId} />
                     </Saratoga.Column>
                 </Saratoga.Columns>

@@ -26,7 +26,10 @@ import { UserBanStatusBadge } from "@/components/ui/status-badge";
 import { route } from "@/lib/routes";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { UserId } from "@/lib/schemas/user";
-import { SystemAdmin_UserActions_Menu } from "@/modules/system-admin/components/users/user-actions-menu";
+import {
+    SystemAdmin_User_ActionsCard,
+    SystemAdmin_UserActions_Menu,
+} from "@/modules/system-admin/components/users/user-actions-menu";
 import { trpc } from "@/trpc/client";
 
 export function SystemAdmin_User_Content({ userId }: { userId: UserId }) {
@@ -40,14 +43,11 @@ export function SystemAdmin_User_Content({ userId }: { userId: UserId }) {
                 <Saratoga.Title badges={<UserBanStatusBadge banned={user.banned} />}>
                     {user.name}
                 </Saratoga.Title>
-                <Saratoga.Actions>
-                    <SystemAdmin_UserActions_Menu user={user} />
-                </Saratoga.Actions>
             </Saratoga.Header>
 
             <Saratoga.Columns>
                 <Saratoga.Column slot="main">
-                    <RecordCard label="User">
+                    <RecordCard label="User" action={<SystemAdmin_UserActions_Menu user={user} />}>
                         <CardContent>
                             <DataList>
                                 <RecordCardId label="User ID" id={user.id} />
@@ -75,6 +75,7 @@ export function SystemAdmin_User_Content({ userId }: { userId: UserId }) {
                 </Saratoga.Column>
 
                 <Saratoga.Column slot="secondary">
+                    <SystemAdmin_User_ActionsCard user={user} />
                     <section aria-labelledby={organizationsHeadingId} className="space-y-2">
                         <div className="flex min-h-8 items-center justify-between gap-2 pl-1">
                             <h2 id={organizationsHeadingId} className="text-base font-medium">

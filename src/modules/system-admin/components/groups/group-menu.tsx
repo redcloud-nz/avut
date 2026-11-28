@@ -7,17 +7,18 @@
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { ObjectIcons } from "@/components/icons";
-import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
+import { type MenuActionProps } from "@/components/ui/menu-action";
+import { RecordCardMenu } from "@/components/ui/record-card-actions";
 import { OrganizationGroupId } from "@/lib/schemas/organization-group";
 
 import { SystemAdmin_DeleteGroup_Dialog } from "./delete-group-dialog";
 
-const ACTIONS = ["edit", "add-member", "delete"] as const;
+const ACTIONS = ["delete"] as const;
 
 /**
- * Header actions menu for a group's detail page. Edit and Add organisation open the dialogs
- * that the Details and Members cards render (they share the `?action=` param); Delete's dialog
- * lives here.
+ * The Group card's ⋮ (the page's primary record card): Delete, whose dialog lives here. Edit is
+ * the card's pencil and Add organisation the Members card's Add; each of those dialogs answers
+ * to its own `?action=` verb.
  */
 export function SystemAdmin_Group_Menu({
     group,
@@ -27,18 +28,6 @@ export function SystemAdmin_Group_Menu({
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(ACTIONS));
 
     const actions: MenuActionProps[] = [
-        {
-            verb: "update",
-            label: "Edit",
-            icon: <ObjectIcons.Edit />,
-            onSelect: () => void setAction("edit", { history: "push" }),
-        },
-        {
-            verb: "create",
-            label: "Add organisation",
-            icon: <ObjectIcons.Create />,
-            onSelect: () => void setAction("add-member", { history: "push" }),
-        },
         {
             verb: "delete",
             label: "Delete",
@@ -50,7 +39,7 @@ export function SystemAdmin_Group_Menu({
 
     return (
         <>
-            <EntityActionMenu actions={actions} category="Groups" />
+            <RecordCardMenu actions={actions} category="Groups" primary />
 
             <SystemAdmin_DeleteGroup_Dialog
                 group={group}

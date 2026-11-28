@@ -20,7 +20,7 @@ import { PersonId } from "@/lib/schemas/person";
 import { AdminModule_Person_LinkedUser_Card } from "@/modules/org-admin/components/personnel/linked-user-card";
 import { trpc } from "@/trpc/client";
 
-import { AdminModule_PersonMenu } from "./person-menu";
+import { AdminModule_Person_ActionsCard, AdminModule_PersonMenu } from "./person-menu";
 import { AdminModule_Person_TeamMemberships_Card } from "./team-memberships";
 import { AdminModule_UpdatePerson_Dialog } from "./update-person";
 
@@ -47,9 +47,6 @@ export function AdminModule_Person_Content({ personId }: { personId: PersonId })
                 <Saratoga.Title badges={<RecordStatusBadge status={person.status} />}>
                     {person.name}
                 </Saratoga.Title>
-                <Saratoga.Actions>
-                    <AdminModule_PersonMenu person={person} />
-                </Saratoga.Actions>
             </Saratoga.Header>
 
             <Saratoga.Columns>
@@ -62,9 +59,12 @@ export function AdminModule_Person_Content({ personId }: { personId: PersonId })
                             person_id: person.id,
                         })}
                         action={
-                            <Protect permissions={{ person: ["update"] }}>
-                                <AdminModule_UpdatePerson_Dialog person={person} />
-                            </Protect>
+                            <>
+                                <Protect permissions={{ person: ["update"] }}>
+                                    <AdminModule_UpdatePerson_Dialog person={person} primary />
+                                </Protect>
+                                <AdminModule_PersonMenu person={person} />
+                            </>
                         }
                     >
                         <CardContent>
@@ -88,6 +88,7 @@ export function AdminModule_Person_Content({ personId }: { personId: PersonId })
                     </Protect>
                 </Saratoga.Column>
                 <Saratoga.Column slot="secondary">
+                    <AdminModule_Person_ActionsCard person={person} />
                     <Suspense fallback={<CardLoadingFallback />}>
                         <AdminModule_Person_TeamMemberships_Card person={person} />
                     </Suspense>

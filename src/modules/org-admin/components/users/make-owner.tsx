@@ -27,9 +27,8 @@ import { trpc } from "@/trpc/client";
 
 /**
  * `?action=make-owner` confirm dialog on the org-admin Users page — grants a member ownership
- * in addition to whatever other roles they hold. The menu item that opens this is always
- * visible (not `<Protect>`-gated); `member: ["owner"]` is enforced by the mutation itself, and
- * a caller lacking it sees the error surface inside this dialog.
+ * in addition to whatever other roles they hold. The User card's menu offers it only to a
+ * viewer with `member: ["owner"]`, which the mutation enforces too.
  */
 export function AdminModule_MakeOwner_Dialog({
     organizationUser,

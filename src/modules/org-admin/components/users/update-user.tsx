@@ -5,7 +5,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect, useId } from "react";
+import { RefObject, useEffect, useId } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -13,12 +13,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
 import { organizationsEffects } from "@/client/organizations-effects";
-import { ObjectIcons } from "@/components/icons";
 import {
     memberRolesSchema,
     RoleFields,
 } from "@/components/organization-roles/invitation-role-fields";
-import { Button, MutationButton } from "@/components/ui/button";
+import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogBody,
@@ -31,6 +30,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { FieldGroup } from "@/components/ui/field";
+import { RecordCardEditButton } from "@/components/ui/record-card-actions";
 import { ObjectName } from "@/components/ui/typography";
 import { useOrganization } from "@/hooks/use-organization";
 import { hasOwnerRole } from "@/lib/permissions";
@@ -38,10 +38,19 @@ import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { type AuthOrganizationMember } from "@/server/auth";
 import { trpc } from "@/trpc/client";
 
+/**
+ * The User card's pencil and the `?action=update` dialog it opens. `primary` on the page's
+ * primary record card, so ⌥E opens it.
+ */
 export function AdminModule_UpdateUser_Dialog({
     organizationUser,
+    primary = false,
+    triggerRef,
 }: {
     organizationUser: AuthOrganizationMember;
+    primary?: boolean;
+    /** Ref on the pencil, for the page's other dialogs to return focus to. */
+    triggerRef?: RefObject<HTMLButtonElement | null>;
 }) {
     const organization = useOrganization();
 
@@ -98,9 +107,12 @@ export function AdminModule_UpdateUser_Dialog({
     return (
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Update user roles">
-                    <ObjectIcons.Edit />
-                </Button>
+                <RecordCardEditButton
+                    ref={triggerRef}
+                    label="Edit user roles"
+                    category="Users"
+                    primary={primary}
+                />
             </DialogTrigger>
             <DialogContent size="lg">
                 <DialogHeader>

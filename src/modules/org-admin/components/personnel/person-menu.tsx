@@ -4,22 +4,18 @@
  */
 "use client";
 
-import Link from "next/link";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useRef } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 
 import { ObjectIcons } from "@/components/icons";
 import { Teams_AddTeamMembership_Dialog } from "@/components/teams/add-team-membership";
-import {
-    DropdownMenuGroup,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
+import { Button } from "@/components/ui/button";
+import { type MenuActionProps } from "@/components/ui/menu-action";
+import { ActionsCard, RecordCardMenu } from "@/components/ui/record-card-actions";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
 import { PersonData } from "@/lib/schemas/person";
 import { AdminModule_LinkUser_Dialog } from "@/modules/org-admin/components/person-user-link/link-user";
 import { AdminModule_UnlinkPerson_Dialog } from "@/modules/org-admin/components/person-user-link/unlink-person";
@@ -31,158 +27,115 @@ import { AdminModule_InvitePerson_Dialog } from "./invite-person";
 import { AdminModule_RecoverPerson_Dialog } from "./recover-person";
 import { AdminModule_RestorePerson_Dialog } from "./restore-person";
 
-interface AdminModule_PersonMenuProps {
-    person: PersonData;
-}
+/** Every `?action=` the person page's dialogs answer to. Edit's dialog owns `update` itself. */
+const personActions = parseAsStringLiteral([
+    "update",
+    "delete",
+    "invite",
+    "archive",
+    "restore",
+    "recover",
+    "link-user",
+    "unlink-user",
+    "add-membership",
+] as const);
 
-export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) {
+/**
+ * The person's linked user, or `null` once it's known there's none. `undefined` while it loads
+ * or for a viewer without `member: ["view"]` (what the procedure requires alongside
+ * `person: ["view"]`), who never issues the query: treat that as unknown and show neither the
+ * linked nor the unlinked actions.
+ */
+function useLinkedUser(person: PersonData) {
     const organization = useOrganization();
-
-    const [action, setAction] = useQueryState(
-        "action",
-        parseAsStringLiteral([
-            "update",
-            "delete",
-            "invite",
-            "archive",
-            "restore",
-            "recover",
-            "link-user",
-            "unlink-user",
-            "add-membership",
-        ] as const),
-    );
-
-    const canUpdate = useHasPermission({ person: ["update"] });
-    const canDelete = useHasPermission({ person: ["delete"] });
-    const canInvite = useHasPermission({ invitation: ["create"] });
     const canViewMember = useHasPermission({ member: ["view"] });
-    const canUpdateLink = useHasPermission({ member: ["update"], person: ["update"] });
-    const canAddMembership = useHasPermission({ team: ["update"] });
 
-    // Non-suspense and permission-gated — a caller without `member: ["view"]` (what the
-    // procedure itself requires alongside `person: ["view"]`) never issues this query at all.
-    // While it's loading, or the caller lacks the permission, `linkedUser` is treated as
-    // unknown and the menu defaults to the "not linked" branch (Invite/Link, not Unlink) — the
-    // underlying invite/link/unlink mutations enforce their own permissions regardless of what
-    // the menu displays, so a wrong default here is a UX nit, not a security gap.
-    const { data: linkedUser } = useQuery(
+    const { data } = useQuery(
         trpc.personnel.getLinkedUser.queryOptions(
             { organizationId: organization.id, personId: person.id },
             { enabled: canViewMember },
         ),
     );
+    return data;
+}
 
-    const actions: MenuActionProps[] = [
-        {
-            verb: "update",
-            label: "Edit",
-            icon: <ObjectIcons.Edit />,
-            onSelect: () => setAction("update", { history: "push" }),
-            disabled: !canUpdate,
-        },
-    ];
-    if (person.status === "Active") {
-        actions.push({
-            verb: "create",
-            label: "Add to team",
-            icon: <ObjectIcons.Create />,
-            onSelect: () => setAction("add-membership", { history: "push" }),
-            disabled: !canAddMembership,
-        });
-    }
-    if (person.status === "Active" && !linkedUser) {
-        actions.push({
-            verb: "invite",
-            label: "Invite to AVUT",
-            icon: <ObjectIcons.Invite />,
-            onSelect: () => setAction("invite", { history: "push" }),
-            disabled: !canInvite,
-        });
-    }
-    if (linkedUser) {
-        actions.push({
-            verb: "unlink",
-            label: "Unlink from user",
-            icon: <ObjectIcons.Unlink />,
-            onSelect: () => setAction("unlink-user", { history: "push" }),
-            disabled: !canUpdateLink,
-        });
-    } else {
-        actions.push({
-            verb: "link",
-            label: "Link to user",
-            icon: <ObjectIcons.Link />,
-            onSelect: () => setAction("link-user", { history: "push" }),
-            disabled: !canUpdateLink,
-        });
-    }
-    if (person.status === "Active") {
+/**
+ * The Person card's ⋮ (the page's primary record card): Archive, Restore or Recover, Delete, and
+ * Link to user for a person who isn't Active (an Active one gets it in
+ * {@link AdminModule_Person_ActionsCard}). Edit is the card's pencil, History its "Updated"
+ * footer, Add to team the Team Memberships card's Add, Unlink the Linked User card's ⋮.
+ *
+ * Mounts every dialog on the page, whichever card or button opens it.
+ */
+export function AdminModule_PersonMenu({ person }: { person: PersonData }) {
+    const [action, setAction] = useQueryState("action", personActions);
+
+    const canUpdate = useHasPermission({ person: ["update"] });
+    const canDelete = useHasPermission({ person: ["delete"] });
+    const canUpdateLink = useHasPermission({ member: ["update"], person: ["update"] });
+
+    const linkedUser = useLinkedUser(person);
+
+    // The dialogs below whose button is gone after they succeed (Invite and Link hide the action
+    // card, Unlink the Linked User card) return focus here instead.
+    const triggerRef = useRef<HTMLButtonElement>(null);
+
+    const actions: MenuActionProps[] = [];
+    if (person.status === "Active" && canUpdate) {
         actions.push({
             verb: "archive",
             label: "Archive",
             icon: <ObjectIcons.Archive />,
             onSelect: () => setAction("archive", { history: "push" }),
-            disabled: !canUpdate,
         });
-    } else if (person.status === "Archived") {
+    }
+    if (person.status === "Archived" && canUpdate) {
         actions.push({
             verb: "restore",
             label: "Restore",
             icon: <ObjectIcons.Restore />,
             onSelect: () => setAction("restore", { history: "push" }),
-            disabled: !canUpdate,
         });
-    } else {
+    }
+    if (person.status === "Deleted" && canDelete) {
         actions.push({
             verb: "recover",
             label: "Recover from rubbish",
             icon: <ObjectIcons.Recover />,
             onSelect: () => setAction("recover", { history: "push" }),
-            disabled: !canDelete,
         });
     }
-    if (person.status !== "Deleted") {
+    if (person.status === "Archived" && linkedUser === null && canUpdateLink) {
+        actions.push({
+            verb: "link",
+            label: "Link to user",
+            icon: <ObjectIcons.Link />,
+            onSelect: () => setAction("link-user", { history: "push" }),
+        });
+    }
+    if (person.status !== "Deleted" && canDelete) {
         actions.push({
             verb: "delete",
             label: "Delete",
             icon: <ObjectIcons.Delete />,
             onSelect: () => setAction("delete", { history: "push" }),
-            disabled: !canDelete,
             destructive: true,
         });
     }
 
     return (
         <>
-            <EntityActionMenu
+            <RecordCardMenu
                 actions={actions}
                 category="Personnel"
-                before={
-                    <>
-                        <DropdownMenuGroup>
-                            <DropdownMenuItem asChild>
-                                <Link
-                                    href={route(
-                                        "/orgs/[slug]/admin/personnel/[person_id]/history",
-                                        {
-                                            slug: organization.slug,
-                                            person_id: person.id,
-                                        },
-                                    )}
-                                >
-                                    <ObjectIcons.History /> History
-                                </Link>
-                            </DropdownMenuItem>
-                        </DropdownMenuGroup>
-                        <DropdownMenuSeparator />
-                    </>
-                }
+                primary
+                triggerRef={triggerRef}
             />
 
             {/* Invite Person dialog */}
             <AdminModule_InvitePerson_Dialog
                 person={person}
+                returnFocusRef={triggerRef}
                 open={action === "invite"}
                 onOpenChange={(open) =>
                     setAction(open ? "invite" : null, {
@@ -238,6 +191,7 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
             {/* Link User dialog */}
             <AdminModule_LinkUser_Dialog
                 person={person}
+                returnFocusRef={triggerRef}
                 open={action === "link-user"}
                 onOpenChange={(open) =>
                     setAction(open ? "link-user" : null, {
@@ -252,6 +206,7 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
                     userId={linkedUser.userId}
                     userName={linkedUser.user.name}
                     personName={person.name}
+                    returnFocusRef={triggerRef}
                     open={action === "unlink-user"}
                     onOpenChange={(open) =>
                         setAction(open ? "unlink-user" : null, {
@@ -273,4 +228,56 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
             />
         </>
     );
+}
+
+/**
+ * The bare action card at the top of the person's secondary column: Invite to AVUT and Link to
+ * existing user, for an Active person with no user yet. Renders nothing otherwise, or while the
+ * link is still loading (rather than show buttons that might vanish). The buttons only set
+ * `?action=`; the dialogs are in {@link AdminModule_PersonMenu}.
+ */
+export function AdminModule_Person_ActionsCard({ person }: { person: PersonData }) {
+    const [, setAction] = useQueryState("action", personActions);
+
+    const canInvite = useHasPermission({ invitation: ["create"] });
+    const canUpdateLink = useHasPermission({ member: ["update"], person: ["update"] });
+
+    const linkedUser = useLinkedUser(person);
+    const canBeLinked = person.status === "Active" && linkedUser === null;
+
+    return (
+        <ActionsCard>
+            {canBeLinked && canInvite ? (
+                <Button onClick={() => setAction("invite", { history: "push" })}>
+                    <ObjectIcons.Invite /> Invite to AVUT
+                </Button>
+            ) : null}
+            {canBeLinked && canUpdateLink ? (
+                <Button
+                    variant="outline"
+                    onClick={() => setAction("link-user", { history: "push" })}
+                >
+                    <ObjectIcons.Link /> Link to existing user
+                </Button>
+            ) : null}
+        </ActionsCard>
+    );
+}
+
+/** The Linked User card's ⋮: Unlink from user. The dialog is in {@link AdminModule_PersonMenu}. */
+export function AdminModule_Person_LinkedUserMenu() {
+    const [, setAction] = useQueryState("action", personActions);
+    const canUpdateLink = useHasPermission({ member: ["update"], person: ["update"] });
+
+    const actions: MenuActionProps[] = [];
+    if (canUpdateLink) {
+        actions.push({
+            verb: "unlink",
+            label: "Unlink from user",
+            icon: <ObjectIcons.Unlink />,
+            onSelect: () => setAction("unlink-user", { history: "push" }),
+        });
+    }
+
+    return <RecordCardMenu actions={actions} category="Personnel" label="Linked user actions" />;
 }

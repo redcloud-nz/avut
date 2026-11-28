@@ -14,8 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
 import { d4hNagEffects } from "@/client/d4h-nag-effects";
-import { ObjectIcons } from "@/components/icons";
-import { Button, MutationButton } from "@/components/ui/button";
+import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogBody,
@@ -28,6 +27,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import { RecordCardEditButton } from "@/components/ui/record-card-actions";
 import { ObjectName } from "@/components/ui/typography";
 import { useOrganization } from "@/hooks/use-organization";
 import { useReturnFocus } from "@/hooks/use-return-focus";
@@ -47,10 +47,17 @@ function formValues(rule: Rule) {
 }
 
 /**
- * `?action=update` — self-triggered (Recipe A): the trigger button lives here, and the rule's
- * actions menu can open it too. The rule's team can't change, so the form has no team picker.
+ * `?action=update` — self-triggered (Recipe A): the Rule card's pencil is its trigger, and
+ * `primary` (the page's primary record card) makes ⌥E open it. The rule's team can't change, so
+ * the form has no team picker.
  */
-export function D4HNag_UpdateRule_Dialog({ rule }: { rule: Rule }) {
+export function D4HNag_UpdateRule_Dialog({
+    rule,
+    primary = false,
+}: {
+    rule: Rule;
+    primary?: boolean;
+}) {
     const organization = useOrganization();
 
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
@@ -97,9 +104,11 @@ export function D4HNag_UpdateRule_Dialog({ rule }: { rule: Rule }) {
     return (
         <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Edit rule">
-                    <ObjectIcons.Edit />
-                </Button>
+                <RecordCardEditButton
+                    label="Edit rule"
+                    category="D4H Attendance Reminders"
+                    primary={primary}
+                />
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
@@ -129,8 +138,8 @@ export function D4HNag_UpdateRule_Dialog({ rule }: { rule: Rule }) {
 }
 
 /**
- * `?action=enable` / `?action=disable` — a state-transition confirm, host-driven from the rule's
- * actions menu (`open` / `onOpenChange` come from there). Opened from a menu item, so
+ * `?action=enable` / `?action=disable` — a state-transition confirm, host-driven from the
+ * Rule card's ⋮ (`open` / `onOpenChange` come from there). Opened from a menu item, so
  * `useReturnFocus` returns focus on close.
  */
 export function D4HNag_SetRuleEnabled_Dialog({

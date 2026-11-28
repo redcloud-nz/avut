@@ -12,7 +12,6 @@ import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
 import { d4hAccessTokensEffects } from "@/client/d4h-access-tokens-effects";
 import { Saratoga } from "@/components/blocks/saratoga";
-import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,18 +26,22 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useOrganization } from "@/hooks/use-organization";
 import { getD4HServer } from "@/lib/d4h-servers";
 import { route } from "@/lib/routes";
 import { ProviderCredentialAccess, ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { trpc } from "@/trpc/client";
 
-import { AdminModule_D4HAccessToken_Menu, D4HAccessTokenAction } from "./d4h-access-token-menu";
+import {
+    AdminModule_D4HAccessToken_Menu,
+    D4H_ACCESS_TOKEN_PERMISSIONS,
+    D4HAccessTokenAction,
+} from "./d4h-access-token-menu";
+import { AdminModule_EditD4HAccessToken_Dialog } from "./edit-d4h-access-token-dialog";
 
 export function AdminModule_D4HAccessToken_Content({ tokenId }: { tokenId: ProviderCredentialId }) {
     const organization = useOrganization();
-    const [, setAction] = useQueryState("action", D4HAccessTokenAction);
+    const [action, setAction] = useQueryState("action", D4HAccessTokenAction);
 
     const { data: accessToken } = useSuspenseQuery(
         trpc.d4hAccessTokens.getOrganizationAccessToken.queryOptions({
@@ -83,73 +86,67 @@ export function AdminModule_D4HAccessToken_Content({ tokenId }: { tokenId: Provi
                 <Saratoga.Title badges={<D4HAccessTokenStatusBadge status={accessToken.status} />}>
                     {accessToken.label || `Access Token: ${accessToken.id}`}
                 </Saratoga.Title>
-                <Saratoga.Actions>
-                    <Protect permissions={{ organization: ["update"] }}>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
+            </Saratoga.Header>
+            {/* Nothing for a secondary column: full width. */}
+            <div className="space-y-4">
+                <RecordCard
+                    label="D4H Access Token"
+                    updatedAt={accessToken.updatedAt}
+                    historyHref={route("/orgs/[slug]/admin/d4h-access-tokens/[token_id]/history", {
+                        slug: organization.slug,
+                        token_id: accessToken.id,
+                    })}
+                    action={
+                        <>
+                            <Protect permissions={D4H_ACCESS_TOKEN_PERMISSIONS}>
+                                <AdminModule_EditD4HAccessToken_Dialog
+                                    token={accessToken}
+                                    primary
+                                    open={action === "edit"}
+                                    onOpenChange={(open) =>
+                                        void setAction(open ? "edit" : null, {
+                                            history: open ? "push" : "replace",
+                                        })
+                                    }
+                                />
                                 <Button
                                     variant="ghost"
                                     size="icon"
                                     aria-label="Refresh from D4H"
+                                    title="Refresh from D4H"
+                                    disabled={refreshMutation.isPending}
                                     onClick={handleRefresh}
                                 >
                                     <RefreshCwIcon />
                                 </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Refresh from D4H</TooltipContent>
-                        </Tooltip>
-                    </Protect>
-                    <AdminModule_D4HAccessToken_Menu
-                        token={accessToken}
-                        onRefresh={handleRefresh}
-                    />
-                </Saratoga.Actions>
-            </Saratoga.Header>
-            <Saratoga.Columns>
-                <Saratoga.Column slot="main">
-                    <RecordCard
-                        label="D4H Access Token"
-                        updatedAt={accessToken.updatedAt}
-                        historyHref={route(
-                            "/orgs/[slug]/admin/d4h-access-tokens/[token_id]/history",
-                            { slug: organization.slug, token_id: accessToken.id },
-                        )}
-                        action={
-                            <Protect permissions={{ organization: ["update"] }}>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    aria-label="Edit access token"
-                                    onClick={() => void setAction("edit", { history: "push" })}
-                                >
-                                    <ObjectIcons.Edit />
-                                </Button>
                             </Protect>
-                        }
-                    >
-                        <CardContent>
-                            <DataList>
-                                <RecordCardId label="Token ID" id={accessToken.id} />
-                                <DataItem>
-                                    <DataItemTitle>Label</DataItemTitle>
-                                    <DataItemValue>{accessToken.label}</DataItemValue>
-                                </DataItem>
-                                <DataItem>
-                                    <DataItemTitle>Server</DataItemTitle>
-                                    <DataItemValue>
-                                        {getD4HServer(accessToken.serverCode)?.name}
-                                    </DataItemValue>
-                                </DataItem>
-                                <DataItem>
-                                    <DataItemTitle>Access</DataItemTitle>
-                                    <DataItemValue>
-                                        {ProviderCredentialAccess.labels[accessToken.access]}
-                                    </DataItemValue>
-                                </DataItem>
-                            </DataList>
-                        </CardContent>
-                    </RecordCard>
-                    {/* <Card>
+                            <AdminModule_D4HAccessToken_Menu token={accessToken} />
+                        </>
+                    }
+                >
+                    <CardContent>
+                        <DataList>
+                            <RecordCardId label="Token ID" id={accessToken.id} />
+                            <DataItem>
+                                <DataItemTitle>Label</DataItemTitle>
+                                <DataItemValue>{accessToken.label}</DataItemValue>
+                            </DataItem>
+                            <DataItem>
+                                <DataItemTitle>Server</DataItemTitle>
+                                <DataItemValue>
+                                    {getD4HServer(accessToken.serverCode)?.name}
+                                </DataItemValue>
+                            </DataItem>
+                            <DataItem>
+                                <DataItemTitle>Access</DataItemTitle>
+                                <DataItemValue>
+                                    {ProviderCredentialAccess.labels[accessToken.access]}
+                                </DataItemValue>
+                            </DataItem>
+                        </DataList>
+                    </CardContent>
+                </RecordCard>
+                {/* <Card>
                             <CardHeader>
                                 <CardTitle>Organizations</CardTitle>
                                 <CardDescription>
@@ -184,38 +181,37 @@ export function AdminModule_D4HAccessToken_Content({ tokenId }: { tokenId: Provi
                                 </Table>
                             </CardContent>
                         </Card> */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Teams</CardTitle>
-                            <CardDescription>
-                                List of teams accessible with this access token.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHeadCell className="text-center w-20">
-                                            D4H ID
-                                        </TableHeadCell>
-                                        <TableHeadCell>Name</TableHeadCell>
-                                        <TableHeadCell>Organisation</TableHeadCell>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Teams</CardTitle>
+                        <CardDescription>
+                            List of teams accessible with this access token.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHeadCell className="text-center w-20">
+                                        D4H ID
+                                    </TableHeadCell>
+                                    <TableHeadCell>Name</TableHeadCell>
+                                    <TableHeadCell>Organisation</TableHeadCell>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {accessToken.metadata.d4HTeams.map((team) => (
+                                    <TableRow key={team.id}>
+                                        <TableCell className="text-center">{team.id}</TableCell>
+                                        <TableCell>{team.title}</TableCell>
+                                        <TableCell>{team.owner?.title}</TableCell>
                                     </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {accessToken.metadata.d4HTeams.map((team) => (
-                                        <TableRow key={team.id}>
-                                            <TableCell className="text-center">{team.id}</TableCell>
-                                            <TableCell>{team.title}</TableCell>
-                                            <TableCell>{team.owner?.title}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                </Saratoga.Column>
-            </Saratoga.Columns>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            </div>
         </Saratoga.Root>
     );
 }

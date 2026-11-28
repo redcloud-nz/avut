@@ -5,7 +5,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect } from "react";
+import { RefObject, useEffect } from "react";
 import { toast } from "sonner";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -32,7 +32,10 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { type MenuActionProps } from "@/components/ui/menu-action";
+import { RecordCardMenu } from "@/components/ui/record-card-actions";
 import { useOrganization } from "@/hooks/use-organization";
+import { useReturnFocus } from "@/hooks/use-return-focus";
 import { getD4HServer } from "@/lib/d4h-servers";
 import { OrganizationD4HData } from "@/lib/schemas/organization-d4h";
 import { trpc } from "@/trpc/client";
@@ -58,7 +61,18 @@ function formatReportingStart(day: number | null, month: number | null): string 
     return name ? `${day} ${name}` : null;
 }
 
-export function AdminModule_Organization_D4HCard() {
+/**
+ * The D4H Integration card (a sync icon while a team is linked, a ⋮ with Unlink once none is)
+ * and its Unlink dialog. Shown to `organization: ["update"]` while the organisation has a D4H
+ * link.
+ */
+export function AdminModule_Organization_D4HCard({
+    returnFocusRef,
+}: {
+    /** Where the Unlink dialog returns focus, since the card (and its ⋮) is gone once it
+     *  succeeds: the Organisation card's pencil, which everyone who sees this card sees. */
+    returnFocusRef?: RefObject<HTMLElement | null>;
+}) {
     const organization = useOrganization();
 
     const { data: orgD4H } = useQuery(
@@ -85,7 +99,19 @@ export function AdminModule_Organization_D4HCard() {
         orgD4H.d4hReportingStartMonth,
     );
     const canSync = orgD4H.d4hOrganisationId != null && orgD4H.linkedTeamCount > 0;
-    const teamsRemain = orgD4H.linkedTeamCount > 0;
+
+    // The whole card is behind `organization: ["update"]`. Unlink waits until no team is linked
+    // (the procedure refuses it before then), so it's left out until then rather than disabled.
+    const menuActions: MenuActionProps[] = [];
+    if (orgD4H.linkedTeamCount === 0) {
+        menuActions.push({
+            verb: "unlink",
+            label: "Unlink from D4H",
+            icon: <D4HIcons.Unlink />,
+            onSelect: () => void setAction("d4h-org-unlink", { history: "push" }),
+            destructive: true,
+        });
+    }
 
     return (
         <Protect permissions={{ organization: ["update"] }}>
@@ -107,24 +133,20 @@ export function AdminModule_Organization_D4HCard() {
                                 <D4HIcons.Sync />
                             </Button>
                         )}
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Unlink from D4H"
-                            className="text-destructive hover:text-destructive"
-                            disabled={teamsRemain}
-                            title={
-                                teamsRemain
-                                    ? "Unlink all D4H-linked teams first"
-                                    : "Unlink from D4H"
-                            }
-                            onClick={() => void setAction("d4h-org-unlink", { history: "push" })}
-                        >
-                            <D4HIcons.Unlink />
-                        </Button>
+                        <RecordCardMenu
+                            actions={menuActions}
+                            category="Organisation"
+                            label="D4H integration actions"
+                        />
                     </CardAction>
                 </CardHeader>
                 <CardContent>
+                    {orgD4H.linkedTeamCount > 0 && (
+                        // Unlink is left out of the ⋮ until then, so say why it isn't there.
+                        <p className="mb-4 text-sm text-muted-foreground">
+                            Unlink every team from D4H to unlink the organisation.
+                        </p>
+                    )}
                     <DataList>
                         <DataItem inline>
                             <DataItemTitle>D4H Organisation</DataItemTitle>
@@ -182,6 +204,7 @@ export function AdminModule_Organization_D4HCard() {
 
             <UnlinkDialog
                 orgD4H={orgD4H}
+                returnFocusRef={returnFocusRef}
                 open={action === "d4h-org-unlink"}
                 onClose={() => void setAction(null, { history: "replace" })}
             />
@@ -191,14 +214,17 @@ export function AdminModule_Organization_D4HCard() {
 
 function UnlinkDialog({
     orgD4H,
+    returnFocusRef,
     open,
     onClose,
 }: {
     orgD4H: OrganizationD4HData;
+    returnFocusRef?: RefObject<HTMLElement | null>;
     open: boolean;
     onClose: () => void;
 }) {
     const organization = useOrganization();
+    const returnFocus = useReturnFocus(returnFocusRef);
 
     const mutation = useMutation(
         trpc.teams.unlinkOrganizationFromD4H.mutationOptions({
@@ -218,7 +244,7 @@ function UnlinkDialog({
 
     return (
         <Dialog open={open} onOpenChange={(o) => (o ? undefined : onClose())}>
-            <DialogContent>
+            <DialogContent {...returnFocus}>
                 <DialogHeader>
                     <DialogTitle>Unlink {organization.name} from D4H</DialogTitle>
                     <DialogDescription>

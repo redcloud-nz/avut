@@ -5,7 +5,6 @@
 
 "use client";
 
-import Link from "next/link";
 import { parseAsBoolean, parseAsStringLiteral, useQueryState } from "nuqs";
 import { toast } from "sonner";
 
@@ -19,13 +18,7 @@ import { NoteDetail } from "@/components/notes/note-detail";
 import { NoteEditor } from "@/components/notes/note-editor";
 import { isNoteNotFound, NoteGoneBoundary } from "@/components/notes/note-gone-boundary";
 import { notesBreadcrumbs } from "@/components/notes/notes-breadcrumbs";
-import { Button } from "@/components/ui/button";
-import {
-    DropdownMenuGroup,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { EntityActionMenu } from "@/components/ui/menu-action";
+import { RecordCardEditButton, RecordCardMenu } from "@/components/ui/record-card-actions";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -114,57 +107,37 @@ function OrgNote_Body({ noteId }: { noteId: OrganizationNoteId }) {
                     note={note}
                     byline={byline}
                     breadcrumbs={breadcrumbs}
+                    historyHref={route("/orgs/[slug]/notes/[note_id]/history", {
+                        slug: organization.slug,
+                        note_id: note.id,
+                    })}
                     actions={
                         <>
+                            {/* View mode only, so ⌥E can't fire while the editor is open. */}
                             {canEdit && (
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    aria-label="Edit note"
+                                <RecordCardEditButton
+                                    label="Edit note"
+                                    category="Notes"
+                                    primary
                                     onClick={openEditor}
-                                >
-                                    <ObjectIcons.Edit />
-                                </Button>
+                                />
                             )}
-                            <EntityActionMenu
+                            <RecordCardMenu
                                 category="Notes"
-                                before={
-                                    <>
-                                        <DropdownMenuGroup>
-                                            <DropdownMenuItem asChild>
-                                                <Link
-                                                    href={route(
-                                                        "/orgs/[slug]/notes/[note_id]/history",
-                                                        {
-                                                            slug: organization.slug,
-                                                            note_id: note.id,
-                                                        },
-                                                    )}
-                                                >
-                                                    <ObjectIcons.History /> History
-                                                </Link>
-                                            </DropdownMenuItem>
-                                        </DropdownMenuGroup>
-                                        <DropdownMenuSeparator />
-                                    </>
+                                primary
+                                actions={
+                                    canDelete
+                                        ? [
+                                              {
+                                                  verb: "delete",
+                                                  label: "Delete",
+                                                  icon: <ObjectIcons.Delete />,
+                                                  onSelect: () => handleDeleteOpenChange(true),
+                                                  destructive: true,
+                                              },
+                                          ]
+                                        : []
                                 }
-                                actions={[
-                                    {
-                                        verb: "update",
-                                        label: "Edit",
-                                        icon: <ObjectIcons.Edit />,
-                                        onSelect: openEditor,
-                                        disabled: !canEdit,
-                                    },
-                                    {
-                                        verb: "delete",
-                                        label: "Delete",
-                                        icon: <ObjectIcons.Delete />,
-                                        onSelect: () => handleDeleteOpenChange(true),
-                                        disabled: !canDelete,
-                                        destructive: true,
-                                    },
-                                ]}
                             />
                         </>
                     }

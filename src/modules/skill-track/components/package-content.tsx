@@ -4,14 +4,15 @@
  */
 "use client";
 
+import { BookPlusIcon } from "lucide-react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useRef } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { SkillGroupLink } from "@/components/entity-links/skill-group-link";
 import { ObjectIcons } from "@/components/icons";
-import { Protect } from "@/components/protect";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,8 +24,9 @@ import {
     DataItemValue,
     DataList,
 } from "@/components/ui/data-item";
-import { EntityActionMenu } from "@/components/ui/menu-action";
+import { type MenuActionProps } from "@/components/ui/menu-action";
 import { RecordCard, RecordCardId } from "@/components/ui/record-card";
+import { ActionsCard, RecordCardMenu } from "@/components/ui/record-card-actions";
 import { SkillPackageAvailabilityBadge } from "@/components/ui/status-badge";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
@@ -53,9 +55,9 @@ export function SkillTrack_Package_Content({ skillPackageId }: { skillPackageId:
     // leave it, but not subscribe again.
     const withdrawn = !SkillPackage.isAvailable(skillPackage);
 
-    // The subscribe/unsubscribe dialogs are host-driven: their own success
-    // effect flips `skillPackage.subscription`, which swaps the trigger button —
-    // if a dialog owned the param it would be clearing it from an unmounted hook.
+    // The subscribe/unsubscribe dialogs are host-driven: their own success effect flips
+    // `skillPackage.subscription`, which swaps the Subscription action card for the Subscription
+    // record card — if a dialog owned the param it would be clearing it from an unmounted hook.
     const [action, setAction] = useQueryState(
         "action",
         parseAsStringLiteral(["subscribe", "unsubscribe"] as const),
@@ -64,6 +66,23 @@ export function SkillTrack_Package_Content({ skillPackageId }: { skillPackageId:
     const canSubscribe = useHasPermission({ skillPackageSubscription: ["subscribe"] });
     // The catalogue is read-only in team scope: subscribing is an org-scope action.
     const readOnly = useSkillTrackScope().scope === "team";
+
+    // Subscribing swaps the Subscribe button for the Subscription card's ⋮, unsubscribing the
+    // reverse, so each dialog returns focus to the control that replaces its opener. Both show to
+    // anyone with `subscribe`, which is what opening either dialog takes.
+    const subscriptionMenuRef = useRef<HTMLButtonElement>(null);
+    const subscribeButtonRef = useRef<HTMLButtonElement>(null);
+
+    const subscriptionActions: MenuActionProps[] = [];
+    if (!readOnly && canSubscribe) {
+        subscriptionActions.push({
+            verb: "unsubscribe",
+            label: "Unsubscribe",
+            icon: <ObjectIcons.Unsubscribe />,
+            onSelect: () => void setAction("unsubscribe", { history: "push" }),
+            destructive: true,
+        });
+    }
 
     return (
         <>
@@ -88,34 +107,6 @@ export function SkillTrack_Package_Content({ skillPackageId }: { skillPackageId:
                     >
                         {skillPackage.name}
                     </Saratoga.Title>
-                    <Saratoga.Actions>
-                        {!readOnly && !skillPackage.subscription && !withdrawn && (
-                            <Protect permissions={{ skillPackageSubscription: ["subscribe"] }}>
-                                <Button
-                                    variant="outline"
-                                    onClick={() => void setAction("subscribe", { history: "push" })}
-                                >
-                                    Subscribe
-                                </Button>
-                            </Protect>
-                        )}
-                        {!readOnly && skillPackage.subscription && (
-                            <EntityActionMenu
-                                category="Packages"
-                                actions={[
-                                    {
-                                        verb: "unsubscribe",
-                                        label: "Unsubscribe",
-                                        icon: <ObjectIcons.Unsubscribe />,
-                                        onSelect: () =>
-                                            void setAction("unsubscribe", { history: "push" }),
-                                        disabled: !canSubscribe,
-                                        destructive: true,
-                                    },
-                                ]}
-                            />
-                        )}
-                    </Saratoga.Actions>
                 </Saratoga.Header>
                 {withdrawn && (
                     <Alert variant="warning">
@@ -158,6 +149,14 @@ export function SkillTrack_Package_Content({ skillPackageId }: { skillPackageId:
                             <RecordCard
                                 label="Subscription"
                                 updatedAt={skillPackage.subscription.updatedAt}
+                                action={
+                                    <RecordCardMenu
+                                        actions={subscriptionActions}
+                                        category="Packages"
+                                        label="Subscription actions"
+                                        triggerRef={subscriptionMenuRef}
+                                    />
+                                }
                             >
                                 <CardContent>
                                     <DataList>
@@ -195,6 +194,22 @@ export function SkillTrack_Package_Content({ skillPackageId }: { skillPackageId:
                         </section>
                     </Saratoga.Column>
                     <Saratoga.Column slot="secondary">
+                        <ActionsCard
+                            title="Subscription"
+                            description="Subscribe to use its skills in your organisation's sessions and reports."
+                        >
+                            {!readOnly &&
+                            !skillPackage.subscription &&
+                            !withdrawn &&
+                            canSubscribe ? (
+                                <Button
+                                    ref={subscribeButtonRef}
+                                    onClick={() => void setAction("subscribe", { history: "push" })}
+                                >
+                                    <BookPlusIcon /> Subscribe
+                                </Button>
+                            ) : null}
+                        </ActionsCard>
                         <div className="grid grid-cols-2 gap-2">
                             <Metric label="Skills" value={skillPackage.skillCount} />
                             <Metric label="Subscribers" value={skillPackage.subscriptionCount} />
@@ -207,6 +222,7 @@ export function SkillTrack_Package_Content({ skillPackageId }: { skillPackageId:
                 <>
                     <SkillTrack_SubscribeToPackage_Dialog
                         skillPackage={skillPackage}
+                        returnFocusRef={subscriptionMenuRef}
                         open={action === "subscribe"}
                         onOpenChange={(open) =>
                             void setAction(open ? "subscribe" : null, {
@@ -216,6 +232,7 @@ export function SkillTrack_Package_Content({ skillPackageId }: { skillPackageId:
                     />
                     <SkillTrack_UnsubscribeFromPackage_Dialog
                         skillPackage={skillPackage}
+                        returnFocusRef={subscribeButtonRef}
                         open={action === "unsubscribe"}
                         onOpenChange={(open) =>
                             void setAction(open ? "unsubscribe" : null, {

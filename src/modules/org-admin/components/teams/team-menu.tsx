@@ -4,21 +4,13 @@
  */
 "use client";
 
-import Link from "next/link";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { ObjectIcons } from "@/components/icons";
 import { Teams_AddTeamMembership_Dialog } from "@/components/teams/add-team-membership";
-import { Teams_D4HMenuGroup } from "@/components/teams/d4h-link-card";
-import {
-    DropdownMenuGroup,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
+import { type MenuActionProps } from "@/components/ui/menu-action";
+import { RecordCardMenu } from "@/components/ui/record-card-actions";
 import { useHasPermission } from "@/hooks/use-has-permission";
-import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
 import { TeamData } from "@/lib/schemas/team";
 
 import { AdminModule_ArchiveTeam_Dialog } from "./archive-team";
@@ -30,104 +22,59 @@ interface AdminModule_TeamMenuProps {
     team: TeamData;
 }
 
-const ACTIONS = [
-    "update",
-    "delete",
-    "d4h-link",
-    "d4h-sync",
-    "d4h-unlink",
-    "add-membership",
-    "archive",
-    "restore",
-    "recover",
-] as const;
+const ACTIONS = ["update", "delete", "add-membership", "archive", "restore", "recover"] as const;
 
+/**
+ * The Team card's ⋮ (the page's primary record card): Archive, Restore or Recover, and Delete.
+ * Edit is the card's pencil, History its "Updated" footer, Add person the Related card's Add,
+ * and the D4H actions are on the Linked D4H Team card and the D4H action card.
+ *
+ * Mounts the page's lifecycle and Add person dialogs; `Teams_D4HCard` mounts the D4H ones.
+ */
 export function AdminModule_Team_Menu({ team }: AdminModule_TeamMenuProps) {
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(ACTIONS));
 
-    const organization = useOrganization();
     const canUpdate = useHasPermission({ team: ["update"] });
     const canDelete = useHasPermission({ team: ["delete"] });
-    const isActive = team.status === "Active";
 
-    const actions: MenuActionProps[] = [
-        {
-            verb: "update",
-            label: "Edit",
-            icon: <ObjectIcons.Edit />,
-            onSelect: () => setAction("update", { history: "push" }),
-            disabled: !canUpdate,
-        },
-    ];
-    if (isActive) {
-        actions.push({
-            verb: "create",
-            label: "Add person",
-            icon: <ObjectIcons.Create />,
-            onSelect: () => setAction("add-membership", { history: "push" }),
-            disabled: !canUpdate,
-        });
-    }
-    if (isActive) {
+    const actions: MenuActionProps[] = [];
+    if (team.status === "Active" && canUpdate) {
         actions.push({
             verb: "archive",
             label: "Archive",
             icon: <ObjectIcons.Archive />,
             onSelect: () => setAction("archive", { history: "push" }),
-            disabled: !canUpdate,
         });
-    } else if (team.status === "Archived") {
+    }
+    if (team.status === "Archived" && canUpdate) {
         actions.push({
             verb: "restore",
             label: "Restore",
             icon: <ObjectIcons.Restore />,
             onSelect: () => setAction("restore", { history: "push" }),
-            disabled: !canUpdate,
         });
-    } else {
+    }
+    if (team.status === "Deleted" && canDelete) {
         actions.push({
             verb: "recover",
             label: "Recover from rubbish",
             icon: <ObjectIcons.Recover />,
             onSelect: () => setAction("recover", { history: "push" }),
-            disabled: !canDelete,
         });
     }
-    if (team.status !== "Deleted") {
+    if (team.status !== "Deleted" && canDelete) {
         actions.push({
             verb: "delete",
             label: "Delete",
             icon: <ObjectIcons.Delete />,
             onSelect: () => setAction("delete", { history: "push" }),
-            disabled: !canDelete,
             destructive: true,
         });
     }
 
     return (
         <>
-            <EntityActionMenu
-                actions={actions}
-                category="Teams"
-                before={
-                    <>
-                        <DropdownMenuGroup>
-                            <DropdownMenuItem asChild>
-                                <Link
-                                    href={route("/orgs/[slug]/admin/teams/[team_id]/history", {
-                                        slug: organization.slug,
-                                        team_id: team.id,
-                                    })}
-                                >
-                                    <ObjectIcons.History /> History
-                                </Link>
-                            </DropdownMenuItem>
-                        </DropdownMenuGroup>
-                        <DropdownMenuSeparator />
-                    </>
-                }
-                after={<Teams_D4HMenuGroup team={team} setAction={setAction} />}
-            />
+            <RecordCardMenu actions={actions} category="Teams" primary />
 
             <AdminModule_DeleteTeam_Dialog
                 team={team}

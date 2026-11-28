@@ -10,10 +10,7 @@ import { TRPCError } from "@trpc/server";
 
 import { Std } from "@/components/blocks/std";
 import { TITLE_SEPARATOR } from "@/lib/constants";
-import {
-    D4HI3Module_ItemReturn_Dialog,
-    D4HI3Module_ItemReturn_MenuAction,
-} from "@/modules/d4h-i3/components/equipment-item/item-return-action";
+import { D4HI3Module_ItemReturn_Card } from "@/modules/d4h-i3/components/equipment-item/item-return-action";
 import { D4HI3Module_ItemReturnedBadge } from "@/modules/d4h-i3/components/equipment-item/item-returned-badge";
 import { D4HModule_EquipmentItem_Content } from "@/modules/d4h/components/items/equipment-item-content";
 import { getOrganizationBySlug } from "@/server/cache/organization";
@@ -67,8 +64,8 @@ export async function equipmentItemMetadata({
 }
 
 /**
- * When D4H I3 is usable, I3's Return action and returned badge are passed in as slots: the D4H
- * module can't import I3, but the page can.
+ * When D4H I3 is usable, I3's action card (Return, with its dialog) and returned badge are passed
+ * in as slots: the D4H module can't import I3, but the page can.
  */
 export async function D4HEquipmentItemPage({
     slug,
@@ -131,14 +128,9 @@ export async function D4HEquipmentItemPage({
                     teamId={teamId}
                     itemId={itemId}
                     memberId={memberId}
-                    menuActions={
+                    actionCard={
                         withI3 ? (
-                            <D4HI3Module_ItemReturn_MenuAction teamId={teamId} itemId={itemId} />
-                        ) : null
-                    }
-                    menuDialogs={
-                        withI3 ? (
-                            <D4HI3Module_ItemReturn_Dialog teamId={teamId} itemId={itemId} />
+                            <D4HI3Module_ItemReturn_Card teamId={teamId} itemId={itemId} />
                         ) : null
                     }
                     statusBadge={

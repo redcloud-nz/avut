@@ -32,11 +32,14 @@ export function D4HTeamPickerDialog({
     section,
     forceOpen = false,
     label = "Change team",
+    showLabel = false,
 }: {
     /** The page to go to for the chosen team. */
     section: (teamId: number) => Route;
     forceOpen?: boolean;
     label?: string;
+    /** Keep the label visible below `sm` (see `PickerDialog`). */
+    showLabel?: boolean;
 }) {
     const router = useRouter();
 
@@ -46,6 +49,7 @@ export function D4HTeamPickerDialog({
             forceOpen={forceOpen}
             icon={<ArrowLeftRightIcon />}
             label={label}
+            showLabel={showLabel}
             title="Select a team"
             description="Choose one of your D4H teams."
         >

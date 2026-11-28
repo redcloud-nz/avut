@@ -4,23 +4,18 @@
  */
 "use client";
 
-import Link from "next/link";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useQueryClient } from "@tanstack/react-query";
 
 import { ObjectIcons } from "@/components/icons";
-import {
-    DropdownMenuGroup,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
+import { Button } from "@/components/ui/button";
+import { type MenuActionProps } from "@/components/ui/menu-action";
+import { ActionsCard, RecordCardMenu } from "@/components/ui/record-card-actions";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
 import { SkillPackage } from "@/lib/schemas/skill-package";
 import { trpc } from "@/trpc/client";
 
@@ -31,6 +26,17 @@ import { SkillPackageBuilder_RecoverPackage_Dialog } from "./recover-package";
 import { SkillPackageBuilder_RestorePackage_Dialog } from "./restore-package";
 import { SkillPackageBuilder_UnpublishPackage_Dialog } from "./unpublish-package";
 
+/** Every `?action=` the package page's dialogs answer to. Edit's dialog owns `update` itself. */
+const packageActions = parseAsStringLiteral([
+    "update",
+    "delete",
+    "archive",
+    "restore",
+    "recover",
+    "publish",
+    "unpublish",
+] as const);
+
 function slugify(value: string): string {
     return (
         value
@@ -40,26 +46,26 @@ function slugify(value: string): string {
     );
 }
 
+/**
+ * The Skill Package card's ⋮ (the page's primary record card): Export .json, Archive, Restore or
+ * Recover, and Delete. Edit is the card's pencil, History its "Updated" footer, Publish and
+ * Unpublish the {@link SkillPackageBuilder_Package_PublishingCard}.
+ *
+ * Mounts every dialog on the page, whichever card or button opens it.
+ */
 export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackage: SkillPackage }) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
 
-    const [action, setAction] = useQueryState(
-        "action",
-        parseAsStringLiteral([
-            "delete",
-            "archive",
-            "restore",
-            "recover",
-            "publish",
-            "unpublish",
-        ] as const),
-    );
+    const [action, setAction] = useQueryState("action", packageActions);
 
     const canView = useHasPermission({ skillPackage: ["view"] });
     const canUpdate = useHasPermission({ skillPackage: ["update"] });
-    const canPublish = useHasPermission({ skillPackage: ["publish"] });
     const canDelete = useHasPermission({ skillPackage: ["delete"] });
+
+    // Publish's and Unpublish's buttons are gone once they succeed, so their dialogs return focus
+    // here instead. Anyone who can publish can view, so this ⋮ (with Export) is always there.
+    const triggerRef = useRef<HTMLButtonElement>(null);
 
     const [exporting, setExporting] = useState(false);
 
@@ -96,94 +102,53 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
         }
     }
 
-    const actions: MenuActionProps[] = [
-        {
+    const actions: MenuActionProps[] = [];
+    if (canView) {
+        actions.push({
             verb: "export",
             label: "Export .json",
             icon: <ObjectIcons.Export />,
             onSelect: () => void exportPackage(),
-            disabled: !canView || exporting,
-        },
-    ];
-    if (skillPackage.status == "Active") {
+            disabled: exporting,
+        });
+    }
+    if (skillPackage.status === "Active" && canUpdate) {
         actions.push({
             verb: "archive",
             label: "Archive",
             icon: <ObjectIcons.Archive />,
             onSelect: () => setAction("archive", { history: "push" }),
-            disabled: !canUpdate,
         });
     }
-    if (skillPackage.status == "Archived") {
+    if (skillPackage.status === "Archived" && canUpdate) {
         actions.push({
             verb: "restore",
             label: "Restore",
             icon: <ObjectIcons.Restore />,
             onSelect: () => setAction("restore", { history: "push" }),
-            disabled: !canUpdate,
         });
     }
-    if (skillPackage.status == "Deleted") {
+    if (skillPackage.status === "Deleted" && canDelete) {
         actions.push({
             verb: "recover",
             label: "Recover from rubbish",
             icon: <ObjectIcons.Recover />,
             onSelect: () => setAction("recover", { history: "push" }),
-            disabled: !canDelete,
         });
     }
-    if (skillPackage.status == "Active" && !skillPackage.published) {
-        actions.push({
-            verb: "publish",
-            label: "Publish",
-            icon: <ObjectIcons.Publish />,
-            onSelect: () => setAction("publish", { history: "push" }),
-            disabled: !canPublish,
-        });
-    }
-    if (skillPackage.published) {
-        actions.push({
-            verb: "unpublish",
-            label: "Unpublish",
-            icon: <ObjectIcons.Unpublish />,
-            onSelect: () => setAction("unpublish", { history: "push" }),
-            disabled: !canPublish,
-        });
-    }
-    if (skillPackage.status != "Deleted") {
+    if (skillPackage.status !== "Deleted" && canDelete) {
         actions.push({
             verb: "delete",
             label: "Delete",
             icon: <ObjectIcons.Delete />,
             onSelect: () => setAction("delete", { history: "push" }),
-            disabled: !canDelete,
             destructive: true,
         });
     }
 
     return (
         <>
-            <EntityActionMenu
-                actions={actions}
-                category="Packages"
-                before={
-                    <>
-                        <DropdownMenuGroup>
-                            <DropdownMenuItem asChild>
-                                <Link
-                                    href={route(
-                                        "/orgs/[slug]/skill-package-builder/packages/[package_id]/history",
-                                        { slug: organization.slug, package_id: skillPackage.id },
-                                    )}
-                                >
-                                    <ObjectIcons.History /> History
-                                </Link>
-                            </DropdownMenuItem>
-                        </DropdownMenuGroup>
-                        <DropdownMenuSeparator />
-                    </>
-                }
-            />
+            <RecordCardMenu actions={actions} category="Packages" primary triggerRef={triggerRef} />
             <SkillPackageBuilder_DeletePackage_Dialog
                 skillPackage={skillPackage}
                 open={action === "delete"}
@@ -204,8 +169,55 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
             />
             <SkillPackageBuilder_ArchivePackage_Dialog skillPackage={skillPackage} />
             <SkillPackageBuilder_RestorePackage_Dialog skillPackage={skillPackage} />
-            <SkillPackageBuilder_PublishPackage_Dialog skillPackage={skillPackage} />
-            <SkillPackageBuilder_UnpublishPackage_Dialog skillPackage={skillPackage} />
+            <SkillPackageBuilder_PublishPackage_Dialog
+                skillPackage={skillPackage}
+                returnFocusRef={triggerRef}
+            />
+            <SkillPackageBuilder_UnpublishPackage_Dialog
+                skillPackage={skillPackage}
+                returnFocusRef={triggerRef}
+            />
         </>
+    );
+}
+
+/**
+ * The titled Publishing card at the top of the package's secondary column, for a viewer who can
+ * publish: whether the package is published and what that means for subscribers, then Publish
+ * (an Active, unpublished package) or Unpublish. Renders nothing when neither applies. The
+ * dialogs are in {@link SkillPackageBuilder_Package_Menu}.
+ */
+export function SkillPackageBuilder_Package_PublishingCard({
+    skillPackage,
+}: {
+    skillPackage: SkillPackage;
+}) {
+    const [, setAction] = useQueryState("action", packageActions);
+
+    const canPublish = useHasPermission({ skillPackage: ["publish"] });
+
+    return (
+        <ActionsCard
+            title="Publishing"
+            description={
+                skillPackage.published
+                    ? "Published: other organisations can subscribe, and its skills are in subscribers' sessions and reports."
+                    : "Not published: no one can subscribe, and subscribers' sessions and reports leave its skills out."
+            }
+        >
+            {canPublish && skillPackage.status === "Active" && !skillPackage.published ? (
+                <Button onClick={() => setAction("publish", { history: "push" })}>
+                    <ObjectIcons.Publish /> Publish
+                </Button>
+            ) : null}
+            {canPublish && skillPackage.published ? (
+                <Button
+                    variant="outline"
+                    onClick={() => setAction("unpublish", { history: "push" })}
+                >
+                    <ObjectIcons.Unpublish /> Unpublish
+                </Button>
+            ) : null}
+        </ActionsCard>
     );
 }

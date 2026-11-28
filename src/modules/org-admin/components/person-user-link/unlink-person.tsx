@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { useEffect } from "react";
+import { RefObject, useEffect } from "react";
 import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
@@ -23,6 +23,7 @@ import {
 import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 import { useOrganization } from "@/hooks/use-organization";
+import { useReturnFocus } from "@/hooks/use-return-focus";
 import { UserId } from "@/lib/schemas/user";
 import { trpc } from "@/trpc/client";
 
@@ -30,13 +31,17 @@ export function AdminModule_UnlinkPerson_Dialog({
     userId,
     userName,
     personName,
+    returnFocusRef,
     ...props
 }: AlertDialogProps & {
     userId: UserId;
     userName: string;
     personName: string;
+    /** Where focus goes on close when the item that opened the dialog is gone. */
+    returnFocusRef?: RefObject<HTMLElement | null>;
 }) {
     const organization = useOrganization();
+    const returnFocus = useReturnFocus(returnFocusRef);
 
     const mutation = useMutation(
         trpc.users.unlinkPerson.mutationOptions({
@@ -66,7 +71,7 @@ export function AdminModule_UnlinkPerson_Dialog({
 
     return (
         <AlertDialog {...props}>
-            <AlertDialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
+            <AlertDialogContent {...returnFocus}>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Unlink Person</AlertDialogTitle>
                     <AlertDialogDescription>

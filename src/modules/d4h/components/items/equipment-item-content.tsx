@@ -6,7 +6,7 @@
 
 import { CornerDownRightIcon } from "lucide-react";
 import { notFound } from "next/navigation";
-import { Suspense, useMemo, type ReactNode } from "react";
+import { Suspense, useMemo, useRef, type ReactNode } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 
 import { useQuery, useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
@@ -32,6 +32,7 @@ import { Protect } from "@/components/protect";
 import { CardContent, CardLoadingFallback } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import { RecordCard, RecordCardId } from "@/components/ui/record-card";
+import { ActionsCardFocusFallback } from "@/components/ui/record-card-actions";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
 import { hasD4HTeamPermission } from "@/lib/d4h-permissions";
@@ -42,7 +43,6 @@ import { trpc } from "@/trpc/client";
 import { D4HModule_OpenInD4H_Button } from "../open-in-d4h-button";
 import { D4HModule_ItemTasks_Card } from "../tasks/item-tasks-card";
 
-import { D4HModule_EquipmentItem_Menu } from "./equipment-item-menu";
 import {
     D4HModule_UpdateEquipmentItem_Dialog,
     updateEquipmentItemDisabledReason,
@@ -51,9 +51,9 @@ import {
 /**
  * A D4H equipment item, read live from D4H with the viewer's token.
  *
- * Other modules add to the page through slots that `page.tsx` fills: `menuActions` and
- * `menuDialogs` go to the Actions menu (see `EntityActionMenu`), and `statusBadge` sits beside the
- * D4H Status value.
+ * Other modules add to the page through slots that `page.tsx` fills: `actionCard` goes at the top
+ * of the secondary column (an action card that mounts its own dialogs, since the item has no ⋮ to
+ * host them), and `statusBadge` sits beside the D4H Status value.
  *
  * `memberId` is set on the member-scoped route, and only changes the breadcrumbs.
  */
@@ -61,20 +61,23 @@ export function D4HModule_EquipmentItem_Content({
     teamId,
     itemId,
     memberId,
-    menuActions,
-    menuDialogs,
+    actionCard,
     statusBadge,
 }: {
     teamId: number;
     itemId: number;
     memberId?: number;
-    menuActions?: ReactNode;
-    menuDialogs?: ReactNode;
+    actionCard?: ReactNode;
     statusBadge?: ReactNode;
 }) {
     const organization = useOrganization();
     const slug = organization.slug;
     const { formatDate } = usePreferences();
+
+    // The D4H Item card's pencil (or its tooltip wrapper), which every viewer sees: where a
+    // dialog the `actionCard` opens returns focus once its button has gone. The slot arrives as
+    // an element from the server page, so the ref reaches it through context.
+    const editFocusRef = useRef<HTMLElement>(null);
 
     const [
         {
@@ -161,11 +164,6 @@ export function D4HModule_EquipmentItem_Content({
                 </Saratoga.Title>
                 <Saratoga.Actions>
                     <D4HModule_OpenInD4H_Button href={d4hUrl} />
-                    <D4HModule_EquipmentItem_Menu
-                        canUpdateInD4H={canUpdateInD4H}
-                        extraActions={menuActions}
-                        dialogs={menuDialogs}
-                    />
                 </Saratoga.Actions>
             </Saratoga.Header>
 
@@ -180,6 +178,7 @@ export function D4HModule_EquipmentItem_Content({
                                     <D4HModule_UpdateEquipmentItem_Dialog
                                         teamId={teamId}
                                         item={item}
+                                        focusRef={editFocusRef}
                                         disabledReason={updateEquipmentItemDisabledReason({
                                             hasPermission,
                                             canUpdateInD4H,
@@ -321,6 +320,9 @@ export function D4HModule_EquipmentItem_Content({
                     </ItemContentsBoundary>
                 </Saratoga.Column>
                 <Saratoga.Column slot="secondary">
+                    <ActionsCardFocusFallback value={editFocusRef}>
+                        {actionCard}
+                    </ActionsCardFocusFallback>
                     <Protect permissions={{ d4hTask: ["view"] }}>
                         <Suspense fallback={<CardLoadingFallback />}>
                             <D4HModule_ItemTasks_Card

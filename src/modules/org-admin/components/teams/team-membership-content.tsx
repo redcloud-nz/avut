@@ -48,6 +48,32 @@ export function AdminModule_TeamMembership_Content({
         ],
     });
 
+    const membershipCard = (
+        <RecordCard
+            label="Membership"
+            updatedAt={membership.updatedAt}
+            action={<AdminModule_TeamMembership_Menu team={team} person={membership.person} />}
+        >
+            <CardContent>
+                <DataList>
+                    <RecordCardId label="Membership ID" id={membership.id} />
+                    <DataItem>
+                        <DataItemTitle>Person</DataItemTitle>
+                        <DataItemValue>
+                            <PersonLink person={membership.person} />
+                        </DataItemValue>
+                    </DataItem>
+                    <DataItem>
+                        <DataItemTitle>Team</DataItemTitle>
+                        <DataItemValue>
+                            <TeamLink team={team} />
+                        </DataItemValue>
+                    </DataItem>
+                </DataList>
+            </CardContent>
+        </RecordCard>
+    );
+
     return (
         <Saratoga.Root>
             <Saratoga.Breadcrumbs
@@ -76,34 +102,13 @@ export function AdminModule_TeamMembership_Content({
                 <Saratoga.Title badges={<RecordStatusBadge status={membership.status} />}>
                     {membership.person.name}
                 </Saratoga.Title>
-                <Saratoga.Actions>
-                    <AdminModule_TeamMembership_Menu team={team} person={membership.person} />
-                </Saratoga.Actions>
             </Saratoga.Header>
 
-            <Saratoga.Columns>
-                <Saratoga.Column slot="main">
-                    <RecordCard label="Membership" updatedAt={membership.updatedAt}>
-                        <CardContent>
-                            <DataList>
-                                <RecordCardId label="Membership ID" id={membership.id} />
-                                <DataItem>
-                                    <DataItemTitle>Person</DataItemTitle>
-                                    <DataItemValue>
-                                        <PersonLink person={membership.person} />
-                                    </DataItemValue>
-                                </DataItem>
-                                <DataItem>
-                                    <DataItemTitle>Team</DataItemTitle>
-                                    <DataItemValue>
-                                        <TeamLink team={team} />
-                                    </DataItemValue>
-                                </DataItem>
-                            </DataList>
-                        </CardContent>
-                    </RecordCard>
-
-                    {membership.d4h && (
+            {/* With no D4H Member card the secondary column would be empty: full width then. */}
+            {membership.d4h ? (
+                <Saratoga.Columns>
+                    <Saratoga.Column slot="main">{membershipCard}</Saratoga.Column>
+                    <Saratoga.Column slot="secondary">
                         <RecordCard label="D4H Member">
                             <CardContent>
                                 <DataList>
@@ -148,9 +153,11 @@ export function AdminModule_TeamMembership_Content({
                                 </DataList>
                             </CardContent>
                         </RecordCard>
-                    )}
-                </Saratoga.Column>
-            </Saratoga.Columns>
+                    </Saratoga.Column>
+                </Saratoga.Columns>
+            ) : (
+                membershipCard
+            )}
         </Saratoga.Root>
     );
 }

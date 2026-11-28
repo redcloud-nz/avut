@@ -16,6 +16,8 @@ export type ActionVerb =
     | "publish"
     | "unpublish"
     | "unsubscribe"
+    | "enable"
+    | "disable"
     | "move"
     | "export"
     | "import"
@@ -38,6 +40,10 @@ export type ActionVerb =
  * through the actions menu ({@link ACTIONS_MENU_HOTKEY}, arrows, Enter) rather than a key nobody
  * would remember; its menu item shows no shortcut badge.
  *
+ * On a detail page only the primary record card registers these: its `RecordCardEditButton`
+ * registers `update` (⌥E) and its `RecordCardMenu` the verbs in it. `create` (⌥N) stays a list
+ * page's Create key. Action-card buttons register none.
+ *
  * `Alt`-prefixing rather than a bare letter: the hotkey library's `ignoreInputs` already stops a
  * bare `E` firing inside a text field, but it would still fire when focus is on a button, link,
  * table row, or the page body. `Alt+<key>` requires intent.
@@ -51,8 +57,9 @@ export const ActionHotkey: Partial<Record<ActionVerb, Hotkey>> = {
 
 /**
  * Open the page's actions menu with its first item focused (`Cmd+.` on Mac, `Ctrl+.` elsewhere),
- * as VS Code's Quick Fix menu does. Registered by `EntityActionMenu`, which only page-level menus
- * use. Deliberately not `Alt+<key>`: opening the menu isn't an action.
+ * as VS Code's Quick Fix menu does. Registered by the primary record card's `RecordCardMenu`
+ * (`primary`), so a page registers it at most once. Deliberately not `Alt+<key>`: opening the menu isn't
+ * an action.
  */
 export const ACTIONS_MENU_HOTKEY: Hotkey = "Mod+.";
 

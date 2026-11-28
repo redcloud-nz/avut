@@ -15,8 +15,7 @@ import { useMutation } from "@tanstack/react-query";
 import { i3Effects } from "@/client/i3-effects";
 import { D4HEquipmentCategorySelect } from "@/components/controls/d4h-equipment-category-select";
 import { D4HEquipmentTypeSelect } from "@/components/controls/d4h-equipment-type-select";
-import { ObjectIcons } from "@/components/icons";
-import { Button, MutationButton } from "@/components/ui/button";
+import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogBody,
@@ -31,6 +30,7 @@ import {
 import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { RecordCardEditButton } from "@/components/ui/record-card-actions";
 import {
     Select,
     SelectContent,
@@ -45,7 +45,17 @@ import { I3BrandModelRule, I3Template } from "@/lib/schemas/i3-template";
 import { useOrganisationOnlyId } from "@/modules/d4h-i3/lib/use-organisation-only-id";
 import { trpc } from "@/trpc/client";
 
-export function D4HI3Module_UpdateTemplate_Dialog({ template }: { template: I3Template }) {
+/**
+ * The I3 Template card's pencil and the `?action=update` dialog it opens. `primary` on the page's
+ * primary record card, so ⌥E opens it.
+ */
+export function D4HI3Module_UpdateTemplate_Dialog({
+    template,
+    primary = false,
+}: {
+    template: I3Template;
+    primary?: boolean;
+}) {
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
     const dialogOpen = action === "update";
 
@@ -56,9 +66,11 @@ export function D4HI3Module_UpdateTemplate_Dialog({ template }: { template: I3Te
     return (
         <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Update template">
-                    <ObjectIcons.Edit />
-                </Button>
+                <RecordCardEditButton
+                    label="Edit template"
+                    category="Templates"
+                    primary={primary}
+                />
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>

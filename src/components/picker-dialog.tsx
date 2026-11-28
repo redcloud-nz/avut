@@ -46,8 +46,13 @@ export interface PickerDialogProps<A extends string> {
     forceOpen?: boolean;
     /** Trigger button icon. */
     icon: ReactNode;
-    /** Trigger button label; screen-reader only below `sm`. */
+    /** Trigger button label; screen-reader only below `sm` unless `showLabel`. */
     label: string;
+    /**
+     * Keep the label visible below `sm` too, where the button sits alone (an action card) rather
+     * than in a header row that needs the room.
+     */
+    showLabel?: boolean;
     /** Hide the trigger button below `sm`, when the page offers it in a dropdown menu instead. */
     compact?: boolean;
     title: ReactNode;
@@ -72,6 +77,7 @@ export function PickerDialog<A extends string>({
     forceOpen = false,
     icon,
     label,
+    showLabel = false,
     compact = false,
     title,
     description,
@@ -110,7 +116,7 @@ export function PickerDialog<A extends string>({
                 className={cn(compact && "max-sm:hidden")}
             >
                 {icon}
-                <span className="sr-only sm:not-sr-only">{label}</span>
+                <span className={cn(!showLabel && "sr-only sm:not-sr-only")}>{label}</span>
             </Button>
             <DialogContent className="gap-0 p-0">
                 <DialogHeader className="border-b px-4 py-3">

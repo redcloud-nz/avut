@@ -4,22 +4,15 @@
  */
 "use client";
 
-import { LockOpenIcon } from "lucide-react";
+import { ListChecksIcon, LockOpenIcon, UserIcon } from "lucide-react";
 import Link from "next/link";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
-import { DropdownMenuTriggerIcon, ObjectIcons, SessionReviewIcon } from "@/components/icons";
+import { ObjectIcons, SessionReviewIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuGroup,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
+import { type MenuActionProps } from "@/components/ui/menu-action";
+import { ActionsCard, RecordCardMenu } from "@/components/ui/record-card-actions";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
@@ -28,21 +21,25 @@ import { useSessionAccess } from "@/modules/skill-track/lib/use-session-access";
 import { SkillsModule_DeleteSession_Dialog } from "./delete-session";
 import { SkillsModule_ReopenSession_Dialog } from "./reopen-session";
 
-export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSession }) {
-    const scopedRoute = useScopedRoute();
-    const [action, setAction] = useQueryState(
-        "action",
-        parseAsStringLiteral(["update", "reopen", "delete"] as const),
-    );
+/** Every `?action=` the session page's dialogs answer to. Edit's dialog owns `update` itself. */
+const sessionActions = parseAsStringLiteral(["update", "reopen", "delete"] as const);
 
-    const canUpdate = useHasPermission({ skillCheckSession: ["update"] });
-    const canReopen = useHasPermission({ skillCheckSession: ["approve"] });
+/**
+ * The Session card's ⋮ (the page's primary record card): Delete. Edit is the card's pencil,
+ * History its "Updated" footer; Record, Reopen and Review are in
+ * {@link SkillsModule_Session_ActionCards}.
+ *
+ * Mounts the Reopen and Delete dialogs, whichever card or button opens them. A foreign session
+ * (another team's, or an org one, in team scope) is view only here: no ⋮ and no dialogs (nor
+ * their hotkeys), though a stale `?action=` is still cleared.
+ */
+export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSession }) {
+    const [action, setAction] = useQueryState("action", sessionActions);
+
     const canDelete = useHasPermission({ skillCheckSession: ["delete"] });
 
     // Reopen only exists for an approved session; a Draft one has nothing to reopen.
     const isApproved = session.status === "Include";
-    // A foreign session (another team's, or an org one, in team scope) is view only here: no
-    // Edit, Reopen or Delete at all.
     const { foreign, locked } = useSessionAccess(session);
 
     // The edit dialog isn't mounted for a locked session, so it can't clear its own param, and
@@ -55,96 +52,31 @@ export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSessi
         if (staleAction) void setAction(null, { history: "replace" });
     }, [staleAction, setAction]);
 
-    const links = (
-        <DropdownMenuGroup>
-            <DropdownMenuItem asChild>
-                <Link
-                    href={scopedRoute(
-                        {
-                            organization: "/orgs/[slug]/skill-track/sessions/[session_id]/history",
-                            team: "/teams/[slug]/skill-track/sessions/[session_id]/history",
-                        },
-                        { session_id: session.id },
-                    )}
-                >
-                    <ObjectIcons.History /> History
-                </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-                <Link
-                    href={scopedRoute(
-                        {
-                            organization: "/orgs/[slug]/skill-track/sessions/[session_id]/review",
-                            team: "/teams/[slug]/skill-track/sessions/[session_id]/review",
-                        },
-                        { session_id: session.id },
-                    )}
-                >
-                    <SessionReviewIcon /> Review
-                </Link>
-            </DropdownMenuItem>
-        </DropdownMenuGroup>
-    );
+    // Reopen's button is gone once it succeeds, so its dialog returns focus here instead.
+    const triggerRef = useRef<HTMLButtonElement>(null);
 
-    // No actions and no dialogs (nor their hotkeys): only the links to the session's other pages.
-    if (foreign) {
-        return (
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" aria-label="Actions" className="glyph-halo">
-                        <DropdownMenuTriggerIcon />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">{links}</DropdownMenuContent>
-            </DropdownMenu>
-        );
-    }
+    if (foreign) return null;
 
-    const actions: MenuActionProps[] = [
-        // Approving locks the whole session, so Edit is off until it's reopened, as Record is.
-        {
-            verb: "update",
-            label: "Edit",
-            icon: <ObjectIcons.Edit />,
-            onSelect: () => setAction("update", { history: "push" }),
-            disabled: !canUpdate || locked,
-        },
-        ...(isApproved
-            ? [
-                  {
-                      verb: "reopen",
-                      label: "Reopen",
-                      icon: <LockOpenIcon />,
-                      onSelect: () => setAction("reopen", { history: "push" }),
-                      disabled: !canReopen,
-                  } satisfies MenuActionProps,
-              ]
-            : []),
-        {
+    const actions: MenuActionProps[] = [];
+    if (canDelete) {
+        actions.push({
             verb: "delete",
             label: "Delete",
             icon: <ObjectIcons.Delete />,
             onSelect: () => setAction("delete", { history: "push" }),
-            disabled: !canDelete,
             destructive: true,
-        },
-    ];
+        });
+    }
 
     return (
         <>
-            <EntityActionMenu
-                actions={actions}
-                category="Sessions"
-                before={
-                    <>
-                        {links}
-                        <DropdownMenuSeparator />
-                    </>
-                }
-            />
+            <RecordCardMenu actions={actions} category="Sessions" primary triggerRef={triggerRef} />
 
             <SkillsModule_ReopenSession_Dialog
                 session={session}
+                // The Session ⋮ needs `delete`, Reopen `approve`: today only skills-admin holds
+                // `approve`, and it also holds `delete`, so the ⋮ is always there for it.
+                returnFocusRef={triggerRef}
                 open={isApproved && action === "reopen"}
                 onOpenChange={(open) =>
                     setAction(open ? "reopen" : null, {
@@ -161,6 +93,98 @@ export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSessi
                     })
                 }
             />
+        </>
+    );
+}
+
+/**
+ * The session's action cards, at the top of its secondary column, one per job:
+ *
+ * - **Record** opens the two recording views. While the session is approved its checks are
+ *   locked, so the card offers Reopen instead (the Reopen dialog is in
+ *   {@link SkillsModule_SessionMenu}). Not shown for a foreign session, which is view only here.
+ * - **Review** links to the review page, for every viewer.
+ */
+export function SkillsModule_Session_ActionCards({ session }: { session: SkillCheckSession }) {
+    const scopedRoute = useScopedRoute();
+    const [, setAction] = useQueryState("action", sessionActions);
+
+    const canRecord = useHasPermission({ skillCheck: ["create"] });
+    const canReopen = useHasPermission({ skillCheckSession: ["approve"] });
+
+    const isApproved = session.status === "Include";
+    const { foreign } = useSessionAccess(session);
+    const params = { session_id: session.id };
+
+    return (
+        <>
+            {!foreign && (
+                <ActionsCard
+                    title="Record"
+                    description={
+                        isApproved
+                            ? "Checks are locked while the session is approved. Reopen it to record or change them."
+                            : "Record checks one person at a time, or one skill across everyone."
+                    }
+                >
+                    {isApproved && canReopen ? (
+                        <Button onClick={() => setAction("reopen", { history: "push" })}>
+                            <LockOpenIcon /> Reopen
+                        </Button>
+                    ) : null}
+                    {!isApproved && canRecord ? (
+                        <Button variant="outline" asChild>
+                            <Link
+                                href={scopedRoute(
+                                    {
+                                        organization:
+                                            "/orgs/[slug]/skill-track/sessions/[session_id]/by-person",
+                                        team: "/teams/[slug]/skill-track/sessions/[session_id]/by-person",
+                                    },
+                                    params,
+                                )}
+                            >
+                                <UserIcon /> Record by person
+                            </Link>
+                        </Button>
+                    ) : null}
+                    {!isApproved && canRecord ? (
+                        <Button variant="outline" asChild>
+                            <Link
+                                href={scopedRoute(
+                                    {
+                                        organization:
+                                            "/orgs/[slug]/skill-track/sessions/[session_id]/by-skill",
+                                        team: "/teams/[slug]/skill-track/sessions/[session_id]/by-skill",
+                                    },
+                                    params,
+                                )}
+                            >
+                                <ListChecksIcon /> Record by skill
+                            </Link>
+                        </Button>
+                    ) : null}
+                </ActionsCard>
+            )}
+            <ActionsCard
+                title="Review"
+                description="Check coverage and resolve conflicting checks before approving the session."
+            >
+                <Button variant="outline" asChild>
+                    <Link
+                        href={scopedRoute(
+                            {
+                                organization:
+                                    "/orgs/[slug]/skill-track/sessions/[session_id]/review",
+                                team: "/teams/[slug]/skill-track/sessions/[session_id]/review",
+                            },
+                            params,
+                        )}
+                    >
+                        <SessionReviewIcon /> Review
+                    </Link>
+                </Button>
+            </ActionsCard>
         </>
     );
 }

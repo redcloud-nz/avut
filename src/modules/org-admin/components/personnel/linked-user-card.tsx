@@ -19,9 +19,11 @@ import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { PersonId } from "@/lib/schemas/person";
 import { trpc } from "@/trpc/client";
 
+import { AdminModule_Person_LinkedUserMenu } from "./person-menu";
+
 /**
  * The person detail page's linked user card: a second record card ("Linked User") under the
- * person's own, with an arrow out to the user's page. Its own `getLinkedUser` fetch, decoupled from the rest of the page so a caller without
+ * person's own, with an arrow out to the user's page and a ⋮ to unlink it. Its own `getLinkedUser` fetch, decoupled from the rest of the page so a caller without
  * `member: ["view"]` never issues it (the procedure itself requires
  * `member: ["view"], person: ["view"]`, so a plain `person: ["view"]` holder would otherwise get a
  * silent `FORBIDDEN` on a query it can't use). Rendered only inside a
@@ -41,18 +43,21 @@ export function AdminModule_Person_LinkedUser_Card({ personId }: { personId: Per
             label="Linked User"
             updatedAt={linkedUser.user.updatedAt}
             action={
-                <Button variant="ghost" size="icon" asChild>
-                    <Link
-                        href={route("/orgs/[slug]/admin/users/[user_id]", {
-                            slug: organization.slug,
-                            user_id: linkedUser.userId,
-                        })}
-                        aria-label="Open user"
-                        title="Open user"
-                    >
-                        <ArrowUpRightIcon />
-                    </Link>
-                </Button>
+                <>
+                    <Button variant="ghost" size="icon" asChild>
+                        <Link
+                            href={route("/orgs/[slug]/admin/users/[user_id]", {
+                                slug: organization.slug,
+                                user_id: linkedUser.userId,
+                            })}
+                            aria-label="Open user"
+                            title="Open user"
+                        >
+                            <ArrowUpRightIcon />
+                        </Link>
+                    </Button>
+                    <AdminModule_Person_LinkedUserMenu />
+                </>
             }
         >
             <CardContent>

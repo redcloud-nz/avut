@@ -508,6 +508,13 @@ history: "push" })}>`). Radix restores focus on close only to a
 - Wrap every permission-gated trigger in `<Protect>` (or its `render` prop for
   the disabled-item case). This only hides/disables the entry point — the tRPC
   procedure is the real guard.
+- **On a detail page, a record card's ⋮ (`RecordCardMenu`) and the action cards
+  (`ActionsCard`) are triggers only.** They parse the page's verb set and set
+  `?action=`, but never mount dialogs: the page's dialogs stay mounted once, in
+  its `*-menu.tsx`, so they still open when the ⋮ or card renders nothing. A
+  dialog whose button disappears on success (Link, Subscribe, Publish, Reopen,
+  Return) returns focus with `useReturnFocus` and a `fallbackRef` (below). See
+  [detail-page-actions.md](detail-page-actions.md).
 
 ### Returning focus without a `DialogTrigger`
 

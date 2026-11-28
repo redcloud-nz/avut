@@ -20,7 +20,10 @@ import { trpc } from "@/trpc/client";
 import { packageBreadcrumbs } from "../lib/breadcrumbs";
 
 import { SkillPackageBuilder_Package_Contents_List } from "./package-contents";
-import { SkillPackageBuilder_Package_Menu } from "./package-menu";
+import {
+    SkillPackageBuilder_Package_Menu,
+    SkillPackageBuilder_Package_PublishingCard,
+} from "./package-menu";
 import { SkillPackageBuilder_UpdatePackage_Dialog } from "./update-package";
 
 export function SkillPackageBuilder_Package_Content({
@@ -51,9 +54,6 @@ export function SkillPackageBuilder_Package_Content({
                 >
                     {skillPackage.name}
                 </Saratoga.Title>
-                <Saratoga.Actions>
-                    <SkillPackageBuilder_Package_Menu skillPackage={skillPackage} />
-                </Saratoga.Actions>
             </Saratoga.Header>
             <Saratoga.Columns>
                 <Saratoga.Column slot="main">
@@ -65,11 +65,15 @@ export function SkillPackageBuilder_Package_Content({
                             { slug: organization.slug, package_id: skillPackage.id },
                         )}
                         action={
-                            <Protect permissions={{ skillPackage: ["update"] }}>
-                                <SkillPackageBuilder_UpdatePackage_Dialog
-                                    skillPackage={skillPackage}
-                                />
-                            </Protect>
+                            <>
+                                <Protect permissions={{ skillPackage: ["update"] }}>
+                                    <SkillPackageBuilder_UpdatePackage_Dialog
+                                        skillPackage={skillPackage}
+                                        primary
+                                    />
+                                </Protect>
+                                <SkillPackageBuilder_Package_Menu skillPackage={skillPackage} />
+                            </>
                         }
                     >
                         <CardContent>
@@ -87,6 +91,9 @@ export function SkillPackageBuilder_Package_Content({
                         </CardContent>
                     </RecordCard>
                     <SkillPackageBuilder_Package_Contents_List skillPackage={skillPackage} />
+                </Saratoga.Column>
+                <Saratoga.Column slot="secondary">
+                    <SkillPackageBuilder_Package_PublishingCard skillPackage={skillPackage} />
                 </Saratoga.Column>
             </Saratoga.Columns>
         </Saratoga.Root>

@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { useState } from "react";
+import { RefObject, useState } from "react";
 import { toast } from "sonner";
 
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
@@ -27,6 +27,7 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { ObjectName } from "@/components/ui/typography";
 import { useOrganization } from "@/hooks/use-organization";
+import { useReturnFocus } from "@/hooks/use-return-focus";
 import { PersonId } from "@/lib/schemas/person";
 import { UserId } from "@/lib/schemas/user";
 import { trpc } from "@/trpc/client";
@@ -34,11 +35,19 @@ import { trpc } from "@/trpc/client";
 export function AdminModule_LinkPerson_Dialog({
     userId,
     userName,
+    returnFocusRef,
     ...props
-}: DialogProps & { userId: UserId; userName: string }) {
+}: DialogProps & {
+    userId: UserId;
+    userName: string;
+    /** Where focus goes on close when the button that opened the dialog is gone. */
+    returnFocusRef?: RefObject<HTMLElement | null>;
+}) {
+    const returnFocus = useReturnFocus(returnFocusRef);
+
     return (
         <Dialog {...props}>
-            <DialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
+            <DialogContent {...returnFocus}>
                 <DialogHeader>
                     <DialogTitle>Link Person</DialogTitle>
                     <DialogDescription>

@@ -9,11 +9,8 @@ import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
 
-import {
-    MenuAction,
-    useEntityActionMenuTrigger,
-    type MenuActionProps,
-} from "@/components/ui/menu-action";
+import { Button } from "@/components/ui/button";
+import { ActionsCard, useActionsCardFocusFallback } from "@/components/ui/record-card-actions";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { hasD4HTeamPermission } from "@/lib/d4h-permissions";
@@ -22,15 +19,25 @@ import { trpc } from "@/trpc/client";
 import { D4HI3Module_ReturnEquipmentItem_Dialog } from "./return-equipment-item";
 
 /**
- * I3's Return action for the D4H item page's Actions menu, which its `page.tsx` passes in as two
- * slots: {@link D4HI3Module_ItemReturn_MenuAction} goes in the menu and
- * {@link D4HI3Module_ItemReturn_Dialog} beside it.
+ * I3's titled action card for the D4H item page, which its `page.tsx` passes in as the content's
+ * `actionCard` slot (the D4H module can't import I3), wrapped in an `ActionsCardFocusFallback`. The item page has no ⋮ to host a dialog, so
+ * the card mounts the Return dialog itself.
  *
- * Return is left out when the item isn't issued to a member, and disabled when it's already
- * returned, the viewer lacks the I3 role, or their D4H account lacks Equipment UPDATE.
+ * Return shows only when the viewer can take it: the item is issued to a member and not already
+ * returned, the viewer has the I3 role, and their D4H account has Equipment UPDATE on the team.
+ * With no Return to offer, the card renders nothing.
  */
-function useItemReturn(teamId: number, itemId: number) {
+export function D4HI3Module_ItemReturn_Card({
+    teamId,
+    itemId,
+}: {
+    teamId: number;
+    itemId: number;
+}) {
     const organization = useOrganization();
+    // Where focus goes once the dialog closes: the Return button is gone after it succeeds. The
+    // item page provides the D4H Item card's pencil, which every viewer sees.
+    const returnFocusRef = useActionsCardFocusFallback();
 
     const [
         {
@@ -61,56 +68,31 @@ function useItemReturn(teamId: number, itemId: number) {
         ? hasD4HTeamPermission(team.permissions, "Equipment", "UPDATE")
         : false;
 
-    const action: MenuActionProps = {
-        verb: "return",
-        label: "Return",
-        icon: <PackageCheckIcon />,
-        onSelect: () => setAction("return", { history: "push" }),
-        disabled: !holder || !hasPermission || !canUpdateInD4H || returnedItemIds.includes(item.id),
-    };
-
-    return { item, holder, action };
-}
-
-/** The Return item in the D4H item page's Actions menu. */
-export function D4HI3Module_ItemReturn_MenuAction({
-    teamId,
-    itemId,
-}: {
-    teamId: number;
-    itemId: number;
-}) {
-    const { holder, action } = useItemReturn(teamId, itemId);
-
-    if (!holder) return null;
-
-    return <MenuAction {...action} />;
-}
-
-/**
- * The `?action=return` dialog, mounted beside the Actions menu so it stays open after the menu
- * closes. Focus goes back to the menu's button when the dialog closes.
- */
-export function D4HI3Module_ItemReturn_Dialog({
-    teamId,
-    itemId,
-}: {
-    teamId: number;
-    itemId: number;
-}) {
-    const { item, holder, action } = useItemReturn(teamId, itemId);
-    const triggerRef = useEntityActionMenuTrigger();
-
-    if (!holder) return null;
+    const canReturn =
+        !!holder && hasPermission && canUpdateInD4H && !returnedItemIds.includes(item.id);
 
     return (
-        <D4HI3Module_ReturnEquipmentItem_Dialog
-            teamId={teamId}
-            itemId={item.id}
-            itemLabel={`#${item.ref} ${item.kind.title}`}
-            holder={holder}
-            canReturn={!action.disabled}
-            returnFocusRef={triggerRef}
-        />
+        <>
+            <ActionsCard
+                title="I3"
+                description="Return queues a D4H task to retire the item. Nothing changes in D4H until the task is done."
+            >
+                {canReturn ? (
+                    <Button onClick={() => void setAction("return", { history: "push" })}>
+                        <PackageCheckIcon /> Return
+                    </Button>
+                ) : null}
+            </ActionsCard>
+            {holder && (
+                <D4HI3Module_ReturnEquipmentItem_Dialog
+                    teamId={teamId}
+                    itemId={item.id}
+                    itemLabel={`#${item.ref} ${item.kind.title}`}
+                    holder={holder}
+                    canReturn={canReturn}
+                    returnFocusRef={returnFocusRef}
+                />
+            )}
+        </>
     );
 }

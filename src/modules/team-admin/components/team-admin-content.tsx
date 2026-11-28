@@ -6,12 +6,13 @@
 
 import { useRouter } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useRef } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Protect } from "@/components/protect";
-import { Teams_D4HCard } from "@/components/teams/d4h-link-card";
+import { Teams_D4HCard, Teams_D4HLink_ActionsCard } from "@/components/teams/d4h-link-card";
 import { Teams_TeamAccess_Card } from "@/components/teams/team-access-card";
 import { Teams_Details_Card } from "@/components/teams/team-details-card";
 import { useOrganization } from "@/hooks/use-organization";
@@ -21,7 +22,6 @@ import type { TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
 import { TeamAdmin_MembersLink_Card } from "./members-link-card";
-import { TeamAdmin_Team_Menu } from "./team-menu";
 
 /**
  * Team admin's overview (`/teams/[slug]/admin`): the team's details, access grants and D4H link,
@@ -38,6 +38,9 @@ export function TeamAdmin_Overview_Content() {
     const { id: teamId } = useTeam();
 
     const [, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
+
+    // The Team card's pencil: where the D4H dialogs return focus once their button is gone.
+    const editButtonRef = useRef<HTMLButtonElement>(null);
 
     const { data: team } = useSuspenseQuery(
         trpc.teams.getTeam.queryOptions({ organizationId: organization.id, teamId }),
@@ -61,9 +64,6 @@ export function TeamAdmin_Overview_Content() {
         <Saratoga.Root>
             <Saratoga.Header>
                 <Saratoga.Title>Team Admin</Saratoga.Title>
-                <Saratoga.Actions>
-                    <TeamAdmin_Team_Menu team={team} />
-                </Saratoga.Actions>
             </Saratoga.Header>
 
             <Saratoga.Columns>
@@ -72,6 +72,7 @@ export function TeamAdmin_Overview_Content() {
                         team={team}
                         requireSlug
                         onUpdated={(updated) => void handleUpdated(updated)}
+                        triggerRef={editButtonRef}
                     />
 
                     <Protect permissions={{ member: ["view"] }}>
@@ -84,10 +85,15 @@ export function TeamAdmin_Overview_Content() {
                         />
                     </Protect>
 
-                    <Teams_D4HCard team={team} onChanged={() => router.refresh()} />
+                    <Teams_D4HCard
+                        team={team}
+                        onChanged={() => router.refresh()}
+                        returnFocusRef={editButtonRef}
+                    />
                 </Saratoga.Column>
 
                 <Saratoga.Column slot="secondary">
+                    <Teams_D4HLink_ActionsCard team={team} />
                     <TeamAdmin_MembersLink_Card teamId={team.id} />
                 </Saratoga.Column>
             </Saratoga.Columns>

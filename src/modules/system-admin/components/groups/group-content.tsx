@@ -41,117 +41,114 @@ export function SystemAdmin_Group_Content({ groupId }: { groupId: OrganizationGr
             <Saratoga.Breadcrumbs items={[{ label: "Groups", href: "/system/admin/groups" }]} />
             <Saratoga.Header>
                 <Saratoga.Title>{group.name}</Saratoga.Title>
-                <Saratoga.Actions>
-                    <SystemAdmin_Group_Menu group={group} />
-                </Saratoga.Actions>
             </Saratoga.Header>
 
-            <Saratoga.Columns>
-                <Saratoga.Column slot="main">
-                    <RecordCard
-                        label="Group"
-                        updatedAt={group.updatedAt}
-                        action={<SystemAdmin_EditGroup_Dialog group={group} />}
-                    >
-                        <CardContent>
-                            <DataList>
-                                <RecordCardId label="Group ID" id={group.id} />
-                                <DataItem>
-                                    <DataItemTitle>Name</DataItemTitle>
-                                    <DataItemValue>{group.name}</DataItemValue>
-                                </DataItem>
-                                <DataItem>
-                                    <DataItemTitle>Slug</DataItemTitle>
-                                    <DataItemValue className="font-mono">
-                                        {group.slug}
-                                    </DataItemValue>
-                                </DataItem>
-                            </DataList>
-                        </CardContent>
-                    </RecordCard>
+            {/* Nothing for a secondary column: full width. */}
+            <div className="space-y-4">
+                <RecordCard
+                    label="Group"
+                    updatedAt={group.updatedAt}
+                    action={
+                        <>
+                            <SystemAdmin_EditGroup_Dialog group={group} primary />
+                            <SystemAdmin_Group_Menu group={group} />
+                        </>
+                    }
+                >
+                    <CardContent>
+                        <DataList>
+                            <RecordCardId label="Group ID" id={group.id} />
+                            <DataItem>
+                                <DataItemTitle>Name</DataItemTitle>
+                                <DataItemValue>{group.name}</DataItemValue>
+                            </DataItem>
+                            <DataItem>
+                                <DataItemTitle>Slug</DataItemTitle>
+                                <DataItemValue className="font-mono">{group.slug}</DataItemValue>
+                            </DataItem>
+                        </DataList>
+                    </CardContent>
+                </RecordCard>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Members</CardTitle>
-                            <CardAction>
-                                <SystemAdmin_AddGroupMember_Dialog
-                                    groupId={group.id}
-                                    activeOrganizationIds={activeOrganizationIds}
-                                />
-                            </CardAction>
-                        </CardHeader>
-                        <CardContent>
-                            {group.memberships.length === 0 ? (
-                                <p className="text-sm text-muted-foreground">No members.</p>
-                            ) : (
-                                <table className="w-full text-sm">
-                                    <thead>
-                                        <tr className="text-left text-muted-foreground">
-                                            <th className="py-1 pr-4 font-medium">Organisation</th>
-                                            <th className="py-1 pr-4 font-medium">Role</th>
-                                            <th className="py-1 font-medium">Membership</th>
-                                            <th className="py-1" />
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {group.memberships.map((membership) => {
-                                            const active = membership.status === "Active";
-                                            return (
-                                                <tr
-                                                    key={membership.id}
-                                                    className={cn(
-                                                        "border-t",
-                                                        !active && "text-muted-foreground",
-                                                    )}
-                                                >
-                                                    <td className="py-1 pr-4">
-                                                        <Link
-                                                            href={route(
-                                                                "/system/admin/organizations/[organizationId]",
-                                                                {
-                                                                    organizationId:
-                                                                        membership.organization.id,
-                                                                },
-                                                            )}
-                                                        >
-                                                            {membership.organization.name}
-                                                        </Link>
-                                                    </td>
-                                                    <td className="py-1 pr-4">
-                                                        {
-                                                            OrganizationGroupRole.displayNames[
-                                                                membership.role
-                                                            ]
-                                                        }
-                                                    </td>
-                                                    <td className="py-1">
-                                                        <Badge
-                                                            variant={
-                                                                active ? "secondary" : "outline"
-                                                            }
-                                                        >
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Members</CardTitle>
+                        <CardAction>
+                            <SystemAdmin_AddGroupMember_Dialog
+                                groupId={group.id}
+                                activeOrganizationIds={activeOrganizationIds}
+                            />
+                        </CardAction>
+                    </CardHeader>
+                    <CardContent>
+                        {group.memberships.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">No members.</p>
+                        ) : (
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="text-left text-muted-foreground">
+                                        <th className="py-1 pr-4 font-medium">Organisation</th>
+                                        <th className="py-1 pr-4 font-medium">Role</th>
+                                        <th className="py-1 font-medium">Membership</th>
+                                        <th className="py-1" />
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {group.memberships.map((membership) => {
+                                        const active = membership.status === "Active";
+                                        return (
+                                            <tr
+                                                key={membership.id}
+                                                className={cn(
+                                                    "border-t",
+                                                    !active && "text-muted-foreground",
+                                                )}
+                                            >
+                                                <td className="py-1 pr-4">
+                                                    <Link
+                                                        href={route(
+                                                            "/system/admin/organizations/[organizationId]",
                                                             {
-                                                                OrganizationGroupMembershipStatus
-                                                                    .displayNames[membership.status]
-                                                            }
-                                                        </Badge>
-                                                    </td>
-                                                    <td className="py-1 text-right">
-                                                        <SystemAdmin_GroupMemberActionsMenu
-                                                            group={group}
-                                                            membership={membership}
-                                                        />
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            )}
-                        </CardContent>
-                    </Card>
-                </Saratoga.Column>
-            </Saratoga.Columns>
+                                                                organizationId:
+                                                                    membership.organization.id,
+                                                            },
+                                                        )}
+                                                    >
+                                                        {membership.organization.name}
+                                                    </Link>
+                                                </td>
+                                                <td className="py-1 pr-4">
+                                                    {
+                                                        OrganizationGroupRole.displayNames[
+                                                            membership.role
+                                                        ]
+                                                    }
+                                                </td>
+                                                <td className="py-1">
+                                                    <Badge
+                                                        variant={active ? "secondary" : "outline"}
+                                                    >
+                                                        {
+                                                            OrganizationGroupMembershipStatus
+                                                                .displayNames[membership.status]
+                                                        }
+                                                    </Badge>
+                                                </td>
+                                                <td className="py-1 text-right">
+                                                    <SystemAdmin_GroupMemberActionsMenu
+                                                        group={group}
+                                                        membership={membership}
+                                                    />
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
         </Saratoga.Root>
     );
 }
