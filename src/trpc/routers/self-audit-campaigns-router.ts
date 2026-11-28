@@ -20,6 +20,7 @@ import {
 } from "@/lib/schemas/self-audit";
 import { TeamId } from "@/lib/schemas/team";
 import { SelfAuditApplyResult, SelfAuditDifferences } from "@/lib/self-audit-differences";
+import { SelfAuditNeedsReport } from "@/lib/self-audit-needs";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import * as SelfAuditCampaigns from "@/server/services/self-audit-campaigns";
 
@@ -195,31 +196,22 @@ export const selfAuditCampaignsRouter = createTrpcRouter({
      */
     getNeedsReport: selfAuditProcedure
         .input(z.object({ campaignId: SelfAuditCampaignId.schema }))
-        .output(
-            z.object({
-                groups: z.array(
-                    z.object({
-                        templateId: z.string(),
-                        templateName: z.string(),
-                        category: z.string(),
-                        variantLabel: z.string(),
-                        size: z.string(),
-                        count: z.number(),
-                        members: z.array(z.string()),
-                    }),
-                ),
-                extras: z.array(
-                    z.object({
-                        memberName: z.string(),
-                        item: z.string(),
-                        size: z.string(),
-                        notes: z.string(),
-                    }),
-                ),
-            }),
-        )
+        .output(SelfAuditNeedsReport)
         .query(async ({ ctx, input: { campaignId } }) => {
             return SelfAuditCampaigns.getNeedsReport(ctx, campaignId);
+        }),
+
+    /**
+     * The needs report as one CSV file, a row per need, for the needs report's download route.
+     * Reads only AVUT.
+     *
+     * @throws TRPCError(NOT_FOUND) if the self audit campaign isn't in the organization.
+     */
+    getNeedsReportCsv: selfAuditProcedure
+        .input(z.object({ campaignId: SelfAuditCampaignId.schema }))
+        .output(z.string())
+        .query(async ({ ctx, input: { campaignId } }) => {
+            return SelfAuditCampaigns.getNeedsReportCsv(ctx, campaignId);
         }),
 
     /**

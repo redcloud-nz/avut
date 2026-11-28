@@ -9,6 +9,8 @@
  * `docs/plans/2026-11-28-self-audit-needs-and-fixes.md`); the caller picks the requests.
  */
 
+import * as z from "zod";
+
 import { csvCell } from "@/lib/csv";
 import type {
     SelfAuditAnswerData,
@@ -33,29 +35,33 @@ export type SelfAuditNeedsInput = {
 };
 
 /** Needs of one template, variant and size. */
-export type SelfAuditNeedsGroup = {
-    templateId: string;
-    templateName: string;
-    category: string;
-    variantLabel: string;
-    size: string;
-    count: number;
+export const SelfAuditNeedsGroup = z.object({
+    templateId: z.string(),
+    templateName: z.string(),
+    category: z.string(),
+    variantLabel: z.string(),
+    size: z.string(),
+    count: z.number(),
     /** One per need, sorted: a member who needs two appears twice. */
-    members: string[];
-};
+    members: z.array(z.string()),
+});
+export type SelfAuditNeedsGroup = z.infer<typeof SelfAuditNeedsGroup>;
 
 /** Something a member needs that isn't on the list. */
-export type SelfAuditExtraNeed = {
-    memberName: string;
-    item: string;
-    size: string;
-    notes: string;
-};
+export const SelfAuditExtraNeed = z.object({
+    memberName: z.string(),
+    item: z.string(),
+    size: z.string(),
+    notes: z.string(),
+});
+export type SelfAuditExtraNeed = z.infer<typeof SelfAuditExtraNeed>;
 
-export type SelfAuditNeedsReport = {
-    groups: SelfAuditNeedsGroup[];
-    extras: SelfAuditExtraNeed[];
-};
+/** The needs report: the grouped needs on the list, and the needs not on it. */
+export const SelfAuditNeedsReport = z.object({
+    groups: z.array(SelfAuditNeedsGroup),
+    extras: z.array(SelfAuditExtraNeed),
+});
+export type SelfAuditNeedsReport = z.infer<typeof SelfAuditNeedsReport>;
 
 /** The size of a need that gives none. */
 export const NO_SIZE = "No size given";

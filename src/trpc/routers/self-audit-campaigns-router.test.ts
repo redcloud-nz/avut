@@ -1121,6 +1121,25 @@ describe("selfAuditCampaignsRouter", () => {
                 owner().getNeedsReport({ organizationId: T.org, campaignId }),
             ).rejects.toMatchObject({ code: "FORBIDDEN" });
         });
+
+        it("gives the same needs as CSV, a row per need", async () => {
+            const csv = await admin().getNeedsReportCsv({ organizationId: T.org, campaignId });
+
+            expect(csv.split("\r\n")).toEqual([
+                "Template,Variant,Size,Member,Reason,Notes",
+                expect.stringMatching(/^Helmet,Petzl Vertex,M,Ana Lee,/),
+                expect.stringMatching(/^Helmet,Petzl Vertex,M,Zoe North,/),
+                "(not on list),Head torch,No size given,Ana Lee,,",
+                "(not on list),Head torch,No size given,Zoe North,,",
+                "",
+            ]);
+        });
+
+        it("refuses the CSV to an org owner without the system admin role", async () => {
+            await expect(
+                owner().getNeedsReportCsv({ organizationId: T.org, campaignId }),
+            ).rejects.toMatchObject({ code: "FORBIDDEN" });
+        });
     });
 
     describe("listDifferences", () => {

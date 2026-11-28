@@ -68,7 +68,7 @@ Once members have answered a Self Audit Campaign, two new pages under the campai
 
 ### Review group C: UI (one visual checkpoint at the end)
 
-- [ ] **5. Needs report page and CSV** `visual`
+- [x] **5. Needs report page and CSV** `visual` (feat(d4h-i3): self audit campaign needs report page and CSV). Notes: a `getNeedsReportCsv` router query wraps the service so the route gets a permission-checked context; the CSV href is the page's `route()` + `/csv`; the needs report is now Zod schemas in `self-audit-needs.ts` (resolves the Earlier review note); not yet checked live on 3106.
   - **Files:** `src/app/(wrapper)/(authenticated)/orgs/[slug]/d4h-i3/self-audit-campaigns/[campaign_id]/needs/{page.tsx,csv/route.ts}`, new `src/modules/d4h-i3/components/self-audit-campaigns/campaign-needs.tsx`, `campaign-content.tsx` (the "Needs Report" header button), `src/components/docs/help-cards.test.ts`.
   - **Do:** Decisions 3, 9. Page per `docs/patterns/detail-page-data-fetching.md` (prefetch + `HydrateClient`, `Std.ScrollContainer`, trail in the content). Needs as a table grouped by template (Variant, Size, Count, Members), matching neighbouring pages; an "Other needs" table for extras; a "Download CSV" button linking the route. Empty state when no submitted needs.
   - **Done when:** the page renders on 3106 for a sent campaign with submitted answers; CSV downloads; `npm run check` passes.
