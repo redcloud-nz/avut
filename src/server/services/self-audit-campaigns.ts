@@ -1183,37 +1183,78 @@ async function lockCampaign(
 }
 
 /**
- * Snapshot what each current member of a campaign's D4H team would be asked, against the
- * campaign's stored templates (decision 7 of the campaigns plan), not the bundle as it is now: a
- * member added later is asked about the same templates as everyone else.
+ * The current members of a campaign's D4H team, as recipients. With `fresh`, read from D4H rather
+ * than the hours-long cache.
+ *
+ * @throws NotFoundError if the token doesn't reach the D4H team.
+ */
+async function readTeamRecipients(
+    accessToken: D4HAccessToken_ServerOnly,
+    d4hTeamId: number,
+    { fresh = false }: { fresh?: boolean } = {},
+): Promise<SelfAuditRecipient[]> {
+    const credentialRef = toD4HCredentialRef(accessToken);
+    await requireReachableD4HTeam(accessToken, d4hTeamId);
+    if (fresh) expireD4HTeamMembers(credentialRef, d4hTeamId);
+    const members = await getD4HTeamMembers(credentialRef, d4hTeamId);
+    return members.map(
+        (member): SelfAuditRecipient => ({
+            id: member.id,
+            name: member.name,
+            email: emailOf(member),
+        }),
+    );
+}
+
+/** A member's snapshot, with the items D4H records as issued to them now. */
+export type SelfAuditLiveMemberSnapshot<M extends SelfAuditMemberSource> =
+    SelfAuditMemberSnapshot<M> & {
+        /**
+         * Per stored template present in the comparison (keyed by template id), the member's
+         * counted items of its column: matched by D4H kind, LOST left out, so one item can appear
+         * under two templates that share a kind. Unlike `heldItems`, not first-template-wins.
+         */
+        live: Record<string, SelfAuditIssuedItem[]>;
+    };
+
+export type SelfAuditLiveComparison<M extends SelfAuditMemberSource> = {
+    members: SelfAuditLiveMemberSnapshot<M>[];
+    /**
+     * The stored templates present in the comparison. One absent (its I3 template since deleted,
+     * or since unlinked from D4H) matches no items.
+     */
+    liveTemplateIds: string[];
+};
+
+/**
+ * Compare the given members against the campaign's stored templates (decision 7 of the campaigns
+ * plan), not the bundle as it is now, with the D4H team's equipment read from D4H: what each
+ * member would be asked, and what they hold now. Adding members passes the D4H team's current
+ * members (`readTeamRecipients`), so a member added later is asked about the same templates as
+ * everyone else. The differences pass a campaign's requests, so a member who has since left the
+ * team is still compared (decision 4 of `docs/plans/2026-11-28-self-audit-needs-and-fixes.md`).
  *
  * Each stored template is matched by its I3 template's current D4H type and rules. One since
  * deleted, or since unlinked from D4H, matches no items. Only the variants the stored template
  * offers are offered, so a held item's `variantId` is always one the member can pick.
  *
- * With `fresh`, the team's members are read from D4H rather than the hours-long cache.
- *
- * @throws NotFoundError if the token doesn't reach the D4H team.
+ * The caller checks the token reaches the D4H team.
  */
-async function snapshotCampaignMembers(
+export async function snapshotCampaignMembers<M extends SelfAuditMemberSource>(
     ctx: OrgServiceContext,
     {
         accessToken,
         d4hTeamId,
         templates,
-        fresh = false,
+        members,
     }: {
         accessToken: D4HAccessToken_ServerOnly;
         d4hTeamId: number;
         templates: readonly SelfAuditTemplate[];
-        fresh?: boolean;
+        members: readonly M[];
     },
-): Promise<SelfAuditMemberSnapshot<SelfAuditRecipient>[]> {
-    const credentialRef = toD4HCredentialRef(accessToken);
-    await requireReachableD4HTeam(accessToken, d4hTeamId);
-    if (fresh) expireD4HTeamMembers(credentialRef, d4hTeamId);
-
-    const [records, items, members] = await Promise.all([
+): Promise<SelfAuditLiveComparison<M>> {
+    const [records, items] = await Promise.all([
         ctx.prisma.i3Template.findMany({
             where: {
                 id: { in: templates.map((template) => template.id) },
@@ -1222,7 +1263,6 @@ async function snapshotCampaignMembers(
             include: { d4h: true, variants: { include: { d4h: true } } },
         }),
         fetchD4HTeamEquipmentItems(accessToken, d4hTeamId),
-        getD4HTeamMembers(credentialRef, d4hTeamId),
     ]);
     const recordById = new Map(records.map((record) => [record.id, record]));
 
@@ -1272,29 +1312,37 @@ async function snapshotCampaignMembers(
     const issued = filterTeamIssuedItems(items, d4hTeamId).map(
         ({ item, holderId }): SelfAuditIssuedItem => ({ ...item, holder: { id: holderId } }),
     );
-    const recipients = members.map(
-        (member): SelfAuditRecipient => ({
-            id: member.id,
-            name: member.name,
-            email: emailOf(member),
-        }),
-    );
 
     const comparison = compareBundle({
         lines,
-        members: recipients,
+        members,
         items: issued,
         // The stored templates fitted the team when the campaign was created.
         fittingTemplateIds: templates.map((template) => template.id),
     });
-    return buildSelfAuditSnapshot({
+    const snapshot = buildSelfAuditSnapshot({
         columns: comparison.columns,
         rows: comparison.rows,
         variants: variantSources,
         fittingVariantIds: templates.flatMap((template) =>
             template.variants.map((variant) => variant.id),
         ),
-    }).members;
+    });
+    // `buildSelfAuditSnapshot` keeps the comparison's row order.
+    return {
+        members: snapshot.members.map(
+            (member, index): SelfAuditLiveMemberSnapshot<M> => ({
+                ...member,
+                live: Object.fromEntries(
+                    comparison.columns.map((column, columnIndex) => [
+                        column.template.id,
+                        comparison.rows[index].cells[columnIndex].items.map(({ item }) => item),
+                    ]),
+                ),
+            }),
+        ),
+        liveTemplateIds: comparison.columns.map((column) => column.template.id),
+    };
 }
 
 /** A D4H member who can be added to a self audit campaign. */
@@ -1459,13 +1507,16 @@ export async function addMembers(
     // Checked before D4H is read, and again under the lock (below).
     const firstRead = checkAddable(campaign.requests, memberIds);
 
-    const snapshots = await snapshotCampaignMembers(ctx, {
-        accessToken,
-        d4hTeamId: campaign.d4hTeamId,
-        templates: z.array(SelfAuditTemplate).parse(campaign.templates),
+    const recipients = await readTeamRecipients(accessToken, campaign.d4hTeamId, {
         // A re-added member's email is refreshed from D4H: read it fresh, so one just fixed
         // there is the one used.
         fresh: memberIds.some((memberId) => firstRead.has(memberId)),
+    });
+    const { members: snapshots } = await snapshotCampaignMembers(ctx, {
+        accessToken,
+        d4hTeamId: campaign.d4hTeamId,
+        templates: z.array(SelfAuditTemplate).parse(campaign.templates),
+        members: recipients,
     });
     const snapshotByMember = new Map(snapshots.map((snapshot) => [snapshot.member.id, snapshot]));
     const chosen = memberIds.map((memberId) => {

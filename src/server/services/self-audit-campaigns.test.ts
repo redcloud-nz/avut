@@ -23,6 +23,7 @@ import {
     SelfAuditRequestId,
     SelfAuditResponseData,
     type SelfAuditCampaignId,
+    type SelfAuditTemplate,
 } from "@/lib/schemas/self-audit";
 import { TeamId } from "@/lib/schemas/team";
 import { UserId } from "@/lib/schemas/user";
@@ -50,6 +51,7 @@ import {
     resendRequest,
     SEND_SPACING_MS,
     sendCampaign,
+    snapshotCampaignMembers,
     statusOf,
     withdrawRequest,
     type SelfAuditIssuedItem,
@@ -1365,6 +1367,100 @@ describe("campaigns", () => {
             await expect(add(campaignId, [42], deps)).rejects.toBeInstanceOf(ConflictError);
             expect(deps.sendEmail).not.toHaveBeenCalled();
             expect(await requestsOf(campaignId)).toHaveLength(0);
+        });
+    });
+
+    describe("snapshotCampaignMembers", () => {
+        const helmetTemplate: SelfAuditTemplate = {
+            id: S.helmet,
+            category: "PPE",
+            name: "Helmet",
+            variants: [],
+            requireSN: false,
+            sized: true,
+            sizeOptional: true,
+            sizeOptions: [],
+        };
+        /** A stored template whose I3 template has since been deleted. */
+        const deletedTemplate: SelfAuditTemplate = {
+            ...helmetTemplate,
+            id: I3TemplateId.create(),
+            name: "Gone",
+        };
+
+        it("compares the given members, live items per template, in or out of the team", async () => {
+            vi.mocked(fetchD4HTeamEquipmentItems).mockResolvedValueOnce([
+                item(1, 42, HELMET_KIND),
+                item(2, 42, HELMET_KIND, { status: "LOST" }),
+                // Held by a member no longer in the team: still compared.
+                item(3, 99, HELMET_KIND),
+            ]);
+            vi.mocked(getD4HTeamMembers).mockClear();
+
+            const result = await snapshotCampaignMembers(ctx(), {
+                accessToken,
+                d4hTeamId: TEAM_ID,
+                templates: [deletedTemplate, helmetTemplate],
+                members: [
+                    { id: 42, name: "John Smith" },
+                    { id: 99, name: "Left Team" },
+                    { id: 43, name: "Ana Lee" },
+                ],
+            });
+
+            expect(getD4HTeamMembers).not.toHaveBeenCalled();
+            expect(result.liveTemplateIds).toEqual([S.helmet]);
+            const byMember = Object.fromEntries(
+                result.members.map((member) => [member.member.id, member]),
+            );
+            expect(byMember[42].live).toEqual({ [S.helmet]: [expect.objectContaining({ id: 1 })] });
+            expect(byMember[42].heldItems).toEqual([
+                expect.objectContaining({ id: "1", templateId: S.helmet }),
+            ]);
+            expect(byMember[99].live).toEqual({ [S.helmet]: [expect.objectContaining({ id: 3 })] });
+            expect(byMember[43].live).toEqual({ [S.helmet]: [] });
+        });
+
+        it("lists an item under every template of its kind in `live`, once in `heldItems`", async () => {
+            const helmetAgain: SelfAuditTemplate = { ...helmetTemplate, name: "Helmet again" };
+            const otherHelmet = I3TemplateId.create();
+            await db.i3Template.create({
+                data: {
+                    id: otherHelmet,
+                    organizationId: S.org,
+                    name: "Other helmet",
+                    description: "",
+                    d4h: {
+                        create: {
+                            categoryId: 1,
+                            categoryTitle: "PPE",
+                            kindId: HELMET_KIND,
+                            kindTitle: "Helmet",
+                            outputRefFormat: "",
+                            requireSN: false,
+                        },
+                    },
+                },
+            });
+            try {
+                const result = await snapshotCampaignMembers(ctx(), {
+                    accessToken,
+                    d4hTeamId: TEAM_ID,
+                    templates: [helmetTemplate, { ...helmetAgain, id: otherHelmet }],
+                    members: [{ id: 42, name: "John Smith" }],
+                });
+                const [john] = result.members;
+                expect(john.heldItems).toEqual([
+                    expect.objectContaining({ id: "1", templateId: S.helmet }),
+                ]);
+                expect(john.live).toEqual({
+                    [S.helmet]: [expect.objectContaining({ id: 1 })],
+                    [otherHelmet]: [expect.objectContaining({ id: 1 })],
+                });
+            } finally {
+                await db.i3Template_D4H.deleteMany({ where: { templateId: otherHelmet } });
+                await db.i3Template.delete({ where: { id: otherHelmet } });
+            }
         });
     });
 
