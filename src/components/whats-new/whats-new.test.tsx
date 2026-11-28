@@ -2,6 +2,7 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
+import { useQueryState } from "nuqs";
 import { NuqsTestingAdapter, type UrlUpdateEvent } from "nuqs/adapters/testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -47,6 +48,16 @@ function markSeenCalls() {
     return fetchMock.mock.calls.filter(([url]) => String(url).includes("whatsNew.markSeen"));
 }
 
+/** Clears `?whats-new=` from outside the dialog, as Back does. */
+function ClearParam() {
+    const [, setParam] = useQueryState("whats-new");
+    return (
+        <button type="button" onClick={() => void setParam(null)}>
+            Clear param
+        </button>
+    );
+}
+
 /** Applies `meta.effects`, as `Providers` does in the app. */
 function Effector({ queryClient }: { queryClient: QueryClient }) {
     useMutationEffector(queryClient);
@@ -82,6 +93,7 @@ function renderWhatsNew({
             <NuqsTestingAdapter searchParams={searchParams} hasMemory onUrlUpdate={onUrlUpdate}>
                 <WhatsNewVersionButton />
                 <WhatsNew />
+                <ClearParam />
             </NuqsTestingAdapter>
         </QueryClientProvider>,
     );
@@ -157,6 +169,19 @@ describe("WhatsNew", () => {
         await screen.findByRole("dialog");
         await user.keyboard("{Escape}");
 
+        await waitFor(() => expect(markSeenCalls()).toHaveLength(1));
+        const [, init] = markSeenCalls()[0];
+        expect(JSON.parse(String(init?.body))).toEqual({ 0: { json: { through: "0.11" } } });
+    });
+
+    it("marks seen when the param is cleared from outside the dialog, as Back does", async () => {
+        renderWhatsNew({ unseen: [newer, older] });
+
+        await screen.findByRole("dialog");
+        // The open modal aria-hides (and blocks pointer events on) the page behind it.
+        fireEvent.click(screen.getByRole("button", { name: "Clear param", hidden: true }));
+
+        await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
         await waitFor(() => expect(markSeenCalls()).toHaveLength(1));
         const [, init] = markSeenCalls()[0];
         expect(JSON.parse(String(init?.body))).toEqual({ 0: { json: { through: "0.11" } } });

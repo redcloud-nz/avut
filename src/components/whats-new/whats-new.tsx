@@ -94,7 +94,10 @@ export function WhatsNew() {
     if (param === null && resolvedFor !== null) {
         setResolvedFor(null);
     } else if (param !== null && param !== resolvedFor) {
-        const next = resolveView(param, unseen.isPending, unseen.data?.entries ?? []);
+        // Wait only for a first request still in flight: `isPending` holds through every retry,
+        // and a click shouldn't hang for the whole backoff when `getUnseen` is failing.
+        const awaitingFirst = unseen.isPending && unseen.failureCount === 0;
+        const next = resolveView(param, awaitingFirst, unseen.data?.entries ?? []);
         if (next) {
             setView(next);
             setResolvedFor(param);
@@ -153,16 +156,16 @@ export function WhatsNew() {
 }
 
 /**
- * The view for an opening with `param`, or `undefined` while `getUnseen` is still loading.
- * `unseen` with nothing unseen (or a failed `getUnseen`) shows the recent entries.
+ * The view for an opening with `param`, or `undefined` while `getUnseen`'s first request is in
+ * flight. `unseen` with nothing unseen (or a failing `getUnseen`) shows the recent entries.
  */
 function resolveView(
     param: WhatsNewParam,
-    unseenPending: boolean,
+    awaitingUnseen: boolean,
     unseenEntries: UpdateEntryData[],
 ): WhatsNewView | undefined {
     if (param === "recent") return { mode: "recent" };
-    if (unseenPending) return undefined;
+    if (awaitingUnseen) return undefined;
     return unseenEntries.length > 0
         ? { mode: "unseen", entries: unseenEntries }
         : { mode: "recent" };
