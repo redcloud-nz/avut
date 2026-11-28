@@ -21,12 +21,8 @@ import {
     SidebarHeader,
     SidebarRail,
 } from "@/components/ui/sidebar";
+import { WhatsNew } from "@/components/whats-new/whats-new";
 import { WhatsNewVersionButton } from "@/components/whats-new/whats-new-button";
-import {
-    WhatsNewBoundary,
-    WhatsNewDialog,
-    WhatsNewProvider,
-} from "@/components/whats-new/whats-new-dialog";
 import { ImpersonationBanner } from "@/modules/system-admin/components/impersonation-banner";
 import { TimeZoneAutoDetect } from "@/modules/user-settings/components/timezone-auto-detect";
 import { helpCardRoutes } from "@/server/docs";
@@ -43,10 +39,7 @@ import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 // layout already blocks on it.
 export const instant = false;
 
-export default async function AuthenticatedLayout(props: {
-    modal: ReactNode;
-    children: ReactNode;
-}) {
+export default async function AuthenticatedLayout(props: { children: ReactNode }) {
     // Baseline guard for every authenticated route. The proxy only checks that a session
     // cookie is *present*; this is the check that actually validates it.
     await requireSession();
@@ -80,12 +73,6 @@ export default async function AuthenticatedLayout(props: {
     prefetch(trpc.user.listMemberships.queryOptions());
     prefetch(trpc.user.listTeamGrants.queryOptions());
 
-    // `WhatsNewDialog` and the version button's unseen dot both read this via `useSuspenseQuery`,
-    // each inside its own `WhatsNewBoundary` (renders nothing while loading or on failure). Neither
-    // is needed for first paint, so prefetch rather than await: the popup can open a moment after
-    // the page does.
-    prefetch(trpc.whatsNew.getUnseen.queryOptions());
-
     return (
         <HydrateClient>
             {/* Redirects to sign-in if the session is revoked or expires after first paint —
@@ -97,39 +84,33 @@ export default async function AuthenticatedLayout(props: {
             {/* Below the awaited `getSession` above, so it reads the hydrated session (#347). */}
             <ImpersonationBanner />
             <SidebarPortalProvider>
-                <WhatsNewProvider>
-                    <Sidebar>
-                        <SidebarHeader className="flex flex-row items-center pb-0">
-                            <div className="min-w-0 flex-1">
-                                <Suspense fallback={<ScopeSwitcher_Skeleton />}>
-                                    <ScopeSwitcher />
-                                </Suspense>
-                            </div>
-                        </SidebarHeader>
-                        <SidebarContent className="overflow-hidden">
-                            <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)] [scrollbar-gutter:stable]">
-                                <ScopeSidebar_Modules userModuleFlags={userModuleFlags} />
-                                <SidebarPortalOutlet />
-                            </div>
-                        </SidebarContent>
-                        <SidebarFooter>
-                            <div className="flex justify-center text-center text-xs text-muted-foreground">
-                                <WhatsNewVersionButton />
-                            </div>
-                        </SidebarFooter>
-                        <SidebarRail />
-                    </Sidebar>
-                    {/* Wraps the `@modal` slot too, so whatever renders there can read the cards. */}
-                    <HelpRoutesProvider cards={helpCardRoutes()}>
-                        {props.modal}
-                        {/* Outside `<Sidebar>`: on mobile its offcanvas sheet unmounts its content
-                            while closed, so a dialog in there could never open on its own. */}
-                        <WhatsNewBoundary>
-                            <WhatsNewDialog />
-                        </WhatsNewBoundary>
-                        <Std.SidebarInset navbar={<AppNavbar />}>{props.children}</Std.SidebarInset>
-                    </HelpRoutesProvider>
-                </WhatsNewProvider>
+                <Sidebar>
+                    <SidebarHeader className="flex flex-row items-center pb-0">
+                        <div className="min-w-0 flex-1">
+                            <Suspense fallback={<ScopeSwitcher_Skeleton />}>
+                                <ScopeSwitcher />
+                            </Suspense>
+                        </div>
+                    </SidebarHeader>
+                    <SidebarContent className="overflow-hidden">
+                        <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)] [scrollbar-gutter:stable]">
+                            <ScopeSidebar_Modules userModuleFlags={userModuleFlags} />
+                            <SidebarPortalOutlet />
+                        </div>
+                    </SidebarContent>
+                    <SidebarFooter>
+                        <div className="flex justify-center text-center text-xs text-muted-foreground">
+                            <WhatsNewVersionButton />
+                        </div>
+                    </SidebarFooter>
+                    <SidebarRail />
+                </Sidebar>
+                {/* Outside `<Sidebar>`: on mobile its offcanvas sheet unmounts its content while
+                    closed, so a dialog in there could never open on its own. */}
+                <WhatsNew />
+                <HelpRoutesProvider cards={helpCardRoutes()}>
+                    <Std.SidebarInset navbar={<AppNavbar />}>{props.children}</Std.SidebarInset>
+                </HelpRoutesProvider>
             </SidebarPortalProvider>
         </HydrateClient>
     );
