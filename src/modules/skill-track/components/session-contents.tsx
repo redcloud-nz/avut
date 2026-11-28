@@ -26,6 +26,7 @@ import {
     useSessionConfigAction,
     type SessionConfigAction,
 } from "@/modules/skill-track/components/session-config-dialogs";
+import { useSessionAccess } from "@/modules/skill-track/lib/use-session-access";
 import { trpc } from "@/trpc/client";
 
 export function SkillsModule_Session_Contents_Card({
@@ -60,8 +61,10 @@ export function SkillsModule_Session_Contents_Card({
             ],
         });
 
-    // An approved session's config is locked until it's reopened.
+    // An approved session's config is locked until it's reopened, and a foreign one's (in team
+    // scope) can't be changed here.
     const isApproved = session.status === "Include";
+    const { locked } = useSessionAccess(session);
 
     // Only unresolved conflicts need attention, and only before approval; once approved, each one
     // has been resolved.
@@ -74,17 +77,17 @@ export function SkillsModule_Session_Contents_Card({
             <ItemGroup className="gap-2">
                 <ConfigRow
                     action="change-personnel"
-                    locked={isApproved}
+                    locked={locked}
                     title={`${assessees.length} Personnel`}
                 />
                 <ConfigRow
                     action="change-skills"
-                    locked={isApproved}
+                    locked={locked}
                     title={`${skills.length} Skills`}
                 />
                 <ConfigRow
                     action="change-assessors"
-                    locked={isApproved}
+                    locked={locked}
                     title={`${session.assessors.length} Assessors`}
                 />
                 <Item variant="outline" role="listitem" asChild>
@@ -141,7 +144,7 @@ export function SkillsModule_Session_Contents_Card({
 /**
  * A Contents row for one of the session's config lists. Updaters get a button that opens the
  * list's dialog (hosted by `SkillTrack_SessionConfigDialogs` on the page); everyone else, and
- * everyone while the session is `locked` (approved), gets the same row as plain text.
+ * everyone while the session is `locked` (approved, or foreign in team scope), gets the same row as plain text.
  */
 function ConfigRow({
     action,

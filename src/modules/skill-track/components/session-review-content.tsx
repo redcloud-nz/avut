@@ -37,6 +37,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { useScopedRoute } from "@/hooks/use-scoped-route";
+import { route } from "@/lib/routes";
 import { SkillCheck } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import {
@@ -48,6 +49,7 @@ import {
 } from "@/lib/skill-check-conflicts";
 import { coverageBy } from "@/lib/skill-check-coverage";
 import { SkillsModule_ApproveSession_Dialog } from "@/modules/skill-track/components/approve-session";
+import { SkillTrack_ForeignSessionNotice } from "@/modules/skill-track/components/foreign-session-notice";
 import { SkillsModule_ReopenSession_Dialog } from "@/modules/skill-track/components/reopen-session";
 import { SkillsModule_ResolveConflict_Dialog } from "@/modules/skill-track/components/resolve-conflict";
 import {
@@ -62,6 +64,7 @@ import {
     SkillTrack_SessionReview_Coverage,
 } from "@/modules/skill-track/components/session-review-coverage";
 import { SkillTrack_SessionReview_Summary } from "@/modules/skill-track/components/session-review-summary";
+import { useSessionAccess } from "@/modules/skill-track/lib/use-session-access";
 import { trpc } from "@/trpc/client";
 
 const SHOW_LABELS = {
@@ -130,8 +133,11 @@ export function SkillTrack_SessionReview_Content({
 
     const assessorById = useMemo(() => new Map(assessors.map((p) => [p.id, p])), [assessors]);
 
-    // An approved session is locked until it's reopened: its controls are read-only.
+    // An approved session is locked until it's reopened: its controls are read-only. A foreign
+    // one (another team's, or an org session, in team scope) is locked too, and offers no
+    // Approve, Reopen or Resolve either.
     const isApproved = session.status === "Include";
+    const { foreign, locked } = useSessionAccess(session);
 
     // Whoever can approve resolves conflicts and excludes checks; for anyone else the controls
     // are read-only.
@@ -139,9 +145,9 @@ export function SkillTrack_SessionReview_Content({
 
     // Each decision is saved as it's made, by the Resolve and check dialogs' Save: a check is
     // included unless its status is `Exclude` (`isCheckIncluded`), and Approve approves that saved
-    // state. The check dialogs are read-only on an approved session or for a viewer who can't
-    // approve.
-    const reviewReadOnly = isApproved || !canApprove;
+    // state. The check dialogs are read-only on a locked (approved or foreign) session or for a
+    // viewer who can't approve.
+    const reviewReadOnly = locked || !canApprove;
     // A dialog's save still in flight (it can be closed before the save lands).
     const savingExclusions =
         useIsMutating({
@@ -294,13 +300,14 @@ export function SkillTrack_SessionReview_Content({
         personId: parseAsString,
         skillId: parseAsString,
     });
-    const canOpenReopen = canApprove && isApproved;
-    const canOpenApprove = canApprove && !isApproved && approveBlockedReason === null;
+    // None of the three on a foreign session, whose `?action=` is cleared as stale below.
+    const canOpenReopen = canApprove && isApproved && !foreign;
+    const canOpenApprove = canApprove && !locked && approveBlockedReason === null;
     const resolvingConflict =
         conflicts.find(
             (conflict) => conflict.assesseeId === personId && conflict.skillId === skillId,
         ) ?? null;
-    const canOpenResolve = canApprove && !isApproved && resolvingConflict !== null;
+    const canOpenResolve = canApprove && !locked && resolvingConflict !== null;
     // The person (or skill) whose checks the check dialog shows: one listed with checks the Show
     // option shows, so a narrowed dialog never opens empty.
     const reviewingPerson =
@@ -450,42 +457,45 @@ export function SkillTrack_SessionReview_Content({
             <Saratoga.Header>
                 <Saratoga.Title>Review</Saratoga.Title>
                 <Saratoga.Actions>
-                    <Protect permissions={{ skillCheckSession: ["approve"] }}>
-                        {isApproved ? (
-                            <Button variant="outline" onClick={() => openAction("reopen")}>
-                                <LockOpenIcon /> Reopen
-                            </Button>
-                        ) : approveBlockedReason ? (
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    {/* A disabled button gets no pointer events, so the
+                    {/* Not on a foreign session: it can't be approved or reopened here. */}
+                    {!foreign && (
+                        <Protect permissions={{ skillCheckSession: ["approve"] }}>
+                            {isApproved ? (
+                                <Button variant="outline" onClick={() => openAction("reopen")}>
+                                    <LockOpenIcon /> Reopen
+                                </Button>
+                            ) : approveBlockedReason ? (
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        {/* A disabled button gets no pointer events, so the
                                                 wrapper takes the hover and focus instead. */}
-                                    <span tabIndex={0}>
-                                        <Button disabled>Approve</Button>
-                                    </span>
-                                </TooltipTrigger>
-                                <TooltipContent>{approveBlockedReason}</TooltipContent>
-                            </Tooltip>
-                        ) : (
-                            <Button onClick={() => openAction("approve")}>Approve</Button>
-                        )}
-                        <SkillsModule_ReopenSession_Dialog
-                            session={session}
-                            open={canOpenReopen && action === "reopen"}
-                            onOpenChange={(open) =>
-                                open ? openAction("reopen") : closeAction("reopen")
-                            }
-                        />
-                        <SkillsModule_ApproveSession_Dialog
-                            session={session}
-                            includedCheckIds={includedCheckIds}
-                            excludedCount={excludedCount}
-                            open={canOpenApprove && action === "approve"}
-                            onOpenChange={(open) =>
-                                open ? openAction("approve") : closeAction("approve")
-                            }
-                        />
-                    </Protect>
+                                        <span tabIndex={0}>
+                                            <Button disabled>Approve</Button>
+                                        </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>{approveBlockedReason}</TooltipContent>
+                                </Tooltip>
+                            ) : (
+                                <Button onClick={() => openAction("approve")}>Approve</Button>
+                            )}
+                            <SkillsModule_ReopenSession_Dialog
+                                session={session}
+                                open={canOpenReopen && action === "reopen"}
+                                onOpenChange={(open) =>
+                                    open ? openAction("reopen") : closeAction("reopen")
+                                }
+                            />
+                            <SkillsModule_ApproveSession_Dialog
+                                session={session}
+                                includedCheckIds={includedCheckIds}
+                                excludedCount={excludedCount}
+                                open={canOpenApprove && action === "approve"}
+                                onOpenChange={(open) =>
+                                    open ? openAction("approve") : closeAction("approve")
+                                }
+                            />
+                        </Protect>
+                    )}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon">
@@ -527,6 +537,15 @@ export function SkillTrack_SessionReview_Content({
                     </DropdownMenu>
                 </Saratoga.Actions>
             </Saratoga.Header>
+            {foreign && (
+                <SkillTrack_ForeignSessionNotice
+                    team={session.team}
+                    orgHref={route("/orgs/[slug]/skill-track/sessions/[session_id]/review", {
+                        slug: organization.slug,
+                        session_id: sessionId,
+                    })}
+                />
+            )}
             {/* The same gap between cards as the session page's columns. */}
             <div className="flex flex-col gap-4">
                 <Show when={isApproved}>
@@ -535,10 +554,12 @@ export function SkillTrack_SessionReview_Content({
                         <AlertDescription>
                             <p>
                                 This session has been approved and is locked.{" "}
-                                <Protect permissions={{ skillCheckSession: ["approve"] }}>
-                                    To change what&apos;s included, reopen it with Reopen at the top
-                                    of the page.
-                                </Protect>
+                                {!foreign && (
+                                    <Protect permissions={{ skillCheckSession: ["approve"] }}>
+                                        To change what&apos;s included, reopen it with Reopen at the
+                                        top of the page.
+                                    </Protect>
+                                )}
                             </p>
                         </AlertDescription>
                     </Alert>
@@ -572,6 +593,7 @@ export function SkillTrack_SessionReview_Content({
                             skillById={skillById}
                             assessorById={assessorById}
                             isApproved={isApproved}
+                            locked={locked}
                         />
                     </Show>
                     <SkillTrack_SessionReview_Coverage

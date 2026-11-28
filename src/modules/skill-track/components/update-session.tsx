@@ -141,7 +141,12 @@ export function SkillsModule_UpdateSession_Dialog({
                                 mutation.mutate({
                                     organizationId: organization.id,
                                     skillCheckSessionId: session.id,
-                                    update: parsed.data,
+                                    // The hidden field's default already holds the pinned team;
+                                    // send it explicitly so the pin doesn't rest on that.
+                                    update: {
+                                        ...parsed.data,
+                                        teamId: pinnedTeamId ?? parsed.data.teamId,
+                                    },
                                 });
                             },
                             (errors) => {

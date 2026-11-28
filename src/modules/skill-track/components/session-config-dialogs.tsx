@@ -15,6 +15,7 @@ import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { SkillTrack_ChangeSessionAssessors_Dialog } from "@/modules/skill-track/components/change-session-assessors";
 import { SkillTrack_ChangeSessionPersonnel_Dialog } from "@/modules/skill-track/components/change-session-personnel";
 import { SkillTrack_ChangeSessionSkills_Dialog } from "@/modules/skill-track/components/change-session-skills";
+import { useSessionAccess } from "@/modules/skill-track/lib/use-session-access";
 import { trpc } from "@/trpc/client";
 
 const SESSION_CONFIG_ACTIONS = ["change-personnel", "change-skills", "change-assessors"] as const;
@@ -73,21 +74,22 @@ export function SkillTrack_SessionConfigDialogs({
             skillCheckSessionId: sessionId,
         }),
     );
-    // An approved session's config is locked until it's reopened. The triggers are disabled
-    // then; this covers a shared `?action=change-*` link, and a session approved while one is open:
-    // the param is cleared (replacing the history entry), and `open` is masked until it is.
-    const isApproved = session.status === "Include";
+    // An approved session's config is locked until it's reopened, and a foreign one's (another
+    // team's, or an org session, in team scope) can't be changed here at all. The triggers are
+    // disabled then; this covers a shared `?action=change-*` link, and a session approved while one
+    // is open: the param is cleared (replacing the history entry), and `open` is masked until it is.
+    const { locked } = useSessionAccess(session);
 
     useEffect(() => {
-        if (isApproved && action) close(action);
+        if (locked && action) close(action);
         // eslint-disable-next-line react-hooks/exhaustive-deps -- `close` is rebuilt every render
-    }, [isApproved, action]);
+    }, [locked, action]);
 
     function dialogProps(dialogAction: SessionConfigAction) {
         return {
             sessionId,
             returnFocusRef,
-            open: !isApproved && action === dialogAction,
+            open: !locked && action === dialogAction,
             onOpenChange: (isOpen: boolean) => (isOpen ? open(dialogAction) : close(dialogAction)),
         };
     }

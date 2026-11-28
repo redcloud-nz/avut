@@ -53,6 +53,7 @@ import {
     useSessionChecksSync,
 } from "@/modules/skill-track/components/use-session-checks-sync";
 import { groupSkillSections } from "@/modules/skill-track/lib/skill-sections";
+import { useSessionAccess } from "@/modules/skill-track/lib/use-session-access";
 import { trpc } from "@/trpc/client";
 
 /** The (assessee, skill) check the record dialog is open on. */
@@ -117,20 +118,21 @@ export function SkillTrack_SessionByPerson_Content({
     // Recording also needs `skillCheck: ["create"]` (see `setSessionSkillCheck` and
     // `deleteSessionSkillCheck`), which a caller holding only session update lacks.
     const canRecordChecks = useHasPermission({ skillCheck: ["create"] });
+    // An approved session is locked until it's reopened (`assertSessionUnlocked`), and a foreign
+    // one (another team's, or an org session, in team scope) can't be changed here: the page shows
+    // only a message in place of its content, and the record dialog is closed.
+    const { foreign, locked } = useSessionAccess(session);
     // Polls the other assessors' checks (and the caller's own from other devices) while the caller
     // could record, approved or not. When the session is approved or reopened elsewhere, the page
     // locks, or unlocks, on the next poll for a recording assessor; anyone else sees it on focus
-    // or reload.
+    // or reload. A foreign session never unlocks here, so it isn't polled.
     const sessionChecks = useSessionChecksSync({
         sessionId,
         selfPersonId: personSelf?.id,
-        enabled: !!personSelf && isAssignedAssessor && canRecordChecks,
+        enabled: !!personSelf && isAssignedAssessor && canRecordChecks && !foreign,
     });
     // The "Also checked by" markers, keyed by (assessee, skill).
     const otherChecksByKey = useOtherAssessorChecks(sessionChecks, personSelf?.id);
-    // An approved session is locked until it's reopened (`assertSessionUnlocked`): the page shows
-    // only a message in place of its content, and the record dialog is closed.
-    const isApproved = session.status === "Include";
 
     type Selected = { personId: PersonId; status: "Loading" | "Selected" } | null;
     const [selected, setSelected] = useState<Selected>(null);
@@ -165,7 +167,7 @@ export function SkillTrack_SessionByPerson_Content({
 
     // Close the dialog when the session is approved under it (during render, like the resets
     // above), so a later reopen doesn't pop it back up.
-    if (isApproved && dialogOpen) {
+    if (locked && dialogOpen) {
         setDialogOpen(false);
     }
 
@@ -226,12 +228,15 @@ export function SkillTrack_SessionByPerson_Content({
         />
     );
 
-    if (isApproved) {
+    if (locked) {
         return (
             // Fills the scroll area, so the empty state centres below the trail.
             <div className="flex min-h-full flex-col">
                 <Saratoga.Root>{breadcrumbs}</Saratoga.Root>
-                <SkillTrack_SessionApprovedEmpty sessionId={sessionId} />
+                <SkillTrack_SessionApprovedEmpty
+                    sessionId={sessionId}
+                    reason={foreign ? "foreign" : "approved"}
+                />
             </div>
         );
     }
