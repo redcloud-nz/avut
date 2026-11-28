@@ -928,4 +928,176 @@ describe("selfAuditCampaignsRouter", () => {
             }
         });
     });
+
+    describe("getNeedsReport", () => {
+        const campaignId = SelfAuditCampaignId.create();
+        const elsewhereOrg = OrganizationId.create();
+        const elsewhereCampaignId = SelfAuditCampaignId.create();
+        const submittedAt = new Date("2026-11-22T09:00:00Z");
+
+        const template: SelfAuditTemplate = {
+            id: T.helmet,
+            category: "PPE",
+            name: "Helmet",
+            variants: [{ id: T.helmetVariant, label: "Petzl Vertex" }],
+            requireSN: false,
+            sized: true,
+            sizeOptional: true,
+            sizeOptions: [],
+        };
+        /** Has none, wants a Petzl Vertex in M. */
+        const needsOne: SelfAuditResponseData = {
+            held: {},
+            missing: {
+                [T.helmet]: {
+                    ...EMPTY_ANSWER,
+                    has: "no",
+                    wantVariantId: T.helmetVariant,
+                    size: "M",
+                },
+            },
+            extras: [{ id: "e1", item: "Head torch", kind: "need", size: "", notes: "" }],
+            comments: "",
+        };
+        const needsNothing: SelfAuditResponseData = {
+            held: {},
+            missing: { [T.helmet]: { ...EMPTY_ANSWER, has: "yes" } },
+            extras: [],
+            comments: "",
+        };
+
+        beforeAll(async () => {
+            await db.organization.create({
+                data: {
+                    id: elsewhereOrg,
+                    name: "Elsewhere",
+                    slug: "elsewhere",
+                    createdAt: new Date(),
+                },
+            });
+            for (const [id, organizationId] of [
+                [campaignId, T.org],
+                [elsewhereCampaignId, elsewhereOrg],
+            ] as const) {
+                await db.selfAuditCampaign.create({
+                    data: {
+                        id,
+                        organizationId,
+                        name: "Needs",
+                        teamId: T.team,
+                        d4hTeamId: TEAM_ID,
+                        d4hTeamName: "Rescue Team",
+                        bundleName: "Responder",
+                        templates: [template],
+                        sentAt: submittedAt,
+                    },
+                });
+            }
+
+            const requests: {
+                memberId: number;
+                memberName: string;
+                formData: SelfAuditResponseData;
+                submittedData: SelfAuditResponseData | null;
+                withdrawn?: boolean;
+                campaign?: "elsewhere";
+            }[] = [
+                // Submitted.
+                {
+                    memberId: 1,
+                    memberName: "Zoe North",
+                    formData: needsOne,
+                    submittedData: needsOne,
+                },
+                // Reopened, now saying they need nothing: counts with the submitted answer.
+                {
+                    memberId: 2,
+                    memberName: "Ana Lee",
+                    formData: needsNothing,
+                    submittedData: needsOne,
+                },
+                // Withdrawn after submitting.
+                {
+                    memberId: 3,
+                    memberName: "Bo Hill",
+                    formData: needsOne,
+                    submittedData: needsOne,
+                    withdrawn: true,
+                },
+                // Never submitted.
+                { memberId: 4, memberName: "Kim Park", formData: needsOne, submittedData: null },
+                // Another org's campaign.
+                {
+                    memberId: 5,
+                    memberName: "Elsewhere Member",
+                    formData: needsOne,
+                    submittedData: needsOne,
+                    campaign: "elsewhere",
+                },
+            ];
+            for (const request of requests) {
+                const organizationId = request.campaign ? elsewhereOrg : T.org;
+                const formInstanceId = FormInstanceId.create();
+                await db.formInstance.create({
+                    data: {
+                        id: formInstanceId,
+                        formKey: "d4h-i3-self-audit",
+                        organizationId,
+                        formData: request.formData,
+                        formStatus: "Draft",
+                    },
+                });
+                await db.selfAuditRequest.create({
+                    data: {
+                        id: SelfAuditRequestId.create(),
+                        organizationId,
+                        campaignId: request.campaign ? elsewhereCampaignId : campaignId,
+                        d4hMemberId: request.memberId,
+                        memberName: request.memberName,
+                        heldItems: [],
+                        deliveryStatus: "Sent",
+                        submittedAt: request.submittedData ? submittedAt : null,
+                        withdrawnAt: request.withdrawn ? submittedAt : null,
+                        submittedData: request.submittedData ?? undefined,
+                        formInstanceId,
+                    },
+                });
+            }
+        });
+
+        it("reads only submitted, not withdrawn, answers, a reopened one by its last submit", async () => {
+            const report = await admin().getNeedsReport({ organizationId: T.org, campaignId });
+
+            expect(report).toEqual({
+                groups: [
+                    {
+                        templateId: T.helmet,
+                        templateName: "Helmet",
+                        category: "PPE",
+                        variantLabel: "Petzl Vertex",
+                        size: "M",
+                        count: 2,
+                        members: ["Ana Lee", "Zoe North"],
+                    },
+                ],
+                extras: [
+                    { memberName: "Ana Lee", item: "Head torch", size: "", notes: "" },
+                    { memberName: "Zoe North", item: "Head torch", size: "", notes: "" },
+                ],
+            });
+            expect(getConfiguredD4HAccessToken).not.toHaveBeenCalled();
+        });
+
+        it("is NOT_FOUND for another org's campaign", async () => {
+            await expect(
+                admin().getNeedsReport({ organizationId: T.org, campaignId: elsewhereCampaignId }),
+            ).rejects.toMatchObject({ code: "NOT_FOUND" });
+        });
+
+        it("refuses an org owner without the system admin role", async () => {
+            await expect(
+                owner().getNeedsReport({ organizationId: T.org, campaignId }),
+            ).rejects.toMatchObject({ code: "FORBIDDEN" });
+        });
+    });
 });

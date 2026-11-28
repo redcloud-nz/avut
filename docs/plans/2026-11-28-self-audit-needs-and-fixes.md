@@ -42,7 +42,7 @@ Once members have answered a Self Audit Campaign, two new pages under the campai
 
 ### Review group A: needs report and task kinds
 
-- [ ] **1. Needs report (pure + service + router)**
+- [x] **1. Needs report (pure + service + router)** (feat(d4h-i3): self audit campaign needs report). Notes: `getNeedsReportCsv` added to the service for task 5's route; `needsReportCsv` takes `buildNeedsReport`'s input; csvCell tests moved to `src/lib/csv.test.ts`.
   - **Files:** new `src/lib/csv.ts` (moved `csvCell`), `src/server/services/public-forms.ts` (import it), new `src/lib/self-audit-needs.ts` (+ test), `src/server/services/self-audit-campaigns.ts` (`getNeedsReport`), router `getNeedsReport` (+ test).
   - **Do:** Decisions 1–3. Pure `buildNeedsReport({ templates, requests: { memberName, heldItems, submittedData }[] })` → `{ groups: { templateId, templateName, category, variantLabel, size, count, members[] }[], extras: { memberName, item, size, notes }[] }` and `needsReportCsv(...)`. Service reads the campaign's stored templates and qualifying requests. Router query input `{ campaignId }` (organization injected by `organizationProcedure`), like `getCampaign`.
   - **Done when:** unit tests cover replacement same/different (incl. `OTHER_VARIANT`), has-none with/without size, `ANY_VARIANT` → "Any", `NOT_NEEDED` excluded, `unsure` excluded, withdrawn and unsubmitted excluded, extras, grouping order, CSV escaping; `npm run check` passes.

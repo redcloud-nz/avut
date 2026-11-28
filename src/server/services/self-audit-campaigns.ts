@@ -50,6 +50,12 @@ import {
 } from "@/lib/schemas/self-audit";
 import { TeamId } from "@/lib/schemas/team";
 import { defaultCampaignName } from "@/lib/self-audit-campaign-name";
+import {
+    buildNeedsReport,
+    needsReportCsv,
+    type SelfAuditNeedsReport,
+    type SelfAuditNeedsSource,
+} from "@/lib/self-audit-needs";
 import { EMPTY_ANSWER } from "@/lib/self-audit-validate";
 import { toD4HCredentialRef } from "@/server/d4h-access-token";
 import {
@@ -578,6 +584,70 @@ export async function getRequestAnswers(
         formData: SelfAuditResponseData.parse(request.formInstance.formData),
         formStatus: request.formInstance.formStatus,
     };
+}
+
+/**
+ * The campaign's stored templates, and the requests the needs report and the differences read
+ * (decision 1 of `docs/plans/2026-11-28-self-audit-needs-and-fixes.md`): submitted and not
+ * withdrawn, each with its last submitted answer. A reopened form counts with that answer.
+ *
+ * @throws NotFoundError if the self audit campaign isn't in the organization.
+ */
+async function loadSubmittedAnswers(
+    ctx: OrgServiceContext,
+    campaignId: SelfAuditCampaignId,
+): Promise<{ templates: SelfAuditTemplate[]; requests: SelfAuditNeedsSource[] }> {
+    const campaign = await ctx.prisma.selfAuditCampaign.findFirst({
+        where: { id: campaignId, organizationId: ctx.organizationId },
+        select: {
+            templates: true,
+            requests: {
+                where: { submittedAt: { not: null }, withdrawnAt: null },
+                select: { memberName: true, heldItems: true, submittedData: true },
+            },
+        },
+    });
+    if (!campaign) throw new NotFoundError(`SelfAuditCampaign(id=${campaignId}) not found.`);
+
+    return {
+        templates: z.array(SelfAuditTemplate).parse(campaign.templates),
+        requests: campaign.requests.flatMap((request) =>
+            request.submittedData === null
+                ? []
+                : [
+                      {
+                          memberName: request.memberName,
+                          heldItems: z.array(SelfAuditHeldItem).parse(request.heldItems),
+                          submittedData: SelfAuditResponseData.parse(request.submittedData),
+                      },
+                  ],
+        ),
+    };
+}
+
+/**
+ * What the campaign's members need, from their submitted answers: grouped by template, variant
+ * and size, and the needs not on the list.
+ *
+ * @throws NotFoundError if the self audit campaign isn't in the organization.
+ */
+export async function getNeedsReport(
+    ctx: OrgServiceContext,
+    campaignId: SelfAuditCampaignId,
+): Promise<SelfAuditNeedsReport> {
+    return buildNeedsReport(await loadSubmittedAnswers(ctx, campaignId));
+}
+
+/**
+ * The needs report as CSV, a row per need.
+ *
+ * @throws NotFoundError if the self audit campaign isn't in the organization.
+ */
+export async function getNeedsReportCsv(
+    ctx: OrgServiceContext,
+    campaignId: SelfAuditCampaignId,
+): Promise<string> {
+    return needsReportCsv(await loadSubmittedAnswers(ctx, campaignId));
 }
 
 // Create

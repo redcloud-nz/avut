@@ -154,18 +154,3 @@ describe("PublicForms jacket interest", () => {
         expect(rows.map((row) => row.answer.size)).toContain("5XL");
     });
 });
-
-describe("csvCell", () => {
-    it("keeps a spreadsheet from reading an answer as a formula", () => {
-        expect(PublicForms.csvCell("=1+1")).toBe("'=1+1");
-        expect(PublicForms.csvCell('=HYPERLINK("x","y")')).toBe(`"'=HYPERLINK(""x"",""y"")"`);
-        expect(PublicForms.csvCell("+64 21 000")).toBe("'+64 21 000");
-        expect(PublicForms.csvCell("-1")).toBe("'-1");
-        expect(PublicForms.csvCell("@SUM(A1)")).toBe("'@SUM(A1)");
-    });
-
-    it("leaves ordinary text alone", () => {
-        expect(PublicForms.csvCell("Sam Sample")).toBe("Sam Sample");
-        expect(PublicForms.csvCell("")).toBe("");
-    });
-});
