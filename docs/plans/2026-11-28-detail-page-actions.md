@@ -82,7 +82,7 @@ Untouched: D4H catalogue/member/team pages (↗ only), self-audit campaign (out 
   - **Do:** Per the map. `Teams_D4HMenuGroup` splits: Sync stays the Linked D4H Team card's icon, Unlink goes to that card's ⋮, Link becomes a bare action card in the secondary column (both team pages). Make owner gets the `member: ["owner"]` gate. Team membership: D4H Member card moves to the secondary column; full width when there's none.
   - **Done when:** map rows hold as owner, admin and member; `npm run check` passes.
 
-- [ ] **Task 4 — org-admin organisation, D4H access tokens (org + user)** `visual`
+- [x] **Task 4 — org-admin organisation, D4H access tokens (org + user)** `visual`
   - **Files:** `src/app/(wrapper)/(authenticated)/orgs/[slug]/admin/organization/page.tsx`, `src/modules/org-admin/components/organization/{organization-menu,d4h-org-card}.tsx`, `src/modules/org-admin/components/d4h-access-tokens/{d4h-access-token-menu,access-token-content}.tsx`, `src/modules/user-settings/components/{d4h-access-token-menu,d4h-access-token-content}.tsx`.
   - **Do:** Per the map. Organisation: the D4H Sync/Unlink group moves onto the D4H org card (sync icon, ⋮ Unlink); the disabled Delete goes. Tokens: the header refresh button becomes a card icon beside the pencil; History leaves the menu. All three go full width.
   - **Done when:** map rows hold; `npm run check` passes.

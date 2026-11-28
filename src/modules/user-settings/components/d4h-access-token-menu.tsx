@@ -4,17 +4,13 @@
  */
 "use client";
 
-import { KeyRoundIcon, RefreshCwIcon } from "lucide-react";
+import { KeyRoundIcon } from "lucide-react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useRef } from "react";
 
 import { ObjectIcons } from "@/components/icons";
-import {
-    DropdownMenuGroup,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
+import { type MenuActionProps } from "@/components/ui/menu-action";
+import { RecordCardMenu } from "@/components/ui/record-card-actions";
 import type { RouterOutput } from "@/trpc/routers/_app";
 
 import { UserSettings_EditD4HAccessToken_Dialog } from "./edit-d4h-access-token-dialog";
@@ -29,29 +25,23 @@ export const PersonalD4HAccessTokenAction = parseAsStringLiteral([
     "remove",
 ] as const);
 
-export function UserSettings_D4HAccessToken_Menu({
-    token,
-    onRefresh,
-}: {
-    token: PersonalAccessToken;
-    onRefresh: () => void;
-}) {
+/**
+ * The token card's ⋮ (the page's primary record card): Replace token value and Remove. Edit is
+ * the card's pencil, Refresh from D4H its icon.
+ *
+ * Mounts every dialog on the page, the pencil's Edit included.
+ */
+export function UserSettings_D4HAccessToken_Menu({ token }: { token: PersonalAccessToken }) {
     const [action, setAction] = useQueryState("action", PersonalD4HAccessTokenAction);
     // The menu item that opens a dialog unmounts with the menu, so focus returns to the trigger.
     const triggerRef = useRef<HTMLButtonElement>(null);
 
-    // The menu opens each dialog, so the edit and replace dialogs only ever ask to close.
+    // The pencil and the menu open the edit and replace dialogs, so they only ever ask to close.
     function handleOpenChange(open: boolean) {
         if (!open) void setAction(null, { history: "replace" });
     }
 
     const actions: MenuActionProps[] = [
-        {
-            verb: "update",
-            label: "Edit",
-            icon: <ObjectIcons.Edit />,
-            onSelect: () => setAction("edit", { history: "push" }),
-        },
         {
             verb: "replace",
             label: "Replace token value",
@@ -69,20 +59,11 @@ export function UserSettings_D4HAccessToken_Menu({
 
     return (
         <>
-            <EntityActionMenu
+            <RecordCardMenu
                 actions={actions}
                 category="D4H Access Token"
+                primary
                 triggerRef={triggerRef}
-                before={
-                    <>
-                        <DropdownMenuGroup>
-                            <DropdownMenuItem onClick={onRefresh}>
-                                <RefreshCwIcon /> Refresh from D4H
-                            </DropdownMenuItem>
-                        </DropdownMenuGroup>
-                        <DropdownMenuSeparator />
-                    </>
-                }
             />
 
             <UserSettings_EditD4HAccessToken_Dialog
