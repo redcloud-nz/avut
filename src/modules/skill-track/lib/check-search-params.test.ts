@@ -5,11 +5,19 @@
 
 import { describe, expect, it } from "vitest";
 
+import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
 import { SkillId } from "@/lib/schemas/skill";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { TeamId } from "@/lib/schemas/team";
 
-import { checkSearchFilters, checkSearchPage, type CheckSearchParams } from "./check-search-params";
+import {
+    CHECK_SEARCH_PAGE_SIZE,
+    checkSearchFilters,
+    checkSearchInput,
+    checkSearchPage,
+    type CheckSearchParams,
+} from "./check-search-params";
 
 const empty: CheckSearchParams = {
     person: null,
@@ -81,5 +89,30 @@ describe("checkSearchPage", () => {
 
     it.each([0, -1, 1e20, Number.NaN])("treats %s as page 1", (page) => {
         expect(checkSearchPage(page)).toBe(1);
+    });
+});
+
+describe("checkSearchInput", () => {
+    const organizationId = OrganizationId.create();
+    const skillId = SkillId.create();
+
+    it("builds the filters and page from the params alone without a teamId", () => {
+        expect(checkSearchInput(organizationId, { ...empty, skill: skillId, page: 2 })).toEqual({
+            organizationId,
+            filters: { skillId },
+            page: 2,
+            pageSize: CHECK_SEARCH_PAGE_SIZE,
+        });
+    });
+
+    it("adds the teamId to the filters", () => {
+        const teamId = TeamId.create();
+
+        expect(checkSearchInput(organizationId, { ...empty, skill: skillId }, teamId)).toEqual({
+            organizationId,
+            filters: { skillId, teamId },
+            page: 1,
+            pageSize: CHECK_SEARCH_PAGE_SIZE,
+        });
     });
 });

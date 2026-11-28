@@ -194,6 +194,7 @@ export const Modules = {
         segment: "skill-track",
         scope: "organization",
         href: (slug) => route("/orgs/[slug]/skill-track", { slug }),
+        team: { href: (teamSlug) => route("/teams/[slug]/skill-track", { slug: teamSlug }) },
     },
     "skill-package-builder": {
         id: "skill-package-builder",

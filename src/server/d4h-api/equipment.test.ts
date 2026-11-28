@@ -10,6 +10,8 @@ import type { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 
 import {
+    createD4HEquipmentItem,
+    D4HResponseError,
     fetchD4HEquipmentItem,
     fetchD4HEquipmentItemContents,
     fetchD4HEquipmentItemsByKind,
@@ -344,6 +346,65 @@ describe("patchD4HEquipmentItem", () => {
         await expect(patchD4HEquipmentItem(token, 7, 1234, { isCritical: true })).rejects.toThrow(
             /400.*Unknown field/,
         );
+    });
+});
+
+describe("createD4HEquipmentItem", () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it("POSTs the item located with the member and returns its id", async () => {
+        const fetchMock = vi.fn(async (_request: Request) => Response.json(itemFixture));
+        vi.stubGlobal("fetch", fetchMock);
+
+        const id = await createD4HEquipmentItem(token, 7, {
+            categoryId: 3,
+            kindId: 8,
+            memberId: 99,
+            serial: "SN-1",
+            brandId: null,
+        });
+
+        expect(id).toBe(1234);
+        const request = fetchMock.mock.calls[0][0];
+        expect(request.method).toBe("POST");
+        expect(request.url).toBe("https://api.team-manager.ap.d4h.com/v3/team/7/equipment");
+        expect(await request.json()).toEqual({
+            categoryId: 3,
+            kindId: 8,
+            location: { id: 99, resourceType: "Member" },
+            serial: "SN-1",
+        });
+    });
+
+    it("returns null, not a failure, when the created item's id can't be read", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => Response.json({ data: "unexpected" })),
+        );
+
+        expect(
+            await createD4HEquipmentItem(token, 7, { categoryId: 3, kindId: 8, memberId: 99 }),
+        ).toBeNull();
+    });
+
+    it("throws a D4HResponseError with D4H's status and body on failure", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => Response.json({ message: "Kind not found" }, { status: 422 })),
+        );
+
+        const error = await createD4HEquipmentItem(token, 7, {
+            categoryId: 3,
+            kindId: 8,
+            memberId: 99,
+        }).catch((err: unknown) => err);
+        expect(error).toBeInstanceOf(D4HResponseError);
+        expect(error).toMatchObject({
+            status: 422,
+            message: expect.stringMatching(/422.*Kind not found/),
+        });
     });
 });
 

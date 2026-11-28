@@ -5,6 +5,9 @@ routes:
   - "/orgs/[slug]/skill-track/sessions/[session_id]"
   - "/orgs/[slug]/skill-track/sessions/[session_id]/checks"
   - "/orgs/[slug]/skill-track/sessions/[session_id]/history"
+  - "/teams/[slug]/skill-track/sessions/[session_id]"
+  - "/teams/[slug]/skill-track/sessions/[session_id]/checks"
+  - "/teams/[slug]/skill-track/sessions/[session_id]/history"
 keyTerms: ["skill-check-session", "assessor", "assessee"]
 ---
 
@@ -21,10 +24,15 @@ tile for each part of the session. Click one to change it:
 - **Conflicts**: only shown while two assessors' checks of the same person and
   skill are still unresolved. Resolve them on the review page.
 
-Beside the details, **Record** opens the two recording views (by person or by
-skill), and **Review** opens the review page. Once the session is approved,
-Record offers **Reopen** instead. The pencil on the Session card edits its
-name, time, team and notes; **Delete** is in the card's menu (⋮), and
+Opened from a team, another team's session (or one with no team) is read-only:
+a notice says so, and nothing on it can be changed from there, so only
+**Review** is shown beside the details. Open it from the organisation to change
+it.
+
+Otherwise, beside the details, **Record** opens the two recording views (by
+person or by skill), and **Review** opens the review page. Once the session is
+approved, Record offers **Reopen** instead. The pencil on the Session card edits
+its name, time, team and notes; **Delete** is in the card's menu (⋮), and
 **Updated**, at its foot, opens the session's history.
 
 Approving locks everything about the session (its name, notes, time, personnel,

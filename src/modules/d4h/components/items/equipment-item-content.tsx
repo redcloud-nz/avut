@@ -329,7 +329,7 @@ export function D4HModule_EquipmentItem_Content({
                                 teamId={teamId}
                                 itemId={itemId}
                                 itemLabel={`#${item.ref} ${item.kind.title}`}
-                                canRetireInD4H={canRetireInD4H}
+                                canSeeTasksInD4H={canUpdateInD4H || canRetireInD4H}
                             />
                         </Suspense>
                     </Protect>

@@ -31,12 +31,10 @@ export function D4HModule_D4HTaskActions({ task }: { task: D4HTask }) {
             onSuccess: (result) => {
                 switch (result.result) {
                     case "applied":
-                        toast.success(`${task.itemLabel} is retired in D4H. Task done.`);
+                        toast.success(`${appliedMessage(task)} Task done.`);
                         break;
                     case "pending":
-                        toast.info(
-                            `${task.itemLabel} is not retired yet (D4H status: ${D4HEquipmentStatus.label(result.status)}).`,
-                        );
+                        toast.info(pendingMessage(task, result));
                         break;
                     case "missing":
                         toast.warning(
@@ -98,4 +96,37 @@ export function D4HModule_D4HTaskActions({ task }: { task: D4HTask }) {
             />
         </>
     );
+}
+
+/** What Check found once the task's change is in D4H, per kind. */
+function appliedMessage(task: D4HTask): string {
+    switch (task.kind) {
+        case "Retire":
+            return `${task.itemLabel} is retired in D4H.`;
+        case "SetSerial":
+            return `${task.itemLabel} has serial ${task.payload.serial} in D4H.`;
+        case "SetVariant":
+            return `${task.itemLabel} is ${task.payload.brand} ${task.payload.model} in D4H.`;
+        case "MarkLost":
+            return `${task.itemLabel} is marked Lost in D4H.`;
+    }
+}
+
+/** What's still to do in D4H, per kind, with what D4H has now. */
+function pendingMessage(
+    task: D4HTask,
+    current: { status: string; serial: string | null; brand: string | null; model: string | null },
+): string {
+    switch (task.kind) {
+        case "Retire":
+            return `${task.itemLabel} is not retired yet (D4H status: ${D4HEquipmentStatus.label(current.status)}).`;
+        case "SetSerial":
+            return `${task.itemLabel}'s serial is not set to ${task.payload.serial} yet (D4H serial: ${current.serial?.trim() || "none"}).`;
+        case "SetVariant": {
+            const d4hVariant = [current.brand, current.model].filter(Boolean).join(" ") || "none";
+            return `${task.itemLabel} is not set to ${task.payload.brand} ${task.payload.model} yet (D4H brand/model: ${d4hVariant}).`;
+        }
+        case "MarkLost":
+            return `${task.itemLabel} is not marked Lost yet (D4H status: ${D4HEquipmentStatus.label(current.status)}).`;
+    }
 }

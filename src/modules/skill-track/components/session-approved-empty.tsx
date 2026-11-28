@@ -16,17 +16,23 @@ import {
     EmptyMedia,
     EmptyTitle,
 } from "@/components/ui/empty";
-import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
+import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 
 /**
- * What the skill check entry pages show in place of their content while the session is approved:
- * its checks are locked until it's reopened, so there is nothing to record. Links back to the
- * session page.
+ * What the skill check entry pages show in place of their content while the session is locked
+ * (`useSessionAccess`), so there is nothing to record. `reason` says why: it's `approved` (its
+ * checks are locked until it's reopened), or `foreign`, another team's or an org session seen in
+ * team scope, which can't be changed there. Links back to the session page.
  */
-export function SkillTrack_SessionApprovedEmpty({ sessionId }: { sessionId: SkillCheckSessionId }) {
-    const organization = useOrganization();
+export function SkillTrack_SessionApprovedEmpty({
+    sessionId,
+    reason,
+}: {
+    sessionId: SkillCheckSessionId;
+    reason: "approved" | "foreign";
+}) {
+    const scopedRoute = useScopedRoute();
 
     return (
         <Empty>
@@ -34,16 +40,31 @@ export function SkillTrack_SessionApprovedEmpty({ sessionId }: { sessionId: Skil
                 <EmptyMedia variant="icon">
                     <LockIcon />
                 </EmptyMedia>
-                <EmptyTitle>This session has been approved.</EmptyTitle>
-                <EmptyDescription>Reopen it to record or change checks.</EmptyDescription>
+                {reason === "foreign" ? (
+                    <>
+                        <EmptyTitle>This session is view only in this team.</EmptyTitle>
+                        <EmptyDescription>
+                            It isn&apos;t this team&apos;s session, so its checks can&apos;t be
+                            recorded or changed here.
+                        </EmptyDescription>
+                    </>
+                ) : (
+                    <>
+                        <EmptyTitle>This session has been approved.</EmptyTitle>
+                        <EmptyDescription>Reopen it to record or change checks.</EmptyDescription>
+                    </>
+                )}
             </EmptyHeader>
             <EmptyContent>
                 <Button variant="outline" asChild>
                     <Link
-                        href={route("/orgs/[slug]/skill-track/sessions/[session_id]", {
-                            slug: organization.slug,
-                            session_id: sessionId,
-                        })}
+                        href={scopedRoute(
+                            {
+                                organization: "/orgs/[slug]/skill-track/sessions/[session_id]",
+                                team: "/teams/[slug]/skill-track/sessions/[session_id]",
+                            },
+                            { session_id: sessionId },
+                        )}
                     >
                         Back to session
                     </Link>

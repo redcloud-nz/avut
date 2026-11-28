@@ -33,13 +33,14 @@ import {
     SheetTrigger,
 } from "@/components/ui/sheet";
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
+import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import {
     SessionConfigAction,
     SkillTrack_SessionConfigDialogs,
     useSessionConfigAction,
 } from "@/modules/skill-track/components/session-config-dialogs";
+import { useSessionAccess } from "@/modules/skill-track/lib/use-session-access";
 import { trpc } from "@/trpc/client";
 
 type SessionEntryMode = "by-person" | "by-skill";
@@ -83,8 +84,9 @@ const MODE_ITEMS: { mode: SessionEntryMode; label: string; icon: LucideIcon }[] 
  * a sibling of the sheet (anything inside `SheetContent` unmounts when the sheet closes). The item
  * that opened the dialog is gone by then, so the dialogs return focus to the Options button.
  *
- * The Recording Mode and Configure Session items are disabled while the session is approved: its
- * checks and config are locked until it's reopened.
+ * The Recording Mode and Configure Session items are disabled while the session is locked
+ * (`useSessionAccess`): approved, its checks and config are locked until it's reopened; foreign
+ * (another team's, or an org session, in team scope), they can't be changed here.
  */
 export function SkillTrack_RecordingOptionsSheet({
     sessionId,
@@ -96,6 +98,7 @@ export function SkillTrack_RecordingOptionsSheet({
     view: SessionEntryView;
 }) {
     const organization = useOrganization();
+    const scopedRoute = useScopedRoute();
     const { open: openConfigDialog } = useSessionConfigAction();
     const { data: session } = useSuspenseQuery(
         trpc.skillCheckSessions.getSession.queryOptions({
@@ -103,15 +106,27 @@ export function SkillTrack_RecordingOptionsSheet({
             skillCheckSessionId: sessionId,
         }),
     );
-    const isApproved = session.status === "Include";
+    const { foreign, locked } = useSessionAccess(session);
 
     const [sheetOpen, setSheetOpen] = useState(false);
     const triggerRef = useRef<HTMLButtonElement>(null);
 
-    const routeParams = { slug: organization.slug, session_id: sessionId };
+    const routeParams = { session_id: sessionId };
     const modeHrefs: Record<SessionEntryMode, Route> = {
-        "by-person": route("/orgs/[slug]/skill-track/sessions/[session_id]/by-person", routeParams),
-        "by-skill": route("/orgs/[slug]/skill-track/sessions/[session_id]/by-skill", routeParams),
+        "by-person": scopedRoute(
+            {
+                organization: "/orgs/[slug]/skill-track/sessions/[session_id]/by-person",
+                team: "/teams/[slug]/skill-track/sessions/[session_id]/by-person",
+            },
+            routeParams,
+        ),
+        "by-skill": scopedRoute(
+            {
+                organization: "/orgs/[slug]/skill-track/sessions/[session_id]/by-skill",
+                team: "/teams/[slug]/skill-track/sessions/[session_id]/by-skill",
+            },
+            routeParams,
+        ),
     };
 
     const configureHeadingId = useId();
@@ -163,9 +178,11 @@ export function SkillTrack_RecordingOptionsSheet({
                             >
                                 Recording Mode
                             </h3>
-                            {isApproved && (
+                            {locked && (
                                 <p className="px-3 text-xs text-muted-foreground">
-                                    Locked while the session is approved
+                                    {foreign
+                                        ? "View only in this team"
+                                        : "Locked while the session is approved"}
                                 </p>
                             )}
                             <div className="flex gap-2 px-1 *:flex-1">
@@ -180,16 +197,14 @@ export function SkillTrack_RecordingOptionsSheet({
                                     return (
                                         <Button
                                             key={itemMode}
-                                            asChild={!isApproved}
+                                            asChild={!locked}
                                             variant="ghost"
                                             data-active={current || undefined}
-                                            disabled={isApproved}
-                                            aria-current={
-                                                isApproved && current ? "page" : undefined
-                                            }
+                                            disabled={locked}
+                                            aria-current={locked && current ? "page" : undefined}
                                             className={TILE_CLASS}
                                         >
-                                            {isApproved ? (
+                                            {locked ? (
                                                 content
                                             ) : (
                                                 <Link
@@ -259,7 +274,7 @@ export function SkillTrack_RecordingOptionsSheet({
                                             >
                                                 <button
                                                     type="button"
-                                                    disabled={!hasPermission || isApproved}
+                                                    disabled={!hasPermission || locked}
                                                     onClick={() => handleConfigure(action)}
                                                 >
                                                     <ItemMedia variant="icon">

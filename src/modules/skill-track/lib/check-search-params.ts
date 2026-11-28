@@ -22,6 +22,7 @@ import { PersonId } from "@/lib/schemas/person";
 import { SkillId } from "@/lib/schemas/skill";
 import { SKILL_CHECK_RESULT_VALUES, type CheckSearchFilters } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import type { TeamId } from "@/lib/schemas/team";
 
 /**
  * Filters replace history, so stepping through filters doesn't flood the back button; changing
@@ -94,11 +95,18 @@ export function checkSearchPage(page: number): number {
     return Number.isSafeInteger(page) && page >= 1 ? page : 1;
 }
 
-/** The `skillChecks.searchChecks` input for the params. */
-export function checkSearchInput(organizationId: OrganizationId, params: CheckSearchParams) {
+/**
+ * The `skillChecks.searchChecks` input for the params. `teamId` (the team-scope page's team, not
+ * a URL param) narrows it to checks on that team's people.
+ */
+export function checkSearchInput(
+    organizationId: OrganizationId,
+    params: CheckSearchParams,
+    teamId?: TeamId,
+) {
     return {
         organizationId,
-        filters: checkSearchFilters(params),
+        filters: { ...checkSearchFilters(params), ...(teamId && { teamId }) },
         page: checkSearchPage(params.page),
         pageSize: CHECK_SEARCH_PAGE_SIZE,
     };

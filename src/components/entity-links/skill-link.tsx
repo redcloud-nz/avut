@@ -5,8 +5,7 @@
 
 "use client";
 
-import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
+import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { SkillRef } from "@/lib/schemas/skill";
 
 import { EntityLink } from "./entity-link";
@@ -16,14 +15,17 @@ export type SkillLinkProps = {
 };
 
 export function SkillLink({ skill }: SkillLinkProps) {
-    const organization = useOrganization();
+    const scopedRoute = useScopedRoute();
 
     return (
         <EntityLink
-            href={route("/orgs/[slug]/skill-track/skills/[skill_id]", {
-                slug: organization.slug,
-                skill_id: skill.id,
-            })}
+            href={scopedRoute(
+                {
+                    organization: "/orgs/[slug]/skill-track/skills/[skill_id]",
+                    team: "/teams/[slug]/skill-track/skills/[skill_id]",
+                },
+                { skill_id: skill.id },
+            )}
             title={skill.name}
             type="Skill"
         />

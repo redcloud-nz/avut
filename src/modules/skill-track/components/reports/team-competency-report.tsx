@@ -64,9 +64,40 @@ const headCell =
 export function SkillTrack_TeamCompetencyReport({
     syntheticChecksEnabled,
     breadcrumbs,
+    team,
 }: {
     syntheticChecksEnabled: boolean;
     /** The page's ancestors, shown above the title. */
+    breadcrumbs?: SaratogaBreadcrumb[];
+    /** Fix the report to this team (team scope), with no scope picker. */
+    team?: { id: TeamId; name: string };
+}) {
+    if (team) {
+        return (
+            <TeamCompetencyReportView
+                teamId={team.id}
+                scopeLabel={team.name}
+                canChangeScope={false}
+                syntheticChecksEnabled={syntheticChecksEnabled}
+                breadcrumbs={breadcrumbs}
+            />
+        );
+    }
+
+    return (
+        <OrgTeamCompetencyReport
+            syntheticChecksEnabled={syntheticChecksEnabled}
+            breadcrumbs={breadcrumbs}
+        />
+    );
+}
+
+/** The org-scope report, scoped by `?team=` (a team id, or `all`). */
+function OrgTeamCompetencyReport({
+    syntheticChecksEnabled,
+    breadcrumbs,
+}: {
+    syntheticChecksEnabled: boolean;
     breadcrumbs?: SaratogaBreadcrumb[];
 }) {
     const [team] = useQueryState("team");
@@ -93,7 +124,7 @@ export function SkillTrack_TeamCompetencyReport({
     }
 
     return (
-        <TeamCompetencyReportView
+        <OrgTeamCompetencyReportView
             teamParam={team}
             syntheticChecksEnabled={syntheticChecksEnabled}
             breadcrumbs={breadcrumbs}
@@ -101,7 +132,8 @@ export function SkillTrack_TeamCompetencyReport({
     );
 }
 
-function TeamCompetencyReportView({
+/** Resolves `?team=` to the report's scope, labelled from the org's team list. */
+function OrgTeamCompetencyReportView({
     teamParam,
     syntheticChecksEnabled,
     breadcrumbs,
@@ -118,6 +150,38 @@ function TeamCompetencyReportView({
     const { data: teams } = useSuspenseQuery(
         trpc.teams.listTeams.queryOptions({ organizationId: organization.id }),
     );
+
+    const scopeLabel = teamId
+        ? (teams.find((team) => team.id === teamId)?.name ?? "Team")
+        : "Whole Organization";
+
+    return (
+        <TeamCompetencyReportView
+            teamId={teamId}
+            scopeLabel={scopeLabel}
+            canChangeScope
+            syntheticChecksEnabled={syntheticChecksEnabled}
+            breadcrumbs={breadcrumbs}
+        />
+    );
+}
+
+function TeamCompetencyReportView({
+    teamId,
+    scopeLabel,
+    canChangeScope,
+    syntheticChecksEnabled,
+    breadcrumbs,
+}: {
+    /** Absent for the whole organisation. */
+    teamId: TeamId | undefined;
+    scopeLabel: string;
+    /** Offer the scope dialog; off when the page fixes the team. */
+    canChangeScope: boolean;
+    syntheticChecksEnabled: boolean;
+    breadcrumbs?: SaratogaBreadcrumb[];
+}) {
+    const organization = useOrganization();
 
     const {
         data: { personnel, skillPackages, skillGroups, skills, competencies: recordedCompetencies },
@@ -192,10 +256,6 @@ function TeamCompetencyReportView({
         ),
     );
 
-    const scopeLabel = teamId
-        ? (teams.find((team) => team.id === teamId)?.name ?? "Team")
-        : "Whole Organization";
-
     return (
         <ReportCellPopoversProvider isSynthetic={isSynthetic}>
             <Glorious.Root>
@@ -207,7 +267,7 @@ function TeamCompetencyReportView({
                         {rows.length} {rows.length === 1 ? "skill" : "skills"}
                     </Glorious.Subtitle>
                     <Glorious.Actions>
-                        <SkillTrack_TeamScopeDialog compact />
+                        {canChangeScope && <SkillTrack_TeamScopeDialog compact />}
                         {syntheticActions}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -231,8 +291,10 @@ function TeamCompetencyReportView({
                                         <span>Skill Description</span>
                                     </DropdownMenuCheckboxItem>
                                 </DropdownMenuGroup>
-                                <DropdownMenuSeparator className="sm:hidden" />
-                                <SkillTrack_ScopeDialogMenuItem />
+                                {(canChangeScope || syntheticOpenMenuItem) && (
+                                    <DropdownMenuSeparator className="sm:hidden" />
+                                )}
+                                {canChangeScope && <SkillTrack_ScopeDialogMenuItem />}
                                 {syntheticOpenMenuItem}
                                 <DropdownMenuSeparator />
                                 <DropdownMenuGroup>{syntheticMenuItem}</DropdownMenuGroup>

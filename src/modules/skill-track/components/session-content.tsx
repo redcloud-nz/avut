@@ -16,8 +16,10 @@ import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/u
 import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { SkillCheckSessionStatusBadge } from "@/components/ui/status-badge";
 import { useOrganization } from "@/hooks/use-organization";
+import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { route } from "@/lib/routes";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { SkillTrack_ForeignSessionNotice } from "@/modules/skill-track/components/foreign-session-notice";
 import { SkillTrack_SessionConfigDialogs } from "@/modules/skill-track/components/session-config-dialogs";
 import { SkillsModule_Session_Contents_Card } from "@/modules/skill-track/components/session-contents";
 import {
@@ -26,10 +28,12 @@ import {
 } from "@/modules/skill-track/components/session-menu";
 import { SkillsModule_UpdateSession_Dialog } from "@/modules/skill-track/components/update-session";
 import { useFormatSessionWhen } from "@/modules/skill-track/lib/use-format-session-when";
+import { useSessionAccess } from "@/modules/skill-track/lib/use-session-access";
 import { trpc } from "@/trpc/client";
 
 export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillCheckSessionId }) {
     const organization = useOrganization();
+    const scopedRoute = useScopedRoute();
     const formatSessionWhen = useFormatSessionWhen();
 
     const { data: session } = useSuspenseQuery(
@@ -38,7 +42,8 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
             skillCheckSessionId: sessionId,
         }),
     );
-    const isApproved = session.status === "Include";
+    // Locked while approved, and in team scope for another team's (or an org) session.
+    const { foreign, locked } = useSessionAccess(session);
 
     return (
         <>
@@ -47,9 +52,13 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                     items={[
                         {
                             label: "Skill Check Sessions",
-                            href: route("/orgs/[slug]/skill-track/sessions", {
-                                slug: organization.slug,
-                            }),
+                            href: scopedRoute(
+                                {
+                                    organization: "/orgs/[slug]/skill-track/sessions",
+                                    team: "/teams/[slug]/skill-track/sessions",
+                                },
+                                {},
+                            ),
                         },
                     ]}
                 />
@@ -60,19 +69,34 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                         {session.name || session.id}
                     </Saratoga.Title>
                 </Saratoga.Header>
+                {foreign && (
+                    <SkillTrack_ForeignSessionNotice
+                        team={session.team}
+                        orgHref={route("/orgs/[slug]/skill-track/sessions/[session_id]", {
+                            slug: organization.slug,
+                            session_id: session.id,
+                        })}
+                    />
+                )}
                 <Saratoga.Columns>
                     <Saratoga.Column slot="main">
                         <RecordCard
                             label="Session"
                             updatedAt={session.updatedAt}
-                            historyHref={route(
-                                "/orgs/[slug]/skill-track/sessions/[session_id]/history",
-                                { slug: organization.slug, session_id: session.id },
+                            historyHref={scopedRoute(
+                                {
+                                    organization:
+                                        "/orgs/[slug]/skill-track/sessions/[session_id]/history",
+                                    team: "/teams/[slug]/skill-track/sessions/[session_id]/history",
+                                },
+                                { session_id: session.id },
                             )}
                             action={
                                 <>
-                                    {/* Not mounted when approved, so ?action=update can't open it either. */}
-                                    {!isApproved && (
+                                    {/* Not mounted when locked (approved, or foreign in team scope), so
+                                        ?action=update can't open it either: in team scope it would
+                                        also move a foreign session to this team. */}
+                                    {!locked && (
                                         <Protect permissions={{ skillCheckSession: ["update"] }}>
                                             <SkillsModule_UpdateSession_Dialog
                                                 session={session}
@@ -80,6 +104,7 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                                             />
                                         </Protect>
                                     )}
+                                    {/* Renders nothing for a foreign session, but still clears a stale ?action=. */}
                                     <SkillsModule_SessionMenu session={session} />
                                 </>
                             }

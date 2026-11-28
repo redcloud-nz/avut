@@ -26,11 +26,12 @@ import { Show } from "@/components/show";
 import { Badge } from "@/components/ui/badge";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
+import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { Skill } from "@/lib/schemas/skill";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
 import { formatFrequency } from "@/modules/skill-track/lib/format-frequency";
+import { useSkillTrackScope } from "@/modules/skill-track/lib/use-skill-track-scope";
 import { trpc } from "@/trpc/client";
 
 type SkillRow = Skill & { group: SkillGroup; skillPackage: SkillPackage };
@@ -41,6 +42,9 @@ type SkillRow = Skill & { group: SkillGroup; skillPackage: SkillPackage };
  */
 export function SkillTrack_SkillsList() {
     const organization = useOrganization();
+    const scopedRoute = useScopedRoute();
+    // In team scope the catalogue is read-only, so there's no subscribing to point to.
+    const inTeamScope = useSkillTrackScope().scope === "team";
 
     const { data: assessable } = useSuspenseQuery(
         trpc.skillPackageSubscriptions.listAssessableSkills.queryOptions({
@@ -162,15 +166,24 @@ export function SkillTrack_SkillsList() {
                             <PocketKnifeIcon className="size-12 text-muted-foreground" />
                         </EmptyMedia>
                         <EmptyDescription>
-                            No skills yet.{" "}
-                            <Link
-                                href={route("/orgs/[slug]/skill-track/packages", {
-                                    slug: organization.slug,
-                                })}
-                            >
-                                Subscribe to a package
-                            </Link>{" "}
-                            to add its skills.
+                            No skills yet.
+                            {!inTeamScope && (
+                                <>
+                                    {" "}
+                                    <Link
+                                        href={scopedRoute(
+                                            {
+                                                organization: "/orgs/[slug]/skill-track/packages",
+                                                team: "/teams/[slug]/skill-track/packages",
+                                            },
+                                            {},
+                                        )}
+                                    >
+                                        Subscribe to a package
+                                    </Link>{" "}
+                                    to add its skills.
+                                </>
+                            )}
                         </EmptyDescription>
                     </Empty>
                 }

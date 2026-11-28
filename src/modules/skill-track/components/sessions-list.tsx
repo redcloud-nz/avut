@@ -24,25 +24,32 @@ import { Show } from "@/components/show";
 import { Empty, EmptyDescription, EmptyHeader } from "@/components/ui/empty";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
-import { route } from "@/lib/routes";
+import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { PersonRef } from "@/lib/schemas/person";
 import { SKILL_CHECK_STATUS_LABELS } from "@/lib/schemas/skill-check";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
-import { TeamRef } from "@/lib/schemas/team";
+import { TeamId, TeamRef } from "@/lib/schemas/team";
 import { useFormatSessionWhen } from "@/modules/skill-track/lib/use-format-session-when";
+import { useSkillTrackScope } from "@/modules/skill-track/lib/use-skill-track-scope";
 import { trpc } from "@/trpc/client";
 
 import { SkillTrack_CreateSession_Dialog } from "./create-session";
 import { NO_SESSION_TEAM } from "./session-when-picker";
 
-export default function SkillTrack_Sessions_List() {
+/**
+ * The organisation's skill check sessions. With `teamId` (team scope), only that team's sessions.
+ */
+export default function SkillTrack_Sessions_List({ teamId }: { teamId?: TeamId } = {}) {
     const organization = useOrganization();
+    const scopedRoute = useScopedRoute();
     const { formatDate } = usePreferences();
     const formatSessionWhen = useFormatSessionWhen();
+    const inTeamScope = useSkillTrackScope().scope === "team";
 
     const { data: sessions } = useSuspenseQuery(
         trpc.skillCheckSessions.listSessions.queryOptions({
             organizationId: organization.id,
+            teamId,
         }),
     );
 
@@ -69,10 +76,13 @@ export default function SkillTrack_Sessions_List() {
                     header: "Name",
                     cell: (ctx) => (
                         <Link
-                            href={route("/orgs/[slug]/skill-track/sessions/[session_id]", {
-                                slug: organization.slug,
-                                session_id: ctx.row.original.id,
-                            })}
+                            href={scopedRoute(
+                                {
+                                    organization: "/orgs/[slug]/skill-track/sessions/[session_id]",
+                                    team: "/teams/[slug]/skill-track/sessions/[session_id]",
+                                },
+                                { session_id: ctx.row.original.id },
+                            )}
                         >
                             {ctx.getValue() || ctx.row.original.id}
                         </Link>
@@ -81,16 +91,21 @@ export default function SkillTrack_Sessions_List() {
                     enableGlobalFilter: true,
                     enableColumnFilter: false,
                 }),
-                columnHelper.accessor((row) => row.team?.id ?? NO_SESSION_TEAM, {
-                    id: "team",
-                    header: "Team",
-                    cell: (ctx) => ctx.row.original.team?.name ?? "—",
-                    enableSorting: false,
-                    enableGlobalFilter: false,
-                    enableColumnFilter: true,
-                    filterFn: Kaga.filterFns.oneOf,
-                    meta: { columnOptions: teamOptions },
-                }),
+                // Team scope lists only its own team's sessions, so there's no Team to show.
+                ...(inTeamScope
+                    ? []
+                    : [
+                          columnHelper.accessor((row) => row.team?.id ?? NO_SESSION_TEAM, {
+                              id: "team",
+                              header: "Team",
+                              cell: (ctx) => ctx.row.original.team?.name ?? "—",
+                              enableSorting: false,
+                              enableGlobalFilter: false,
+                              enableColumnFilter: true,
+                              filterFn: Kaga.filterFns.oneOf,
+                              meta: { columnOptions: teamOptions },
+                          }),
+                      ]),
                 columnHelper.accessor("startsAt", {
                     header: "When",
                     cell: (ctx) => formatSessionWhen(ctx.getValue(), ctx.row.original.endsAt),
@@ -129,7 +144,7 @@ export default function SkillTrack_Sessions_List() {
                     },
                 }),
             ]),
-        [organization.slug, formatDate, formatSessionWhen, teamOptions],
+        [scopedRoute, formatDate, formatSessionWhen, teamOptions, inTeamScope],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
