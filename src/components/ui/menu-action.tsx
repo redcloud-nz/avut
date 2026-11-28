@@ -51,8 +51,13 @@ export function MenuAction({
     onSelect,
     disabled,
     destructive,
-}: MenuActionProps) {
-    const hotkey = ActionHotkey[verb];
+    showShortcut = true,
+}: MenuActionProps & {
+    /** False for a menu that registers no hotkeys (a non-primary record-card ⋮), so it doesn't
+     *  show a shortcut that does nothing. */
+    showShortcut?: boolean;
+}) {
+    const hotkey = showShortcut ? ActionHotkey[verb] : undefined;
 
     return (
         <DropdownMenuItem

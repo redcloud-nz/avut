@@ -74,6 +74,8 @@ export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSessi
 
             <SkillsModule_ReopenSession_Dialog
                 session={session}
+                // The Session ⋮ needs `delete`, Reopen `approve`: today only skills-admin holds
+                // `approve`, and it also holds `delete`, so the ⋮ is always there for it.
                 returnFocusRef={triggerRef}
                 open={isApproved && action === "reopen"}
                 onOpenChange={(open) =>

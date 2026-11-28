@@ -160,7 +160,7 @@ export function RecordCardMenu({
                     {actions.length > 0 && (
                         <DropdownMenuGroup>
                             {actions.map((a) => (
-                                <MenuAction key={a.verb} {...a} />
+                                <MenuAction key={a.verb} {...a} showShortcut={primary} />
                             ))}
                         </DropdownMenuGroup>
                     )}
