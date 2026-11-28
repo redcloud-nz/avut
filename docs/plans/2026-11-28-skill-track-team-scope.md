@@ -60,7 +60,7 @@ _End of review group A._
 
 ### Review group B: team routes, links, sessions
 
-- [ ] **Task 3: team-scope session pages** (feat(skill-track): add team-scope session pages)
+- [x] **Task 3: team-scope session pages** (feat(skill-track): add team-scope session pages)
   - **Files:** `src/modules/skill-track/components/sessions-list.tsx` (optional `teamId` prop), new `page.tsx` files under `src/app/(wrapper)/(authenticated)/teams/[slug]/skill-track/sessions/` mirroring the org ones (list, `[session_id]`, `by-person`, `by-skill`, `checks`, `history`, `review`), the session cards' `routes` in `content/help/skill-track/`
   - **Do:** Each page mirrors its org counterpart (same prefetches, same content component) with `requireTeam` in place of `getOrganizationBySlug`, and `generateMetadata` per Decisions. The list page prefetches `listSessions({ organizationId, teamId })` and passes `teamId` to `sessions-list.tsx`, which adds it to its query in the same commit. Follow `docs/patterns/detail-page-data-fetching.md`. Run `npx next typegen`.
   - **Done when:** each page renders for one of the team's sessions (still fully editable everywhere until Task 7). `npm run check` and the help-cards test pass.
@@ -120,3 +120,8 @@ New: Skill Track in team scope (team's sessions, checks on the team's people, re
 - Assessor role grants in team scope.
 
 ## Parked
+
+## Review notes
+
+- (group A) `use-skill-track-scope.test.tsx`: the `it.each(["org scope", "no scope"])` runs the same unwrapped render twice. Make the org case a real org-only wrapper, or keep one "no TeamProvider" case.
+- (group A) `useSkillTrackScope()` returns a new object every render. Hoist a module-level `ORG_SCOPE` constant and `useMemo` the team branch on `team`, since shared components will use it as an effect/memo dependency.

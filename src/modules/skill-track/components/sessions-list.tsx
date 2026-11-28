@@ -28,14 +28,17 @@ import { route } from "@/lib/routes";
 import { PersonRef } from "@/lib/schemas/person";
 import { SKILL_CHECK_STATUS_LABELS } from "@/lib/schemas/skill-check";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
-import { TeamRef } from "@/lib/schemas/team";
+import { TeamId, TeamRef } from "@/lib/schemas/team";
 import { useFormatSessionWhen } from "@/modules/skill-track/lib/use-format-session-when";
 import { trpc } from "@/trpc/client";
 
 import { SkillTrack_CreateSession_Dialog } from "./create-session";
 import { NO_SESSION_TEAM } from "./session-when-picker";
 
-export default function SkillTrack_Sessions_List() {
+/**
+ * The organisation's skill check sessions. With `teamId` (team scope), only that team's sessions.
+ */
+export default function SkillTrack_Sessions_List({ teamId }: { teamId?: TeamId } = {}) {
     const organization = useOrganization();
     const { formatDate } = usePreferences();
     const formatSessionWhen = useFormatSessionWhen();
@@ -43,6 +46,7 @@ export default function SkillTrack_Sessions_List() {
     const { data: sessions } = useSuspenseQuery(
         trpc.skillCheckSessions.listSessions.queryOptions({
             organizationId: organization.id,
+            teamId,
         }),
     );
 
