@@ -15,8 +15,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
 import { skillCheckSessionsEffects } from "@/client/skill-check-sessions-effects";
-import { ObjectIcons } from "@/components/icons";
-import { Button, MutationButton } from "@/components/ui/button";
+import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogBody,
@@ -30,6 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { RecordCardEditButton } from "@/components/ui/record-card-actions";
 import { Textarea } from "@/components/ui/textarea";
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
@@ -46,10 +46,16 @@ import {
     withSessionEndTime,
 } from "./session-when-picker";
 
+/**
+ * The Session card's pencil and the `?action=update` dialog it opens. `primary` on the page's
+ * primary record card, so ⌥E opens it.
+ */
 export function SkillsModule_UpdateSession_Dialog({
     session,
+    primary = false,
 }: {
     session: SkillCheckSession & { team: TeamRef | null };
+    primary?: boolean;
 }) {
     const organization = useOrganization();
     const router = useRouter();
@@ -114,9 +120,7 @@ export function SkillsModule_UpdateSession_Dialog({
     return (
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Update session">
-                    <ObjectIcons.Edit />
-                </Button>
+                <RecordCardEditButton label="Edit session" category="Sessions" primary={primary} />
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>

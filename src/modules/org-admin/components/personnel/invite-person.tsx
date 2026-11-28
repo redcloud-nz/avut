@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { useId } from "react";
+import { RefObject, useId } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -34,6 +34,7 @@ import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import { FieldDescription, FieldGroup } from "@/components/ui/field";
 import { ObjectName } from "@/components/ui/typography";
 import { useOrganization } from "@/hooks/use-organization";
+import { useReturnFocus } from "@/hooks/use-return-focus";
 import { formatRelativeDateTime } from "@/lib/datetime";
 import { PersonData } from "@/lib/schemas/person";
 import { trpc } from "@/trpc/client";
@@ -53,17 +54,24 @@ import { trpc } from "@/trpc/client";
  * - **Invite.** Otherwise send an invitation carrying `personId`, which
  *   `organizationHooks.afterAcceptInvitation` copies onto the membership when it is accepted.
  *
- * Host-driven (Recipe C of `docs/patterns/mutation-dialog.md`): the link outcome hides the menu
- * action that opened this dialog, so it must not own the `action` param itself — a dialog may only
- * do that if it outlives its own mutation's success.
+ * Host-driven (Recipe C of `docs/patterns/mutation-dialog.md`): the link outcome hides the button
+ * that opened this dialog, so it must not own the `action` param itself — a dialog may only do
+ * that if it outlives its own mutation's success.
  */
 export function AdminModule_InvitePerson_Dialog({
     person,
+    returnFocusRef,
     ...props
-}: DialogProps & { person: PersonData }) {
+}: DialogProps & {
+    person: PersonData;
+    /** Where focus goes on close when the button that opened the dialog is gone. */
+    returnFocusRef?: RefObject<HTMLElement | null>;
+}) {
+    const returnFocus = useReturnFocus(returnFocusRef);
+
     return (
         <Dialog {...props}>
-            <DialogContent size="lg" onCloseAutoFocus={(e) => e.preventDefault()}>
+            <DialogContent size="lg" {...returnFocus}>
                 {/* The header depends on `getInviteState`, so it lives in the body component; this
                     neutral one covers loading and a failed load. Radix only mounts the body while
                     the dialog is open, which also keeps the query and form state fresh per open. */}

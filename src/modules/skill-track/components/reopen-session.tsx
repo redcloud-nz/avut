@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { ComponentProps, useEffect } from "react";
+import { ComponentProps, RefObject, useEffect } from "react";
 import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { ObjectName } from "@/components/ui/typography";
 import { useOrganization } from "@/hooks/use-organization";
+import { useReturnFocus } from "@/hooks/use-return-focus";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 import { useRefetchSessionOnConflict } from "@/modules/skill-track/components/use-refetch-session-on-conflict";
 import { trpc } from "@/trpc/client";
@@ -29,13 +30,20 @@ import { trpc } from "@/trpc/client";
 /**
  * Confirm reopening an approved session. A state-transition confirm, so a plain `Dialog`
  * rather than an `AlertDialog`; host-driven (`open`/`onOpenChange` from the session menu,
- * which owns `?action=reopen`) because the success effect hides the menu's Reopen item.
+ * which owns `?action=reopen`) because the success effect hides the Record card's Reopen
+ * button.
  */
 export function SkillsModule_ReopenSession_Dialog({
     session,
+    returnFocusRef,
     ...props
-}: ComponentProps<typeof Dialog> & { session: SkillCheckSession }) {
+}: ComponentProps<typeof Dialog> & {
+    session: SkillCheckSession;
+    /** Where focus goes on close, since the Reopen button is gone once it succeeds. */
+    returnFocusRef?: RefObject<HTMLElement | null>;
+}) {
     const organization = useOrganization();
+    const returnFocus = useReturnFocus(returnFocusRef);
 
     const refetchSessionOnConflict = useRefetchSessionOnConflict(session.id);
     const mutation = useMutation(
@@ -65,7 +73,7 @@ export function SkillsModule_ReopenSession_Dialog({
 
     return (
         <Dialog {...props}>
-            <DialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
+            <DialogContent {...returnFocus}>
                 <DialogHeader>
                     <DialogTitle>Reopen session</DialogTitle>
                     <DialogDescription>

@@ -13,8 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
 import { personnelEffects } from "@/client/personnel-effects";
-import { ObjectIcons } from "@/components/icons";
-import { Button, MutationButton } from "@/components/ui/button";
+import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogBody,
@@ -29,11 +28,22 @@ import {
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 import { Input } from "@/components/ui/input";
+import { RecordCardEditButton } from "@/components/ui/record-card-actions";
 import { useOrganization } from "@/hooks/use-organization";
 import { ModifiablePersonData, PersonData } from "@/lib/schemas/person";
 import { trpc } from "@/trpc/client";
 
-export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData }) {
+/**
+ * The Person card's pencil and the `?action=update` dialog it opens. `primary` on the page's
+ * primary record card, so ⌥E opens it.
+ */
+export function AdminModule_UpdatePerson_Dialog({
+    person,
+    primary = false,
+}: {
+    person: PersonData;
+    primary?: boolean;
+}) {
     const organization = useOrganization();
 
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
@@ -80,9 +90,7 @@ export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData
     return (
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Update person">
-                    <ObjectIcons.Edit />
-                </Button>
+                <RecordCardEditButton label="Edit person" category="Personnel" primary={primary} />
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
