@@ -130,3 +130,10 @@ Every detail page's actions move: guides that say "open the ⋮ / Actions menu" 
 ## Parked
 
 - Person page: `AdminModule_Person_LinkedUser_Card` reads `personnel.getLinkedUser` with `useSuspenseQuery` and the page doesn't prefetch it, so the server render errors ("called during the server render, where nothing was hydrated") and the page falls back to client rendering. Same on integration; the prefetch needs gating on `member: ["view"]`.
+
+## Review notes
+
+Group B checkpoint (user, 2026-11-28): Make owner stays on `member: ["owner"]`; the org D4H card says why Unlink is missing; the team sync icon is Active-only. Done in-session.
+
+- Token pencils (org and user D4H token pages) set `?action=edit` with `aria-expanded` rather than being the dialog's `DialogTrigger` (Decision 10): either make them real triggers or document a "URL-opened pencil" variant in `docs/patterns/detail-page-actions.md`.
+- `content/help/admin/teams.mdx`: rewrap the D4H paragraph; line ~30 "set under **Edit**" → "with the Team card's pencil". `content/help/admin/users.mdx` ~31–34: rewrap the Make owner paragraph.

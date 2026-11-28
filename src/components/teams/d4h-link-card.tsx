@@ -142,15 +142,18 @@ export function Teams_D4HCard({
                     label="Linked D4H Team"
                     action={
                         <>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                aria-label="Sync with D4H"
-                                title="Sync with D4H"
-                                onClick={() => void setAction("d4h-sync", { history: "push" })}
-                            >
-                                <D4HIcons.Sync />
-                            </Button>
+                            {/* Sync is for an Active team, as the old menu offered it. */}
+                            {team.status === "Active" && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label="Sync with D4H"
+                                    title="Sync with D4H"
+                                    onClick={() => void setAction("d4h-sync", { history: "push" })}
+                                >
+                                    <D4HIcons.Sync />
+                                </Button>
+                            )}
                             <RecordCardMenu
                                 actions={menuActions}
                                 category="Teams"

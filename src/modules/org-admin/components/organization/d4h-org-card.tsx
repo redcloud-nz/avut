@@ -141,6 +141,12 @@ export function AdminModule_Organization_D4HCard({
                     </CardAction>
                 </CardHeader>
                 <CardContent>
+                    {orgD4H.linkedTeamCount > 0 && (
+                        // Unlink is left out of the ⋮ until then, so say why it isn't there.
+                        <p className="mb-4 text-sm text-muted-foreground">
+                            Unlink every team from D4H to unlink the organisation.
+                        </p>
+                    )}
                     <DataList>
                         <DataItem inline>
                             <DataItemTitle>D4H Organisation</DataItemTitle>
