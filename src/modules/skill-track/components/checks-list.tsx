@@ -10,7 +10,7 @@ import Link from "next/link";
 import { useQueryStates } from "nuqs";
 import { useDeferredValue, useMemo, type ReactNode } from "react";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { getCoreRowModel, useReactTable, type PaginationState } from "@tanstack/react-table";
 
 import { Kaga } from "@/components/blocks/kaga";
@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Empty, EmptyContent, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
-import { route } from "@/lib/routes";
+import { useScopedRoute } from "@/hooks/use-scoped-route";
 import { assessorDisplayName, getSkillCheckResultLabel } from "@/lib/schemas/skill-check";
 import { cn } from "@/lib/utils";
 import { SkillTrack_ChecksFilterBar } from "@/modules/skill-track/components/checks-filter-bar";
@@ -31,14 +31,19 @@ import {
     checkSearchPage,
     checkSearchParsers,
 } from "@/modules/skill-track/lib/check-search-params";
+import { useSkillTrackScope } from "@/modules/skill-track/lib/use-skill-track-scope";
 import { trpc } from "@/trpc/client";
 
 /**
  * Every check in the organization, newest first, one server page at a time. The filters and page
- * live in search params (`check-search-params.ts`), so a filtered view can be linked to.
+ * live in search params (`check-search-params.ts`), so a filtered view can be linked to. In team
+ * scope, only checks on the team's people (`checkSearchInput`'s `teamId`).
  */
 export default function SkillTrack_ChecksList() {
     const organization = useOrganization();
+    const scopedRoute = useScopedRoute();
+    const skillTrackScope = useSkillTrackScope();
+    const teamId = skillTrackScope.scope === "team" ? skillTrackScope.team.id : undefined;
     const { formatDate } = usePreferences();
 
     const [params, setParams] = useQueryStates(checkSearchParsers);
@@ -47,14 +52,21 @@ export default function SkillTrack_ChecksList() {
     // page. Building the input from the deferred params keeps the old rows (and everything around
     // them) on screen until the new page arrives.
     const deferredParams = useDeferredValue(params);
-    const input = checkSearchInput(organization.id, deferredParams);
+    const input = checkSearchInput(organization.id, deferredParams, teamId);
     // A filter or page change is in flight while the live params ask for something else.
     const isPending =
-        JSON.stringify(checkSearchInput(organization.id, params)) !== JSON.stringify(input);
+        JSON.stringify(checkSearchInput(organization.id, params, teamId)) !== JSON.stringify(input);
 
     const {
         data: { rows, total },
     } = useSuspenseQuery(trpc.skillChecks.searchChecks.queryOptions(input));
+
+    // Team scope only: names the team a foreign session (another team's) belongs to. Not
+    // suspense, so the table doesn't wait on it; the page prefetches it.
+    const { data: teams } = useQuery({
+        ...trpc.teams.listTeams.queryOptions({ organizationId: organization.id }),
+        enabled: teamId !== undefined,
+    });
 
     type Row = (typeof rows)[number];
 
@@ -86,15 +98,33 @@ export default function SkillTrack_ChecksList() {
                         const row = ctx.row.original;
                         if (!row.session) return <span className="text-muted-foreground">—</span>;
                         const label = row.session.name || row.session.id;
+                        // In team scope, a session that isn't this team's opens read-only; say whose
+                        // it is.
+                        const owner =
+                            teamId && row.session.teamId !== teamId
+                                ? row.session.teamId === null
+                                    ? "Organisation"
+                                    : (teams?.find((t) => t.id === row.session?.teamId)?.name ??
+                                      "Another team")
+                                : null;
                         return (
-                            <Link
-                                href={route("/orgs/[slug]/skill-track/sessions/[session_id]", {
-                                    slug: organization.slug,
-                                    session_id: row.session.id,
-                                })}
-                            >
-                                {label}
-                            </Link>
+                            <>
+                                <Link
+                                    href={scopedRoute(
+                                        {
+                                            organization:
+                                                "/orgs/[slug]/skill-track/sessions/[session_id]",
+                                            team: "/teams/[slug]/skill-track/sessions/[session_id]",
+                                        },
+                                        { session_id: row.session.id },
+                                    )}
+                                >
+                                    {label}
+                                </Link>
+                                {owner && (
+                                    <span className="ml-1.5 text-muted-foreground">({owner})</span>
+                                )}
+                            </>
                         );
                     },
                     enableSorting: false,
@@ -113,7 +143,7 @@ export default function SkillTrack_ChecksList() {
                     enableColumnFilter: false,
                 }),
             ]),
-        [organization.slug, organization.settings, formatDate],
+        [organization.settings, formatDate, scopedRoute, teamId, teams],
     );
 
     // From the live page, not the deferred one, so paging again before the next page arrives

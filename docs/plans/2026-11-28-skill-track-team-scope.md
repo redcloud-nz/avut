@@ -90,7 +90,7 @@ _End of review group C._ Visual checkpoint: sidebar, sessions list and create, o
 
 ### Review group D: checks, catalogue, reports, docs
 
-- [ ] **Task 8: checks and catalogue in team scope** (feat(skill-track): team-scope checks and a read-only catalogue) · `visual`
+- [x] **Task 8: checks and catalogue in team scope** (feat(skill-track): team-scope checks and a read-only catalogue) · `visual`
   - **Files:** `teams/[slug]/skill-track/checks/page.tsx`, `checks-list.tsx`, `checks-filter-bar.tsx`, `create-check.tsx`, `packages-list.tsx`, `package-content.tsx`, `group-content.tsx`, `skills-list.tsx`, `skill-content.tsx`, `subscribe-package.tsx`/`unsubscribe-package.tsx` as needed
   - **Do:** Per Decisions. The page and `checks-list.tsx` switch to `checkSearchInput(…, team.id)` together. The Session column links per Decisions (a scoped route for every session, with a foreign session's owner as muted text; the org scope is unchanged). The Session filter, Assessee filter and Create Check's picker per Decisions; prefetch what the page's filters read. Catalogue: hide subscribe/unsubscribe and any other editing control in team scope.
   - **Done when:** the team Checks page lists only roster people's checks (session and standalone), links every session (foreign ones marked), and its filters and create dialog offer only the team's sessions and people; the catalogue pages in team scope have no editing controls; the org scope is unchanged. `npm run check` passes.
@@ -127,3 +127,4 @@ New: Skill Track in team scope (team's sessions, checks on the team's people, re
 - (group A) `useSkillTrackScope()` returns a new object every render. Hoist a module-level `ORG_SCOPE` constant and `useMemo` the team branch on `team`, since shared components will use it as an effect/memo dependency.
 - (group C) `create-session.tsx`: send `teamId: pinnedTeamId ?? parsed.data.teamId` explicitly, as `update-session.tsx` does, rather than relying on the hidden field's default.
 - (group C) `session-menu.tsx`: the foreign-session menu hand-copies `EntityActionMenu`'s trigger and loses its open-menu hotkey. Use `EntityActionMenu` with no actions if it supports that cleanly; otherwise leave it.
+- (Task 9) The team person picker (`useTeamRosterPeople`) lists Archived people, who then hit the "not an active member" empty state because `getCompetencyMatrix` returns Active people only. List only Active people there, matching the org picker.

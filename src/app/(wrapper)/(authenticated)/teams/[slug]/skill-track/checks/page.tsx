@@ -23,10 +23,29 @@ export default async function Team_SkillTrack_Checks_Page(
 ) {
     const { slug } = await props.params;
     // Cached per request, and already run by the team layout. Read here for the ids.
-    const { organization } = await requireTeam(slug);
+    const { organization, team } = await requireTeam(slug);
     const params = await loadCheckSearchParams(props.searchParams);
 
-    prefetch(trpc.skillChecks.searchChecks.queryOptions(checkSearchInput(organization.id, params)));
+    prefetch(
+        trpc.skillChecks.searchChecks.queryOptions(
+            checkSearchInput(organization.id, params, team.id),
+        ),
+    );
+    // What the filters (the Session and Assessee options) and the Session column (other teams'
+    // names) read in team scope.
+    prefetch(
+        trpc.skillCheckSessions.listSessions.queryOptions({
+            organizationId: organization.id,
+            teamId: team.id,
+        }),
+    );
+    prefetch(
+        trpc.teams.listTeamMemberships.queryOptions({
+            organizationId: organization.id,
+            teamId: team.id,
+        }),
+    );
+    prefetch(trpc.teams.listTeams.queryOptions({ organizationId: organization.id }));
 
     return (
         <HydrateClient>

@@ -7,6 +7,7 @@
 
 import { XIcon } from "lucide-react";
 import { useId, useMemo, type ReactNode } from "react";
+import * as R from "remeda";
 
 import { useQuery } from "@tanstack/react-query";
 
@@ -40,6 +41,7 @@ import {
     type CheckSearchParams,
 } from "@/modules/skill-track/lib/check-search-params";
 import { useFormatSessionWhen } from "@/modules/skill-track/lib/use-format-session-when";
+import { useSkillTrackScope } from "@/modules/skill-track/lib/use-skill-track-scope";
 import { trpc } from "@/trpc/client";
 
 /** What a filter change writes: some filter params, set or cleared. */
@@ -60,6 +62,9 @@ export interface ChecksFilterBarProps {
  * date range, held in search params. A collapsible card whose header sums the filters up in a
  * sentence. Whether a filter is set comes from `checkSearchFilters`, so a mangled param
  * (`?skill=xyz`) shows as unset, matching the query, which drops it.
+ *
+ * In team scope the Session filter offers the team's sessions and the Person filter the team's
+ * roster (a non-`Deleted` membership, person not `Deleted`); the page prefetches both.
  */
 export function SkillTrack_ChecksFilterBar({
     params,
@@ -70,6 +75,8 @@ export function SkillTrack_ChecksFilterBar({
     const formatSessionWhen = useFormatSessionWhen();
     const { display } = usePreferences();
     const id = useId();
+    const skillTrackScope = useSkillTrackScope();
+    const teamId = skillTrackScope.scope === "team" ? skillTrackScope.team.id : undefined;
 
     const filters = checkSearchFilters(params);
     const anySet = Object.keys(filters).length > 0;
@@ -81,11 +88,40 @@ export function SkillTrack_ChecksFilterBar({
         }),
     );
     const sessionsQuery = useQuery(
-        trpc.skillCheckSessions.listSessions.queryOptions({ organizationId: organization.id }),
+        trpc.skillCheckSessions.listSessions.queryOptions({
+            organizationId: organization.id,
+            teamId,
+        }),
     );
     // The pickers load the same list; this names a chosen person in the summary.
     const personnelQuery = useQuery(
         trpc.personnel.listPersonnel.queryOptions({ organizationId: organization.id }),
+    );
+
+    // Team scope only. `listTeamMemberships` already leaves out `Deleted` memberships.
+    const membershipsQuery = useQuery({
+        ...trpc.teams.listTeamMemberships.queryOptions({
+            organizationId: organization.id,
+            teamId,
+        }),
+        enabled: teamId !== undefined,
+    });
+
+    const rosterOptions = useMemo(
+        () =>
+            R.pipe(
+                membershipsQuery.data ?? [],
+                R.map((membership) => membership.person),
+                R.filter((person) => person.status !== "Deleted"),
+                R.sortBy((person) => person.name),
+                R.map((person) => ({
+                    value: person.id,
+                    label: person.name,
+                    subtitle: person.email,
+                    badge: person.status === "Archived" ? "Archived" : undefined,
+                })),
+            ),
+        [membershipsQuery.data],
     );
 
     const skillOptions = useMemo(
@@ -231,15 +267,41 @@ export function SkillTrack_ChecksFilterBar({
                             isSet={!!filters.assesseeId}
                             onClear={() => onFiltersChange({ person: null })}
                         >
-                            <PersonPicker
-                                id={`${id}-person`}
-                                className={FILTER_TRIGGER}
-                                organizationId={organization.id}
-                                value={filters.assesseeId ?? null}
-                                onValueChange={(person) => onFiltersChange({ person })}
-                                placeholder="Any person"
-                                allStatuses
-                            />
+                            {teamId ? (
+                                <SearchableSelect
+                                    id={`${id}-person`}
+                                    className={FILTER_TRIGGER}
+                                    value={filters.assesseeId ?? null}
+                                    onValueChange={(person) =>
+                                        onFiltersChange({ person: person || null })
+                                    }
+                                    options={rosterOptions}
+                                    // A person off the roster (e.g. from a hand-edited link).
+                                    valueLabel={
+                                        filters.assesseeId &&
+                                        !rosterOptions.some((o) => o.value === filters.assesseeId)
+                                            ? personName(filters.assesseeId, sampleRow?.assessee)
+                                            : undefined
+                                    }
+                                    placeholder="Any person"
+                                    searchPlaceholder="Search team members..."
+                                    emptyMessage={
+                                        membershipsQuery.isPending
+                                            ? "Loading team members..."
+                                            : "No team members found."
+                                    }
+                                />
+                            ) : (
+                                <PersonPicker
+                                    id={`${id}-person`}
+                                    className={FILTER_TRIGGER}
+                                    organizationId={organization.id}
+                                    value={filters.assesseeId ?? null}
+                                    onValueChange={(person) => onFiltersChange({ person })}
+                                    placeholder="Any person"
+                                    allStatuses
+                                />
+                            )}
                         </Filter>
                         <Filter
                             id={`${id}-skill`}
