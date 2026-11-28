@@ -58,8 +58,7 @@ export const ActionHotkey: Partial<Record<ActionVerb, Hotkey>> = {
 /**
  * Open the page's actions menu with its first item focused (`Cmd+.` on Mac, `Ctrl+.` elsewhere),
  * as VS Code's Quick Fix menu does. Registered by the primary record card's `RecordCardMenu`
- * (`primary`), so a page registers it at most once, and by the page-level `EntityActionMenu` on
- * pages not yet moved to record-card menus. Deliberately not `Alt+<key>`: opening the menu isn't
+ * (`primary`), so a page registers it at most once. Deliberately not `Alt+<key>`: opening the menu isn't
  * an action.
  */
 export const ACTIONS_MENU_HOTKEY: Hotkey = "Mod+.";

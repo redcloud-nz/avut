@@ -111,7 +111,7 @@ Untouched: D4H catalogue/member/team pages (↗ only), self-audit campaign (out 
 
 ### Closing
 
-- [ ] **Task 9 — remove `EntityActionMenu` and sweep** `mechanical`
+- [x] **Task 9 — remove `EntityActionMenu` and sweep** `mechanical`
   - **Files:** `src/components/ui/{menu-action,menu-action.test}.tsx`, `src/components/ui/README.md`, `src/lib/hotkeys.ts`, whatever the greps find.
   - **Do:** Delete `EntityActionMenu`, `useEntityActionMenuTrigger` and their tests (keep `MenuAction`/`useMenuActionHotkeys`, which `RecordCardMenu` uses). Then: `grep -rn "EntityActionMenu\|glyph-halo" src` has only intended hits; no `Saratoga.Actions` wraps an empty fragment; help cards don't mention a detail-page "Actions menu" (`grep -rniE "actions menu|⋮" content/help`).
   - **Done when:** greps clean, `npm run check -- --all` passes.

@@ -60,19 +60,6 @@ export interface RecordCardMenuProps {
     label?: string;
 }
 
-const RecordCardMenuTriggerContext = createContext<RefObject<HTMLButtonElement | null> | null>(
-    null,
-);
-
-/**
- * The enclosing {@link RecordCardMenu}'s trigger button, for content rendered inside the menu
- * (its `after` groups) that opens a dialog and needs somewhere to return focus. Dialogs mounted
- * beside the menu take the menu's `triggerRef` instead.
- */
-export function useRecordCardMenuTrigger(): RefObject<HTMLButtonElement | null> | undefined {
-    return useContext(RecordCardMenuTriggerContext) ?? undefined;
-}
-
 const ActionsCardFocusFallbackContext = createContext<RefObject<HTMLElement | null> | null>(null);
 
 /**
@@ -162,7 +149,7 @@ export function RecordCardMenu({
     if (isEmpty) return null;
 
     return (
-        <RecordCardMenuTriggerContext value={triggerRef}>
+        <>
             <DropdownMenu open={open} onOpenChange={setOpen}>
                 <DropdownMenuTrigger asChild>
                     <Button ref={triggerRef} variant="ghost" size="icon" aria-label={label}>
@@ -180,7 +167,7 @@ export function RecordCardMenu({
                     {after}
                 </DropdownMenuContent>
             </DropdownMenu>
-        </RecordCardMenuTriggerContext>
+        </>
     );
 }
 
