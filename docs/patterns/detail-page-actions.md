@@ -99,6 +99,11 @@ content, with `fallbackRef` on a control that stays (the card's ⋮ via `RecordC
 `triggerRef`, or the pencil). Pick one that every viewer who can open the dialog is sure to
 see: a ⋮ renders nothing for a viewer with no actions in it.
 
+An action card that another module supplies through a slot (I3's Return card on the D4H item
+page) arrives as an element from the server page, so the host can't hand it a ref prop. The host
+wraps the slot in `<ActionsCardFocusFallback value={pencilRef}>` and the card reads the ref with
+`useActionsCardFocusFallback()` (both in `record-card-actions.tsx`).
+
 ## The secondary column
 
 A page whose secondary column would be empty drops `Saratoga.Columns` and renders its cards full

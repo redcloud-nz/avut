@@ -7,7 +7,13 @@ import { describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import type { MenuActionProps } from "./menu-action";
-import { ActionsCard, RecordCardEditButton, RecordCardMenu } from "./record-card-actions";
+import {
+    ActionsCard,
+    ActionsCardFocusFallback,
+    RecordCardEditButton,
+    RecordCardMenu,
+    useActionsCardFocusFallback,
+} from "./record-card-actions";
 
 const icon = <span />;
 
@@ -145,5 +151,28 @@ describe("ActionsCard", () => {
 
         expect(screen.getByText("Check coverage.")).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Review" })).toBeInTheDocument();
+    });
+});
+
+describe("useActionsCardFocusFallback", () => {
+    function Probe({ onRef }: { onRef: (ref: unknown) => void }) {
+        onRef(useActionsCardFocusFallback());
+        return null;
+    }
+
+    it("returns undefined outside a provider", () => {
+        const onRef = vi.fn();
+        render(<Probe onRef={onRef} />);
+
+        expect(onRef).toHaveBeenLastCalledWith(undefined);
+    });
+
+    it("returns the ref the provider passes, through an element slot", () => {
+        const ref = { current: null };
+        const onRef = vi.fn();
+        const slot = <Probe onRef={onRef} />;
+        render(<ActionsCardFocusFallback value={ref}>{slot}</ActionsCardFocusFallback>);
+
+        expect(onRef).toHaveBeenLastCalledWith(ref);
     });
 });

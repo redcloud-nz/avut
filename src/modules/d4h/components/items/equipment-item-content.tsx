@@ -6,15 +6,7 @@
 
 import { CornerDownRightIcon } from "lucide-react";
 import { notFound } from "next/navigation";
-import {
-    Suspense,
-    useMemo,
-    useRef,
-    type ComponentType,
-    type ReactElement,
-    type ReactNode,
-    type RefObject,
-} from "react";
+import { Suspense, useMemo, useRef, type ReactNode } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 
 import { useQuery, useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
@@ -40,6 +32,7 @@ import { Protect } from "@/components/protect";
 import { CardContent, CardLoadingFallback } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import { RecordCard, RecordCardId } from "@/components/ui/record-card";
+import { ActionsCardFocusFallback } from "@/components/ui/record-card-actions";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
 import { hasD4HTeamPermission } from "@/lib/d4h-permissions";
@@ -54,13 +47,6 @@ import {
     D4HModule_UpdateEquipmentItem_Dialog,
     updateEquipmentItemDisabledReason,
 } from "./update-equipment-item";
-
-/** Props the item page gives its {@link D4HModule_EquipmentItem_Content}'s `actionCard`. */
-export interface D4HModule_EquipmentItem_ActionCardProps {
-    /** The D4H Item card's pencil (or its tooltip wrapper), which every viewer sees: where a
-     *  dialog the card opens returns focus once its button has gone. */
-    returnFocusRef?: RefObject<HTMLElement | null>;
-}
 
 /**
  * A D4H equipment item, read live from D4H with the viewer's token.
@@ -81,20 +67,17 @@ export function D4HModule_EquipmentItem_Content({
     teamId: number;
     itemId: number;
     memberId?: number;
-    actionCard?: ReactElement<
-        D4HModule_EquipmentItem_ActionCardProps,
-        ComponentType<D4HModule_EquipmentItem_ActionCardProps>
-    > | null;
+    actionCard?: ReactNode;
     statusBadge?: ReactNode;
 }) {
     const organization = useOrganization();
     const slug = organization.slug;
     const { formatDate } = usePreferences();
 
-    // The slot arrives as an element from the server page, which can't hold a ref: render its
-    // component here with the pencil's ref added.
+    // The D4H Item card's pencil (or its tooltip wrapper), which every viewer sees: where a
+    // dialog the `actionCard` opens returns focus once its button has gone. The slot arrives as
+    // an element from the server page, so the ref reaches it through context.
     const editFocusRef = useRef<HTMLElement>(null);
-    const ActionCard = actionCard?.type;
 
     const [
         {
@@ -337,9 +320,9 @@ export function D4HModule_EquipmentItem_Content({
                     </ItemContentsBoundary>
                 </Saratoga.Column>
                 <Saratoga.Column slot="secondary">
-                    {ActionCard && (
-                        <ActionCard {...actionCard?.props} returnFocusRef={editFocusRef} />
-                    )}
+                    <ActionsCardFocusFallback value={editFocusRef}>
+                        {actionCard}
+                    </ActionsCardFocusFallback>
                     <Protect permissions={{ d4hTask: ["view"] }}>
                         <Suspense fallback={<CardLoadingFallback />}>
                             <D4HModule_ItemTasks_Card

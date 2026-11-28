@@ -73,6 +73,35 @@ export function useRecordCardMenuTrigger(): RefObject<HTMLButtonElement | null> 
     return useContext(RecordCardMenuTriggerContext) ?? undefined;
 }
 
+const ActionsCardFocusFallbackContext = createContext<RefObject<HTMLElement | null> | null>(null);
+
+/**
+ * Provides a focus-return fallback to an {@link ActionsCard} that another module supplies through
+ * a slot (a server page passes it in as an element, so the host can't add a ref prop to it). Wrap
+ * the slot: `<ActionsCardFocusFallback value={pencilRef}>{actionCard}</ActionsCardFocusFallback>`.
+ * The card reads it with {@link useActionsCardFocusFallback}.
+ */
+export function ActionsCardFocusFallback({
+    value,
+    children,
+}: {
+    value: RefObject<HTMLElement | null>;
+    children?: ReactNode;
+}) {
+    return (
+        <ActionsCardFocusFallbackContext value={value}>{children}</ActionsCardFocusFallbackContext>
+    );
+}
+
+/**
+ * The control the host page offers for a slotted action card's dialogs to return focus to once
+ * the card's button has gone (`useReturnFocus(fallbackRef)`), or `undefined` outside an
+ * {@link ActionsCardFocusFallback}.
+ */
+export function useActionsCardFocusFallback(): RefObject<HTMLElement | null> | undefined {
+    return useContext(ActionsCardFocusFallbackContext) ?? undefined;
+}
+
 /**
  * A record card's ⋮, for its `action` slot after the card's icons: the record's non-primary
  * actions (Archive, Delete, Unlink, Move, …). Renders nothing when there are no actions and no

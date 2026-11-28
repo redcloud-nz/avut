@@ -5,7 +5,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect, useId, type RefObject } from "react";
+import { useCallback, useEffect, useId, type RefObject } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -184,9 +184,12 @@ export function D4HModule_UpdateEquipmentItem_Dialog({
         (errors) => console.warn("Form validation errors:", errors),
     );
 
-    function setFocusTarget(node: HTMLElement | null) {
-        if (focusRef) focusRef.current = node;
-    }
+    const setFocusTarget = useCallback(
+        (node: HTMLElement | null) => {
+            if (focusRef) focusRef.current = node;
+        },
+        [focusRef],
+    );
 
     if (disabledReason !== null) {
         return (
