@@ -37,17 +37,21 @@ import { trpc } from "@/trpc/client";
  * Scope picker for the Skill Coverage report, presented as a command dialog. Opened via
  * `?action=select-scope` (or forced open when no skill is picked yet); choosing a skill
  * sets `?skill=<id>`. A team filter (`?team=<id>`, absent = whole organization) is folded
- * in as a select at the top of the dialog.
+ * in as a select at the top of the dialog, unless `hideTeamSelect` (team scope, where the
+ * report is fixed to the team).
  */
 export function SkillTrack_SkillScopeDialog({
     forceOpen = false,
     label = "Change scope",
     compact = false,
+    hideTeamSelect = false,
 }: {
     forceOpen?: boolean;
     label?: string;
     /** Hide the trigger button below `sm` — the report offers it in the dropdown menu instead. */
     compact?: boolean;
+    /** Leave out the team filter, and its `listTeams` read. */
+    hideTeamSelect?: boolean;
 }) {
     const [, setSkill] = useQueryState("skill");
 
@@ -63,6 +67,7 @@ export function SkillTrack_SkillScopeDialog({
         >
             {({ close }) => (
                 <SkillScope_Picker
+                    hideTeamSelect={hideTeamSelect}
                     onSelect={(skillId) => {
                         void setSkill(skillId, { history: "push" });
                         close();
@@ -77,17 +82,14 @@ export function SkillTrack_SkillScopeDialog({
  * The team filter and skill list, rendered inside `DialogContent` so their queries only run once
  * the dialog opens — the dialog is always mounted in the report header.
  */
-function SkillScope_Picker({ onSelect }: { onSelect: (skillId: string) => void }) {
-    const idPrefix = useId();
+function SkillScope_Picker({
+    hideTeamSelect,
+    onSelect,
+}: {
+    hideTeamSelect: boolean;
+    onSelect: (skillId: string) => void;
+}) {
     const organization = useOrganization();
-    const [teamParam, setTeamParam] = useQueryState("team");
-
-    const { data: teams } = useSuspenseQuery(
-        trpc.teams.listTeams.queryOptions({ organizationId: organization.id }),
-    );
-    // Only Active teams are offered as a new scope; an existing `?team=` naming an
-    // Archived team still validates below so a saved/linked scope keeps resolving.
-    const activeTeams = teams.filter((team) => team.status === "Active");
 
     const {
         data: { skillPackages, skillGroups, skills },
@@ -125,47 +127,9 @@ function SkillScope_Picker({ onSelect }: { onSelect: (skillId: string) => void }
         ),
     );
 
-    // A malformed `?team=` isn't one of the SelectItem values, so fall back to whole-org —
-    // matching how the report itself treats an unparseable team id.
-    const currentTeamValue =
-        teamParam && teams.some((team) => team.id === teamParam) ? teamParam : "all";
-    // A saved/linked scope naming an Archived team still resolves and needs its own option so
-    // the Select can show its name, even though it isn't offered as a new selection.
-    const selectableTeams = activeTeams.some((team) => team.id === currentTeamValue)
-        ? activeTeams
-        : [...activeTeams, ...teams.filter((team) => team.id === currentTeamValue)];
-
     return (
         <>
-            <div className="flex items-center gap-2 border-b px-4 py-3">
-                <Label htmlFor={`${idPrefix}-team`} className="text-muted-foreground">
-                    Team
-                </Label>
-                <Select
-                    value={currentTeamValue}
-                    onValueChange={(value) =>
-                        void setTeamParam(value === "all" ? null : value, {
-                            history: "replace",
-                        })
-                    }
-                >
-                    <SelectTrigger id={`${idPrefix}-team`} size="sm" className="flex-1">
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Whole Organisation</SelectItem>
-                        {R.pipe(
-                            selectableTeams,
-                            R.sortBy((team) => team.name),
-                            R.map((team) => (
-                                <SelectItem key={team.id} value={team.id}>
-                                    {team.name}
-                                </SelectItem>
-                            )),
-                        )}
-                    </SelectContent>
-                </Select>
-            </div>
+            {!hideTeamSelect && <SkillScope_TeamSelect />}
             <Command className="max-sm:min-h-0 max-sm:flex-1">
                 <CommandInput placeholder="Search skills…" />
                 <CommandList className="max-sm:max-h-none max-sm:flex-1 sm:h-72">
@@ -186,5 +150,61 @@ function SkillScope_Picker({ onSelect }: { onSelect: (skillId: string) => void }
                 </CommandList>
             </Command>
         </>
+    );
+}
+
+/** The team filter at the top of the dialog, writing `?team=` (absent = whole organisation). */
+function SkillScope_TeamSelect() {
+    const idPrefix = useId();
+    const organization = useOrganization();
+    const [teamParam, setTeamParam] = useQueryState("team");
+
+    const { data: teams } = useSuspenseQuery(
+        trpc.teams.listTeams.queryOptions({ organizationId: organization.id }),
+    );
+    // Only Active teams are offered as a new scope; an existing `?team=` naming an
+    // Archived team still validates below so a saved/linked scope keeps resolving.
+    const activeTeams = teams.filter((team) => team.status === "Active");
+
+    // A malformed `?team=` isn't one of the SelectItem values, so fall back to whole-org —
+    // matching how the report itself treats an unparseable team id.
+    const currentTeamValue =
+        teamParam && teams.some((team) => team.id === teamParam) ? teamParam : "all";
+    // A saved/linked scope naming an Archived team still resolves and needs its own option so
+    // the Select can show its name, even though it isn't offered as a new selection.
+    const selectableTeams = activeTeams.some((team) => team.id === currentTeamValue)
+        ? activeTeams
+        : [...activeTeams, ...teams.filter((team) => team.id === currentTeamValue)];
+
+    return (
+        <div className="flex items-center gap-2 border-b px-4 py-3">
+            <Label htmlFor={`${idPrefix}-team`} className="text-muted-foreground">
+                Team
+            </Label>
+            <Select
+                value={currentTeamValue}
+                onValueChange={(value) =>
+                    void setTeamParam(value === "all" ? null : value, {
+                        history: "replace",
+                    })
+                }
+            >
+                <SelectTrigger id={`${idPrefix}-team`} size="sm" className="flex-1">
+                    <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">Whole Organisation</SelectItem>
+                    {R.pipe(
+                        selectableTeams,
+                        R.sortBy((team) => team.name),
+                        R.map((team) => (
+                            <SelectItem key={team.id} value={team.id}>
+                                {team.name}
+                            </SelectItem>
+                        )),
+                    )}
+                </SelectContent>
+            </Select>
+        </div>
     );
 }

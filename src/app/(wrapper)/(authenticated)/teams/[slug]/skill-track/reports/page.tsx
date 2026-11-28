@@ -28,7 +28,10 @@ export default async function Team_SkillsTrack_Reports_Page(
         <Std.ScrollContainer>
             <Std.IndexPage title="Skills Reports">
                 <ItemGroup>
-                    <Protect permissions={{ skillCheck: ["view"] }}>
+                    {/* In team scope this one lists the team's roster for its picker, so it
+                        needs `team: ["view"]` too. The other three are fixed to the team and
+                        read no team list. */}
+                    <Protect permissions={{ skillCheck: ["view"], team: ["view"] }}>
                         <Item variant="outline" asChild>
                             <Link
                                 href={route("/teams/[slug]/skill-track/reports/person", {
@@ -47,17 +50,13 @@ export default async function Team_SkillsTrack_Reports_Page(
                             </Link>
                         </Item>
                     </Protect>
-                    {/* These three also list teams for their scope picker/filter, so they
-                        need `team: ["view"]` too — `skillCheck: ["view"]` alone would show
-                        a link that then hits a FORBIDDEN error when it loads. */}
-                    <Protect permissions={{ skillCheck: ["view"], team: ["view"] }}>
+                    <Protect permissions={{ skillCheck: ["view"] }}>
                         <Item variant="outline" asChild>
                             <Link href={route("/teams/[slug]/skill-track/reports/team", { slug })}>
                                 <ItemContent>
                                     <ItemTitle>Team Competency</ItemTitle>
                                     <ItemDescription>
-                                        Competency gaps across a team or the whole organisation,
-                                        summarised per skill.
+                                        Competency gaps across the team, summarised per skill.
                                     </ItemDescription>
                                 </ItemContent>
                                 <ItemActions>

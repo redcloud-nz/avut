@@ -55,10 +55,13 @@ const headCell =
 export function SkillTrack_SkillCoverageReport({
     syntheticChecksEnabled,
     breadcrumbs,
+    team,
 }: {
     syntheticChecksEnabled: boolean;
     /** The page's ancestors, shown above the title. */
     breadcrumbs?: SaratogaBreadcrumb[];
+    /** Fix the report to this team (team scope): the skill dialog offers no team filter. */
+    team?: { id: TeamId; name: string };
 }) {
     const [skillParam] = useQueryState("skill");
     const parsedSkillId = skillParam ? SkillId.schema.safeParse(skillParam) : undefined;
@@ -72,7 +75,11 @@ export function SkillTrack_SkillCoverageReport({
                     {breadcrumbs && <Glorious.Breadcrumbs items={breadcrumbs} />}
                     <Glorious.Title>Skill Coverage Report</Glorious.Title>
                     <Glorious.Actions>
-                        <SkillTrack_SkillScopeDialog forceOpen label="Select a skill" />
+                        <SkillTrack_SkillScopeDialog
+                            forceOpen
+                            label="Select a skill"
+                            hideTeamSelect={!!team}
+                        />
                     </Glorious.Actions>
                 </Glorious.Header>
                 <Empty>
@@ -84,8 +91,21 @@ export function SkillTrack_SkillCoverageReport({
         );
     }
 
+    if (team) {
+        return (
+            <SkillCoverageReportView
+                skillId={parsedSkillId.data}
+                teamId={team.id}
+                scopeLabel={team.name}
+                fixedTeam
+                syntheticChecksEnabled={syntheticChecksEnabled}
+                breadcrumbs={breadcrumbs}
+            />
+        );
+    }
+
     return (
-        <SkillCoverageReportView
+        <OrgSkillCoverageReportView
             skillId={parsedSkillId.data}
             syntheticChecksEnabled={syntheticChecksEnabled}
             breadcrumbs={breadcrumbs}
@@ -93,7 +113,8 @@ export function SkillTrack_SkillCoverageReport({
     );
 }
 
-function SkillCoverageReportView({
+/** Resolves `?team=` (absent = whole organisation) to the scope, labelled from the team list. */
+function OrgSkillCoverageReportView({
     skillId,
     syntheticChecksEnabled,
     breadcrumbs,
@@ -103,7 +124,6 @@ function SkillCoverageReportView({
     breadcrumbs?: SaratogaBreadcrumb[];
 }) {
     const organization = useOrganization();
-    const { formatDate } = usePreferences();
 
     const [teamParam] = useQueryState("team");
 
@@ -113,6 +133,42 @@ function SkillCoverageReportView({
     const { data: teams } = useSuspenseQuery(
         trpc.teams.listTeams.queryOptions({ organizationId: organization.id }),
     );
+
+    const scopeLabel = teamId
+        ? (teams.find((team) => team.id === teamId)?.name ?? "Team")
+        : "Whole Organization";
+
+    return (
+        <SkillCoverageReportView
+            skillId={skillId}
+            teamId={teamId}
+            scopeLabel={scopeLabel}
+            fixedTeam={false}
+            syntheticChecksEnabled={syntheticChecksEnabled}
+            breadcrumbs={breadcrumbs}
+        />
+    );
+}
+
+function SkillCoverageReportView({
+    skillId,
+    teamId,
+    scopeLabel,
+    fixedTeam,
+    syntheticChecksEnabled,
+    breadcrumbs,
+}: {
+    skillId: SkillId;
+    /** Absent for the whole organisation. */
+    teamId: TeamId | undefined;
+    scopeLabel: string;
+    /** The page fixes the team, so the skill dialog offers no team filter. */
+    fixedTeam: boolean;
+    syntheticChecksEnabled: boolean;
+    breadcrumbs?: SaratogaBreadcrumb[];
+}) {
+    const organization = useOrganization();
+    const { formatDate } = usePreferences();
 
     const {
         data: { personnel, skills, competencies: recordedCompetencies },
@@ -158,10 +214,6 @@ function SkillCoverageReportView({
 
     const counts = tallyStatuses(rows.map((row) => row.status));
 
-    const scopeLabel = teamId
-        ? (teams.find((team) => team.id === teamId)?.name ?? "Team")
-        : "Whole Organization";
-
     return (
         <ReportCellPopoversProvider isSynthetic={isSynthetic}>
             <Glorious.Root>
@@ -184,7 +236,7 @@ function SkillCoverageReportView({
                         )}
                     </Glorious.Subtitle>
                     <Glorious.Actions>
-                        <SkillTrack_SkillScopeDialog compact />
+                        <SkillTrack_SkillScopeDialog compact hideTeamSelect={fixedTeam} />
                         {syntheticActions}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
