@@ -94,7 +94,12 @@ export const SelfAuditDifferenceState = z.enum(["selectable", "queued", "unavail
 export type SelfAuditDifferenceState = z.infer<typeof SelfAuditDifferenceState>;
 
 export const SelfAuditDifference = z.object({
-    /** Stable across recomputes: `<kind>:<itemId>`, or `<kind>:<templateId>` with no item. */
+    /**
+     * Stable across recomputes while the difference and its fix stay the same:
+     * `<kind>:<itemId>`, or `<kind>:<templateId>` with no item, then `:<fix>` when it has one
+     * (`fixFingerprint`). So an apply whose recomputed fix differs from the one confirmed (the
+     * permission it rests on changed, or the member resubmitted) finds no such key and skips it.
+     */
     key: z.string(),
     kind: SelfAuditDifferenceKind,
     templateId: z.string(),
@@ -136,8 +141,11 @@ const SelfAuditAppliedDifference = z.object({ key: z.string(), label: z.string()
  */
 export const SelfAuditApplyResult = z.object({
     campaignId: SelfAuditCampaignId.schema,
-    /** Written to D4H: marked LOST, or created. */
-    applied: z.array(SelfAuditAppliedDifference),
+    /**
+     * Written to D4H: marked LOST, or created. `warning` when D4H has it but its log entry
+     * failed.
+     */
+    applied: z.array(SelfAuditAppliedDifference.extend({ warning: z.string().optional() })),
     /** Queued as a D4H task. */
     queued: z.array(SelfAuditAppliedDifference),
     /** No longer a difference, or no longer selectable, when recomputed: not acted on. */
@@ -191,6 +199,34 @@ function brandModel(item: SelfAuditLiveItem): string {
         (part): part is string => !!part && part.trim() !== "",
     );
     return parts.length > 0 ? parts.join(" ") : "no brand/model";
+}
+
+/**
+ * A fix as its difference's key names it: its type, task kind, and the serial, brand and model it
+ * would write. Free text is URI-encoded, so it can't run into the separators.
+ */
+export function fixFingerprint(fix: SelfAuditFix): string {
+    const text = (value: string | null) => (value === null ? "-" : encodeURIComponent(value));
+    switch (fix.type) {
+        case "patch-lost":
+            return "lost";
+        case "create":
+            return `create=${fix.variant ? `${fix.variant.brandId}/${fix.variant.modelId}` : "-"}/${text(fix.serial)}`;
+        case "task":
+            switch (fix.taskKind) {
+                case "MarkLost":
+                    return "task-lost";
+                case "SetSerial":
+                    return `task-serial=${text(fix.serial)}`;
+                case "SetVariant":
+                    return `task-variant=${text(fix.brand)}/${text(fix.model)}`;
+            }
+    }
+}
+
+/** A difference's key: what it's about, then its fix (`SelfAuditDifference.key`). */
+function differenceKey(base: string, fix: SelfAuditFix | null): string {
+    return fix ? `${base}:${fixFingerprint(fix)}` : base;
 }
 
 /** One member's differences from D4H, in the stored templates' order (decision 4). */
@@ -392,5 +428,9 @@ export function diffAnswers(input: SelfAuditDiffInput): SelfAuditDifference[] {
         }
     }
 
-    return differences;
+    // Built with the base key; the fix is added last, from the fix each difference ended up with.
+    return differences.map((difference) => ({
+        ...difference,
+        key: differenceKey(difference.key, difference.fix),
+    }));
 }

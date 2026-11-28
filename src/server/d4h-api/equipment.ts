@@ -223,13 +223,15 @@ export type D4HEquipmentItemCreate = {
 
 /**
  * Create one equipment item in a team, located with a member, uncached. Returns the new item's
- * id. Throws a {@link D4HResponseError} with D4H's status and body when D4H refuses it.
+ * id, or `null` when D4H created it but its response has no id we can read: the item exists either
+ * way, so that isn't a failure. Throws a {@link D4HResponseError} with D4H's status and body when
+ * D4H refuses it.
  */
 export async function createD4HEquipmentItem(
     token: D4HAccessToken_ServerOnly,
     d4hTeamId: number,
     item: D4HEquipmentItemCreate,
-): Promise<number> {
+): Promise<number | null> {
     const { data, error, response } = await getD4HFetchClient(token).POST(
         "/v3/{context}/{contextId}/equipment",
         {
@@ -255,7 +257,8 @@ export async function createD4HEquipmentItem(
             { cause: error },
         );
     }
-    return z.object({ id: z.number() }).parse(data).id;
+    const created = z.object({ id: z.number() }).safeParse(data);
+    return created.success ? created.data.id : null;
 }
 
 /** The parts of a token's metadata that {@link resolveCatalogueOwner} reads. */

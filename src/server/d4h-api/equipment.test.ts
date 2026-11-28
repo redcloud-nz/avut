@@ -378,6 +378,17 @@ describe("createD4HEquipmentItem", () => {
         });
     });
 
+    it("returns null, not a failure, when the created item's id can't be read", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => Response.json({ data: "unexpected" })),
+        );
+
+        expect(
+            await createD4HEquipmentItem(token, 7, { categoryId: 3, kindId: 8, memberId: 99 }),
+        ).toBeNull();
+    });
+
     it("throws a D4HResponseError with D4H's status and body on failure", async () => {
         vi.stubGlobal(
             "fetch",

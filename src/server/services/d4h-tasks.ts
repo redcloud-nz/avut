@@ -5,6 +5,7 @@
 
 import "server-only";
 
+import type { Prisma } from "@/generated/prisma/client";
 import { diffObject } from "@/lib/diff";
 import { ConflictError, NotFoundError } from "@/lib/errors";
 import {
@@ -58,6 +59,15 @@ export async function createTask(
         itemLabel: string;
         formInstanceId?: string;
     } & D4HTaskPayload,
+    {
+        openBatch,
+    }: {
+        /**
+         * Opens the log batch `ctx` binds (`createLogBatch` with the id given to `withBatch`), in
+         * the same transaction ahead of the log entry, so a failed insert leaves no empty batch.
+         */
+        openBatch?: Prisma.PrismaPromise<unknown>;
+    } = {},
 ): Promise<D4HTask> {
     const id = D4HTaskId.create();
     const { note, ...fields } = args.payload;
@@ -80,6 +90,7 @@ export async function createTask(
                 formInstanceId: args.formInstanceId ?? null,
             },
         }),
+        ...(openBatch ? [openBatch] : []),
         ctx.logEvent({
             action: "Create",
             objectType: "D4HTask",

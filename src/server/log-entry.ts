@@ -86,6 +86,12 @@ export interface RecordLogEntryInput {
 }
 
 export interface CreateLogBatchInput {
+    /**
+     * The batch's id, when the caller binds it (`withBatch`) before the batch is written: to open
+     * the batch in the same `$transaction([...])` as its first entry, so a failed write leaves no
+     * empty batch. Otherwise a new one.
+     */
+    id?: LogBatchId;
     operationKey: OperationKey;
     userId?: UserId;
     actorLabel?: string;
@@ -297,7 +303,7 @@ export function createLogBatch(
 
     return tx.logBatch.create({
         data: {
-            id: LogBatchId.create(),
+            id: input.id ?? LogBatchId.create(),
             operationKey: input.operationKey,
             userId: input.userId ?? null,
             actorLabel: input.actorLabel ?? null,

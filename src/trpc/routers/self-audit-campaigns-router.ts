@@ -125,7 +125,9 @@ export const selfAuditCampaignsRouter = createTrpcRouter({
         .input(
             z.object({
                 requestId: SelfAuditRequestId.schema,
-                keys: z.array(z.string()).min(1),
+                // A member has at most a few differences per template; the cap only bounds a
+                // hand-made request.
+                keys: z.array(z.string().max(1000)).min(1).max(300),
             }),
         )
         .output(SelfAuditApplyResult)

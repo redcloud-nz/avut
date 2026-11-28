@@ -1227,7 +1227,7 @@ describe("selfAuditCampaignsRouter", () => {
                         inTeam: true,
                         differences: [
                             {
-                                key: "serial:1",
+                                key: "serial:1:task-serial=SN-2",
                                 kind: "Serial",
                                 templateId: T.helmet,
                                 itemId: 1,
@@ -1292,13 +1292,13 @@ describe("selfAuditCampaignsRouter", () => {
                 const result = await admin().applyFixes({
                     organizationId: T.org,
                     requestId: johnRequestId,
-                    keys: ["serial:1", "gone:9"],
+                    keys: ["serial:1:task-serial=SN-2", "gone:9"],
                 });
 
                 expect(result).toEqual({
                     campaignId,
                     applied: [],
-                    queued: [{ key: "serial:1", label: "#1 Helmet" }],
+                    queued: [{ key: "serial:1:task-serial=SN-2", label: "#1 Helmet" }],
                     skipped: [{ key: "gone:9" }],
                     failed: [],
                 });
@@ -1328,6 +1328,16 @@ describe("selfAuditCampaignsRouter", () => {
                         }),
                     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
                 }
+            });
+
+            it("is BAD_REQUEST for more than 300 keys", async () => {
+                await expect(
+                    admin().applyFixes({
+                        organizationId: T.org,
+                        requestId: johnRequestId,
+                        keys: Array.from({ length: 301 }, (_, i) => `gone:${i}`),
+                    }),
+                ).rejects.toMatchObject({ code: "BAD_REQUEST" });
             });
 
             it("is PRECONDITION_FAILED without a personal D4H token", async () => {

@@ -1674,7 +1674,7 @@ describe("campaigns", () => {
                     inTeam: true,
                     differences: [
                         {
-                            key: "notheld:1",
+                            key: "notheld:1:lost",
                             kind: "NotHeld",
                             fix: { type: "patch-lost" },
                             state: "selectable",
@@ -1687,7 +1687,7 @@ describe("campaigns", () => {
                     inTeam: true,
                     differences: [
                         {
-                            key: "unrecorded:" + S.helmet,
+                            key: `unrecorded:${S.helmet}:create=-/-`,
                             kind: "Unrecorded",
                             fix: { type: "create", variant: null, serial: null },
                             state: "unavailable",
@@ -1707,7 +1707,7 @@ describe("campaigns", () => {
                     inTeam: false,
                     differences: [
                         {
-                            key: "serial:3",
+                            key: "serial:3:task-serial=SN-9",
                             kind: "Serial",
                             fix: { type: "task", taskKind: "SetSerial", serial: "SN-9" },
                             state: "queued",
@@ -1751,6 +1751,14 @@ describe("campaigns", () => {
             unsubmitted: SelfAuditRequestId.create(),
         };
         const NOTE = "Self-audit Fixes: John Smith reported";
+        /** John's differences' keys, each naming its fix. */
+        const K = {
+            lost: "notheld:11:lost",
+            lostTask: "notheld:11:task-lost",
+            serial: "serial:12:task-serial=SN-NEW",
+            variant: "variant:12:task-variant=Motorola/DP4400",
+            unrecorded: `unrecorded:${A.torch}:create=-/T-1`,
+        };
         const template = (
             id: string,
             name: string,
@@ -1960,20 +1968,17 @@ describe("campaigns", () => {
             const deps = makeDeps();
             const batchesBefore = await batchCount();
 
-            const result = await apply(
-                ["notheld:11", "serial:12", "variant:12", `unrecorded:${A.torch}`],
-                deps,
-            );
+            const result = await apply([K.lost, K.serial, K.variant, K.unrecorded], deps);
 
             expect(result).toEqual({
                 campaignId: A.campaign,
                 applied: [
-                    { key: "notheld:11", label: "#000011 Kind" },
-                    { key: `unrecorded:${A.torch}`, label: "Torch" },
+                    { key: K.lost, label: "#000011 Kind" },
+                    { key: K.unrecorded, label: "Torch" },
                 ],
                 queued: [
-                    { key: "serial:12", label: "#000012 Kind" },
-                    { key: "variant:12", label: "#000012 Kind" },
+                    { key: K.serial, label: "#000012 Kind" },
+                    { key: K.variant, label: "#000012 Kind" },
                 ],
                 skipped: [],
                 failed: [],
@@ -2061,9 +2066,9 @@ describe("campaigns", () => {
         it("queues a MarkLost task instead of the PATCH without D4H Equipment UPDATE", async () => {
             const deps = makeDeps({ update: false });
 
-            const result = await apply(["notheld:11"], deps);
+            const result = await apply([K.lostTask], deps);
 
-            expect(result.queued).toEqual([{ key: "notheld:11", label: "#000011 Kind" }]);
+            expect(result.queued).toEqual([{ key: K.lostTask, label: "#000011 Kind" }]);
             expect(deps.patchD4HEquipmentItem).not.toHaveBeenCalled();
             expect(await db.d4HTask.findMany({ where: { resourceId: 11 } })).toMatchObject([
                 {
@@ -2077,9 +2082,9 @@ describe("campaigns", () => {
         it("skips an Unrecorded fix without D4H Equipment CREATE", async () => {
             const deps = makeDeps({ create: false });
 
-            const result = await apply([`unrecorded:${A.torch}`], deps);
+            const result = await apply([K.unrecorded], deps);
 
-            expect(result.skipped).toEqual([{ key: `unrecorded:${A.torch}` }]);
+            expect(result.skipped).toEqual([{ key: K.unrecorded }]);
             expect(result.applied).toEqual([]);
             expect(deps.createD4HEquipmentItem).not.toHaveBeenCalled();
         });
@@ -2088,11 +2093,11 @@ describe("campaigns", () => {
             vi.mocked(getD4HTeamFitContext).mockResolvedValue(fitContext({ kindTeam: 8 }));
             const deps = makeDeps();
 
-            const result = await apply([`unrecorded:${A.torch}`], deps);
+            const result = await apply([K.unrecorded], deps);
 
             expect(result.failed).toEqual([
                 {
-                    key: `unrecorded:${A.torch}`,
+                    key: K.unrecorded,
                     label: "Torch",
                     error: `"Torch" can't be issued to Rescue Team: its D4H records aren't owned by Rescue Team or its D4H organisation.`,
                 },
@@ -2116,13 +2121,13 @@ describe("campaigns", () => {
             const deps = makeDeps();
             const batchesBefore = await batchCount();
 
-            const result = await apply(["serial:12", "notheld:999", "gone:11"], deps);
+            const result = await apply([K.serial, "notheld:999:lost", "gone:11"], deps);
 
             expect(result).toMatchObject({
                 applied: [],
                 queued: [],
                 failed: [],
-                skipped: [{ key: "serial:12" }, { key: "notheld:999" }, { key: "gone:11" }],
+                skipped: [{ key: K.serial }, { key: "notheld:999:lost" }, { key: "gone:11" }],
             });
             expect(await batchCount()).toBe(batchesBefore);
             expect(await db.d4HTask.count({ where: { resourceId: 12 } })).toBe(1);
@@ -2139,29 +2144,120 @@ describe("campaigns", () => {
                 });
             const loggedBefore = await patchesLogged();
 
-            const result = await apply(["notheld:11", `unrecorded:${A.torch}`], deps);
+            const result = await apply([K.lost, K.unrecorded], deps);
 
             expect(result.failed).toEqual([
                 {
-                    key: "notheld:11",
+                    key: K.lost,
                     label: "#000011 Kind",
                     error: "Failed to update D4H equipment item 11 in team 7: 422",
                 },
             ]);
-            expect(result.applied).toEqual([{ key: `unrecorded:${A.torch}`, label: "Torch" }]);
+            expect(result.applied).toEqual([{ key: K.unrecorded, label: "Torch" }]);
             expect(await patchesLogged()).toBe(loggedBefore);
         });
 
+        it("skips a key whose fix differs from the recomputed one", async () => {
+            // Shown as a MarkLost task, but the token has UPDATE now; shown with a serial John
+            // has since changed.
+            const deps = makeDeps();
+            const batchesBefore = await batchCount();
+
+            const result = await apply([K.lostTask, "serial:12:task-serial=SN-OTHER"], deps);
+
+            expect(result).toMatchObject({
+                applied: [],
+                queued: [],
+                failed: [],
+                skipped: [{ key: K.lostTask }, { key: "serial:12:task-serial=SN-OTHER" }],
+            });
+            expect(deps.patchD4HEquipmentItem).not.toHaveBeenCalled();
+            expect(await db.d4HTask.count({ where: { resourceId: { in: [11, 12] } } })).toBe(0);
+            expect(await batchCount()).toBe(batchesBefore);
+        });
+
+        it("reads the team's members fresh only for an Unrecorded key", async () => {
+            vi.mocked(expireD4HTeamMembers).mockClear();
+            await apply([K.serial]);
+            expect(expireD4HTeamMembers).not.toHaveBeenCalled();
+
+            await apply([K.unrecorded]);
+            expect(expireD4HTeamMembers).toHaveBeenCalledWith(expect.anything(), TEAM_ID);
+        });
+
+        it("reports a D4H write whose log entry fails as applied, with a warning", async () => {
+            const deps = makeDeps();
+            const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+            const spy = vi
+                .spyOn(db.logEntry, "create")
+                .mockImplementationOnce((() =>
+                    Promise.reject(
+                        new Error("log write failed"),
+                    )) as unknown as typeof db.logEntry.create);
+            const batchesBefore = await batchCount();
+            try {
+                const result = await apply([K.lost, K.serial], deps);
+
+                expect(result.applied).toEqual([
+                    {
+                        key: K.lost,
+                        label: "#000011 Kind",
+                        warning: "Done in D4H, but not recorded in the AVUT history.",
+                    },
+                ]);
+                expect(result.queued).toEqual([{ key: K.serial, label: "#000012 Kind" }]);
+                expect(result.failed).toEqual([]);
+                expect(errors).toHaveBeenCalled();
+                // The failed entry's batch rolled back with it; the task's entry opened it.
+                expect(await batchCount()).toBe(batchesBefore + 1);
+            } finally {
+                spy.mockRestore();
+                errors.mockRestore();
+            }
+        });
+
+        it("logs a created item D4H returned no id for, as applied", async () => {
+            const deps = makeDeps();
+            deps.createD4HEquipmentItem.mockResolvedValueOnce(null as never);
+
+            const result = await apply([K.unrecorded], deps);
+
+            expect(result.applied).toEqual([{ key: K.unrecorded, label: "Torch" }]);
+            expect(
+                await db.logEntry.findFirst({
+                    where: { objectType: "D4HEquipmentItem", objectId: "unknown" },
+                }),
+            ).toMatchObject({ action: "Create", description: expect.stringContaining("no id") });
+        });
+
+        it("leaves no empty log batch when the first task fails to queue", async () => {
+            const spy = vi
+                .spyOn(db.d4HTask, "create")
+                .mockImplementationOnce((() =>
+                    Promise.reject(
+                        new Error("insert failed"),
+                    )) as unknown as typeof db.d4HTask.create);
+            const batchesBefore = await batchCount();
+            try {
+                const result = await apply([K.serial]);
+
+                expect(result.failed).toEqual([
+                    { key: K.serial, label: "#000012 Kind", error: "insert failed" },
+                ]);
+                expect(await batchCount()).toBe(batchesBefore);
+            } finally {
+                spy.mockRestore();
+            }
+        });
+
         it("rejects a withdrawn or unsubmitted member, and another org's request", async () => {
-            await expect(apply(["notheld:11"], makeDeps(), A.withdrawn)).rejects.toThrow(
+            await expect(apply([K.lost], makeDeps(), A.withdrawn)).rejects.toThrow(ValidationError);
+            await expect(apply([K.lost], makeDeps(), A.unsubmitted)).rejects.toThrow(
                 ValidationError,
             );
-            await expect(apply(["notheld:11"], makeDeps(), A.unsubmitted)).rejects.toThrow(
-                ValidationError,
+            await expect(apply([K.lost], makeDeps(), SelfAuditRequestId.create())).rejects.toThrow(
+                NotFoundError,
             );
-            await expect(
-                apply(["notheld:11"], makeDeps(), SelfAuditRequestId.create()),
-            ).rejects.toThrow(NotFoundError);
         });
     });
 

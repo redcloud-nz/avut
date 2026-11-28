@@ -106,7 +106,7 @@ describe("diffAnswers", () => {
         it("is a PATCH to LOST with UPDATE", () => {
             expect(diffAnswers(input({}, no))).toEqual([
                 expect.objectContaining({
-                    key: "notheld:1",
+                    key: "notheld:1:lost",
                     kind: "NotHeld",
                     itemId: 1,
                     label: "#R1 Harness",
@@ -121,6 +121,7 @@ describe("diffAnswers", () => {
                 diffAnswers(input({ permissions: { update: false, create: true } }, no)),
             ).toEqual([
                 expect.objectContaining({
+                    key: "notheld:1:task-lost",
                     kind: "NotHeld",
                     fix: { type: "task", taskKind: "MarkLost" },
                     state: "selectable",
@@ -174,7 +175,7 @@ describe("diffAnswers", () => {
         it("queues a SetSerial task when the serial differs", () => {
             expect(diffAnswers(input({}, { ...yes, serial: " SN2 " }))).toEqual([
                 expect.objectContaining({
-                    key: "serial:1",
+                    key: "serial:1:task-serial=SN2",
                     kind: "Serial",
                     fix: { type: "task", taskKind: "SetSerial", serial: "SN2" },
                     state: "selectable",
@@ -218,6 +219,11 @@ describe("diffAnswers", () => {
             expect(difference).toMatchObject({ kind: "Serial", state: "selectable" });
         });
 
+        it("names the serial in the key, encoded", () => {
+            const [difference] = diffAnswers(input({}, { ...yes, serial: "A:1/2" }));
+            expect(difference.key).toBe("serial:1:task-serial=A%3A1%2F2");
+        });
+
         it("ignores a blank serial", () => {
             expect(diffAnswers(input({}, { ...yes, serial: "   " }))).toEqual([]);
         });
@@ -227,7 +233,7 @@ describe("diffAnswers", () => {
         it("queues a SetVariant task with the variant's D4H titles", () => {
             expect(diffAnswers(input({}, { ...yes, variantId: "falcon" }))).toEqual([
                 expect.objectContaining({
-                    key: "variant:1",
+                    key: "variant:1:task-variant=Petzl/Falcon",
                     kind: "Variant",
                     fix: { type: "task", taskKind: "SetVariant", brand: "Petzl", model: "Falcon" },
                     state: "selectable",
@@ -267,8 +273,8 @@ describe("diffAnswers", () => {
                 input({}, { ...yes, serial: "SN2", variantId: "falcon" }),
             );
             expect(differences.map((difference) => difference.key)).toEqual([
-                "serial:1",
-                "variant:1",
+                "serial:1:task-serial=SN2",
+                "variant:1:task-variant=Petzl/Falcon",
             ]);
         });
     });
@@ -306,7 +312,7 @@ describe("diffAnswers", () => {
                 diffAnswers(input(missingYes({ variantId: "falcon", serial: " SN9 " }))),
             ).toEqual([
                 expect.objectContaining({
-                    key: "unrecorded:harness",
+                    key: "unrecorded:harness:create=1/12/SN9",
                     kind: "Unrecorded",
                     templateId: harness.id,
                     itemId: null,
@@ -330,6 +336,7 @@ describe("diffAnswers", () => {
             for (const variantId of [OTHER_VARIANT, "nolink", ""]) {
                 const [difference] = diffAnswers(input(missingYes({ variantId, serial: " " })));
                 expect(difference.fix).toEqual({ type: "create", variant: null, serial: null });
+                expect(difference.key).toBe("unrecorded:harness:create=-/-");
             }
         });
 
@@ -461,6 +468,9 @@ describe("diffAnswers", () => {
                 answer: { held: { "1": no, "2": no }, missing: {}, extras: [], comments: "" },
             }),
         );
-        expect(differences.map((difference) => difference.key)).toEqual(["notheld:2", "notheld:1"]);
+        expect(differences.map((difference) => difference.key)).toEqual([
+            "notheld:2:lost",
+            "notheld:1:lost",
+        ]);
     });
 });

@@ -30,6 +30,7 @@ import { compareBundle, type BundleRow, type ComparableLine } from "@/lib/i3-bun
 import type { ItemQualityResult } from "@/lib/i3-item-quality";
 import { templateFitsTeam, variantFitsTeam } from "@/lib/i3-template-fit";
 import type { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
+import type { D4HTaskPayload } from "@/lib/schemas/d4h-task";
 import type { D4HEquipmentListItem } from "@/lib/schemas/d4h/equipment-item";
 import type { D4HWhoami } from "@/lib/schemas/d4h/whoami";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
@@ -39,6 +40,7 @@ import {
     type I3BundleId,
     type I3BundleSummary,
 } from "@/lib/schemas/i3-bundle";
+import { LogBatchId } from "@/lib/schemas/log-entry";
 import {
     SELF_AUDIT_RECIPIENTS_MAX,
     SELF_AUDIT_TOKEN_DAYS,
@@ -1885,7 +1887,8 @@ type DifferenceRequest = {
  * `docs/plans/2026-11-28-self-audit-needs-and-fixes.md`): the live comparison over the requests'
  * members, the D4H team's current members, open tasks and the token's permissions from
  * `readWhoami`. Shared by `listDifferences` and `applyFixes`, so an apply acts on exactly what
- * the page would show.
+ * the page would show. With `freshMembers`, the team's members are read from D4H rather than the
+ * hours-long cache.
  *
  * @throws NotFoundError if the token doesn't reach the D4H team.
  */
@@ -1897,16 +1900,18 @@ async function compareRequests(
         templates,
         requests,
         readWhoami,
+        freshMembers = false,
     }: {
         accessToken: D4HAccessToken_ServerOnly;
         d4hTeamId: number;
         templates: readonly SelfAuditTemplate[];
         requests: readonly DifferenceRequest[];
         readWhoami: () => Promise<D4HWhoami>;
+        freshMembers?: boolean;
     },
 ) {
     // Checks the token reaches the team, before the rest reads it.
-    const recipients = await readTeamRecipients(accessToken, d4hTeamId);
+    const recipients = await readTeamRecipients(accessToken, d4hTeamId, { fresh: freshMembers });
     const [whoami, openTasks, comparison] = await Promise.all([
         readWhoami(),
         D4HTasks.listOpen(ctx, { d4hTeamIds: [d4hTeamId] }),
@@ -2048,14 +2053,17 @@ export const defaultSelfAuditApplyDeps: SelfAuditApplyDeps = {
 /**
  * Apply a member's selected differences from D4H (decisions 6–8 of
  * `docs/plans/2026-11-28-self-audit-needs-and-fixes.md`). Their differences are recomputed live,
- * with the token's permissions read uncached, and only the keys still present and selectable are
- * acted on, each by its recomputed fix: `patch-lost` marks the item LOST in D4H, `create` creates
- * it in D4H located with the member (after re-checking its template still fits the team), and
- * `task` queues a D4H task. Any other key is skipped.
+ * with the token's permissions read uncached (and the team's members too, when an `unrecorded:`
+ * key would create an item located with the member), and only the keys still present and
+ * selectable are acted on, each by its recomputed fix: `patch-lost` marks the item LOST in D4H,
+ * `create` creates it in D4H located with the member (after re-checking its template still fits
+ * the team), and `task` queues a D4H task. A key names its fix (`fixFingerprint`), so one whose
+ * fix has changed since it was shown is no longer present, and is skipped like any other.
  *
  * Each D4H write is logged after it succeeds, and each task as it's queued, in one log batch
- * opened on the first entry, so an apply that writes nothing logs nothing. A failed fix doesn't
- * stop the rest; it's reported with why.
+ * opened in the same transaction as the first entry, so an apply that writes nothing logs nothing
+ * and leaves no empty batch. A failed fix doesn't stop the rest; it's reported with why. A D4H
+ * write whose log entry fails is still reported applied, with a warning, since D4H has it.
  *
  * @throws NotFoundError if the request isn't in the organization, or the token doesn't reach the
  * campaign's D4H team.
@@ -2108,6 +2116,8 @@ export async function applyFixes(
         templates,
         requests: [request],
         readWhoami: () => deps.fetchWhoami(accessToken),
+        // A create locates the item with the member: don't trust a cached "still in the team".
+        freshMembers: keys.some((key) => key.startsWith("unrecorded:")),
     });
     const [{ live, differences }] = members;
     const differenceByKey = new Map(differences.map((difference) => [difference.key, difference]));
@@ -2117,19 +2127,43 @@ export async function applyFixes(
             .map((item) => [item.id, item]),
     );
 
-    let batchCtx: OrgServiceContext | null = null;
-    async function openBatch(): Promise<OrgServiceContext> {
-        if (batchCtx) return batchCtx;
-        const batch = await createLogBatch(
-            {
-                operationKey: "self-audit-apply-fixes",
-                userId: ctx.userId,
-                description: `Self-audit fixes applied for ${request.memberName}`,
-            },
-            ctx.prisma,
-        );
-        batchCtx = withBatch(ctx, batch.id);
-        return batchCtx;
+    // The batch is written with its first entry, in the same transaction, so a failed first
+    // write leaves no empty batch.
+    const batchId = LogBatchId.create();
+    const batchCtx = withBatch(ctx, batchId);
+    let batchOpened = false;
+    /** The batch's create, while it hasn't been written; `undefined` once it has. */
+    const openBatch = () =>
+        batchOpened
+            ? undefined
+            : createLogBatch(
+                  {
+                      id: batchId,
+                      operationKey: "self-audit-apply-fixes",
+                      userId: ctx.userId,
+                      description: `Self-audit fixes applied for ${request.memberName}`,
+                  },
+                  ctx.prisma,
+              );
+    /**
+     * Log a D4H write that has already succeeded. A failure here doesn't undo the write, so it's
+     * returned as a warning rather than thrown, and logged server-side.
+     */
+    async function logApplied(
+        options: Parameters<OrgServiceContext["logEvent"]>[0],
+    ): Promise<string | undefined> {
+        try {
+            const batch = openBatch();
+            await ctx.prisma.$transaction([...(batch ? [batch] : []), batchCtx.logEvent(options)]);
+            batchOpened = true;
+            return undefined;
+        } catch (err) {
+            console.error(
+                `Self-audit apply for SelfAuditRequest(id=${requestId}): ${options.description ?? options.objectId} succeeded in D4H, but its log entry failed:`,
+                err,
+            );
+            return "Done in D4H, but not recorded in the AVUT history.";
+        }
     }
 
     let fitContext: Promise<I3Templates.D4HTeamFitContext> | null = null;
@@ -2168,9 +2202,7 @@ export async function applyFixes(
                         status: "LOST",
                         updateNotes: `${reported} they don't have it.`,
                     });
-                    await (
-                        await openBatch()
-                    ).logEvent({
+                    const warning = await logApplied({
                         action: "Update",
                         objectType: "D4HEquipmentItem",
                         objectId: String(itemId),
@@ -2178,7 +2210,7 @@ export async function applyFixes(
                         changes: diffObject({ status: before }, { status: "LOST" }),
                         refs,
                     });
-                    result.applied.push({ key, label });
+                    result.applied.push({ key, label, ...(warning ? { warning } : {}) });
                     break;
                 }
                 case "create": {
@@ -2216,56 +2248,57 @@ export async function applyFixes(
                         brandId: fix.variant?.brandId,
                         modelId: fix.variant?.modelId,
                     });
-                    await (
-                        await openBatch()
-                    ).logEvent({
+                    // Created either way, even when D4H's response had no id to read.
+                    const warning = await logApplied({
                         action: "Create",
                         objectType: "D4HEquipmentItem",
-                        objectId: String(createdId),
-                        description: `Created ${label} in D4H for ${request.memberName}: they said they have one`,
+                        objectId: createdId === null ? "unknown" : String(createdId),
+                        description: `Created ${label} in D4H for ${request.memberName}: they said they have one${createdId === null ? " (D4H returned no id)" : ""}`,
                         refs,
                     });
-                    result.applied.push({ key, label });
+                    result.applied.push({ key, label, ...(warning ? { warning } : {}) });
                     break;
                 }
                 case "task": {
                     if (itemId === null) throw new Error(`${key} has no D4H item.`);
-                    const task = { d4hTeamId, itemId, itemLabel: label };
-                    const formInstanceId = record.formInstanceId;
-                    const batch = await openBatch();
-                    switch (fix.taskKind) {
-                        case "SetSerial":
-                            await D4HTasks.createTask(batch, {
-                                ...task,
-                                formInstanceId,
-                                kind: "SetSerial",
-                                payload: {
-                                    serial: fix.serial,
-                                    note: `${reported} serial ${fix.serial}.`,
-                                },
-                            });
-                            break;
-                        case "SetVariant":
-                            await D4HTasks.createTask(batch, {
-                                ...task,
-                                formInstanceId,
-                                kind: "SetVariant",
-                                payload: {
-                                    brand: fix.brand,
-                                    model: fix.model,
-                                    note: `${reported} ${fix.brand} ${fix.model}.`,
-                                },
-                            });
-                            break;
-                        case "MarkLost":
-                            await D4HTasks.createTask(batch, {
-                                ...task,
-                                formInstanceId,
-                                kind: "MarkLost",
-                                payload: { note: `${reported} they don't have it.` },
-                            });
-                            break;
-                    }
+                    const taskPayload: D4HTaskPayload = (() => {
+                        switch (fix.taskKind) {
+                            case "SetSerial":
+                                return {
+                                    kind: "SetSerial",
+                                    payload: {
+                                        serial: fix.serial,
+                                        note: `${reported} serial ${fix.serial}.`,
+                                    },
+                                };
+                            case "SetVariant":
+                                return {
+                                    kind: "SetVariant",
+                                    payload: {
+                                        brand: fix.brand,
+                                        model: fix.model,
+                                        note: `${reported} ${fix.brand} ${fix.model}.`,
+                                    },
+                                };
+                            case "MarkLost":
+                                return {
+                                    kind: "MarkLost",
+                                    payload: { note: `${reported} they don't have it.` },
+                                };
+                        }
+                    })();
+                    await D4HTasks.createTask(
+                        batchCtx,
+                        {
+                            d4hTeamId,
+                            itemId,
+                            itemLabel: label,
+                            formInstanceId: record.formInstanceId,
+                            ...taskPayload,
+                        },
+                        { openBatch: openBatch() },
+                    );
+                    batchOpened = true;
                     result.queued.push({ key, label });
                     break;
                 }

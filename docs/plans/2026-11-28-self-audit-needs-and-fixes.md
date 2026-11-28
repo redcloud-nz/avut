@@ -95,4 +95,16 @@ No guide pages: the campaign pages are system-admin only and unlinked. The D4H T
 
 ## Review notes
 
+Group B (fixed before group C, since the key shape is task 6's contract):
+
+- Task 4b: concurrent `applyFixes` for one request can duplicate a D4H POST or a queued task (both recompute before either writes). **Accepted, not fixed (user, 2026-11-28):** a server-side claim needs a lease column and a migration; the pages are system-admin only, so task 6's dialog disables Apply while the mutation is pending and the risk stays. A sequential repeat is safe.
+- Task 4b: `inTeam` comes from the hours-cached members list, so a create could locate an item with someone who just left. `applyFixes` reads members fresh when any selected key is `unrecorded:`.
+- Task 3/4b: a key names the difference, not its fix, so apply can do something other than what was confirmed (cached whoami offered MarkLost task but uncached has UPDATE → PATCH; member resubmitted with a new serial/variant). Fingerprint the fix in the key (type + serial/brand/model where relevant); a mismatch is `skipped`.
+- Task 4b: a D4H write that succeeds but whose log write throws is reported `failed`. Log in its own try/catch; still report `applied` (with a warning) and log the failure server-side.
+- Task 4b nit: `createD4HEquipmentItem` throws when the POST body doesn't parse, turning a created item into a failure (also changes I3 Issue). `safeParse`, return `number | null`.
+- Task 4b nit: `openBatch()` runs before `createTask`, leaving an empty batch if the insert fails. Open it only when used.
+- Task 4b nit: `applyFixes` input `keys` has no `.max()`; cap it (e.g. 300).
+
+Earlier:
+
 - Task 1: `getNeedsReport`'s `.output()` schema in `self-audit-campaigns-router.ts` is written inline and duplicates the TS types in `src/lib/self-audit-needs.ts`. Define a Zod schema for the report beside the types (or in `src/lib/schemas/self-audit.ts`), derive the types with `z.infer`, and pass it to `.output()`.
