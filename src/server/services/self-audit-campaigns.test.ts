@@ -18,6 +18,7 @@ import type { D4HEquipmentListItem } from "@/lib/schemas/d4h/equipment-item";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { I3BundleId, type I3BundleLine } from "@/lib/schemas/i3-bundle";
 import { I3TemplateId } from "@/lib/schemas/i3-template";
+import { I3TemplateVariantId } from "@/lib/schemas/i3-template-variant";
 import { OrganizationId } from "@/lib/schemas/organization";
 import {
     SELF_AUDIT_TOKEN_DAYS,
@@ -37,12 +38,13 @@ import {
 } from "@/server/d4h-api/client";
 import { fetchD4HTeamEquipmentItems } from "@/server/d4h-api/equipment";
 import { createLinkToken } from "@/server/link-token";
-import { listFitsForD4HTeam } from "@/server/services/i3-templates";
+import { getD4HTeamFitContext, listFitsForD4HTeam } from "@/server/services/i3-templates";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createOrganizationMockContext } from "@/test/trpc-helpers";
 
 import {
     addMembers,
+    applyFixes,
     buildSelfAuditSnapshot,
     createCampaign,
     discardCampaign,
@@ -57,6 +59,7 @@ import {
     snapshotCampaignMembers,
     statusOf,
     withdrawRequest,
+    type SelfAuditApplyDeps,
     type SelfAuditIssuedItem,
     type SelfAuditSendDeps,
     type SelfAuditVariantSource,
@@ -79,6 +82,8 @@ vi.mock("@/server/d4h-access-token", () => ({
 
 vi.mock("@/server/d4h-api/client", () => ({
     expireD4HTeamMembers: vi.fn(),
+    // Not reached: the applyFixes tests pass their own deps.
+    fetchD4HWhoami: vi.fn(),
     // Equipment UPDATE on the team, not CREATE.
     fetchD4HWhoamiCached: vi.fn(async () => ({
         account: { id: 1, resourceType: "Account" },
@@ -109,9 +114,13 @@ vi.mock("@/server/d4h-api/equipment", async (importOriginal) => ({
     filterTeamIssuedItems: (await importOriginal<typeof import("@/server/d4h-api/equipment")>())
         .filterTeamIssuedItems,
     fetchD4HTeamEquipmentItems: vi.fn(),
+    // Not reached: the applyFixes tests pass their own deps.
+    createD4HEquipmentItem: vi.fn(),
+    patchD4HEquipmentItem: vi.fn(),
 }));
 
 vi.mock("@/server/services/i3-templates", () => ({
+    getD4HTeamFitContext: vi.fn(),
     listFitsForD4HTeam: vi.fn(),
 }));
 
@@ -1724,6 +1733,435 @@ describe("campaigns", () => {
             await expect(listDifferences(ctx(), { accessToken, campaignId })).rejects.toThrow(
                 NotFoundError,
             );
+        });
+    });
+
+    describe("applyFixes", () => {
+        const RADIO_KIND = 60;
+        const TORCH_KIND = 70;
+        const CREATED_ITEM_ID = 777;
+        const A = {
+            campaign: SelfAuditCampaignId.create(),
+            radio: I3TemplateId.create(),
+            radioVariant: I3TemplateVariantId.create(),
+            torch: I3TemplateId.create(),
+            john: SelfAuditRequestId.create(),
+            johnForm: FormInstanceId.create(),
+            withdrawn: SelfAuditRequestId.create(),
+            unsubmitted: SelfAuditRequestId.create(),
+        };
+        const NOTE = "Self-audit Fixes: John Smith reported";
+        const template = (
+            id: string,
+            name: string,
+            variants: SelfAuditTemplate["variants"] = [],
+        ): SelfAuditTemplate => ({
+            id,
+            category: "PPE",
+            name,
+            variants,
+            requireSN: false,
+            sized: false,
+            sizeOptions: [],
+        });
+        const held = (id: number, templateId: string, description: string): SelfAuditHeldItem => ({
+            id: String(id),
+            templateId,
+            description,
+            serial: null,
+            variantId: null,
+            problems: [],
+        });
+        /**
+         * John holds helmet 11 (says he doesn't) and radio 12 (says it's serial SN-NEW, a Motorola
+         * DP4400), and says he has a torch D4H doesn't record.
+         */
+        const johnAnswer: SelfAuditResponseData = {
+            held: {
+                "11": { ...EMPTY_ANSWER, has: "no" },
+                "12": {
+                    ...EMPTY_ANSWER,
+                    has: "yes",
+                    serial: " SN-NEW ",
+                    variantId: A.radioVariant,
+                },
+            },
+            missing: { [A.torch]: { ...EMPTY_ANSWER, has: "yes", serial: " T-1 " } },
+            extras: [],
+            comments: "",
+        };
+
+        /** Equipment UPDATE and CREATE on the team, unless turned off. */
+        function whoami({ update = true, create = true } = {}) {
+            return {
+                account: { id: 1, resourceType: "Account" as const },
+                members: [
+                    {
+                        id: 500,
+                        resourceType: "Member" as const,
+                        hasAccess: true,
+                        name: "Ana Admin",
+                        owner: { id: TEAM_ID, resourceType: "Team" as const, title: "Rescue Team" },
+                        permissions: { Equipment: { UPDATE: update, CREATE: create } },
+                    },
+                ],
+            };
+        }
+
+        function makeDeps(permissions: { update?: boolean; create?: boolean } = {}) {
+            return {
+                fetchWhoami: vi.fn(async () => whoami(permissions)),
+                patchD4HEquipmentItem: vi.fn(async () => {}),
+                createD4HEquipmentItem: vi.fn(async () => CREATED_ITEM_ID),
+            } satisfies SelfAuditApplyDeps;
+        }
+
+        /** The team's fit context: every record team-owned, unless `kindTeam` says otherwise. */
+        function fitContext({ kindTeam = TEAM_ID }: { kindTeam?: number } = {}) {
+            const owned = (id: number, teamId = TEAM_ID) => ({
+                id,
+                title: `Record ${id}`,
+                owner: { resourceType: "Team" as const, id: teamId, title: "Rescue Team" },
+            });
+            return {
+                team: { id: TEAM_ID, resourceType: "Team", title: "Rescue Team", permissions: {} },
+                catalogue: {
+                    categories: [owned(1)],
+                    kinds: [owned(TORCH_KIND, kindTeam)],
+                    brands: [],
+                    models: [],
+                },
+            } as unknown as Awaited<ReturnType<typeof getD4HTeamFitContext>>;
+        }
+
+        const apply = (keys: string[], deps = makeDeps(), requestId = A.john) =>
+            applyFixes(ctx(), { accessToken, requestId, keys }, deps);
+
+        const batchCount = () =>
+            db.logBatch.count({ where: { operationKey: "self-audit-apply-fixes" } });
+
+        beforeAll(async () => {
+            for (const [id, name, kindId] of [
+                [A.radio, "Radio", RADIO_KIND],
+                [A.torch, "Torch", TORCH_KIND],
+            ] as const) {
+                await db.i3Template.create({
+                    data: {
+                        id,
+                        organizationId: S.org,
+                        name,
+                        description: "",
+                        d4h: {
+                            create: {
+                                categoryId: 1,
+                                categoryTitle: "PPE",
+                                kindId,
+                                kindTitle: name,
+                                outputRefFormat: "",
+                                requireSN: false,
+                            },
+                        },
+                    },
+                });
+            }
+            await db.i3TemplateVariant.create({
+                data: {
+                    id: A.radioVariant,
+                    templateId: A.radio,
+                    name: "DP4400",
+                    d4h: {
+                        create: {
+                            brandId: 900,
+                            brandTitle: "Motorola",
+                            modelId: 901,
+                            modelTitle: "DP4400",
+                        },
+                    },
+                },
+            });
+            await db.selfAuditCampaign.create({
+                data: {
+                    id: A.campaign,
+                    organizationId: S.org,
+                    name: "Fixes",
+                    teamId: S.team,
+                    d4hTeamId: TEAM_ID,
+                    d4hTeamName: "Rescue Team",
+                    bundleName: "Responder",
+                    templates: [
+                        template(S.helmet, "Helmet"),
+                        template(A.radio, "Radio", [
+                            { id: A.radioVariant, label: "Motorola DP4400" },
+                        ]),
+                        template(A.torch, "Torch"),
+                    ],
+                    sentAt: new Date("2026-11-20T09:00:00Z"),
+                },
+            });
+
+            const submittedAt = new Date("2026-11-22T09:00:00Z");
+            for (const request of [
+                {
+                    id: A.john,
+                    formInstanceId: A.johnForm,
+                    d4hMemberId: 42,
+                    memberName: "John Smith",
+                    submittedAt,
+                },
+                {
+                    id: A.withdrawn,
+                    formInstanceId: FormInstanceId.create(),
+                    d4hMemberId: 43,
+                    memberName: "Ana Lee",
+                    submittedAt,
+                    withdrawnAt: submittedAt,
+                },
+                {
+                    id: A.unsubmitted,
+                    formInstanceId: FormInstanceId.create(),
+                    d4hMemberId: 44,
+                    memberName: "Kim Tan",
+                    submittedAt: null,
+                },
+            ]) {
+                await db.formInstance.create({
+                    data: {
+                        id: request.formInstanceId,
+                        formKey: "d4h-i3-self-audit",
+                        organizationId: S.org,
+                        userId: null,
+                        formData: johnAnswer,
+                        formStatus: request.submittedAt ? "Submitted" : "Draft",
+                    },
+                });
+                await db.selfAuditRequest.create({
+                    data: {
+                        ...request,
+                        organizationId: S.org,
+                        campaignId: A.campaign,
+                        heldItems: [held(11, S.helmet, "Helmet"), held(12, A.radio, "Radio")],
+                        deliveryStatus: "Sent",
+                        submittedData: request.submittedAt ? johnAnswer : undefined,
+                    },
+                });
+            }
+        });
+
+        beforeEach(async () => {
+            await db.d4HTask.deleteMany({ where: { resourceId: { in: [11, 12] } } });
+            vi.mocked(fetchD4HTeamEquipmentItems).mockResolvedValue([
+                item(11, 42, HELMET_KIND),
+                item(12, 42, RADIO_KIND, { serial: "SN-OLD" }),
+            ]);
+            vi.mocked(getD4HTeamFitContext).mockResolvedValue(fitContext());
+        });
+
+        it("applies each fix from the recomputed differences, in one log batch", async () => {
+            const deps = makeDeps();
+            const batchesBefore = await batchCount();
+
+            const result = await apply(
+                ["notheld:11", "serial:12", "variant:12", `unrecorded:${A.torch}`],
+                deps,
+            );
+
+            expect(result).toEqual({
+                campaignId: A.campaign,
+                applied: [
+                    { key: "notheld:11", label: "#000011 Kind" },
+                    { key: `unrecorded:${A.torch}`, label: "Torch" },
+                ],
+                queued: [
+                    { key: "serial:12", label: "#000012 Kind" },
+                    { key: "variant:12", label: "#000012 Kind" },
+                ],
+                skipped: [],
+                failed: [],
+            });
+            expect(deps.fetchWhoami).toHaveBeenCalledWith(accessToken);
+            expect(deps.patchD4HEquipmentItem).toHaveBeenCalledExactlyOnceWith(
+                accessToken,
+                TEAM_ID,
+                11,
+                { status: "LOST", updateNotes: `${NOTE} they don't have it.` },
+            );
+            expect(deps.createD4HEquipmentItem).toHaveBeenCalledExactlyOnceWith(
+                accessToken,
+                TEAM_ID,
+                {
+                    categoryId: 1,
+                    kindId: TORCH_KIND,
+                    memberId: 42,
+                    serial: "T-1",
+                    brandId: undefined,
+                    modelId: undefined,
+                },
+            );
+
+            const tasks = await db.d4HTask.findMany({
+                where: { resourceId: 12 },
+                orderBy: { kind: "asc" },
+            });
+            expect(tasks).toMatchObject([
+                {
+                    kind: "SetSerial",
+                    d4hTeamId: TEAM_ID,
+                    itemLabel: "#000012 Kind",
+                    formInstanceId: A.johnForm,
+                    payload: { serial: "SN-NEW", note: `${NOTE} serial SN-NEW.` },
+                },
+                {
+                    kind: "SetVariant",
+                    formInstanceId: A.johnForm,
+                    payload: {
+                        brand: "Motorola",
+                        model: "DP4400",
+                        note: `${NOTE} Motorola DP4400.`,
+                    },
+                },
+            ]);
+
+            expect(await batchCount()).toBe(batchesBefore + 1);
+            // The entry for the item just created is in the new batch.
+            const { batchId } = await db.logEntry.findFirstOrThrow({
+                where: { objectType: "D4HEquipmentItem", objectId: String(CREATED_ITEM_ID) },
+                orderBy: { sequence: "desc" },
+            });
+            expect(
+                await db.logBatch.findUniqueOrThrow({ where: { id: batchId ?? "" } }),
+            ).toMatchObject({ operationKey: "self-audit-apply-fixes", userId: S.admin });
+            const entries = await db.logEntry.findMany({
+                where: { batchId },
+                include: { objects: true },
+            });
+            const byObject = (objectType: string, objectId: string) =>
+                entries.find(
+                    (entry) => entry.objectType === objectType && entry.objectId === objectId,
+                );
+            expect(entries).toHaveLength(4);
+            expect(byObject("D4HEquipmentItem", "11")).toMatchObject({
+                action: "Update",
+                changes: [{ type: "obj_mod", path: ["status"], prev: "OPERATIONAL", curr: "LOST" }],
+            });
+            expect(byObject("D4HEquipmentItem", String(CREATED_ITEM_ID))).toMatchObject({
+                action: "Create",
+            });
+            for (const objectId of ["11", String(CREATED_ITEM_ID)]) {
+                expect(byObject("D4HEquipmentItem", objectId)?.objects).toContainEqual(
+                    expect.objectContaining({
+                        objectType: "SelfAuditRequest",
+                        objectId: A.john,
+                        role: "context",
+                    }),
+                );
+            }
+            expect(entries.filter((entry) => entry.objectType === "D4HTask")).toHaveLength(2);
+        });
+
+        it("queues a MarkLost task instead of the PATCH without D4H Equipment UPDATE", async () => {
+            const deps = makeDeps({ update: false });
+
+            const result = await apply(["notheld:11"], deps);
+
+            expect(result.queued).toEqual([{ key: "notheld:11", label: "#000011 Kind" }]);
+            expect(deps.patchD4HEquipmentItem).not.toHaveBeenCalled();
+            expect(await db.d4HTask.findMany({ where: { resourceId: 11 } })).toMatchObject([
+                {
+                    kind: "MarkLost",
+                    formInstanceId: A.johnForm,
+                    payload: { note: `${NOTE} they don't have it.` },
+                },
+            ]);
+        });
+
+        it("skips an Unrecorded fix without D4H Equipment CREATE", async () => {
+            const deps = makeDeps({ create: false });
+
+            const result = await apply([`unrecorded:${A.torch}`], deps);
+
+            expect(result.skipped).toEqual([{ key: `unrecorded:${A.torch}` }]);
+            expect(result.applied).toEqual([]);
+            expect(deps.createD4HEquipmentItem).not.toHaveBeenCalled();
+        });
+
+        it("fails a create whose template no longer fits the team", async () => {
+            vi.mocked(getD4HTeamFitContext).mockResolvedValue(fitContext({ kindTeam: 8 }));
+            const deps = makeDeps();
+
+            const result = await apply([`unrecorded:${A.torch}`], deps);
+
+            expect(result.failed).toEqual([
+                {
+                    key: `unrecorded:${A.torch}`,
+                    label: "Torch",
+                    error: `"Torch" can't be issued to Rescue Team: its D4H records aren't owned by Rescue Team or its D4H organisation.`,
+                },
+            ]);
+            expect(deps.createD4HEquipmentItem).not.toHaveBeenCalled();
+        });
+
+        it("skips stale keys and writes no log batch when nothing is applied", async () => {
+            await db.d4HTask.create({
+                data: {
+                    id: D4HTaskId.create(),
+                    organizationId: S.org,
+                    d4hTeamId: TEAM_ID,
+                    resourceType: "Equipment",
+                    resourceId: 12,
+                    itemLabel: "#000012 Kind",
+                    kind: "SetSerial",
+                    payload: { serial: "SN-NEW" },
+                },
+            });
+            const deps = makeDeps();
+            const batchesBefore = await batchCount();
+
+            const result = await apply(["serial:12", "notheld:999", "gone:11"], deps);
+
+            expect(result).toMatchObject({
+                applied: [],
+                queued: [],
+                failed: [],
+                skipped: [{ key: "serial:12" }, { key: "notheld:999" }, { key: "gone:11" }],
+            });
+            expect(await batchCount()).toBe(batchesBefore);
+            expect(await db.d4HTask.count({ where: { resourceId: 12 } })).toBe(1);
+        });
+
+        it("keeps going past a failed D4H write and reports D4H's message", async () => {
+            const deps = makeDeps();
+            deps.patchD4HEquipmentItem.mockRejectedValueOnce(
+                new Error("Failed to update D4H equipment item 11 in team 7: 422"),
+            );
+            const patchesLogged = () =>
+                db.logEntry.count({
+                    where: { objectType: "D4HEquipmentItem", objectId: "11", action: "Update" },
+                });
+            const loggedBefore = await patchesLogged();
+
+            const result = await apply(["notheld:11", `unrecorded:${A.torch}`], deps);
+
+            expect(result.failed).toEqual([
+                {
+                    key: "notheld:11",
+                    label: "#000011 Kind",
+                    error: "Failed to update D4H equipment item 11 in team 7: 422",
+                },
+            ]);
+            expect(result.applied).toEqual([{ key: `unrecorded:${A.torch}`, label: "Torch" }]);
+            expect(await patchesLogged()).toBe(loggedBefore);
+        });
+
+        it("rejects a withdrawn or unsubmitted member, and another org's request", async () => {
+            await expect(apply(["notheld:11"], makeDeps(), A.withdrawn)).rejects.toThrow(
+                ValidationError,
+            );
+            await expect(apply(["notheld:11"], makeDeps(), A.unsubmitted)).rejects.toThrow(
+                ValidationError,
+            );
+            await expect(
+                apply(["notheld:11"], makeDeps(), SelfAuditRequestId.create()),
+            ).rejects.toThrow(NotFoundError);
         });
     });
 

@@ -24,7 +24,7 @@ import { TeamId } from "@/lib/schemas/team";
 import { UserId } from "@/lib/schemas/user";
 import { EMPTY_ANSWER } from "@/lib/self-audit-validate";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
-import { getD4HTokenMetadata } from "@/server/d4h-api/client";
+import { fetchD4HWhoami, getD4HTokenMetadata } from "@/server/d4h-api/client";
 import { fetchD4HTeamEquipmentItems } from "@/server/d4h-api/equipment";
 import { sendEmail } from "@/server/email";
 import { listFitsForD4HTeam } from "@/server/services/i3-templates";
@@ -50,6 +50,7 @@ vi.mock("@/server/d4h-access-token", () => ({
 
 vi.mock("@/server/d4h-api/client", () => ({
     expireD4HTeamMembers: vi.fn(),
+    fetchD4HWhoami: vi.fn(),
     fetchD4HWhoamiCached: vi.fn(async () => ({
         account: { id: 1, resourceType: "Account" },
         members: [
@@ -81,6 +82,8 @@ vi.mock("@/server/d4h-api/equipment", async (importOriginal) => ({
     filterTeamIssuedItems: (await importOriginal<typeof import("@/server/d4h-api/equipment")>())
         .filterTeamIssuedItems,
     fetchD4HTeamEquipmentItems: vi.fn(),
+    createD4HEquipmentItem: vi.fn(),
+    patchD4HEquipmentItem: vi.fn(),
 }));
 
 vi.mock("@/server/email", async (importOriginal) => ({
@@ -89,6 +92,7 @@ vi.mock("@/server/email", async (importOriginal) => ({
 }));
 
 vi.mock("@/server/services/i3-templates", () => ({
+    getD4HTeamFitContext: vi.fn(),
     listFitsForD4HTeam: vi.fn(),
 }));
 
@@ -1257,6 +1261,97 @@ describe("selfAuditCampaignsRouter", () => {
             await expect(
                 owner().listDifferences({ organizationId: T.org, campaignId }),
             ).rejects.toMatchObject({ code: "FORBIDDEN" });
+        });
+
+        // After listDifferences' own tests: an apply queues a task, which they'd then see.
+        describe("applyFixes", () => {
+            beforeEach(() => {
+                vi.mocked(fetchD4HWhoami)
+                    .mockReset()
+                    .mockResolvedValue({
+                        account: { id: 1, resourceType: "Account" },
+                        members: [
+                            {
+                                id: 500,
+                                resourceType: "Member",
+                                hasAccess: true,
+                                name: "Ana Admin",
+                                owner: { id: TEAM_ID, resourceType: "Team", title: "Rescue Team" },
+                                permissions: { Equipment: { UPDATE: true, CREATE: true } },
+                            },
+                        ],
+                    } as never);
+            });
+
+            const requestOf = (d4hMemberId: number) =>
+                db.selfAuditRequest.findFirstOrThrow({ where: { campaignId, d4hMemberId } });
+
+            it("queues the member's selected task fix, reading whoami uncached", async () => {
+                const john = await requestOf(42);
+
+                const result = await admin().applyFixes({
+                    organizationId: T.org,
+                    requestId: johnRequestId,
+                    keys: ["serial:1", "gone:9"],
+                });
+
+                expect(result).toEqual({
+                    campaignId,
+                    applied: [],
+                    queued: [{ key: "serial:1", label: "#1 Helmet" }],
+                    skipped: [{ key: "gone:9" }],
+                    failed: [],
+                });
+                expect(fetchD4HWhoami).toHaveBeenCalledWith(accessToken);
+                expect(
+                    await db.d4HTask.findMany({ where: { formInstanceId: john.formInstanceId } }),
+                ).toMatchObject([
+                    {
+                        kind: "SetSerial",
+                        resourceId: 1,
+                        payload: {
+                            serial: "SN-2",
+                            note: "Self-audit Differences: John Smith reported serial SN-2.",
+                        },
+                    },
+                ]);
+            });
+
+            it("is BAD_REQUEST for a withdrawn or unsubmitted member", async () => {
+                for (const d4hMemberId of [43, 44]) {
+                    const { id } = await requestOf(d4hMemberId);
+                    await expect(
+                        admin().applyFixes({
+                            organizationId: T.org,
+                            requestId: SelfAuditRequestId.schema.parse(id),
+                            keys: ["serial:1"],
+                        }),
+                    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+                }
+            });
+
+            it("is PRECONDITION_FAILED without a personal D4H token", async () => {
+                vi.mocked(getConfiguredD4HAccessToken).mockRejectedValue(
+                    new NotConfiguredError("No personal D4H access token."),
+                );
+                await expect(
+                    admin().applyFixes({
+                        organizationId: T.org,
+                        requestId: johnRequestId,
+                        keys: ["serial:1"],
+                    }),
+                ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+            });
+
+            it("refuses an org owner without the system admin role", async () => {
+                await expect(
+                    owner().applyFixes({
+                        organizationId: T.org,
+                        requestId: johnRequestId,
+                        keys: ["serial:1"],
+                    }),
+                ).rejects.toMatchObject({ code: "FORBIDDEN" });
+            });
         });
     });
 });

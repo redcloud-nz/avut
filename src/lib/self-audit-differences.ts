@@ -15,6 +15,7 @@ import * as z from "zod";
 import type { D4HTaskKind } from "@/lib/schemas/d4h-task";
 import type { D4HEquipmentListItem } from "@/lib/schemas/d4h/equipment-item";
 import {
+    SelfAuditCampaignId,
     SelfAuditRequestId,
     type SelfAuditHeldItem,
     type SelfAuditResponseData,
@@ -125,6 +126,26 @@ export const SelfAuditDifferences = z.object({
     ),
 });
 export type SelfAuditDifferences = z.infer<typeof SelfAuditDifferences>;
+
+/** A difference an apply acted on, or tried to. */
+const SelfAuditAppliedDifference = z.object({ key: z.string(), label: z.string() });
+
+/**
+ * What applying a member's selected differences did (decision 8 of
+ * `docs/plans/2026-11-28-self-audit-needs-and-fixes.md`), by the keys sent.
+ */
+export const SelfAuditApplyResult = z.object({
+    campaignId: SelfAuditCampaignId.schema,
+    /** Written to D4H: marked LOST, or created. */
+    applied: z.array(SelfAuditAppliedDifference),
+    /** Queued as a D4H task. */
+    queued: z.array(SelfAuditAppliedDifference),
+    /** No longer a difference, or no longer selectable, when recomputed: not acted on. */
+    skipped: z.array(z.object({ key: z.string() })),
+    /** Tried and failed, with why. */
+    failed: z.array(SelfAuditAppliedDifference.extend({ error: z.string() })),
+});
+export type SelfAuditApplyResult = z.infer<typeof SelfAuditApplyResult>;
 
 export type SelfAuditDiffInput = {
     /** The campaign's stored templates, in their stored order. */

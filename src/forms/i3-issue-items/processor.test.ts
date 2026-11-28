@@ -176,7 +176,7 @@ describe("I3IssueItemsFormProcessor", () => {
         vi.mocked(resolveNotifyRecipients).mockResolvedValue(notify([NOTIFY_A]));
         vi.mocked(fetchReceiptAddress).mockResolvedValue(MEMBER_EMAIL);
         POST.mockReset();
-        POST.mockResolvedValue({ response: new Response(null, { status: 201 }) });
+        POST.mockResolvedValue({ data: { id: 1 }, response: new Response(null, { status: 201 }) });
     });
 
     function formData(itemCount: number, withVariant: boolean): I3IssueItemsFormData {
@@ -274,9 +274,15 @@ describe("I3IssueItemsFormProcessor", () => {
     });
 
     it("keeps going past a failed POST and names how many of the items failed", async () => {
-        POST.mockResolvedValueOnce({ response: new Response(null, { status: 201 }) })
+        POST.mockResolvedValueOnce({
+            data: { id: 1 },
+            response: new Response(null, { status: 201 }),
+        })
             .mockResolvedValueOnce({ response: new Response(null, { status: 422 }) })
-            .mockResolvedValueOnce({ response: new Response(null, { status: 201 }) });
+            .mockResolvedValueOnce({
+                data: { id: 1 },
+                response: new Response(null, { status: 201 }),
+            });
 
         await execute(3);
 

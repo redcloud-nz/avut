@@ -19,7 +19,7 @@ import {
     SelfAuditTemplate,
 } from "@/lib/schemas/self-audit";
 import { TeamId } from "@/lib/schemas/team";
-import { SelfAuditDifferences } from "@/lib/self-audit-differences";
+import { SelfAuditApplyResult, SelfAuditDifferences } from "@/lib/self-audit-differences";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import * as SelfAuditCampaigns from "@/server/services/self-audit-campaigns";
 
@@ -109,6 +109,29 @@ export const selfAuditCampaignsRouter = createTrpcRouter({
         .mutation(async ({ ctx, input: { campaignId, d4hMemberIds } }) => {
             const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
             return SelfAuditCampaigns.addMembers(ctx, { accessToken, campaignId, d4hMemberIds });
+        }),
+
+    /**
+     * Apply a member's selected differences from D4H, by key: each is recomputed live and acted
+     * on only if it's still there and selectable (marked LOST or created in D4H, or a D4H task
+     * queued); the rest are skipped. One failing doesn't stop the others.
+     *
+     * @throws TRPCError(PRECONDITION_FAILED) if the caller has no personal D4H token here.
+     * @throws TRPCError(NOT_FOUND) if the request isn't in the organization, or the token doesn't
+     * reach the campaign's D4H team.
+     * @throws TRPCError(BAD_REQUEST) if the member is withdrawn or hasn't submitted.
+     */
+    applyFixes: selfAuditProcedure
+        .input(
+            z.object({
+                requestId: SelfAuditRequestId.schema,
+                keys: z.array(z.string()).min(1),
+            }),
+        )
+        .output(SelfAuditApplyResult)
+        .mutation(async ({ ctx, input: { requestId, keys } }) => {
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
+            return SelfAuditCampaigns.applyFixes(ctx, { accessToken, requestId, keys });
         }),
 
     /**

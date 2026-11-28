@@ -11,7 +11,7 @@ import I3IssueItemsNotificationEmail from "@/emails/i3-issue-items-notification"
 import I3IssueItemsReceiptEmail from "@/emails/i3-issue-items-receipt";
 import { templateFitsTeam, variantFitsTeam } from "@/lib/i3-template-fit";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
-import { getD4HFetchClient } from "@/server/d4h-api/client";
+import { createD4HEquipmentItem, D4HResponseError } from "@/server/d4h-api/equipment";
 import { requireD4HTeamPermission } from "@/server/d4h-permissions";
 import { NoReplyEmailAddress, sendEmail } from "@/server/email";
 import { FormProcessingPipeline } from "@/server/form-processor";
@@ -130,47 +130,30 @@ export const I3IssueItemsFormProcessor = FormProcessingPipeline.builder<
         stageFn: async (ctx, { accessToken, items }) => {
             // Create an equipment record in D4H for each issued item.
 
-            const fetchClient = getD4HFetchClient(accessToken);
-
             // For each item being issued, create a corresponding equipment record in D4H. Keep going
             // past a failed item: the ones already created can't be rolled back, so record as many
             // as D4H accepts and report the rest.
             const failures: string[] = [];
             for (const item of items) {
                 try {
-                    const { error, response } = await fetchClient.POST(
-                        "/v3/{context}/{contextId}/equipment",
-                        {
-                            params: {
-                                path: {
-                                    context: "team",
-                                    contextId: ctx.formData.recipient.teamId,
-                                },
-                            },
-                            body: {
-                                ref: undefined,
-                                categoryId: item.template.d4h.categoryId,
-                                kindId: item.template.d4h?.kindId,
-                                location: {
-                                    id: ctx.formData.recipient.id,
-                                    resourceType: "Member",
-                                },
-                                serial: item.serialNumber ? item.serialNumber : undefined,
-                                brandId: item.variant?.d4h?.brandId ?? undefined,
-                                modelId: item.variant?.d4h?.modelId ?? undefined,
-                            },
-                        },
-                    );
-                    if (!response.ok) {
-                        ctx.logger.error(
-                            `Failed to create equipment in D4H (status ${response.status})`,
-                            error,
-                        );
-                        failures.push(String(response.status));
-                    }
+                    await createD4HEquipmentItem(accessToken, ctx.formData.recipient.teamId, {
+                        categoryId: item.template.d4h.categoryId,
+                        kindId: item.template.d4h.kindId,
+                        memberId: ctx.formData.recipient.id,
+                        serial: item.serialNumber,
+                        brandId: item.variant?.d4h?.brandId,
+                        modelId: item.variant?.d4h?.modelId,
+                    });
                 } catch (err) {
                     ctx.logger.error("Failed to create equipment in D4H", err);
-                    failures.push(err instanceof Error ? err.message : String(err));
+                    // A D4H refusal is named by its status; a thrown network error by its message.
+                    failures.push(
+                        err instanceof D4HResponseError
+                            ? String(err.status)
+                            : err instanceof Error
+                              ? err.message
+                              : String(err),
+                    );
                 }
             }
 
