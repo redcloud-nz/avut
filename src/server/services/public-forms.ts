@@ -5,6 +5,7 @@
 
 import "server-only";
 
+import { csvCell } from "@/lib/csv";
 import { diffObject } from "@/lib/diff";
 import { NotConfiguredError } from "@/lib/errors";
 import { J307_JACKET } from "@/lib/j307-jacket";
@@ -116,16 +117,6 @@ export async function listJacketInterest(ctx: OrgServiceContext): Promise<Jacket
 }
 
 const INTEREST_LABELS = { yes: "Yes", no: "No", unsure: "Not sure" } as const;
-
-/**
- * One CSV cell. Answers come from anyone with the link, so a value a spreadsheet would read as a
- * formula (`=`, `+`, `-`, `@`, or a tab or return first) gets a leading `'`, which keeps it as
- * text; then cells with quotes, commas or line breaks are quoted.
- */
-export function csvCell(value: string): string {
-    const safe = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
-    return /[",\n\r]/.test(safe) ? `"${safe.replaceAll('"', '""')}"` : safe;
-}
 
 /** The answers as CSV, one row each, times in New Zealand time. */
 export function jacketInterestCsv(rows: JacketInterestRow[]): string {

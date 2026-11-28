@@ -7,6 +7,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { ConflictError, NotFoundError } from "@/lib/errors";
 import { D4HTaskId } from "@/lib/schemas/d4h-task";
+import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
@@ -14,6 +15,7 @@ import { createOrganizationMockContext } from "@/test/trpc-helpers";
 
 import {
     createRetireTask,
+    createTask,
     dismiss,
     hasOpenRetireTask,
     listForItem,
@@ -103,6 +105,73 @@ describe("d4h-tasks", () => {
                 where: { objectType: "D4HTask", objectId: task.id, action: "Create" },
             });
             expect(entries).toHaveLength(1);
+        });
+    });
+
+    describe("createTask", () => {
+        const formInstanceId = FormInstanceId.create();
+
+        beforeAll(async () => {
+            await db.formInstance.create({
+                data: { id: formInstanceId, organizationId: T.org, formKey: "self-audit" },
+            });
+        });
+
+        it.each([
+            {
+                kind: "SetSerial" as const,
+                payload: { serial: "SN-42", note: "Self-audit Winter: Ann reported serial SN-42." },
+                description: "Queued D4H set serial task for #31 Helmet.",
+            },
+            {
+                kind: "SetVariant" as const,
+                payload: { brand: "Petzl", model: "Vertex", note: "Self-audit Winter: Ann." },
+                description: "Queued D4H set brand/model task for #31 Helmet.",
+            },
+            {
+                kind: "MarkLost" as const,
+                payload: { note: "Self-audit Winter: Ann reported not having it." },
+                description: "Queued D4H mark lost task for #31 Helmet.",
+            },
+        ])("creates a $kind task that round-trips, and logs it", async (args) => {
+            const task = await createTask(ctx(), {
+                d4hTeamId: T.teamA,
+                itemId: 31,
+                itemLabel: "#31 Helmet",
+                formInstanceId,
+                kind: args.kind,
+                payload: args.payload,
+            } as Parameters<typeof createTask>[1]);
+
+            expect(task).toMatchObject({
+                kind: args.kind,
+                payload: args.payload,
+                resourceId: 31,
+                status: "Open",
+                applyMethod: "Manual",
+                formInstanceId,
+            });
+            expect(await requireById(ctx(), task.id)).toEqual(task);
+
+            const entries = await db.logEntry.findMany({
+                where: { objectType: "D4HTask", objectId: task.id, action: "Create" },
+            });
+            expect(entries.map((entry) => entry.description)).toEqual([args.description]);
+
+            // The Returned badge stays Retire-only.
+            expect(await listOpenRetireItemIds(ctx(), { d4hTeamId: T.teamA })).not.toContain(31);
+        });
+
+        it("leaves an empty note out of the payload", async () => {
+            const task = await createTask(ctx(), {
+                d4hTeamId: T.teamA,
+                itemId: 32,
+                itemLabel: "#32 Helmet",
+                kind: "MarkLost",
+                payload: { note: "" },
+            });
+
+            expect(task.payload).toStrictEqual({});
         });
     });
 

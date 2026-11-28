@@ -24,7 +24,7 @@ import { TeamId } from "@/lib/schemas/team";
 import { UserId } from "@/lib/schemas/user";
 import { EMPTY_ANSWER } from "@/lib/self-audit-validate";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
-import { getD4HTokenMetadata } from "@/server/d4h-api/client";
+import { fetchD4HWhoami, getD4HTokenMetadata } from "@/server/d4h-api/client";
 import { fetchD4HTeamEquipmentItems } from "@/server/d4h-api/equipment";
 import { sendEmail } from "@/server/email";
 import { listFitsForD4HTeam } from "@/server/services/i3-templates";
@@ -50,6 +50,20 @@ vi.mock("@/server/d4h-access-token", () => ({
 
 vi.mock("@/server/d4h-api/client", () => ({
     expireD4HTeamMembers: vi.fn(),
+    fetchD4HWhoami: vi.fn(),
+    fetchD4HWhoamiCached: vi.fn(async () => ({
+        account: { id: 1, resourceType: "Account" },
+        members: [
+            {
+                id: 500,
+                resourceType: "Member",
+                hasAccess: true,
+                name: "Ana Admin",
+                owner: { id: TEAM_ID, resourceType: "Team", title: "Rescue Team" },
+                permissions: { Equipment: { UPDATE: true, CREATE: true } },
+            },
+        ],
+    })),
     getD4HTokenMetadata: vi.fn(async () => ({
         d4HTeams: [
             { id: TEAM_ID, resourceType: "Team", title: "Rescue Team", permissions: {} },
@@ -68,6 +82,8 @@ vi.mock("@/server/d4h-api/equipment", async (importOriginal) => ({
     filterTeamIssuedItems: (await importOriginal<typeof import("@/server/d4h-api/equipment")>())
         .filterTeamIssuedItems,
     fetchD4HTeamEquipmentItems: vi.fn(),
+    createD4HEquipmentItem: vi.fn(),
+    patchD4HEquipmentItem: vi.fn(),
 }));
 
 vi.mock("@/server/email", async (importOriginal) => ({
@@ -76,6 +92,7 @@ vi.mock("@/server/email", async (importOriginal) => ({
 }));
 
 vi.mock("@/server/services/i3-templates", () => ({
+    getD4HTeamFitContext: vi.fn(),
     listFitsForD4HTeam: vi.fn(),
 }));
 
@@ -926,6 +943,444 @@ describe("selfAuditCampaignsRouter", () => {
             ]) {
                 await expect(call()).rejects.toMatchObject({ code: "FORBIDDEN" });
             }
+        });
+    });
+
+    describe("getNeedsReport", () => {
+        const campaignId = SelfAuditCampaignId.create();
+        const elsewhereOrg = OrganizationId.create();
+        const elsewhereCampaignId = SelfAuditCampaignId.create();
+        const submittedAt = new Date("2026-11-22T09:00:00Z");
+
+        const template: SelfAuditTemplate = {
+            id: T.helmet,
+            category: "PPE",
+            name: "Helmet",
+            variants: [{ id: T.helmetVariant, label: "Petzl Vertex" }],
+            requireSN: false,
+            sized: true,
+            sizeOptional: true,
+            sizeOptions: [],
+        };
+        /** Has none, wants a Petzl Vertex in M. */
+        const needsOne: SelfAuditResponseData = {
+            held: {},
+            missing: {
+                [T.helmet]: {
+                    ...EMPTY_ANSWER,
+                    has: "no",
+                    wantVariantId: T.helmetVariant,
+                    size: "M",
+                },
+            },
+            extras: [{ id: "e1", item: "Head torch", kind: "need", size: "", notes: "" }],
+            comments: "",
+        };
+        const needsNothing: SelfAuditResponseData = {
+            held: {},
+            missing: { [T.helmet]: { ...EMPTY_ANSWER, has: "yes" } },
+            extras: [],
+            comments: "",
+        };
+
+        beforeAll(async () => {
+            await db.organization.create({
+                data: {
+                    id: elsewhereOrg,
+                    name: "Elsewhere",
+                    slug: "elsewhere",
+                    createdAt: new Date(),
+                },
+            });
+            for (const [id, organizationId] of [
+                [campaignId, T.org],
+                [elsewhereCampaignId, elsewhereOrg],
+            ] as const) {
+                await db.selfAuditCampaign.create({
+                    data: {
+                        id,
+                        organizationId,
+                        name: "Needs",
+                        teamId: T.team,
+                        d4hTeamId: TEAM_ID,
+                        d4hTeamName: "Rescue Team",
+                        bundleName: "Responder",
+                        templates: [template],
+                        sentAt: submittedAt,
+                    },
+                });
+            }
+
+            const requests: {
+                memberId: number;
+                memberName: string;
+                formData: SelfAuditResponseData;
+                submittedData: SelfAuditResponseData | null;
+                withdrawn?: boolean;
+                campaign?: "elsewhere";
+            }[] = [
+                // Submitted.
+                {
+                    memberId: 1,
+                    memberName: "Zoe North",
+                    formData: needsOne,
+                    submittedData: needsOne,
+                },
+                // Reopened, now saying they need nothing: counts with the submitted answer.
+                {
+                    memberId: 2,
+                    memberName: "Ana Lee",
+                    formData: needsNothing,
+                    submittedData: needsOne,
+                },
+                // Withdrawn after submitting.
+                {
+                    memberId: 3,
+                    memberName: "Bo Hill",
+                    formData: needsOne,
+                    submittedData: needsOne,
+                    withdrawn: true,
+                },
+                // Never submitted.
+                { memberId: 4, memberName: "Kim Park", formData: needsOne, submittedData: null },
+                // Another org's campaign.
+                {
+                    memberId: 5,
+                    memberName: "Elsewhere Member",
+                    formData: needsOne,
+                    submittedData: needsOne,
+                    campaign: "elsewhere",
+                },
+            ];
+            for (const request of requests) {
+                const organizationId = request.campaign ? elsewhereOrg : T.org;
+                const formInstanceId = FormInstanceId.create();
+                await db.formInstance.create({
+                    data: {
+                        id: formInstanceId,
+                        formKey: "d4h-i3-self-audit",
+                        organizationId,
+                        formData: request.formData,
+                        formStatus: "Draft",
+                    },
+                });
+                await db.selfAuditRequest.create({
+                    data: {
+                        id: SelfAuditRequestId.create(),
+                        organizationId,
+                        campaignId: request.campaign ? elsewhereCampaignId : campaignId,
+                        d4hMemberId: request.memberId,
+                        memberName: request.memberName,
+                        heldItems: [],
+                        deliveryStatus: "Sent",
+                        submittedAt: request.submittedData ? submittedAt : null,
+                        withdrawnAt: request.withdrawn ? submittedAt : null,
+                        submittedData: request.submittedData ?? undefined,
+                        formInstanceId,
+                    },
+                });
+            }
+        });
+
+        it("reads only submitted, not withdrawn, answers, a reopened one by its last submit", async () => {
+            const report = await admin().getNeedsReport({ organizationId: T.org, campaignId });
+
+            expect(report).toEqual({
+                groups: [
+                    {
+                        templateId: T.helmet,
+                        templateName: "Helmet",
+                        category: "PPE",
+                        variantLabel: "Petzl Vertex",
+                        size: "M",
+                        count: 2,
+                        members: ["Ana Lee", "Zoe North"],
+                    },
+                ],
+                extras: [
+                    { memberName: "Ana Lee", item: "Head torch", size: "No size given", notes: "" },
+                    {
+                        memberName: "Zoe North",
+                        item: "Head torch",
+                        size: "No size given",
+                        notes: "",
+                    },
+                ],
+            });
+            expect(getConfiguredD4HAccessToken).not.toHaveBeenCalled();
+        });
+
+        it("is NOT_FOUND for another org's campaign", async () => {
+            await expect(
+                admin().getNeedsReport({ organizationId: T.org, campaignId: elsewhereCampaignId }),
+            ).rejects.toMatchObject({ code: "NOT_FOUND" });
+        });
+
+        it("refuses an org owner without the system admin role", async () => {
+            await expect(
+                owner().getNeedsReport({ organizationId: T.org, campaignId }),
+            ).rejects.toMatchObject({ code: "FORBIDDEN" });
+        });
+
+        it("gives the same needs as CSV, a row per need", async () => {
+            const csv = await admin().getNeedsReportCsv({ organizationId: T.org, campaignId });
+
+            expect(csv.split("\r\n")).toEqual([
+                "Template,Variant,Size,Member,Reason,Notes",
+                expect.stringMatching(/^Helmet,Petzl Vertex,M,Ana Lee,/),
+                expect.stringMatching(/^Helmet,Petzl Vertex,M,Zoe North,/),
+                "(not on list),Head torch,No size given,Ana Lee,,",
+                "(not on list),Head torch,No size given,Zoe North,,",
+                "",
+            ]);
+        });
+
+        it("refuses the CSV to an org owner without the system admin role", async () => {
+            await expect(
+                owner().getNeedsReportCsv({ organizationId: T.org, campaignId }),
+            ).rejects.toMatchObject({ code: "FORBIDDEN" });
+        });
+    });
+
+    describe("listDifferences", () => {
+        const campaignId = SelfAuditCampaignId.create();
+        const elsewhereOrg = OrganizationId.create();
+        const elsewhereCampaignId = SelfAuditCampaignId.create();
+        const johnRequestId = SelfAuditRequestId.create();
+        const submittedAt = new Date("2026-11-22T09:00:00Z");
+
+        const template: SelfAuditTemplate = {
+            id: T.helmet,
+            category: "PPE",
+            name: "Helmet",
+            variants: [{ id: T.helmetVariant, label: "Petzl Vertex" }],
+            requireSN: false,
+            sized: false,
+            sizeOptional: true,
+            sizeOptions: [],
+        };
+        const heldHelmet: SelfAuditHeldItem = {
+            id: "1",
+            templateId: T.helmet,
+            description: "Helmet",
+            serial: null,
+            variantId: null,
+            problems: [],
+        };
+        /** Has item 1, with a serial D4H doesn't have. */
+        const newSerial: SelfAuditResponseData = {
+            held: { "1": { ...EMPTY_ANSWER, has: "yes", serial: "SN-2" } },
+            missing: {},
+            extras: [],
+            comments: "",
+        };
+
+        beforeAll(async () => {
+            await db.organization.create({
+                data: {
+                    id: elsewhereOrg,
+                    name: "Elsewhere 2",
+                    slug: "elsewhere-2",
+                    createdAt: new Date(),
+                },
+            });
+            for (const [id, organizationId] of [
+                [campaignId, T.org],
+                [elsewhereCampaignId, elsewhereOrg],
+            ] as const) {
+                await db.selfAuditCampaign.create({
+                    data: {
+                        id,
+                        organizationId,
+                        name: "Differences",
+                        teamId: T.team,
+                        d4hTeamId: TEAM_ID,
+                        d4hTeamName: "Rescue Team",
+                        bundleName: "Responder",
+                        templates: [template],
+                        sentAt: submittedAt,
+                    },
+                });
+            }
+
+            for (const request of [
+                { id: johnRequestId, memberId: 42, memberName: "John Smith" },
+                { memberId: 43, memberName: "Ana Lee", withdrawn: true },
+                { memberId: 44, memberName: "Kim Park", unsubmitted: true },
+            ]) {
+                const formInstanceId = FormInstanceId.create();
+                await db.formInstance.create({
+                    data: {
+                        id: formInstanceId,
+                        formKey: "d4h-i3-self-audit",
+                        organizationId: T.org,
+                        formData: newSerial,
+                        formStatus: "Draft",
+                    },
+                });
+                await db.selfAuditRequest.create({
+                    data: {
+                        id: request.id ?? SelfAuditRequestId.create(),
+                        organizationId: T.org,
+                        campaignId,
+                        d4hMemberId: request.memberId,
+                        memberName: request.memberName,
+                        heldItems: [heldHelmet],
+                        deliveryStatus: "Sent",
+                        submittedAt: request.unsubmitted ? null : submittedAt,
+                        withdrawnAt: request.withdrawn ? submittedAt : null,
+                        submittedData: request.unsubmitted ? undefined : newSerial,
+                        formInstanceId,
+                    },
+                });
+            }
+        });
+
+        it("lists the submitted, not withdrawn, members' differences", async () => {
+            expect(await admin().listDifferences({ organizationId: T.org, campaignId })).toEqual({
+                permissions: { update: true, create: true },
+                members: [
+                    {
+                        requestId: johnRequestId,
+                        memberName: "John Smith",
+                        inTeam: true,
+                        differences: [
+                            {
+                                key: "serial:1:task-serial=SN-2",
+                                kind: "Serial",
+                                templateId: T.helmet,
+                                itemId: 1,
+                                label: "#1 Helmet",
+                                detail: "D4H: no serial; they said SN-2",
+                                fix: { type: "task", taskKind: "SetSerial", serial: "SN-2" },
+                                state: "selectable",
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("is NOT_FOUND for another org's campaign", async () => {
+            await expect(
+                admin().listDifferences({ organizationId: T.org, campaignId: elsewhereCampaignId }),
+            ).rejects.toMatchObject({ code: "NOT_FOUND" });
+        });
+
+        it("is PRECONDITION_FAILED without a personal D4H token", async () => {
+            vi.mocked(getConfiguredD4HAccessToken).mockRejectedValue(
+                new NotConfiguredError("No personal D4H access token."),
+            );
+            await expect(
+                admin().listDifferences({ organizationId: T.org, campaignId }),
+            ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+        });
+
+        it("refuses an org owner without the system admin role", async () => {
+            await expect(
+                owner().listDifferences({ organizationId: T.org, campaignId }),
+            ).rejects.toMatchObject({ code: "FORBIDDEN" });
+        });
+
+        // After listDifferences' own tests: an apply queues a task, which they'd then see.
+        describe("applyFixes", () => {
+            beforeEach(() => {
+                vi.mocked(fetchD4HWhoami)
+                    .mockReset()
+                    .mockResolvedValue({
+                        account: { id: 1, resourceType: "Account" },
+                        members: [
+                            {
+                                id: 500,
+                                resourceType: "Member",
+                                hasAccess: true,
+                                name: "Ana Admin",
+                                owner: { id: TEAM_ID, resourceType: "Team", title: "Rescue Team" },
+                                permissions: { Equipment: { UPDATE: true, CREATE: true } },
+                            },
+                        ],
+                    } as never);
+            });
+
+            const requestOf = (d4hMemberId: number) =>
+                db.selfAuditRequest.findFirstOrThrow({ where: { campaignId, d4hMemberId } });
+
+            it("queues the member's selected task fix, reading whoami uncached", async () => {
+                const john = await requestOf(42);
+
+                const result = await admin().applyFixes({
+                    organizationId: T.org,
+                    requestId: johnRequestId,
+                    keys: ["serial:1:task-serial=SN-2", "gone:9"],
+                });
+
+                expect(result).toEqual({
+                    campaignId,
+                    applied: [],
+                    queued: [{ key: "serial:1:task-serial=SN-2", label: "#1 Helmet" }],
+                    skipped: [{ key: "gone:9" }],
+                    failed: [],
+                });
+                expect(fetchD4HWhoami).toHaveBeenCalledWith(accessToken);
+                expect(
+                    await db.d4HTask.findMany({ where: { formInstanceId: john.formInstanceId } }),
+                ).toMatchObject([
+                    {
+                        kind: "SetSerial",
+                        resourceId: 1,
+                        payload: {
+                            serial: "SN-2",
+                            note: "Self-audit Differences: John Smith reported serial SN-2.",
+                        },
+                    },
+                ]);
+            });
+
+            it("is BAD_REQUEST for a withdrawn or unsubmitted member", async () => {
+                for (const d4hMemberId of [43, 44]) {
+                    const { id } = await requestOf(d4hMemberId);
+                    await expect(
+                        admin().applyFixes({
+                            organizationId: T.org,
+                            requestId: SelfAuditRequestId.schema.parse(id),
+                            keys: ["serial:1"],
+                        }),
+                    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+                }
+            });
+
+            it("is BAD_REQUEST for more than 300 keys", async () => {
+                await expect(
+                    admin().applyFixes({
+                        organizationId: T.org,
+                        requestId: johnRequestId,
+                        keys: Array.from({ length: 301 }, (_, i) => `gone:${i}`),
+                    }),
+                ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+            });
+
+            it("is PRECONDITION_FAILED without a personal D4H token", async () => {
+                vi.mocked(getConfiguredD4HAccessToken).mockRejectedValue(
+                    new NotConfiguredError("No personal D4H access token."),
+                );
+                await expect(
+                    admin().applyFixes({
+                        organizationId: T.org,
+                        requestId: johnRequestId,
+                        keys: ["serial:1"],
+                    }),
+                ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+            });
+
+            it("refuses an org owner without the system admin role", async () => {
+                await expect(
+                    owner().applyFixes({
+                        organizationId: T.org,
+                        requestId: johnRequestId,
+                        keys: ["serial:1"],
+                    }),
+                ).rejects.toMatchObject({ code: "FORBIDDEN" });
+            });
         });
     });
 });

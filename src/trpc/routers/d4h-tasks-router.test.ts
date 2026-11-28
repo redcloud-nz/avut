@@ -6,14 +6,14 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { NotConfiguredError } from "@/lib/errors";
-import type { D4HTaskId } from "@/lib/schemas/d4h-task";
+import type { D4HTaskId, D4HTaskPayload } from "@/lib/schemas/d4h-task";
 import type { D4HEquipmentItemDetail } from "@/lib/schemas/d4h/equipment-item";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import { fetchD4HWhoami, fetchD4HWhoamiCached } from "@/server/d4h-api/client";
 import { fetchD4HEquipmentItem } from "@/server/d4h-api/equipment";
-import { createRetireTask } from "@/server/services/d4h-tasks";
+import { createRetireTask, createTask } from "@/server/services/d4h-tasks";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext, createOrganizationMockContext } from "@/test/trpc-helpers";
 
@@ -61,21 +61,24 @@ vi.mock("@/server/d4h-api/equipment", () => ({
     fetchD4HEquipmentItem: vi.fn(),
 }));
 
-/** A whoami with RETIRE (as given) on `RETIRE_TEAM`, and no RETIRE on `OTHER_TEAM`. */
-function whoami(retire: boolean) {
-    const member = (teamId: number, title: string, canRetire: boolean) => ({
+/**
+ * A whoami with RETIRE and UPDATE (as given) on `RETIRE_TEAM`, and UPDATE (as given) but no RETIRE
+ * on `OTHER_TEAM`.
+ */
+function whoami(retire: boolean, update = true, otherUpdate = true) {
+    const member = (teamId: number, title: string, canRetire: boolean, canUpdate: boolean) => ({
         id: teamId * 10,
         resourceType: "Member",
         hasAccess: true,
         name: "Member",
         owner: { id: teamId, resourceType: "Team", title },
-        permissions: { Equipment: { UPDATE: true, RETIRE: canRetire } },
+        permissions: { Equipment: { UPDATE: canUpdate, RETIRE: canRetire } },
     });
     return {
         account: { id: 1, resourceType: "Account" },
         members: [
-            member(RETIRE_TEAM, "Rescue Team", retire),
-            member(OTHER_TEAM, "Other Team", false),
+            member(RETIRE_TEAM, "Rescue Team", retire, update),
+            member(OTHER_TEAM, "Other Team", false, otherUpdate),
         ],
     } as never;
 }
@@ -124,6 +127,19 @@ describe("d4hTasksRouter", () => {
         return task.id;
     }
 
+    async function queue(d4hTeamId: number, itemId: number, kindAndPayload: D4HTaskPayload) {
+        const task = await createTask(
+            createOrganizationMockContext({
+                organizationId: T.org,
+                user: { id: T.user },
+                permissions: {},
+                prisma: db,
+            }),
+            { d4hTeamId, itemId, itemLabel: `#${itemId} Helmet`, ...kindAndPayload },
+        );
+        return task.id;
+    }
+
     beforeAll(async () => {
         // `Organization.createdAt` has no schema default — prisma-mock requires it.
         await db.organization.create({
@@ -144,6 +160,36 @@ describe("d4hTasksRouter", () => {
         ids.otherTeam = await retire(OTHER_TEAM, 601);
         ids.closed = await retire(RETIRE_TEAM, 701);
         await db.d4HTask.update({ where: { id: ids.closed }, data: { status: "Dismissed" } });
+
+        const serial = { kind: "SetSerial", payload: { serial: "SN-1" } } as const;
+        // Listed only to viewers with UPDATE on the team.
+        ids.listedSerialOther = await queue(OTHER_TEAM, 104, serial);
+        ids.listedSerial = await queue(RETIRE_TEAM, 105, serial);
+        ids.dismissedSerialOther = await queue(OTHER_TEAM, 502, serial);
+        ids.serialNoUpdateDismiss = await queue(RETIRE_TEAM, 503, serial);
+
+        // 8xx: the self-audit kinds, one check test each.
+        const variant = {
+            kind: "SetVariant",
+            payload: { brandId: 1, brand: "Petzl", modelId: 2, model: "Vertex" },
+        } as const;
+        // Queued before the ids were stored: Check compares the titles.
+        const titlesOnlyVariant = {
+            kind: "SetVariant",
+            payload: { brand: "Petzl", model: "Vertex" },
+        } as const;
+        const lost = { kind: "MarkLost", payload: {} } as const;
+        ids.serialApplied = await queue(RETIRE_TEAM, 801, serial);
+        ids.serialPending = await queue(RETIRE_TEAM, 802, serial);
+        ids.serialRetired = await queue(RETIRE_TEAM, 803, serial);
+        ids.serialNoUpdate = await queue(RETIRE_TEAM, 804, serial);
+        ids.serialNoRetire = await queue(OTHER_TEAM, 805, serial);
+        ids.variantApplied = await queue(RETIRE_TEAM, 811, variant);
+        ids.variantPending = await queue(RETIRE_TEAM, 812, variant);
+        ids.variantRenamed = await queue(RETIRE_TEAM, 813, variant);
+        ids.variantTitlesOnly = await queue(RETIRE_TEAM, 814, titlesOnlyVariant);
+        ids.lostApplied = await queue(RETIRE_TEAM, 821, lost);
+        ids.lostPending = await queue(RETIRE_TEAM, 822, lost);
     });
 
     beforeEach(() => {
@@ -205,10 +251,11 @@ describe("d4hTasksRouter", () => {
     });
 
     describe("listOpenTasks", () => {
-        it("lists open tasks only on teams where the viewer holds RETIRE, with URL and team", async () => {
+        it("lists Retire tasks only where the viewer holds RETIRE, with URL and team", async () => {
             const rows = await editor().listOpenTasks({ organizationId: T.org });
 
-            expect(rows.every((row) => row.task.d4hTeamId === RETIRE_TEAM)).toBe(true);
+            const retireRows = rows.filter((row) => row.task.kind === "Retire");
+            expect(retireRows.every((row) => row.task.d4hTeamId === RETIRE_TEAM)).toBe(true);
             expect(rows.map((row) => row.task.id)).toEqual(
                 expect.arrayContaining([ids.listed1, ids.listed2]),
             );
@@ -221,8 +268,28 @@ describe("d4hTasksRouter", () => {
             });
         });
 
-        it("lists nothing when the viewer holds RETIRE on no team", async () => {
-            vi.mocked(fetchD4HWhoamiCached).mockResolvedValue(whoami(false));
+        it("lists the other kinds where the viewer holds UPDATE but not RETIRE", async () => {
+            const rows = await editor().listOpenTasks({ organizationId: T.org });
+
+            expect(rows.find((row) => row.task.id === ids.listedSerialOther)).toMatchObject({
+                teamTitle: "Other Team",
+            });
+        });
+
+        it("lists Retire but not the other kinds where the viewer holds RETIRE but not UPDATE", async () => {
+            vi.mocked(fetchD4HWhoamiCached).mockResolvedValue(whoami(true, false, false));
+
+            const taskIds = (await editor().listOpenTasks({ organizationId: T.org })).map(
+                (row) => row.task.id,
+            );
+
+            expect(taskIds).toEqual(expect.arrayContaining([ids.listed1, ids.listed2]));
+            expect(taskIds).not.toContain(ids.listedSerial);
+            expect(taskIds).not.toContain(ids.listedSerialOther);
+        });
+
+        it("lists nothing when the viewer holds neither RETIRE nor UPDATE on any team", async () => {
+            vi.mocked(fetchD4HWhoamiCached).mockResolvedValue(whoami(false, false, false));
 
             expect(await editor().listOpenTasks({ organizationId: T.org })).toEqual([]);
         });
@@ -239,7 +306,7 @@ describe("d4hTasksRouter", () => {
             expect(tasks.map((task) => task.id)).toEqual([ids.listed1]);
         });
 
-        it("returns nothing when the viewer lacks RETIRE on the team", async () => {
+        it("leaves out a Retire task when the viewer lacks RETIRE on the team", async () => {
             const tasks = await editor().listItemTasks({
                 organizationId: T.org,
                 teamId: OTHER_TEAM,
@@ -247,6 +314,38 @@ describe("d4hTasksRouter", () => {
             });
 
             expect(tasks).toEqual([]);
+        });
+
+        it("returns a SetSerial task when the viewer holds UPDATE but not RETIRE", async () => {
+            const tasks = await editor().listItemTasks({
+                organizationId: T.org,
+                teamId: OTHER_TEAM,
+                itemId: 104,
+            });
+
+            expect(tasks.map((task) => task.id)).toEqual([ids.listedSerialOther]);
+        });
+
+        it("leaves out a SetSerial task when the viewer holds RETIRE but not UPDATE", async () => {
+            vi.mocked(fetchD4HWhoamiCached).mockResolvedValue(whoami(true, false));
+
+            const caller = editor();
+            expect(
+                await caller.listItemTasks({
+                    organizationId: T.org,
+                    teamId: RETIRE_TEAM,
+                    itemId: 105,
+                }),
+            ).toEqual([]);
+            expect(
+                (
+                    await caller.listItemTasks({
+                        organizationId: T.org,
+                        teamId: RETIRE_TEAM,
+                        itemId: 101,
+                    })
+                ).map((task) => task.id),
+            ).toEqual([ids.listed1]);
         });
     });
 
@@ -283,7 +382,13 @@ describe("d4hTasksRouter", () => {
 
             const result = await editor().checkTask({ organizationId: T.org, taskId: ids.pending });
 
-            expect(result).toEqual({ result: "pending", status: "INACTIVE" });
+            expect(result).toEqual({
+                result: "pending",
+                status: "INACTIVE",
+                serial: null,
+                brand: null,
+                model: null,
+            });
             const task = await db.d4HTask.findUnique({ where: { id: ids.pending } });
             expect(task?.status).toBe("Open");
         });
@@ -329,15 +434,195 @@ describe("d4hTasksRouter", () => {
             expect(fetchD4HWhoamiCached).not.toHaveBeenCalled();
             expect(fetchD4HEquipmentItem).not.toHaveBeenCalled();
         });
+
+        async function expectOpen(taskId: D4HTaskId) {
+            const task = await db.d4HTask.findUnique({ where: { id: taskId } });
+            expect(task?.status).toBe("Open");
+        }
+
+        it("marks a SetSerial task Done when the item's trimmed serial matches", async () => {
+            vi.mocked(fetchD4HEquipmentItem).mockResolvedValue({
+                ...item(801, "OPERATIONAL"),
+                serial: " SN-1 ",
+            });
+
+            const result = await editor().checkTask({
+                organizationId: T.org,
+                taskId: ids.serialApplied,
+            });
+
+            expect(result).toMatchObject({ result: "applied", task: { status: "Done" } });
+        });
+
+        it("leaves a SetSerial task open, with the item's serial, while it differs", async () => {
+            vi.mocked(fetchD4HEquipmentItem).mockResolvedValue({
+                ...item(802, "OPERATIONAL"),
+                serial: "OLD",
+            });
+
+            const result = await editor().checkTask({
+                organizationId: T.org,
+                taskId: ids.serialPending,
+            });
+
+            expect(result).toMatchObject({ result: "pending", serial: "OLD" });
+            await expectOpen(ids.serialPending);
+        });
+
+        it("doesn't complete a SetSerial task because the item is retired", async () => {
+            vi.mocked(fetchD4HEquipmentItem).mockResolvedValue(item(803, "RETIRED"));
+
+            const result = await editor().checkTask({
+                organizationId: T.org,
+                taskId: ids.serialRetired,
+            });
+
+            expect(result).toMatchObject({ result: "pending", status: "RETIRED" });
+            await expectOpen(ids.serialRetired);
+        });
+
+        it("checks a SetSerial task with Equipment UPDATE, not RETIRE", async () => {
+            vi.mocked(fetchD4HEquipmentItem).mockResolvedValue({
+                ...item(805, "OPERATIONAL"),
+                owner: { resourceType: "Team", id: OTHER_TEAM },
+                serial: "SN-1",
+            });
+
+            const result = await editor().checkTask({
+                organizationId: T.org,
+                taskId: ids.serialNoRetire,
+            });
+
+            expect(result).toMatchObject({ result: "applied" });
+        });
+
+        it("throws FORBIDDEN checking a SetSerial task without Equipment UPDATE", async () => {
+            vi.mocked(fetchD4HWhoami).mockResolvedValue(whoami(true, false));
+
+            await expect(
+                editor().checkTask({ organizationId: T.org, taskId: ids.serialNoUpdate }),
+            ).rejects.toMatchObject({
+                code: "FORBIDDEN",
+                message: "You need D4H's Equipment UPDATE permission on Rescue Team to do this.",
+            });
+            expect(fetchD4HEquipmentItem).not.toHaveBeenCalled();
+        });
+
+        it("marks a SetVariant task Done when the brand and model ids match", async () => {
+            vi.mocked(fetchD4HEquipmentItem).mockResolvedValue({
+                ...item(811, "OPERATIONAL"),
+                brand: { resourceType: "EquipmentBrand", id: 1, title: "Petzl" },
+                model: { resourceType: "EquipmentModel", id: 2, title: "Vertex" },
+            });
+
+            const result = await editor().checkTask({
+                organizationId: T.org,
+                taskId: ids.variantApplied,
+            });
+
+            expect(result).toMatchObject({ result: "applied", task: { status: "Done" } });
+        });
+
+        it("leaves a SetVariant task open while the model differs", async () => {
+            vi.mocked(fetchD4HEquipmentItem).mockResolvedValue({
+                ...item(812, "OPERATIONAL"),
+                brand: { resourceType: "EquipmentBrand", id: 1, title: "Petzl" },
+                model: { resourceType: "EquipmentModel", id: 3, title: "Boreo" },
+            });
+
+            const result = await editor().checkTask({
+                organizationId: T.org,
+                taskId: ids.variantPending,
+            });
+
+            expect(result).toMatchObject({ result: "pending", brand: "Petzl", model: "Boreo" });
+            await expectOpen(ids.variantPending);
+        });
+
+        it("marks a SetVariant task Done when the ids match after a rename in D4H", async () => {
+            vi.mocked(fetchD4HEquipmentItem).mockResolvedValue({
+                ...item(813, "OPERATIONAL"),
+                brand: { resourceType: "EquipmentBrand", id: 1, title: "Petzl Pro" },
+                model: { resourceType: "EquipmentModel", id: 2, title: "Vertex Vent" },
+            });
+
+            const result = await editor().checkTask({
+                organizationId: T.org,
+                taskId: ids.variantRenamed,
+            });
+
+            expect(result).toMatchObject({ result: "applied", task: { status: "Done" } });
+        });
+
+        it("compares the titles for a SetVariant task queued without ids", async () => {
+            vi.mocked(fetchD4HEquipmentItem).mockResolvedValue({
+                ...item(814, "OPERATIONAL"),
+                brand: { resourceType: "EquipmentBrand", id: 9, title: "Petzl" },
+                model: { resourceType: "EquipmentModel", id: 8, title: "Vertex" },
+            });
+
+            const result = await editor().checkTask({
+                organizationId: T.org,
+                taskId: ids.variantTitlesOnly,
+            });
+
+            expect(result).toMatchObject({ result: "applied", task: { status: "Done" } });
+        });
+
+        it("marks a MarkLost task Done when the item is LOST", async () => {
+            vi.mocked(fetchD4HEquipmentItem).mockResolvedValue(item(821, "LOST"));
+
+            const result = await editor().checkTask({
+                organizationId: T.org,
+                taskId: ids.lostApplied,
+            });
+
+            expect(result).toMatchObject({ result: "applied", task: { status: "Done" } });
+        });
+
+        it("leaves a MarkLost task open while the item isn't LOST", async () => {
+            vi.mocked(fetchD4HEquipmentItem).mockResolvedValue(item(822, "RETIRED"));
+
+            const result = await editor().checkTask({
+                organizationId: T.org,
+                taskId: ids.lostPending,
+            });
+
+            expect(result).toMatchObject({ result: "pending", status: "RETIRED" });
+            await expectOpen(ids.lostPending);
+        });
     });
 
     describe("dismissTask", () => {
-        it("throws FORBIDDEN without D4H's Equipment RETIRE", async () => {
+        it("throws FORBIDDEN dismissing a Retire task without D4H's Equipment RETIRE", async () => {
             await expect(
                 editor().dismissTask({ organizationId: T.org, taskId: ids.otherTeam }),
             ).rejects.toMatchObject({ code: "FORBIDDEN" });
 
             const task = await db.d4HTask.findUnique({ where: { id: ids.otherTeam } });
+            expect(task?.status).toBe("Open");
+        });
+
+        it("dismisses a SetSerial task with Equipment UPDATE, not RETIRE", async () => {
+            const { dismissed } = await editor().dismissTask({
+                organizationId: T.org,
+                taskId: ids.dismissedSerialOther,
+            });
+
+            expect(dismissed).toMatchObject({ status: "Dismissed" });
+        });
+
+        it("throws FORBIDDEN dismissing a SetSerial task without Equipment UPDATE", async () => {
+            vi.mocked(fetchD4HWhoami).mockResolvedValue(whoami(true, false));
+
+            await expect(
+                editor().dismissTask({ organizationId: T.org, taskId: ids.serialNoUpdateDismiss }),
+            ).rejects.toMatchObject({
+                code: "FORBIDDEN",
+                message: "You need D4H's Equipment UPDATE permission on Rescue Team to do this.",
+            });
+
+            const task = await db.d4HTask.findUnique({ where: { id: ids.serialNoUpdateDismiss } });
             expect(task?.status).toBe("Open");
         });
 

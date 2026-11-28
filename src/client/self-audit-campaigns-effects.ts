@@ -30,6 +30,22 @@ function campaignChanged(organizationId: string, campaignId: SelfAuditCampaignId
  */
 export const selfAuditCampaignsEffects = createEffects<"selfAuditCampaigns">()({
     addMembers: ({ organizationId }, { campaignId }) => campaignChanged(organizationId, campaignId),
+    // D4H changed (items marked LOST or created) and tasks were queued, so the differences, the
+    // task lists and the equipment views are all stale. Mirrors `d4h-tasks-effects.ts`.
+    applyFixes: ({ organizationId }, { campaignId }) => [
+        invalidate(
+            trpc.selfAuditCampaigns.listDifferences.queryFilter({ organizationId, campaignId }),
+        ),
+        invalidate(trpc.d4hTasks.listOpenTasks.queryFilter({ organizationId })),
+        invalidate(trpc.d4hTasks.listItemTasks.queryFilter({ organizationId })),
+        // Each task carries the request's form instance.
+        invalidate(trpc.forms.listFormInstanceTasks.queryFilter({ organizationId })),
+        invalidate(trpc.d4hApi.getEquipmentItem.queryFilter({ organizationId })),
+        invalidate(trpc.d4hApi.listMemberEquipment.queryFilter({ organizationId })),
+        invalidate(trpc.d4hApi.listTeamIssuedEquipment.queryFilter({ organizationId })),
+        invalidate(trpc.d4hApi.listEquipmentKindItems.queryFilter({ organizationId })),
+        invalidate(trpc.d4hApi.listEquipmentItemContents.queryFilter({ organizationId })),
+    ],
     // The new Draft joins the list. Its page isn't cached yet, but any entry for it is refetched.
     createCampaign: ({ organizationId }, { campaignId }) => [
         invalidate(trpc.selfAuditCampaigns.listCampaigns.queryFilter({ organizationId })),

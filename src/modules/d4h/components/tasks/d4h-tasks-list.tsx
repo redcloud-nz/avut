@@ -37,8 +37,9 @@ type OpenTaskRow = {
 };
 
 /**
- * The open D4H tasks on every team where the viewer holds D4H's Equipment RETIRE permission,
- * grouped by team, each with Open in D4H, Check and Dismiss.
+ * The open D4H tasks the viewer holds the D4H permission for on the task's team (Equipment RETIRE
+ * for a Retire task, UPDATE for the others), grouped by team, each with Open in D4H, Check and
+ * Dismiss.
  */
 export function D4HModule_D4HTasks_List() {
     const organization = useOrganization();

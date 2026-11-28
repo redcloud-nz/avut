@@ -33,20 +33,22 @@ import { D4HModule_D4HTaskChanges } from "./d4h-task-changes";
  * non-zero summary opens a dialog (`?action=tasks`) listing each task with Check (has it been
  * applied in D4H yet?) and Dismiss.
  *
- * `listItemTasks` returns nothing to a viewer without D4H's Equipment RETIRE permission on the
- * item's team, so for them the card says why instead of claiming there are no tasks.
+ * `listItemTasks` returns only the tasks whose D4H permission the viewer holds on the item's team
+ * (Equipment RETIRE for a Retire task, UPDATE for the others), so a viewer with neither gets
+ * nothing, and the card says why instead of claiming there are no tasks.
  */
 export function D4HModule_ItemTasks_Card({
     teamId,
     itemId,
     itemLabel,
-    canRetireInD4H,
+    canSeeTasksInD4H,
 }: {
     teamId: number;
     itemId: number;
     /** e.g. `#1234 Helmet`, for the dialog title. */
     itemLabel: string;
-    canRetireInD4H: boolean;
+    /** Whether the viewer holds Equipment RETIRE or UPDATE on the item's D4H team. */
+    canSeeTasksInD4H: boolean;
 }) {
     return (
         <Card>
@@ -54,12 +56,12 @@ export function D4HModule_ItemTasks_Card({
                 <CardTitle>D4H Tasks</CardTitle>
             </CardHeader>
             <CardContent>
-                {canRetireInD4H ? (
+                {canSeeTasksInD4H ? (
                     <ItemTasksSummary teamId={teamId} itemId={itemId} itemLabel={itemLabel} />
                 ) : (
                     <p className="text-sm text-muted-foreground">
-                        You need D4H&apos;s Equipment Retire permission to see this item&apos;s
-                        tasks.
+                        You need D4H&apos;s Equipment Update or Retire permission to see this
+                        item&apos;s tasks.
                     </p>
                 )}
             </CardContent>

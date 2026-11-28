@@ -22,12 +22,17 @@ import * as z from "zod";
 import { baseUrl } from "@/emails/base-url";
 import SelfAuditRequestEmail, { selfAuditRequestSubject } from "@/emails/self-audit-request";
 import type { Prisma } from "@/generated/prisma/client";
+import { hasD4HTeamPermission } from "@/lib/d4h-permissions";
+import { diffObject } from "@/lib/diff";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
 import { SelfAuditForm } from "@/lib/forms";
 import { compareBundle, type BundleRow, type ComparableLine } from "@/lib/i3-bundle-compare";
 import type { ItemQualityResult } from "@/lib/i3-item-quality";
+import { templateFitsTeam, variantFitsTeam } from "@/lib/i3-template-fit";
 import type { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
+import type { D4HTaskPayload } from "@/lib/schemas/d4h-task";
 import type { D4HEquipmentListItem } from "@/lib/schemas/d4h/equipment-item";
+import type { D4HWhoami } from "@/lib/schemas/d4h/whoami";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
 import {
     I3BundleLine,
@@ -35,6 +40,7 @@ import {
     type I3BundleId,
     type I3BundleSummary,
 } from "@/lib/schemas/i3-bundle";
+import { LogBatchId } from "@/lib/schemas/log-entry";
 import {
     SELF_AUDIT_RECIPIENTS_MAX,
     SELF_AUDIT_TOKEN_DAYS,
@@ -50,18 +56,40 @@ import {
 } from "@/lib/schemas/self-audit";
 import { TeamId } from "@/lib/schemas/team";
 import { defaultCampaignName } from "@/lib/self-audit-campaign-name";
+import {
+    diffAnswers,
+    type SelfAuditApplyResult,
+    type SelfAuditDifferences,
+    type SelfAuditTemplateD4H,
+    type SelfAuditVariantD4H,
+} from "@/lib/self-audit-differences";
+import {
+    buildNeedsReport,
+    needsReportCsv,
+    type SelfAuditNeedsReport,
+    type SelfAuditNeedsSource,
+} from "@/lib/self-audit-needs";
 import { EMPTY_ANSWER } from "@/lib/self-audit-validate";
 import { toD4HCredentialRef } from "@/server/d4h-access-token";
 import {
     expireD4HTeamMembers,
+    fetchD4HWhoami,
+    fetchD4HWhoamiCached,
     getD4HTeamMembers,
     getD4HTokenMetadata,
 } from "@/server/d4h-api/client";
-import { fetchD4HTeamEquipmentItems, filterTeamIssuedItems } from "@/server/d4h-api/equipment";
+import {
+    createD4HEquipmentItem,
+    fetchD4HTeamEquipmentItems,
+    filterTeamIssuedItems,
+    patchD4HEquipmentItem,
+} from "@/server/d4h-api/equipment";
 import { NoReplyEmailAddress, orgReplyTo, sendEmail } from "@/server/email";
 import { createLinkToken } from "@/server/link-token";
 import { createLogBatch } from "@/server/log-entry";
+import { Messages } from "@/trpc/messages";
 
+import * as D4HTasks from "./d4h-tasks";
 import * as I3Bundles from "./i3-bundles";
 import * as I3Templates from "./i3-templates";
 import * as OrgSettings from "./organization-settings";
@@ -578,6 +606,70 @@ export async function getRequestAnswers(
         formData: SelfAuditResponseData.parse(request.formInstance.formData),
         formStatus: request.formInstance.formStatus,
     };
+}
+
+/**
+ * The campaign's stored templates, and the requests the needs report and the differences read
+ * (decision 1 of `docs/plans/2026-11-28-self-audit-needs-and-fixes.md`): submitted and not
+ * withdrawn, each with its last submitted answer. A reopened form counts with that answer.
+ *
+ * @throws NotFoundError if the self audit campaign isn't in the organization.
+ */
+async function loadSubmittedAnswers(
+    ctx: OrgServiceContext,
+    campaignId: SelfAuditCampaignId,
+): Promise<{ templates: SelfAuditTemplate[]; requests: SelfAuditNeedsSource[] }> {
+    const campaign = await ctx.prisma.selfAuditCampaign.findFirst({
+        where: { id: campaignId, organizationId: ctx.organizationId },
+        select: {
+            templates: true,
+            requests: {
+                where: { submittedAt: { not: null }, withdrawnAt: null },
+                select: { memberName: true, heldItems: true, submittedData: true },
+            },
+        },
+    });
+    if (!campaign) throw new NotFoundError(`SelfAuditCampaign(id=${campaignId}) not found.`);
+
+    return {
+        templates: z.array(SelfAuditTemplate).parse(campaign.templates),
+        requests: campaign.requests.flatMap((request) =>
+            request.submittedData === null
+                ? []
+                : [
+                      {
+                          memberName: request.memberName,
+                          heldItems: z.array(SelfAuditHeldItem).parse(request.heldItems),
+                          submittedData: SelfAuditResponseData.parse(request.submittedData),
+                      },
+                  ],
+        ),
+    };
+}
+
+/**
+ * What the campaign's members need, from their submitted answers: grouped by template, variant
+ * and size, and the needs not on the list.
+ *
+ * @throws NotFoundError if the self audit campaign isn't in the organization.
+ */
+export async function getNeedsReport(
+    ctx: OrgServiceContext,
+    campaignId: SelfAuditCampaignId,
+): Promise<SelfAuditNeedsReport> {
+    return buildNeedsReport(await loadSubmittedAnswers(ctx, campaignId));
+}
+
+/**
+ * The needs report as CSV, a row per need.
+ *
+ * @throws NotFoundError if the self audit campaign isn't in the organization.
+ */
+export async function getNeedsReportCsv(
+    ctx: OrgServiceContext,
+    campaignId: SelfAuditCampaignId,
+): Promise<string> {
+    return needsReportCsv(await loadSubmittedAnswers(ctx, campaignId));
 }
 
 // Create
@@ -1113,37 +1205,85 @@ async function lockCampaign(
 }
 
 /**
- * Snapshot what each current member of a campaign's D4H team would be asked, against the
- * campaign's stored templates (decision 7 of the campaigns plan), not the bundle as it is now: a
- * member added later is asked about the same templates as everyone else.
+ * The current members of a campaign's D4H team, as recipients. With `fresh`, read from D4H rather
+ * than the hours-long cache.
+ *
+ * @throws NotFoundError if the token doesn't reach the D4H team.
+ */
+async function readTeamRecipients(
+    accessToken: D4HAccessToken_ServerOnly,
+    d4hTeamId: number,
+    { fresh = false }: { fresh?: boolean } = {},
+): Promise<SelfAuditRecipient[]> {
+    const credentialRef = toD4HCredentialRef(accessToken);
+    await requireReachableD4HTeam(accessToken, d4hTeamId);
+    if (fresh) expireD4HTeamMembers(credentialRef, d4hTeamId);
+    const members = await getD4HTeamMembers(credentialRef, d4hTeamId);
+    return members.map(
+        (member): SelfAuditRecipient => ({
+            id: member.id,
+            name: member.name,
+            email: emailOf(member),
+        }),
+    );
+}
+
+/** A member's snapshot, with the items D4H records as issued to them now. */
+export type SelfAuditLiveMemberSnapshot<M extends SelfAuditMemberSource> =
+    SelfAuditMemberSnapshot<M> & {
+        /**
+         * Per stored template present in the comparison (keyed by template id), the member's
+         * counted items of its column: matched by D4H kind, LOST left out, so one item can appear
+         * under two templates that share a kind. Unlike `heldItems`, not first-template-wins.
+         */
+        live: Record<string, SelfAuditIssuedItem[]>;
+    };
+
+export type SelfAuditLiveComparison<M extends SelfAuditMemberSource> = {
+    members: SelfAuditLiveMemberSnapshot<M>[];
+    /**
+     * The stored templates present in the comparison. One absent (its I3 template since deleted,
+     * or since unlinked from D4H) matches no items.
+     */
+    liveTemplateIds: string[];
+    /**
+     * Per stored template id, its I3 template's current D4H record; absent when it has none. With
+     * the category and kind an `Unrecorded` fix creates the item as.
+     */
+    templateD4H: Record<string, SelfAuditTemplateD4H & { categoryId: number; kindId: number }>;
+    /** Per variant id of the stored templates, its current D4H record; absent when it has none. */
+    variantD4H: Record<string, SelfAuditVariantD4H>;
+};
+
+/**
+ * Compare the given members against the campaign's stored templates (decision 7 of the campaigns
+ * plan), not the bundle as it is now, with the D4H team's equipment read from D4H: what each
+ * member would be asked, and what they hold now. Adding members passes the D4H team's current
+ * members (`readTeamRecipients`), so a member added later is asked about the same templates as
+ * everyone else. The differences pass a campaign's requests, so a member who has since left the
+ * team is still compared (decision 4 of `docs/plans/2026-11-28-self-audit-needs-and-fixes.md`).
  *
  * Each stored template is matched by its I3 template's current D4H type and rules. One since
  * deleted, or since unlinked from D4H, matches no items. Only the variants the stored template
  * offers are offered, so a held item's `variantId` is always one the member can pick.
  *
- * With `fresh`, the team's members are read from D4H rather than the hours-long cache.
- *
- * @throws NotFoundError if the token doesn't reach the D4H team.
+ * The caller checks the token reaches the D4H team.
  */
-async function snapshotCampaignMembers(
+export async function snapshotCampaignMembers<M extends SelfAuditMemberSource>(
     ctx: OrgServiceContext,
     {
         accessToken,
         d4hTeamId,
         templates,
-        fresh = false,
+        members,
     }: {
         accessToken: D4HAccessToken_ServerOnly;
         d4hTeamId: number;
         templates: readonly SelfAuditTemplate[];
-        fresh?: boolean;
+        members: readonly M[];
     },
-): Promise<SelfAuditMemberSnapshot<SelfAuditRecipient>[]> {
-    const credentialRef = toD4HCredentialRef(accessToken);
-    await requireReachableD4HTeam(accessToken, d4hTeamId);
-    if (fresh) expireD4HTeamMembers(credentialRef, d4hTeamId);
-
-    const [records, items, members] = await Promise.all([
+): Promise<SelfAuditLiveComparison<M>> {
+    const [records, items] = await Promise.all([
         ctx.prisma.i3Template.findMany({
             where: {
                 id: { in: templates.map((template) => template.id) },
@@ -1152,7 +1292,6 @@ async function snapshotCampaignMembers(
             include: { d4h: true, variants: { include: { d4h: true } } },
         }),
         fetchD4HTeamEquipmentItems(accessToken, d4hTeamId),
-        getD4HTeamMembers(credentialRef, d4hTeamId),
     ]);
     const recordById = new Map(records.map((record) => [record.id, record]));
 
@@ -1202,29 +1341,72 @@ async function snapshotCampaignMembers(
     const issued = filterTeamIssuedItems(items, d4hTeamId).map(
         ({ item, holderId }): SelfAuditIssuedItem => ({ ...item, holder: { id: holderId } }),
     );
-    const recipients = members.map(
-        (member): SelfAuditRecipient => ({
-            id: member.id,
-            name: member.name,
-            email: emailOf(member),
-        }),
-    );
 
     const comparison = compareBundle({
         lines,
-        members: recipients,
+        members,
         items: issued,
         // The stored templates fitted the team when the campaign was created.
         fittingTemplateIds: templates.map((template) => template.id),
     });
-    return buildSelfAuditSnapshot({
+    const snapshot = buildSelfAuditSnapshot({
         columns: comparison.columns,
         rows: comparison.rows,
         variants: variantSources,
         fittingVariantIds: templates.flatMap((template) =>
             template.variants.map((variant) => variant.id),
         ),
-    }).members;
+    });
+    // `buildSelfAuditSnapshot` keeps the comparison's row order.
+    return {
+        members: snapshot.members.map(
+            (member, index): SelfAuditLiveMemberSnapshot<M> => ({
+                ...member,
+                live: Object.fromEntries(
+                    comparison.columns.map((column, columnIndex) => [
+                        column.template.id,
+                        comparison.rows[index].cells[columnIndex].items.map(({ item }) => item),
+                    ]),
+                ),
+            }),
+        ),
+        liveTemplateIds: comparison.columns.map((column) => column.template.id),
+        templateD4H: Object.fromEntries(
+            records.flatMap((record) =>
+                record.d4h
+                    ? [
+                          [
+                              record.id,
+                              {
+                                  categoryId: record.d4h.categoryId,
+                                  kindId: record.d4h.kindId,
+                                  kindTitle: record.d4h.kindTitle,
+                              },
+                          ],
+                      ]
+                    : [],
+            ),
+        ),
+        variantD4H: Object.fromEntries(
+            records.flatMap((record) =>
+                record.variants.flatMap(({ id, d4h }) =>
+                    d4h
+                        ? [
+                              [
+                                  id,
+                                  {
+                                      brandId: d4h.brandId,
+                                      brandTitle: d4h.brandTitle,
+                                      modelId: d4h.modelId,
+                                      modelTitle: d4h.modelTitle,
+                                  },
+                              ],
+                          ]
+                        : [],
+                ),
+            ),
+        ),
+    };
 }
 
 /** A D4H member who can be added to a self audit campaign. */
@@ -1389,13 +1571,16 @@ export async function addMembers(
     // Checked before D4H is read, and again under the lock (below).
     const firstRead = checkAddable(campaign.requests, memberIds);
 
-    const snapshots = await snapshotCampaignMembers(ctx, {
-        accessToken,
-        d4hTeamId: campaign.d4hTeamId,
-        templates: z.array(SelfAuditTemplate).parse(campaign.templates),
+    const recipients = await readTeamRecipients(accessToken, campaign.d4hTeamId, {
         // A re-added member's email is refreshed from D4H: read it fresh, so one just fixed
         // there is the one used.
         fresh: memberIds.some((memberId) => firstRead.has(memberId)),
+    });
+    const { members: snapshots } = await snapshotCampaignMembers(ctx, {
+        accessToken,
+        d4hTeamId: campaign.d4hTeamId,
+        templates: z.array(SelfAuditTemplate).parse(campaign.templates),
+        members: recipients,
     });
     const snapshotByMember = new Map(snapshots.map((snapshot) => [snapshot.member.id, snapshot]));
     const chosen = memberIds.map((memberId) => {
@@ -1684,4 +1869,450 @@ export async function discardCampaign(
         );
     });
     return { campaignId };
+}
+
+// Differences from D4H
+
+/** A submitted, not withdrawn, request as the differences compare it. */
+type DifferenceRequest = {
+    id: SelfAuditRequestId;
+    d4hMemberId: number;
+    memberName: string;
+    heldItems: SelfAuditHeldItem[];
+    answer: SelfAuditResponseData;
+};
+
+/**
+ * Compare requests of a campaign with D4H now (decisions 4–6 of
+ * `docs/plans/2026-11-28-self-audit-needs-and-fixes.md`): the live comparison over the requests'
+ * members, the D4H team's current members, open tasks and the token's permissions from
+ * `readWhoami`. Shared by `listDifferences` and `applyFixes`, so an apply acts on exactly what
+ * the page would show. With `freshMembers`, the team's members are read from D4H rather than the
+ * hours-long cache.
+ *
+ * @throws NotFoundError if the token doesn't reach the D4H team.
+ */
+async function compareRequests(
+    ctx: OrgServiceContext,
+    {
+        accessToken,
+        d4hTeamId,
+        templates,
+        requests,
+        readWhoami,
+        freshMembers = false,
+    }: {
+        accessToken: D4HAccessToken_ServerOnly;
+        d4hTeamId: number;
+        templates: readonly SelfAuditTemplate[];
+        requests: readonly DifferenceRequest[];
+        readWhoami: () => Promise<D4HWhoami>;
+        freshMembers?: boolean;
+    },
+) {
+    // Checks the token reaches the team, before the rest reads it.
+    const recipients = await readTeamRecipients(accessToken, d4hTeamId, { fresh: freshMembers });
+    const [whoami, openTasks, comparison] = await Promise.all([
+        readWhoami(),
+        D4HTasks.listOpen(ctx, { d4hTeamIds: [d4hTeamId] }),
+        snapshotCampaignMembers(ctx, {
+            accessToken,
+            d4hTeamId,
+            templates,
+            members: requests.map((request) => ({
+                id: request.d4hMemberId,
+                name: request.memberName,
+            })),
+        }),
+    ]);
+
+    const teamPermissions = whoami.members.find(
+        (membership) => membership.owner.id === d4hTeamId,
+    )?.permissions;
+    const permissions = {
+        update: hasD4HTeamPermission(teamPermissions, "Equipment", "UPDATE"),
+        create: hasD4HTeamPermission(teamPermissions, "Equipment", "CREATE"),
+    };
+    const inTeam = new Set(recipients.map((recipient) => recipient.id));
+    const liveByMember = new Map(
+        comparison.members.map((snapshot) => [snapshot.member.id, snapshot.live]),
+    );
+    const tasks = openTasks.map(({ task }) => ({ resourceId: task.resourceId, kind: task.kind }));
+
+    return {
+        permissions,
+        comparison,
+        members: requests.map((request) => {
+            const live = liveByMember.get(request.d4hMemberId) ?? {};
+            return {
+                request,
+                inTeam: inTeam.has(request.d4hMemberId),
+                live,
+                differences: diffAnswers({
+                    templates,
+                    liveTemplateIds: comparison.liveTemplateIds,
+                    snapshotHeld: request.heldItems,
+                    live,
+                    answer: request.answer,
+                    openTasks: tasks,
+                    permissions,
+                    inTeam: inTeam.has(request.d4hMemberId),
+                    variantD4H: comparison.variantD4H,
+                    templateD4H: comparison.templateD4H,
+                }),
+            };
+        }),
+    };
+}
+
+/**
+ * The campaign's differences from D4H, per submitted (and not withdrawn) member, by member name
+ * (decisions 4–6 of `docs/plans/2026-11-28-self-audit-needs-and-fixes.md`): each member's last
+ * submitted answer against their snapshotted held items and what D4H records as issued to them
+ * now, read live. A member no longer in the D4H team is still compared. Members with no
+ * differences are included. The token's permissions come from a cached whoami: they decide what's
+ * shown, and an apply re-reads them.
+ *
+ * @throws NotFoundError if the campaign isn't in the organization, or the token doesn't reach its
+ * D4H team.
+ */
+export async function listDifferences(
+    ctx: OrgServiceContext,
+    {
+        accessToken,
+        campaignId,
+    }: { accessToken: D4HAccessToken_ServerOnly; campaignId: SelfAuditCampaignId },
+): Promise<SelfAuditDifferences> {
+    const campaign = await ctx.prisma.selfAuditCampaign.findFirst({
+        where: { id: campaignId, organizationId: ctx.organizationId },
+        select: {
+            d4hTeamId: true,
+            templates: true,
+            requests: {
+                where: { submittedAt: { not: null }, withdrawnAt: null },
+                select: {
+                    id: true,
+                    d4hMemberId: true,
+                    memberName: true,
+                    heldItems: true,
+                    submittedData: true,
+                },
+            },
+        },
+    });
+    if (!campaign) throw new NotFoundError(`SelfAuditCampaign(id=${campaignId}) not found.`);
+    const requests = campaign.requests
+        .flatMap((request) =>
+            request.submittedData === null
+                ? []
+                : [
+                      {
+                          id: SelfAuditRequestId.schema.parse(request.id),
+                          d4hMemberId: request.d4hMemberId,
+                          memberName: request.memberName,
+                          heldItems: z.array(SelfAuditHeldItem).parse(request.heldItems),
+                          answer: SelfAuditResponseData.parse(request.submittedData),
+                      },
+                  ],
+        )
+        .toSorted((a, b) => a.memberName.localeCompare(b.memberName));
+
+    const { permissions, members } = await compareRequests(ctx, {
+        accessToken,
+        d4hTeamId: campaign.d4hTeamId,
+        templates: z.array(SelfAuditTemplate).parse(campaign.templates),
+        requests,
+        readWhoami: () => fetchD4HWhoamiCached(toD4HCredentialRef(accessToken)),
+    });
+
+    return {
+        permissions,
+        members: members.map(({ request, inTeam, differences }) => ({
+            requestId: request.id,
+            memberName: request.memberName,
+            inTeam,
+            differences,
+        })),
+    };
+}
+
+/** The D4H calls `applyFixes` makes, injectable so tests never reach D4H. */
+export interface SelfAuditApplyDeps {
+    /** Uncached: what an apply may write rests on the token's permissions now. */
+    fetchWhoami: (token: D4HAccessToken_ServerOnly) => Promise<D4HWhoami>;
+    patchD4HEquipmentItem: typeof patchD4HEquipmentItem;
+    createD4HEquipmentItem: typeof createD4HEquipmentItem;
+}
+
+export const defaultSelfAuditApplyDeps: SelfAuditApplyDeps = {
+    fetchWhoami: fetchD4HWhoami,
+    patchD4HEquipmentItem,
+    createD4HEquipmentItem,
+};
+
+/**
+ * Apply a member's selected differences from D4H (decisions 6–8 of
+ * `docs/plans/2026-11-28-self-audit-needs-and-fixes.md`). Their differences are recomputed live,
+ * with the token's permissions read uncached (and the team's members too, when an `unrecorded:`
+ * key would create an item located with the member), and only the keys still present and
+ * selectable are acted on, each by its recomputed fix: `patch-lost` marks the item LOST in D4H,
+ * `create` creates it in D4H located with the member (after re-checking its template still fits
+ * the team), and `task` queues a D4H task. A key names its fix (`fixFingerprint`), so one whose
+ * fix has changed since it was shown is no longer present, and is skipped like any other.
+ *
+ * Each D4H write is logged after it succeeds, and each task as it's queued, in one log batch
+ * opened in the same transaction as the first entry, so an apply that writes nothing logs nothing
+ * and leaves no empty batch. A failed fix doesn't stop the rest; it's reported with why. A D4H
+ * write whose log entry fails is still reported applied, with a warning, since D4H has it.
+ *
+ * @throws NotFoundError if the request isn't in the organization, or the token doesn't reach the
+ * campaign's D4H team.
+ * @throws ValidationError if the member is withdrawn or hasn't submitted.
+ */
+export async function applyFixes(
+    ctx: OrgServiceContext,
+    {
+        accessToken,
+        requestId,
+        keys,
+    }: { accessToken: D4HAccessToken_ServerOnly; requestId: SelfAuditRequestId; keys: string[] },
+    deps: SelfAuditApplyDeps = defaultSelfAuditApplyDeps,
+): Promise<SelfAuditApplyResult> {
+    const record = await ctx.prisma.selfAuditRequest.findFirst({
+        where: { id: requestId, organizationId: ctx.organizationId },
+        select: {
+            campaignId: true,
+            d4hMemberId: true,
+            memberName: true,
+            heldItems: true,
+            submittedAt: true,
+            submittedData: true,
+            withdrawnAt: true,
+            formInstanceId: true,
+            campaign: { select: { name: true, d4hTeamId: true, templates: true } },
+        },
+    });
+    if (!record) throw new NotFoundError(`SelfAuditRequest(id=${requestId}) not found.`);
+    if (record.withdrawnAt !== null) {
+        throw new ValidationError(`${record.memberName} has been withdrawn.`);
+    }
+    if (record.submittedAt === null || record.submittedData === null) {
+        throw new ValidationError(`${record.memberName} hasn't submitted their self-audit.`);
+    }
+    const campaignId = SelfAuditCampaignId.schema.parse(record.campaignId);
+    const { d4hTeamId, name: campaignName } = record.campaign;
+    const templates = z.array(SelfAuditTemplate).parse(record.campaign.templates);
+    const request: DifferenceRequest = {
+        id: requestId,
+        d4hMemberId: record.d4hMemberId,
+        memberName: record.memberName,
+        heldItems: z.array(SelfAuditHeldItem).parse(record.heldItems),
+        answer: SelfAuditResponseData.parse(record.submittedData),
+    };
+
+    const { comparison, members } = await compareRequests(ctx, {
+        accessToken,
+        d4hTeamId,
+        templates,
+        requests: [request],
+        readWhoami: () => deps.fetchWhoami(accessToken),
+        // A create locates the item with the member: don't trust a cached "still in the team".
+        freshMembers: keys.some((key) => key.startsWith("unrecorded:")),
+    });
+    const [{ live, differences }] = members;
+    const differenceByKey = new Map(differences.map((difference) => [difference.key, difference]));
+    const liveById = new Map(
+        Object.values(live)
+            .flat()
+            .map((item) => [item.id, item]),
+    );
+
+    // The batch is written with its first entry, in the same transaction, so a failed first
+    // write leaves no empty batch.
+    const batchId = LogBatchId.create();
+    const batchCtx = withBatch(ctx, batchId);
+    let batchOpened = false;
+    /** The batch's create, while it hasn't been written; `undefined` once it has. */
+    const openBatch = () =>
+        batchOpened
+            ? undefined
+            : createLogBatch(
+                  {
+                      id: batchId,
+                      operationKey: "self-audit-apply-fixes",
+                      userId: ctx.userId,
+                      description: `Self-audit fixes applied for ${request.memberName}`,
+                  },
+                  ctx.prisma,
+              );
+    /**
+     * Log a D4H write that has already succeeded. A failure here doesn't undo the write, so it's
+     * returned as a warning rather than thrown, and logged server-side.
+     */
+    async function logApplied(
+        options: Parameters<OrgServiceContext["logEvent"]>[0],
+    ): Promise<string | undefined> {
+        try {
+            const batch = openBatch();
+            await ctx.prisma.$transaction([...(batch ? [batch] : []), batchCtx.logEvent(options)]);
+            batchOpened = true;
+            return undefined;
+        } catch (err) {
+            console.error(
+                `Self-audit apply for SelfAuditRequest(id=${requestId}): ${options.description ?? options.objectId} succeeded in D4H, but its log entry failed:`,
+                err,
+            );
+            return "Done in D4H, but not recorded in the AVUT history.";
+        }
+    }
+
+    let fitContext: Promise<I3Templates.D4HTeamFitContext> | null = null;
+    const readFitContext = () =>
+        (fitContext ??= I3Templates.getD4HTeamFitContext(ctx, { accessToken, teamId: d4hTeamId }));
+
+    const refs = [
+        { objectType: "SelfAuditRequest" as const, objectId: requestId, role: "context" as const },
+    ];
+    const reported = `Self-audit ${campaignName}: ${request.memberName} reported`;
+
+    const result: SelfAuditApplyResult = {
+        campaignId,
+        applied: [],
+        queued: [],
+        skipped: [],
+        failed: [],
+    };
+
+    for (const key of new Set(keys)) {
+        const difference = differenceByKey.get(key);
+        // Gone, or no longer selectable (queued, or the permission it needs lost): never acted on
+        // from what the client sent.
+        if (!difference || difference.state !== "selectable" || !difference.fix) {
+            result.skipped.push({ key });
+            continue;
+        }
+        const { fix, label, itemId } = difference;
+
+        try {
+            switch (fix.type) {
+                case "patch-lost": {
+                    if (itemId === null) throw new Error(`${key} has no D4H item.`);
+                    const before = liveById.get(itemId)?.status ?? null;
+                    await deps.patchD4HEquipmentItem(accessToken, d4hTeamId, itemId, {
+                        status: "LOST",
+                        updateNotes: `${reported} they don't have it.`,
+                    });
+                    const warning = await logApplied({
+                        action: "Update",
+                        objectType: "D4HEquipmentItem",
+                        objectId: String(itemId),
+                        description: `Marked ${label} LOST in D4H: ${request.memberName} said they don't have it`,
+                        changes: diffObject({ status: before }, { status: "LOST" }),
+                        refs,
+                    });
+                    result.applied.push({ key, label, ...(warning ? { warning } : {}) });
+                    break;
+                }
+                case "create": {
+                    const templateD4H = comparison.templateD4H[difference.templateId];
+                    const template = templates.find(({ id }) => id === difference.templateId);
+                    if (!templateD4H || !template) {
+                        throw new Error(`${label} is no longer linked to D4H.`);
+                    }
+                    const variantId = request.answer.missing[difference.templateId]?.variantId;
+                    const variantName = fix.variant
+                        ? (template.variants.find(({ id }) => id === variantId)?.label ?? null)
+                        : null;
+
+                    // As I3 Issue's CheckTemplateFit: the template (or the team) may have changed
+                    // since the campaign was created.
+                    const { team, catalogue } = await readFitContext();
+                    const fits = fix.variant
+                        ? variantFitsTeam(fix.variant, templateD4H, catalogue, team)
+                        : templateFitsTeam(templateD4H, catalogue, team);
+                    if (!fits) {
+                        throw new Error(
+                            Messages.i3ItemDoesNotFitTeam({
+                                templateName: template.name,
+                                variantName,
+                                teamTitle: team.title,
+                            }),
+                        );
+                    }
+
+                    const createdId = await deps.createD4HEquipmentItem(accessToken, d4hTeamId, {
+                        categoryId: templateD4H.categoryId,
+                        kindId: templateD4H.kindId,
+                        memberId: request.d4hMemberId,
+                        serial: fix.serial,
+                        brandId: fix.variant?.brandId,
+                        modelId: fix.variant?.modelId,
+                    });
+                    // Created either way, even when D4H's response had no id to read.
+                    const warning = await logApplied({
+                        action: "Create",
+                        objectType: "D4HEquipmentItem",
+                        objectId: createdId === null ? "unknown" : String(createdId),
+                        description: `Created ${label} in D4H for ${request.memberName}: they said they have one${createdId === null ? " (D4H returned no id)" : ""}`,
+                        refs,
+                    });
+                    result.applied.push({ key, label, ...(warning ? { warning } : {}) });
+                    break;
+                }
+                case "task": {
+                    if (itemId === null) throw new Error(`${key} has no D4H item.`);
+                    const taskPayload: D4HTaskPayload = (() => {
+                        switch (fix.taskKind) {
+                            case "SetSerial":
+                                return {
+                                    kind: "SetSerial",
+                                    payload: {
+                                        serial: fix.serial,
+                                        note: `${reported} serial ${fix.serial}.`,
+                                    },
+                                };
+                            case "SetVariant":
+                                return {
+                                    kind: "SetVariant",
+                                    payload: {
+                                        brandId: fix.brandId,
+                                        brand: fix.brand,
+                                        modelId: fix.modelId,
+                                        model: fix.model,
+                                        note: `${reported} ${fix.brand} ${fix.model}.`,
+                                    },
+                                };
+                            case "MarkLost":
+                                return {
+                                    kind: "MarkLost",
+                                    payload: { note: `${reported} they don't have it.` },
+                                };
+                        }
+                    })();
+                    await D4HTasks.createTask(
+                        batchCtx,
+                        {
+                            d4hTeamId,
+                            itemId,
+                            itemLabel: label,
+                            formInstanceId: record.formInstanceId,
+                            ...taskPayload,
+                        },
+                        { openBatch: openBatch() },
+                    );
+                    batchOpened = true;
+                    result.queued.push({ key, label });
+                    break;
+                }
+            }
+        } catch (err) {
+            result.failed.push({
+                key,
+                label,
+                error: err instanceof Error ? err.message : String(err),
+            });
+        }
+    }
+
+    return result;
 }
