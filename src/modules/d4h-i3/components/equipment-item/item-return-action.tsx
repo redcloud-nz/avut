@@ -78,10 +78,7 @@ export function D4HI3Module_ItemReturn_Card({
                 description="Return queues a D4H task to retire the item. Nothing changes in D4H until the task is done."
             >
                 {canReturn ? (
-                    <Button
-                        variant="outline"
-                        onClick={() => void setAction("return", { history: "push" })}
-                    >
+                    <Button onClick={() => void setAction("return", { history: "push" })}>
                         <PackageCheckIcon /> Return
                     </Button>
                 ) : null}

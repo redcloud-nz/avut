@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { ComponentProps, useId, type RefObject } from "react";
+import { ComponentProps, useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -23,11 +23,12 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
+    DialogTrigger,
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { RecordCardEditButton } from "@/components/ui/record-card-actions";
 import { useLogger } from "@/hooks/use-logger";
-import { useReturnFocus } from "@/hooks/use-return-focus";
 import { trpc } from "@/trpc/client";
 import type { RouterOutput } from "@/trpc/routers/_app";
 
@@ -35,20 +36,27 @@ type PersonalAccessToken = RouterOutput["d4hAccessTokens"]["listPersonalAccessTo
 
 type EditD4HAccessTokenDialogProps = Omit<ComponentProps<typeof Dialog>, "children"> & {
     token: PersonalAccessToken;
-    /** Where focus goes on close when the control that opened the dialog is gone (a menu item). */
-    returnFocusRef?: RefObject<HTMLElement | null>;
+    /** Set on the page's primary record card: ⌥E opens the dialog. */
+    primary?: boolean;
 };
+
+/** The token card's pencil and the `?action=edit` dialog it opens. */
 
 export function UserSettings_EditD4HAccessToken_Dialog({
     token,
-    returnFocusRef,
+    primary = false,
     ...props
 }: EditD4HAccessTokenDialogProps) {
-    const returnFocus = useReturnFocus(returnFocusRef);
-
     return (
         <Dialog {...props}>
-            <DialogContent {...returnFocus}>
+            <DialogTrigger asChild>
+                <RecordCardEditButton
+                    label="Edit access token"
+                    category="D4H Access Token"
+                    primary={primary}
+                />
+            </DialogTrigger>
+            <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Edit D4H Access Token</DialogTitle>
                     <DialogDescription>

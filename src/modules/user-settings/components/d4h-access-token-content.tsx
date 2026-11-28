@@ -18,7 +18,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import { RecordCard, RecordCardId } from "@/components/ui/record-card";
-import { RecordCardEditButton } from "@/components/ui/record-card-actions";
 import { D4HAccessTokenStatusBadge } from "@/components/ui/status-badge";
 import {
     Table,
@@ -37,6 +36,7 @@ import {
     PersonalD4HAccessTokenAction,
     UserSettings_D4HAccessToken_Menu,
 } from "./d4h-access-token-menu";
+import { UserSettings_EditD4HAccessToken_Dialog } from "./edit-d4h-access-token-dialog";
 
 export function UserSettings_D4HAccessTokenContent({ tokenId }: { tokenId: ProviderCredentialId }) {
     const { data: tokens } = useSuspenseQuery(
@@ -82,15 +82,15 @@ export function UserSettings_D4HAccessTokenContent({ tokenId }: { tokenId: Provi
                     updatedAt={token.updatedAt}
                     action={
                         <>
-                            <RecordCardEditButton
-                                label="Edit access token"
-                                category="D4H Access Token"
+                            <UserSettings_EditD4HAccessToken_Dialog
+                                token={token}
                                 primary
-                                // Opens its dialog through `?action=`: say so as a
-                                // `DialogTrigger` would, which also stops ⌥E reopening it.
-                                aria-haspopup="dialog"
-                                aria-expanded={action === "edit"}
-                                onClick={() => void setAction("edit", { history: "push" })}
+                                open={action === "edit"}
+                                onOpenChange={(open) =>
+                                    void setAction(open ? "edit" : null, {
+                                        history: open ? "push" : "replace",
+                                    })
+                                }
                             />
                             <Button
                                 variant="ghost"

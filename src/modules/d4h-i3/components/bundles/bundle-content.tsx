@@ -140,6 +140,7 @@ function D4HI3Module_Bundle_CompareCard({ bundle }: { bundle: I3Bundle }) {
             {canCompare && bundle.status !== "Deleted" ? (
                 <D4HTeamPickerDialog
                     label="Compare with a team"
+                    showLabel
                     section={(teamId) =>
                         route("/orgs/[slug]/d4h-i3/bundles/[bundle_id]/teams/[d4h_team_id]", {
                             slug: organization.slug,

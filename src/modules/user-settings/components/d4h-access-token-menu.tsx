@@ -13,7 +13,6 @@ import { type MenuActionProps } from "@/components/ui/menu-action";
 import { RecordCardMenu } from "@/components/ui/record-card-actions";
 import type { RouterOutput } from "@/trpc/routers/_app";
 
-import { UserSettings_EditD4HAccessToken_Dialog } from "./edit-d4h-access-token-dialog";
 import { UserSettings_RemoveD4HAccessToken_Dialog } from "./remove-d4h-access-token";
 import { UserSettings_ReplaceD4HAccessToken_Dialog } from "./replace-d4h-access-token-dialog";
 
@@ -29,14 +28,15 @@ export const PersonalD4HAccessTokenAction = parseAsStringLiteral([
  * The token card's ⋮ (the page's primary record card): Replace token value and Remove. Edit is
  * the card's pencil, Refresh from D4H its icon.
  *
- * Mounts every dialog on the page, the pencil's Edit included.
+ * Mounts the menu's own dialogs. The pencil is the edit dialog's trigger, so the token page
+ * renders that one.
  */
 export function UserSettings_D4HAccessToken_Menu({ token }: { token: PersonalAccessToken }) {
     const [action, setAction] = useQueryState("action", PersonalD4HAccessTokenAction);
     // The menu item that opens a dialog unmounts with the menu, so focus returns to the trigger.
     const triggerRef = useRef<HTMLButtonElement>(null);
 
-    // The pencil and the menu open the edit and replace dialogs, so they only ever ask to close.
+    // The menu opens the replace dialog, so it only ever asks to close.
     function handleOpenChange(open: boolean) {
         if (!open) void setAction(null, { history: "replace" });
     }
@@ -66,12 +66,6 @@ export function UserSettings_D4HAccessToken_Menu({ token }: { token: PersonalAcc
                 triggerRef={triggerRef}
             />
 
-            <UserSettings_EditD4HAccessToken_Dialog
-                token={token}
-                open={action === "edit"}
-                onOpenChange={handleOpenChange}
-                returnFocusRef={triggerRef}
-            />
             <UserSettings_ReplaceD4HAccessToken_Dialog
                 tokenId={token.id}
                 organizationId={token.organization.id}
