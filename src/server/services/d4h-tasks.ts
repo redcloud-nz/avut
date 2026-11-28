@@ -7,17 +7,31 @@ import "server-only";
 
 import { diffObject } from "@/lib/diff";
 import { ConflictError, NotFoundError } from "@/lib/errors";
-import { D4HTask, D4HTaskId, type D4HRetireTaskPayload } from "@/lib/schemas/d4h-task";
+import {
+    D4HTask,
+    D4HTaskId,
+    type D4HRetireTaskPayload,
+    type D4HTaskKind,
+    type D4HTaskPayload,
+} from "@/lib/schemas/d4h-task";
 import type { FormInstanceId } from "@/lib/schemas/form-instance";
 import { isPrismaRecordNotFound } from "@/server/prisma-errors";
 
 import type { OrgServiceContext } from "./service-context";
 
+/** How a task's log entry names what it queued, e.g. "Queued D4H retire task for …". */
+const KIND_DESCRIPTIONS: Record<D4HTaskKind, string> = {
+    Retire: "retire",
+    SetSerial: "set serial",
+    SetVariant: "set brand/model",
+    MarkLost: "mark lost",
+};
+
 /**
  * Queue a task to retire a D4H equipment item by hand in D4H's web app (the API has no retire
  * endpoint).
  */
-export async function createRetireTask(
+export function createRetireTask(
     ctx: OrgServiceContext,
     args: {
         d4hTeamId: number;
@@ -28,11 +42,26 @@ export async function createRetireTask(
         formInstanceId?: string;
     },
 ): Promise<D4HTask> {
+    const { reason, note, ...rest } = args;
+    return createTask(ctx, { ...rest, kind: "Retire", payload: { reason, note } });
+}
+
+/**
+ * Queue a task to change a D4H equipment item by hand in D4H's web app, of any kind. An empty or
+ * missing `note` is left out of the payload.
+ */
+export async function createTask(
+    ctx: OrgServiceContext,
+    args: {
+        d4hTeamId: number;
+        itemId: number;
+        itemLabel: string;
+        formInstanceId?: string;
+    } & D4HTaskPayload,
+): Promise<D4HTask> {
     const id = D4HTaskId.create();
-    const payload: D4HRetireTaskPayload = {
-        reason: args.reason,
-        ...(args.note ? { note: args.note } : {}),
-    };
+    const { note, ...fields } = args.payload;
+    const payload = { ...fields, ...(note ? { note } : {}) };
 
     const [created] = await ctx.prisma.$transaction([
         ctx.prisma.d4HTask.create({
@@ -43,7 +72,7 @@ export async function createRetireTask(
                 resourceType: "Equipment",
                 resourceId: args.itemId,
                 itemLabel: args.itemLabel,
-                kind: "Retire",
+                kind: args.kind,
                 payload,
                 status: "Open",
                 applyMethod: "Manual",
@@ -55,7 +84,7 @@ export async function createRetireTask(
             action: "Create",
             objectType: "D4HTask",
             objectId: id,
-            description: `Queued D4H retire task for ${args.itemLabel}.`,
+            description: `Queued D4H ${KIND_DESCRIPTIONS[args.kind]} task for ${args.itemLabel}.`,
         }),
     ]);
 

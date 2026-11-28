@@ -8,6 +8,7 @@ import * as z from "zod";
 import { hasD4HTeamPermission } from "@/lib/d4h-permissions";
 import { d4hEquipmentItemUrl } from "@/lib/d4h-servers";
 import { D4HTask, D4HTaskId } from "@/lib/schemas/d4h-task";
+import type { D4HEquipmentItemDetail } from "@/lib/schemas/d4h/equipment-item";
 import { getConfiguredD4HAccessToken, toD4HCredentialRef } from "@/server/d4h-access-token";
 import { fetchD4HTeamDetailCached, fetchD4HWhoamiCached } from "@/server/d4h-api/client";
 import { fetchD4HEquipmentItem } from "@/server/d4h-api/equipment";
@@ -17,15 +18,20 @@ import * as D4HTasks from "@/server/services/d4h-tasks";
 import { createTrpcRouter, organizationProcedure } from "../init";
 
 /**
- * Changes the D4H API can't make (v1: retiring an equipment item), queued to be applied by hand in
- * D4H's web app. Seeing, checking or dismissing a task also needs D4H's Equipment RETIRE
- * permission on the task's team.
+ * Changes to D4H equipment queued to be applied by hand in D4H's web app: retiring an item (the
+ * API can't), and a Self Audit Campaign's serial and brand/model fixes, and its LOST fix when the
+ * token lacks Equipment UPDATE. Seeing or dismissing a task also needs D4H's Equipment RETIRE permission
+ * on the task's team; checking one needs the permission its kind's change needs (`checkTask`).
  */
 export const d4hTasksRouter = createTrpcRouter({
     /**
-     * Re-fetch the task's item from D4H and close the task if the change has been applied there.
-     * @returns `missing` when D4H no longer has the item (suggest Dismiss), `applied` when the item
-     *   is retired (the task is now `Done`), or `pending` with the item's current D4H status.
+     * Re-fetch the task's item from D4H and close the task if its change has been applied there:
+     * `Retire` when the item is retired, `SetSerial` when its serial matches, `SetVariant` when its
+     * brand and model titles match, `MarkLost` when it's LOST. Checking needs the D4H permission
+     * the change itself needs: Equipment RETIRE for `Retire`, UPDATE for the other kinds.
+     * @returns `missing` when D4H no longer has the item (suggest Dismiss), `applied` when the
+     *   change is in D4H (the task is now `Done`), or `pending` with the item's current D4H status,
+     *   serial, brand and model.
      */
     checkTask: organizationProcedure({ d4hTask: ["apply"] })
         .input(z.object({ taskId: D4HTaskId.schema }))
@@ -33,7 +39,13 @@ export const d4hTasksRouter = createTrpcRouter({
             z.discriminatedUnion("result", [
                 z.object({ result: z.literal("missing") }),
                 z.object({ result: z.literal("applied"), task: D4HTask.schema }),
-                z.object({ result: z.literal("pending"), status: z.string() }),
+                z.object({
+                    result: z.literal("pending"),
+                    status: z.string(),
+                    serial: z.string().nullable(),
+                    brand: z.string().nullable(),
+                    model: z.string().nullable(),
+                }),
             ]),
         )
         .mutation(async ({ ctx, input: { taskId } }) => {
@@ -42,20 +54,31 @@ export const d4hTasksRouter = createTrpcRouter({
             // A stale list (e.g. in another tab) can offer a task that's already closed: refuse
             // before any D4H call.
             const task = await D4HTasks.requireOpen(ctx, taskId);
-            await requireD4HTeamPermission(accessToken, task.d4hTeamId, "Equipment", "RETIRE");
+            await requireD4HTeamPermission(
+                accessToken,
+                task.d4hTeamId,
+                "Equipment",
+                task.kind === "Retire" ? "RETIRE" : "UPDATE",
+            );
 
             const item = await fetchD4HEquipmentItem(accessToken, task.d4hTeamId, task.resourceId);
             // An item another team owns (a stale or mistyped id) is as good as missing here.
             if (!item || item.owner.id !== task.d4hTeamId) return { result: "missing" as const };
 
-            if (item.status === "RETIRED") {
+            if (isTaskApplied(task, item)) {
                 return {
                     result: "applied" as const,
                     task: await D4HTasks.markApplied(ctx, taskId),
                 };
             }
 
-            return { result: "pending" as const, status: item.status };
+            return {
+                result: "pending" as const,
+                status: item.status,
+                serial: item.serial,
+                brand: item.brand.title ?? null,
+                model: item.model?.title ?? null,
+            };
         }),
 
     /**
@@ -156,3 +179,19 @@ export const d4hTasksRouter = createTrpcRouter({
             return D4HTasks.listOpenRetireItemIds(ctx, { d4hTeamId: teamId });
         }),
 });
+
+/** Whether D4H's copy of the item shows the task's change. */
+function isTaskApplied(task: D4HTask, item: D4HEquipmentItemDetail): boolean {
+    switch (task.kind) {
+        case "Retire":
+            return item.status === "RETIRED";
+        case "SetSerial":
+            return (item.serial ?? "").trim() === task.payload.serial.trim();
+        case "SetVariant":
+            return (
+                item.brand.title === task.payload.brand && item.model?.title === task.payload.model
+            );
+        case "MarkLost":
+            return item.status === "LOST";
+    }
+}

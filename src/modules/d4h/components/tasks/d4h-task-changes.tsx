@@ -17,6 +17,15 @@ function d4hTaskChanges(task: D4HTask): D4HTaskChange[] {
                 { field: "Retired Reason", value: task.payload.reason },
                 { field: "Location", value: "No Location" },
             ];
+        case "SetSerial":
+            return [{ field: "Serial", value: task.payload.serial }];
+        case "SetVariant":
+            return [
+                { field: "Brand", value: task.payload.brand },
+                { field: "Model", value: task.payload.model },
+            ];
+        case "MarkLost":
+            return [{ field: "Status", value: "Lost" }];
     }
 }
 
