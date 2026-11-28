@@ -22,6 +22,16 @@ import nzSpelling from "./eslint-rules/nz-spelling.mjs";
 import requireServerOnly from "./eslint-rules/require-server-only.mjs";
 import zodImportStyle from "./eslint-rules/zod-import-style.mjs";
 
+// An effect with an expression body returns that expression, and React calls whatever comes back as
+// the cleanup: `useEffect(() => window.scrollTo(...), [])` crashes with "destroy is not a function"
+// on unmount. Neither tsc nor react-hooks catches it. Shared because a later block that sets
+// `no-restricted-syntax` replaces this one's options rather than adding to them.
+const effectExpressionBody = {
+  selector:
+    "CallExpression:matches([callee.name=/^use(Layout|Insertion)?Effect$/], [callee.property.name=/^use(Layout|Insertion)?Effect$/]) > ArrowFunctionExpression:first-child[body.type!=/^(BlockStatement|ArrowFunctionExpression|FunctionExpression)$/]",
+  message: "Give an effect a block body; an expression body becomes its cleanup.",
+};
+
 // One shared plugin object: flat config rejects redefining a plugin name with a different object
 // when two blocks match the same file.
 const avut = {
@@ -439,6 +449,12 @@ const config = [
     },
   },
   {
+    files: ["src/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-syntax": ["error", effectExpressionBody],
+    },
+  },
+  {
     // Better Auth's own `useSession` keeps a nanostore cache with no relationship to React
     // Query: a second copy of the session that goes stale independently, cannot be hydrated
     // from the server, and survives sign-out.
@@ -451,6 +467,7 @@ const config = [
           message:
             "Use useSession() from @/client/auth-queries instead of authClient.useSession().",
         },
+        effectExpressionBody,
       ],
     },
   },
