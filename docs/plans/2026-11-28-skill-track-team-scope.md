@@ -77,7 +77,7 @@ _End of review group B._ No visual checkpoint yet (the pages still behave org-wi
 
 ### Review group C: sessions in team scope
 
-- [ ] **Task 6: sessions in team scope** (feat(skill-track): pin the team on sessions in team scope) · `visual`
+- [x] **Task 6: sessions in team scope** (feat(skill-track): pin the team on sessions in team scope) · `visual`
   - **Files:** `src/modules/skill-track/components/create-session.tsx`, `update-session.tsx`, `sessions-list.tsx`, `session-team-select.tsx` if it helps
   - **Do:** Per Decisions: in team scope the create and update dialogs hide the Team field and send `team.id`; the list's Team column is hidden there. Follow `docs/patterns/mutation-dialog.md`.
   - **Done when:** creating a session in team scope makes one with this team (its people added, as #526 does), and it shows in the team's list; the update dialog keeps the team; the org scope is unchanged. `npm run check` passes.

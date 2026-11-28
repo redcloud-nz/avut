@@ -30,6 +30,7 @@ import { SKILL_CHECK_STATUS_LABELS } from "@/lib/schemas/skill-check";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 import { TeamId, TeamRef } from "@/lib/schemas/team";
 import { useFormatSessionWhen } from "@/modules/skill-track/lib/use-format-session-when";
+import { useSkillTrackScope } from "@/modules/skill-track/lib/use-skill-track-scope";
 import { trpc } from "@/trpc/client";
 
 import { SkillTrack_CreateSession_Dialog } from "./create-session";
@@ -43,6 +44,7 @@ export default function SkillTrack_Sessions_List({ teamId }: { teamId?: TeamId }
     const scopedRoute = useScopedRoute();
     const { formatDate } = usePreferences();
     const formatSessionWhen = useFormatSessionWhen();
+    const inTeamScope = useSkillTrackScope().scope === "team";
 
     const { data: sessions } = useSuspenseQuery(
         trpc.skillCheckSessions.listSessions.queryOptions({
@@ -89,16 +91,21 @@ export default function SkillTrack_Sessions_List({ teamId }: { teamId?: TeamId }
                     enableGlobalFilter: true,
                     enableColumnFilter: false,
                 }),
-                columnHelper.accessor((row) => row.team?.id ?? NO_SESSION_TEAM, {
-                    id: "team",
-                    header: "Team",
-                    cell: (ctx) => ctx.row.original.team?.name ?? "—",
-                    enableSorting: false,
-                    enableGlobalFilter: false,
-                    enableColumnFilter: true,
-                    filterFn: Kaga.filterFns.oneOf,
-                    meta: { columnOptions: teamOptions },
-                }),
+                // Team scope lists only its own team's sessions, so there's no Team to show.
+                ...(inTeamScope
+                    ? []
+                    : [
+                          columnHelper.accessor((row) => row.team?.id ?? NO_SESSION_TEAM, {
+                              id: "team",
+                              header: "Team",
+                              cell: (ctx) => ctx.row.original.team?.name ?? "—",
+                              enableSorting: false,
+                              enableGlobalFilter: false,
+                              enableColumnFilter: true,
+                              filterFn: Kaga.filterFns.oneOf,
+                              meta: { columnOptions: teamOptions },
+                          }),
+                      ]),
                 columnHelper.accessor("startsAt", {
                     header: "When",
                     cell: (ctx) => formatSessionWhen(ctx.getValue(), ctx.row.original.endsAt),
@@ -137,7 +144,7 @@ export default function SkillTrack_Sessions_List({ teamId }: { teamId?: TeamId }
                     },
                 }),
             ]),
-        [scopedRoute, formatDate, formatSessionWhen, teamOptions],
+        [scopedRoute, formatDate, formatSessionWhen, teamOptions, inTeamScope],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
