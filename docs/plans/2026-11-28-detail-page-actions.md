@@ -87,7 +87,7 @@ Untouched: D4H catalogue/member/team pages (↗ only), self-audit campaign (out 
   - **Do:** Per the map. Organisation: the D4H Sync/Unlink group moves onto the D4H org card (sync icon, ⋮ Unlink); the disabled Delete goes. Tokens: the header refresh button becomes a card icon beside the pencil; History leaves the menu. All three go full width.
   - **Done when:** map rows hold; `npm run check` passes.
 
-- [ ] **Task 5 — user-settings organisation, system-admin group and user** `visual`
+- [x] **Task 5 — user-settings organisation, system-admin group and user** `visual`
   - **Files:** `src/modules/user-settings/components/{organization-menu,organization-content}.tsx`, `src/modules/system-admin/components/groups/{group-menu,group-content,edit-group-dialog}.tsx`, `src/modules/system-admin/components/users/{user-actions-menu,user-content}.tsx`, `src/modules/system-admin/components/users/user-actions-menu.test.tsx`.
   - **Do:** Per the map. User-settings organisation and system group go full width. System user: Impersonate becomes a bare action card; self sees no ⋮ and no card.
   - **Done when:** map rows hold; the system-admin menu test is updated for hidden-not-disabled and `primary`; `npm run check` passes.

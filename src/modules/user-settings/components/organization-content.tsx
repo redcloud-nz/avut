@@ -44,47 +44,42 @@ export function UserSettings_OrganizationContent({
             />
             <Saratoga.Header>
                 <Saratoga.Title>{organization.name}</Saratoga.Title>
-                <Saratoga.Actions>
-                    <UserSettings_Organization_Menu membership={membership} />
-                </Saratoga.Actions>
             </Saratoga.Header>
-            <Saratoga.Columns>
-                <Saratoga.Column slot="main">
-                    <RecordCard label="Organisation">
-                        <CardContent>
-                            <DataList>
-                                <RecordCardId label="Organisation ID" id={organization.id} />
-                                <DataItem>
-                                    <DataItemTitle>Name</DataItemTitle>
-                                    <DataItemValue>{organization.name}</DataItemValue>
-                                </DataItem>
-                                <DataItem>
-                                    <DataItemTitle>Slug</DataItemTitle>
-                                    <DataItemValue className="font-mono">
-                                        {organization.slug}
-                                    </DataItemValue>
-                                </DataItem>
-                                <DataItem>
-                                    <DataItemTitle>Your Roles</DataItemTitle>
-                                    <DataItemValue>
-                                        <div className="flex flex-wrap gap-1">
-                                            {membership.roles.map((role) => (
-                                                <Badge key={role} variant="secondary">
-                                                    {OrganizationRole.displayNames[role]}
-                                                </Badge>
-                                            ))}
-                                        </div>
-                                    </DataItemValue>
-                                </DataItem>
-                                <DataItem>
-                                    <DataItemTitle>Joined</DataItemTitle>
-                                    <DataItemDateValue date={membership.createdAt} />
-                                </DataItem>
-                            </DataList>
-                        </CardContent>
-                    </RecordCard>
-                </Saratoga.Column>
-            </Saratoga.Columns>
+            {/* Nothing for a secondary column: full width. */}
+            <RecordCard
+                label="Organisation"
+                action={<UserSettings_Organization_Menu membership={membership} />}
+            >
+                <CardContent>
+                    <DataList>
+                        <RecordCardId label="Organisation ID" id={organization.id} />
+                        <DataItem>
+                            <DataItemTitle>Name</DataItemTitle>
+                            <DataItemValue>{organization.name}</DataItemValue>
+                        </DataItem>
+                        <DataItem>
+                            <DataItemTitle>Slug</DataItemTitle>
+                            <DataItemValue className="font-mono">{organization.slug}</DataItemValue>
+                        </DataItem>
+                        <DataItem>
+                            <DataItemTitle>Your Roles</DataItemTitle>
+                            <DataItemValue>
+                                <div className="flex flex-wrap gap-1">
+                                    {membership.roles.map((role) => (
+                                        <Badge key={role} variant="secondary">
+                                            {OrganizationRole.displayNames[role]}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </DataItemValue>
+                        </DataItem>
+                        <DataItem>
+                            <DataItemTitle>Joined</DataItemTitle>
+                            <DataItemDateValue date={membership.createdAt} />
+                        </DataItem>
+                    </DataList>
+                </CardContent>
+            </RecordCard>
         </Saratoga.Root>
     );
 }

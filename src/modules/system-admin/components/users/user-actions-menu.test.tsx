@@ -11,7 +11,7 @@ import userEvent from "@testing-library/user-event";
 
 import { useUser } from "@/client/auth-queries";
 
-import { SystemAdmin_UserActions_Menu } from "./user-actions-menu";
+import { SystemAdmin_User_ActionsCard, SystemAdmin_UserActions_Menu } from "./user-actions-menu";
 
 vi.mock("@/client/auth-queries", () => ({ useUser: vi.fn() }));
 
@@ -61,6 +61,19 @@ function renderMenu(user: MenuUser, search = "") {
     );
 }
 
+/** The page's two halves together: the User card's ⋮ (which mounts the dialogs) and the card. */
+function renderPage(user: MenuUser) {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    return render(
+        <QueryClientProvider client={queryClient}>
+            <NuqsTestingAdapter>
+                <SystemAdmin_User_ActionsCard user={user} />
+                <SystemAdmin_UserActions_Menu user={user} />
+            </NuqsTestingAdapter>
+        </QueryClientProvider>,
+    );
+}
+
 describe("SystemAdmin_UserActions_Menu", () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -69,19 +82,17 @@ describe("SystemAdmin_UserActions_Menu", () => {
         >);
     });
 
-    it("shows only a disabled placeholder and mounts no dialogs for the signed-in operator", async () => {
-        mockUseUser.mockReturnValue({ data: { id: SELF_ID } } as unknown as ReturnType<
-            typeof useUser
-        >);
-        const user = userEvent.setup();
+    it("renders no ⋮ and no action card for the signed-in operator", () => {
+        renderPage(makeUser({ id: SELF_ID }));
 
-        renderMenu(makeUser({ id: SELF_ID }));
-        await user.click(screen.getByRole("button"));
+        expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    });
 
-        const item = screen.getByText("No actions available");
-        expect(item).toHaveAttribute("aria-disabled", "true");
-        expect(screen.queryByText("Impersonate")).not.toBeInTheDocument();
-        expect(screen.queryByText("Delete user")).not.toBeInTheDocument();
+    it("renders no action card until the signed-in operator is known", () => {
+        mockUseUser.mockReturnValue({ data: undefined } as unknown as ReturnType<typeof useUser>);
+        renderPage(makeUser());
+
+        expect(screen.queryByRole("button", { name: /Impersonate/ })).not.toBeInTheDocument();
     });
 
     it("does not mount the action dialogs for the operator even with ?action= set", () => {
@@ -91,13 +102,13 @@ describe("SystemAdmin_UserActions_Menu", () => {
         expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     });
 
-    it("offers promote / ban / impersonate / delete for a plain user", async () => {
+    it("offers promote / ban / delete in the ⋮ for a plain user", async () => {
         const user = userEvent.setup();
         renderMenu(makeUser({ role: "user", banned: false }));
 
-        await user.click(screen.getByRole("button"));
+        await user.click(screen.getByRole("button", { name: "Actions" }));
 
-        expect(screen.getByText("Impersonate")).toBeInTheDocument();
+        expect(screen.queryByText("Impersonate")).not.toBeInTheDocument();
         expect(screen.getByText("Promote to admin")).toBeInTheDocument();
         expect(screen.getByText("Ban user")).toBeInTheDocument();
         expect(screen.getByText("Delete user")).toBeInTheDocument();
@@ -109,7 +120,7 @@ describe("SystemAdmin_UserActions_Menu", () => {
         const user = userEvent.setup();
         renderMenu(makeUser({ role: "admin" }));
 
-        await user.click(screen.getByRole("button"));
+        await user.click(screen.getByRole("button", { name: "Actions" }));
 
         expect(screen.getByText("Demote to user")).toBeInTheDocument();
         expect(screen.queryByText("Promote to admin")).not.toBeInTheDocument();
@@ -119,10 +130,21 @@ describe("SystemAdmin_UserActions_Menu", () => {
         const user = userEvent.setup();
         renderMenu(makeUser({ banned: true }));
 
-        await user.click(screen.getByRole("button"));
+        await user.click(screen.getByRole("button", { name: "Actions" }));
 
         expect(screen.getByText("Unban user")).toBeInTheDocument();
         expect(screen.queryByText("Ban user")).not.toBeInTheDocument();
+    });
+
+    it("opens Impersonate from the action card", async () => {
+        const user = userEvent.setup();
+        renderPage(makeUser());
+
+        await user.click(screen.getByRole("button", { name: "Impersonate" }));
+
+        expect(
+            await screen.findByRole("heading", { name: "Impersonate user" }),
+        ).toBeInTheDocument();
     });
 
     const cases: Array<[string, Record<string, unknown>, string]> = [
@@ -145,7 +167,7 @@ describe("SystemAdmin_UserActions_Menu", () => {
         expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
     });
 
-    it("opens on Mod+. and opens Delete on Alt+Backspace", async () => {
+    it("registers the primary card's keys: Mod+. opens the menu, Alt+Backspace Delete", async () => {
         const user = userEvent.setup();
         renderMenu(makeUser());
 

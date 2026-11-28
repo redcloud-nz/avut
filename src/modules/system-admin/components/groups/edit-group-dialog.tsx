@@ -13,8 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
 import { organizationGroupsEffects } from "@/client/organization-groups-effects";
-import { ObjectIcons } from "@/components/icons";
-import { Button, MutationButton } from "@/components/ui/button";
+import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogBody,
@@ -28,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { RecordCardEditButton } from "@/components/ui/record-card-actions";
 import { OrganizationGroupData, OrganizationGroupId } from "@/lib/schemas/organization-group";
 import { slugify } from "@/modules/system-admin/lib/slugify";
 import { trpc } from "@/trpc/client";
@@ -35,11 +35,14 @@ import { trpc } from "@/trpc/client";
 /**
  * `?action=edit` dialog for changing a group's name and slug. Follows
  * `docs/patterns/mutation-dialog.md`. A slug held by another group shows inline on the field.
+ * Its trigger is the Group card's pencil; `primary` gives it ⌥E.
  */
 export function SystemAdmin_EditGroup_Dialog({
     group,
+    primary = false,
 }: {
     group: { id: OrganizationGroupId; name: string; slug: string };
+    primary?: boolean;
 }) {
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["edit"] as const));
     const dialogOpen = action === "edit";
@@ -89,9 +92,7 @@ export function SystemAdmin_EditGroup_Dialog({
     return (
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Edit group">
-                    <ObjectIcons.Edit />
-                </Button>
+                <RecordCardEditButton label="Edit group" category="Groups" primary={primary} />
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
