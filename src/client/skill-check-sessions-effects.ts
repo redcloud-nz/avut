@@ -253,8 +253,16 @@ export const skillCheckSessionsEffects = createEffects<"skillCheckSessions">()({
                 organizationId: vars.organizationId,
             }),
         ),
+        // Check search rows carry the session's name and team (the team Checks page marks other
+        // teams' sessions), and a start change re-stamps `checkedAt`, so searches refetch on any
+        // update.
+        invalidate(
+            trpc.skillChecks.searchChecks.queryFilter({
+                organizationId: vars.organizationId,
+            }),
+        ),
         // A start change re-stamps every check's `checkedAt` server-side, so the reads that show or
-        // order by it refetch: the session's check lists, the competency matrix and check searches.
+        // order by it refetch: the session's check lists and the competency matrix.
         ...(startChanged
             ? [
                   invalidate(
@@ -265,11 +273,6 @@ export const skillCheckSessionsEffects = createEffects<"skillCheckSessions">()({
                   ),
                   invalidate(
                       trpc.skillChecks.getCompetencyMatrix.queryFilter({
-                          organizationId: vars.organizationId,
-                      }),
-                  ),
-                  invalidate(
-                      trpc.skillChecks.searchChecks.queryFilter({
                           organizationId: vars.organizationId,
                       }),
                   ),

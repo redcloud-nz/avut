@@ -16,6 +16,7 @@ import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { SkillPackageSubscriptionId } from "@/lib/schemas/skill-package-subscription";
 import { TeamId } from "@/lib/schemas/team";
+import { TeamMembershipId } from "@/lib/schemas/team-membership";
 import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createOrganizationMockContext } from "@/test/trpc-helpers";
@@ -574,7 +575,13 @@ describe("skill-checks session team", () => {
             [T.carol, "Archived"],
         ] as const) {
             await db.teamMembership.create({
-                data: { id: nanoId16(), organizationId: T.org, teamId: T.rescue, personId, status },
+                data: {
+                    id: TeamMembershipId.create(),
+                    organizationId: T.org,
+                    teamId: T.rescue,
+                    personId,
+                    status,
+                },
             });
         }
     });
@@ -1036,7 +1043,13 @@ describe("skill-checks search by team", () => {
             [S.swift, S.dave, "Active"],
         ] as const) {
             await db.teamMembership.create({
-                data: { id: nanoId16(), organizationId: S.org, teamId, personId, status },
+                data: {
+                    id: TeamMembershipId.create(),
+                    organizationId: S.org,
+                    teamId,
+                    personId,
+                    status,
+                },
             });
         }
         await db.skillPackage.create({
