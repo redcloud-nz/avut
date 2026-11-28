@@ -628,6 +628,10 @@ function startOfDayIn(date: string, timeZone: string): TZDate {
  * newest `checkedAt` first with ties broken by id (so paging is stable), and the number of checks
  * matching across every page. A page past the end has no rows but still the real total.
  *
+ * `teamId` keeps the checks whose assessee has a membership in that team that isn't `Deleted`,
+ * whatever the person's status, so the team's checks include its people's standalone checks and
+ * their checks from other teams' sessions.
+ *
  * `from`/`to` are calendar days in `timeZone` (the viewer's display zone, the one the Checks page
  * renders `checkedAt` in), both inclusive: `to` is bounded by the start of the day after it, via
  * `addDays` on a `TZDate`, so a DST day keeps its real length.
@@ -657,6 +661,13 @@ export async function search(
             sessionId: filters.sessionId === "none" ? null : filters.sessionId,
         }),
         ...(filters.result && { result: filters.result }),
+        ...(filters.teamId && {
+            assessee: {
+                teamMemberships: {
+                    some: { teamId: filters.teamId, status: { not: "Deleted" } },
+                },
+            },
+        }),
         ...((filters.from || filters.to) && { checkedAt }),
     };
 
@@ -668,7 +679,7 @@ export async function search(
                 assessee: { select: { id: true, name: true } },
                 assessor: { select: { id: true, name: true } },
                 skill: { select: { id: true, name: true } },
-                session: { select: { id: true, name: true } },
+                session: { select: { id: true, name: true, teamId: true } },
             },
             orderBy: [{ checkedAt: "desc" }, { id: "desc" }],
             skip: (page - 1) * pageSize,
@@ -687,6 +698,7 @@ export async function search(
                 ? {
                       id: check.session.id as SkillCheckSessionId,
                       name: check.session.name,
+                      teamId: check.session.teamId as TeamId | null,
                   }
                 : null,
         })),

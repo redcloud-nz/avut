@@ -884,7 +884,7 @@ describe("skill-checks search", () => {
                 assessee: { id: S.bob, name: "Bob" },
                 assessor: { id: S.eve, name: "Eve" },
                 skill: { id: S.skill1, name: "Skill 1" },
-                session: { id: S.session, name: "Session" },
+                session: { id: S.session, name: "Session", teamId: null },
             }),
         ]);
     });
@@ -976,5 +976,176 @@ describe("skill-checks search", () => {
         const result = await search(ctx(), { filters: {}, page: 5, pageSize: 3, timeZone: NZ });
 
         expect(result).toEqual({ rows: [], total: 8 });
+    });
+});
+
+describe("skill-checks search by team", () => {
+    // rescue: alice (Active membership), bob (Archived membership, Deleted person), carol
+    // (Deleted membership). dave has no membership. swift: dave (Active membership).
+    //   aliceRescue  alice, rescueSession (rescue)
+    //   aliceSwift   alice, swiftSession (swift)
+    //   aliceAlone   alice, no session
+    //   bobAlone     bob,   no session
+    //   carolRescue  carol, rescueSession
+    //   daveRescue   dave,  rescueSession
+    const S = {
+        org: OrganizationId.create(),
+        user: UserId.create(),
+        alice: PersonId.create(),
+        bob: PersonId.create(),
+        carol: PersonId.create(),
+        dave: PersonId.create(),
+        rescue: TeamId.create(),
+        swift: TeamId.create(),
+        pkg: SkillPackageId.create(),
+        grp: SkillGroupId.create(),
+        skill: SkillId.create(),
+        rescueSession: SkillCheckSessionId.create(),
+        swiftSession: SkillCheckSessionId.create(),
+        aliceRescue: SkillCheckId.create(),
+        aliceSwift: SkillCheckId.create(),
+        aliceAlone: SkillCheckId.create(),
+        bobAlone: SkillCheckId.create(),
+        carolRescue: SkillCheckId.create(),
+        daveRescue: SkillCheckId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: S.org, name: S.org, slug: S.org, createdAt: new Date() },
+        });
+        for (const [id, status] of [
+            [S.alice, "Active"],
+            [S.bob, "Deleted"],
+            [S.carol, "Active"],
+            [S.dave, "Active"],
+        ] as const) {
+            await db.person.create({
+                data: { id, organizationId: S.org, name: id, email: `${id}@example.com`, status },
+            });
+        }
+        for (const id of [S.rescue, S.swift]) {
+            await db.team.create({ data: { id, organizationId: S.org, name: id } });
+        }
+        for (const [teamId, personId, status] of [
+            [S.rescue, S.alice, "Active"],
+            [S.rescue, S.bob, "Archived"],
+            [S.rescue, S.carol, "Deleted"],
+            [S.swift, S.dave, "Active"],
+        ] as const) {
+            await db.teamMembership.create({
+                data: { id: nanoId16(), organizationId: S.org, teamId, personId, status },
+            });
+        }
+        await db.skillPackage.create({
+            data: {
+                id: S.pkg,
+                organizationId: S.org,
+                name: "Pkg",
+                description: "",
+                properties: {},
+                published: true,
+            },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: S.grp,
+                skillPackageId: S.pkg,
+                name: "Group",
+                description: "",
+                properties: {},
+            },
+        });
+        await db.skill.create({
+            data: {
+                id: S.skill,
+                skillPackageId: S.pkg,
+                skillGroupId: S.grp,
+                name: "Skill",
+                description: "",
+                properties: {},
+            },
+        });
+        for (const [id, sessionNumber, teamId] of [
+            [S.rescueSession, 1, S.rescue],
+            [S.swiftSession, 2, S.swift],
+        ] as const) {
+            await db.skillCheckSession.create({
+                data: { id, organizationId: S.org, name: id, sessionNumber, notes: "", teamId },
+            });
+        }
+        for (const [index, [id, assesseeId, sessionId]] of (
+            [
+                [S.aliceRescue, S.alice, S.rescueSession],
+                [S.aliceSwift, S.alice, S.swiftSession],
+                [S.aliceAlone, S.alice, null],
+                [S.bobAlone, S.bob, null],
+                [S.carolRescue, S.carol, S.rescueSession],
+                [S.daveRescue, S.dave, S.rescueSession],
+            ] as const
+        ).entries()) {
+            await db.skillCheck.create({
+                data: {
+                    id,
+                    organizationId: S.org,
+                    assesseeId,
+                    assessorId: S.dave,
+                    skillId: S.skill,
+                    sessionId,
+                    result: "Pass",
+                    status: "Include",
+                    notes: "",
+                    checkedAt: new Date(Date.UTC(2026, 2, 1 + index)),
+                },
+            });
+        }
+    });
+
+    function ctx() {
+        return createOrganizationMockContext({
+            organizationId: S.org,
+            user: { id: S.user },
+            permissions: {},
+            prisma: db,
+        });
+    }
+
+    async function rows(filters: Parameters<typeof search>[1]["filters"]) {
+        const result = await search(ctx(), { filters, page: 1, pageSize: 100, timeZone: "UTC" });
+        return result.rows;
+    }
+
+    it("keeps checks on the team's people, from any session or none", async () => {
+        expect((await rows({ teamId: S.rescue })).map(({ id }) => id)).toEqual([
+            S.bobAlone,
+            S.aliceAlone,
+            S.aliceSwift,
+            S.aliceRescue,
+        ]);
+    });
+
+    it("leaves out a non-member and a Deleted membership", async () => {
+        const ids = (await rows({ teamId: S.rescue })).map(({ id }) => id);
+
+        expect(ids).not.toContain(S.daveRescue);
+        expect(ids).not.toContain(S.carolRescue);
+    });
+
+    it("returns every check without a teamId", async () => {
+        expect(await rows({})).toHaveLength(6);
+    });
+
+    it("carries the session's team on each row", async () => {
+        const byId = new Map((await rows({ teamId: S.rescue })).map((row) => [row.id, row]));
+
+        expect(byId.get(S.aliceRescue)?.session).toEqual({
+            id: S.rescueSession,
+            name: S.rescueSession,
+            teamId: S.rescue,
+        });
+        expect(byId.get(S.aliceSwift)?.session?.teamId).toBe(S.swift);
+        expect(byId.get(S.aliceAlone)?.session).toBeNull();
     });
 });

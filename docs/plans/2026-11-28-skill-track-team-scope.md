@@ -47,7 +47,7 @@ Skill Track becomes the first org module that also lives in team scope, under `/
 
 ### Review group A: data layer
 
-- [ ] **Task 1: team filters for sessions and checks** (feat(skill-track): filter sessions and checks by team)
+- [x] **Task 1: team filters for sessions and checks** (feat(skill-track): filter sessions and checks by team)
   - **Files:** `src/trpc/routers/skill-check-sessions-router.ts` and its test, `src/lib/schemas/skill-check.ts`, `src/server/services/skill-checks.ts` and its test, `src/modules/skill-track/lib/check-search-params.ts` and its test
   - **Do:** Per Decisions. `listSessions` input gains `teamId: TeamId.schema.optional()` (a `where` on it when given). `CheckSearchFilters` gains `teamId: TeamId.schema.optional()`, mapped in `SkillChecks.search` to the roster rule. `CheckSearchRow.session` gains `teamId: TeamId.schema.nullable()`, selected in `search`. `checkSearchInput(organizationId, params, teamId?)` passes `teamId` through. Follow `src/trpc/CLAUDE.md` and `src/server/services/CLAUDE.md`.
   - **Done when:** tests cover `listSessions` with and without `teamId` (another team's and a team-less session left out); `search` with `teamId` returns roster people's checks from a session and standalone, and leaves out a non-member and a `Deleted` membership; rows carry `session.teamId`; `checkSearchInput` with and without `teamId`. `npm run check` passes.

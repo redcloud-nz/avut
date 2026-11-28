@@ -21,6 +21,7 @@ import {
     SkillCheckResultValue,
 } from "./skill-check-result";
 import { SkillCheckSessionId } from "./skill-check-session";
+import { TeamId } from "./team";
 
 export const SkillCheckId = {
     schema: zodNanoId16("SkillCheckId expected").brand<"SkillCheckId">(),
@@ -98,6 +99,11 @@ export const CheckSearchFilters = {
         skillId: SkillId.schema.optional(),
         sessionId: z.union([SkillCheckSessionId.schema, z.literal("none")]).optional(),
         result: SkillCheckResultValue.schema.optional(),
+        /**
+         * Only checks whose assessee has a non-`Deleted` membership in this team (any person
+         * status), from any session or none. Set by the team-scope Checks page, not a URL param.
+         */
+        teamId: TeamId.schema.optional(),
         ...DateRange.schema.shape,
     }),
 } as const;
@@ -120,7 +126,13 @@ export const CheckSearchRow = {
         assessee: PersonRef.schema,
         assessor: PersonRef.schema.nullable(),
         skill: SkillRef.schema,
-        session: z.object({ id: SkillCheckSessionId.schema, name: z.string() }).nullable(),
+        session: z
+            .object({
+                id: SkillCheckSessionId.schema,
+                name: z.string(),
+                teamId: TeamId.schema.nullable(),
+            })
+            .nullable(),
     }),
 } as const;
 
