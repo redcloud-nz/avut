@@ -61,7 +61,7 @@ Untouched: D4H catalogue/member/team pages (↗ only), self-audit campaign (out 
 
 ### Group A — shared pieces and the two reference pages (visual checkpoint, plus a code read before the sweep)
 
-- [ ] **Task 1 — `RecordCardMenu`, `RecordCardEditButton`, `ActionsCard`, and the rules**
+- [x] **Task 1 — `RecordCardMenu`, `RecordCardEditButton`, `ActionsCard`, and the rules**
   - **Files:** new `src/components/ui/record-card-actions.tsx` (+ `record-card-actions.test.tsx`), `src/components/ui/README.md`, `src/lib/hotkeys.ts` (doc comments), new `docs/patterns/detail-page-actions.md`, `docs/patterns/protect-permission-gating.md`, `docs/patterns/mutation-dialog.md`, `docs/conventions-checklist.md`, `AGENTS.md` (one pointer line to the new pattern doc).
   - **Do:** Add the new components **beside** an untouched `EntityActionMenu` (every current page keeps working; each page task switches its own imports, Task 9 deletes the old one).
     - `RecordCardMenu`: icon-size ghost ⋮ sized for the `RecordCard` header strip, props `actions`, `category`, `after?`, `primary?`, `triggerRef?`, plus a trigger context like `useEntityActionMenuTrigger` for focus return. Renders nothing when `actions` is empty and `after` is null (callers pass `null`, not a component that renders null). `primary` gates `useMenuActionHotkeys` and the `Mod+.` registration (same open-with-first-item-focused behaviour as today). `disabled` stays for in-flight states only.
