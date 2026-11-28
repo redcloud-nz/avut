@@ -1081,8 +1081,13 @@ describe("selfAuditCampaignsRouter", () => {
                     },
                 ],
                 extras: [
-                    { memberName: "Ana Lee", item: "Head torch", size: "", notes: "" },
-                    { memberName: "Zoe North", item: "Head torch", size: "", notes: "" },
+                    { memberName: "Ana Lee", item: "Head torch", size: "No size given", notes: "" },
+                    {
+                        memberName: "Zoe North",
+                        item: "Head torch",
+                        size: "No size given",
+                        notes: "",
+                    },
                 ],
             });
             expect(getConfiguredD4HAccessToken).not.toHaveBeenCalled();

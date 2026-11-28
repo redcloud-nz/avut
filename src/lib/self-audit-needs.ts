@@ -149,7 +149,7 @@ function listExtras({ requests }: SelfAuditNeedsInput): SelfAuditExtraNeed[] {
                 .map((extra) => ({
                     memberName,
                     item: extra.item.trim(),
-                    size: extra.size.trim(),
+                    size: extra.size.trim() || NO_SIZE,
                     notes: extra.notes.trim(),
                 })),
         )
@@ -208,7 +208,7 @@ export function needsReportCsv(input: SelfAuditNeedsInput): string {
         ...listExtras(input).map((extra) => [
             NOT_ON_LIST,
             extra.item,
-            extra.size || NO_SIZE,
+            extra.size,
             extra.memberName,
             "",
             extra.notes,

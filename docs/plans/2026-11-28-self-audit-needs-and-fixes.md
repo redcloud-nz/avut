@@ -92,3 +92,7 @@ No guide pages: the campaign pages are system-admin only and unlinked. The D4H T
 ## Parked
 
 (none yet)
+
+## Review notes
+
+- Task 1: `getNeedsReport`'s `.output()` schema in `self-audit-campaigns-router.ts` is written inline and duplicates the TS types in `src/lib/self-audit-needs.ts`. Define a Zod schema for the report beside the types (or in `src/lib/schemas/self-audit.ts`), derive the types with `z.infer`, and pass it to `.output()`.

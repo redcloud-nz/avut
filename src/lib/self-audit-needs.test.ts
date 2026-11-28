@@ -254,7 +254,7 @@ describe("buildNeedsReport", () => {
             groups: [],
             extras: [
                 { memberName: "Ana", item: "Socks", size: "L", notes: "" },
-                { memberName: "Zoe", item: "Head torch", size: "", notes: "Petzl" },
+                { memberName: "Zoe", item: "Head torch", size: "No size given", notes: "Petzl" },
             ],
         });
     });

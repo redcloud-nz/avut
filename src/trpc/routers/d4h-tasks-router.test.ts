@@ -62,10 +62,10 @@ vi.mock("@/server/d4h-api/equipment", () => ({
 }));
 
 /**
- * A whoami with RETIRE and UPDATE (as given) on `RETIRE_TEAM`, and UPDATE but no RETIRE on
- * `OTHER_TEAM`.
+ * A whoami with RETIRE and UPDATE (as given) on `RETIRE_TEAM`, and UPDATE (as given) but no RETIRE
+ * on `OTHER_TEAM`.
  */
-function whoami(retire: boolean, update = true) {
+function whoami(retire: boolean, update = true, otherUpdate = true) {
     const member = (teamId: number, title: string, canRetire: boolean, canUpdate: boolean) => ({
         id: teamId * 10,
         resourceType: "Member",
@@ -78,7 +78,7 @@ function whoami(retire: boolean, update = true) {
         account: { id: 1, resourceType: "Account" },
         members: [
             member(RETIRE_TEAM, "Rescue Team", retire, update),
-            member(OTHER_TEAM, "Other Team", false, true),
+            member(OTHER_TEAM, "Other Team", false, otherUpdate),
         ],
     } as never;
 }
@@ -161,8 +161,14 @@ describe("d4hTasksRouter", () => {
         ids.closed = await retire(RETIRE_TEAM, 701);
         await db.d4HTask.update({ where: { id: ids.closed }, data: { status: "Dismissed" } });
 
-        // 8xx: the self-audit kinds, one check test each.
         const serial = { kind: "SetSerial", payload: { serial: "SN-1" } } as const;
+        // Listed only to viewers with UPDATE on the team.
+        ids.listedSerialOther = await queue(OTHER_TEAM, 104, serial);
+        ids.listedSerial = await queue(RETIRE_TEAM, 105, serial);
+        ids.dismissedSerialOther = await queue(OTHER_TEAM, 502, serial);
+        ids.serialNoUpdateDismiss = await queue(RETIRE_TEAM, 503, serial);
+
+        // 8xx: the self-audit kinds, one check test each.
         const variant = {
             kind: "SetVariant",
             payload: { brand: "Petzl", model: "Vertex" },
@@ -238,10 +244,11 @@ describe("d4hTasksRouter", () => {
     });
 
     describe("listOpenTasks", () => {
-        it("lists open tasks only on teams where the viewer holds RETIRE, with URL and team", async () => {
+        it("lists Retire tasks only where the viewer holds RETIRE, with URL and team", async () => {
             const rows = await editor().listOpenTasks({ organizationId: T.org });
 
-            expect(rows.every((row) => row.task.d4hTeamId === RETIRE_TEAM)).toBe(true);
+            const retireRows = rows.filter((row) => row.task.kind === "Retire");
+            expect(retireRows.every((row) => row.task.d4hTeamId === RETIRE_TEAM)).toBe(true);
             expect(rows.map((row) => row.task.id)).toEqual(
                 expect.arrayContaining([ids.listed1, ids.listed2]),
             );
@@ -254,8 +261,28 @@ describe("d4hTasksRouter", () => {
             });
         });
 
-        it("lists nothing when the viewer holds RETIRE on no team", async () => {
-            vi.mocked(fetchD4HWhoamiCached).mockResolvedValue(whoami(false));
+        it("lists the other kinds where the viewer holds UPDATE but not RETIRE", async () => {
+            const rows = await editor().listOpenTasks({ organizationId: T.org });
+
+            expect(rows.find((row) => row.task.id === ids.listedSerialOther)).toMatchObject({
+                teamTitle: "Other Team",
+            });
+        });
+
+        it("lists Retire but not the other kinds where the viewer holds RETIRE but not UPDATE", async () => {
+            vi.mocked(fetchD4HWhoamiCached).mockResolvedValue(whoami(true, false, false));
+
+            const taskIds = (await editor().listOpenTasks({ organizationId: T.org })).map(
+                (row) => row.task.id,
+            );
+
+            expect(taskIds).toEqual(expect.arrayContaining([ids.listed1, ids.listed2]));
+            expect(taskIds).not.toContain(ids.listedSerial);
+            expect(taskIds).not.toContain(ids.listedSerialOther);
+        });
+
+        it("lists nothing when the viewer holds neither RETIRE nor UPDATE on any team", async () => {
+            vi.mocked(fetchD4HWhoamiCached).mockResolvedValue(whoami(false, false, false));
 
             expect(await editor().listOpenTasks({ organizationId: T.org })).toEqual([]);
         });
@@ -272,7 +299,7 @@ describe("d4hTasksRouter", () => {
             expect(tasks.map((task) => task.id)).toEqual([ids.listed1]);
         });
 
-        it("returns nothing when the viewer lacks RETIRE on the team", async () => {
+        it("leaves out a Retire task when the viewer lacks RETIRE on the team", async () => {
             const tasks = await editor().listItemTasks({
                 organizationId: T.org,
                 teamId: OTHER_TEAM,
@@ -280,6 +307,38 @@ describe("d4hTasksRouter", () => {
             });
 
             expect(tasks).toEqual([]);
+        });
+
+        it("returns a SetSerial task when the viewer holds UPDATE but not RETIRE", async () => {
+            const tasks = await editor().listItemTasks({
+                organizationId: T.org,
+                teamId: OTHER_TEAM,
+                itemId: 104,
+            });
+
+            expect(tasks.map((task) => task.id)).toEqual([ids.listedSerialOther]);
+        });
+
+        it("leaves out a SetSerial task when the viewer holds RETIRE but not UPDATE", async () => {
+            vi.mocked(fetchD4HWhoamiCached).mockResolvedValue(whoami(true, false));
+
+            const caller = editor();
+            expect(
+                await caller.listItemTasks({
+                    organizationId: T.org,
+                    teamId: RETIRE_TEAM,
+                    itemId: 105,
+                }),
+            ).toEqual([]);
+            expect(
+                (
+                    await caller.listItemTasks({
+                        organizationId: T.org,
+                        teamId: RETIRE_TEAM,
+                        itemId: 101,
+                    })
+                ).map((task) => task.id),
+            ).toEqual([ids.listed1]);
         });
     });
 
@@ -498,12 +557,35 @@ describe("d4hTasksRouter", () => {
     });
 
     describe("dismissTask", () => {
-        it("throws FORBIDDEN without D4H's Equipment RETIRE", async () => {
+        it("throws FORBIDDEN dismissing a Retire task without D4H's Equipment RETIRE", async () => {
             await expect(
                 editor().dismissTask({ organizationId: T.org, taskId: ids.otherTeam }),
             ).rejects.toMatchObject({ code: "FORBIDDEN" });
 
             const task = await db.d4HTask.findUnique({ where: { id: ids.otherTeam } });
+            expect(task?.status).toBe("Open");
+        });
+
+        it("dismisses a SetSerial task with Equipment UPDATE, not RETIRE", async () => {
+            const { dismissed } = await editor().dismissTask({
+                organizationId: T.org,
+                taskId: ids.dismissedSerialOther,
+            });
+
+            expect(dismissed).toMatchObject({ status: "Dismissed" });
+        });
+
+        it("throws FORBIDDEN dismissing a SetSerial task without Equipment UPDATE", async () => {
+            vi.mocked(fetchD4HWhoami).mockResolvedValue(whoami(true, false));
+
+            await expect(
+                editor().dismissTask({ organizationId: T.org, taskId: ids.serialNoUpdateDismiss }),
+            ).rejects.toMatchObject({
+                code: "FORBIDDEN",
+                message: "You need D4H's Equipment UPDATE permission on Rescue Team to do this.",
+            });
+
+            const task = await db.d4HTask.findUnique({ where: { id: ids.serialNoUpdateDismiss } });
             expect(task?.status).toBe("Open");
         });
 
