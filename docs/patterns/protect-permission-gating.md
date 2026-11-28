@@ -62,9 +62,10 @@ if (canDelete) actions.push({ verb: "delete", destructive: true, … });
 <RecordCardMenu actions={actions} category="Personnel" primary />;
 ```
 
-An action-card button is the same: `{canInvite ? <Button …>Invite to AVUT</Button> : null}`,
-or `<Protect permissions={…}>` around that one button. One `Protect` around several buttons
-that call different mutations has the problem above.
+An action-card button is the same: `{canInvite ? <Button …>Invite to AVUT</Button> : null}`.
+Don't wrap action-card buttons in `<Protect>`: `ActionsCard` can only see that a child is
+`null`, so a card of `Protect`-wrapped buttons renders as an empty shell for a viewer who can
+use none of them.
 
 `disabled` stays only for a short-lived in-flight state (an export running, a sync
 pending), not for permission or record state.

@@ -192,7 +192,12 @@ export function RecordCardEditButton({
             ? [
                   {
                       hotkey: ActionHotkey.update,
-                      callback: () => ownRef.current?.click(),
+                      // The pencil is usually a Radix `DialogTrigger`, whose click toggles: don't let a
+                      // second ⌥E close the open dialog and lose the edits.
+                      callback: () => {
+                          if (ownRef.current?.getAttribute("aria-expanded") === "true") return;
+                          ownRef.current?.click();
+                      },
                       options: {
                           enabled: !props.disabled,
                           preventDefault: true,
@@ -234,7 +239,8 @@ function assignRef<T>(ref: Ref<T> | undefined, value: T) {
  * - **Bare** (no `title`) when the button labels say it all: just the stacked buttons.
  *
  * Pass the buttons the viewer can take now as children, `null` for one they can't: the card
- * renders nothing when none are left. Buttons are `outline`, except the one that moves the
+ * renders nothing when none are left. Gate each with `useHasPermission`, never `<Protect>`: a
+ * `Protect` element counts as a child even when it renders nothing. Buttons are `outline`, except the one that moves the
  * record to its next lifecycle state (default, filled), at most one per page. They only set
  * `?action=` or link; no hotkeys.
  */

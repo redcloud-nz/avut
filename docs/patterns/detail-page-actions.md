@@ -96,7 +96,8 @@ themselves.
 A dialog opened from a button that disappears on success (Link, Subscribe, Publish, Reopen,
 Return) has no trigger to return focus to: spread `useReturnFocus(fallbackRef)` onto its
 content, with `fallbackRef` on a control that stays (the card's ⋮ via `RecordCardMenu`'s
-`triggerRef`, or the pencil).
+`triggerRef`, or the pencil). Pick one that every viewer who can open the dialog is sure to
+see: a ⋮ renders nothing for a viewer with no actions in it.
 
 ## The secondary column
 

@@ -92,6 +92,15 @@ describe("RecordCardEditButton", () => {
         expect(onClick).toHaveBeenCalledOnce();
     });
 
+    it("ignores Alt+E while its dialog is open, so a second press doesn't close it", () => {
+        const onClick = vi.fn();
+        render(<RecordCardEditButton label="Edit thing" primary aria-expanded onClick={onClick} />);
+
+        pressAlt("e", "KeyE");
+
+        expect(onClick).not.toHaveBeenCalled();
+    });
+
     it("ignores Alt+E when not primary", () => {
         const onClick = vi.fn();
         render(<RecordCardEditButton label="Edit thing" onClick={onClick} />);

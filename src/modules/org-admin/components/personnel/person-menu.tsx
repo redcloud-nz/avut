@@ -105,7 +105,7 @@ export function AdminModule_PersonMenu({ person }: { person: PersonData }) {
             onSelect: () => setAction("recover", { history: "push" }),
         });
     }
-    if (person.status !== "Active" && linkedUser === null && canUpdateLink) {
+    if (person.status === "Archived" && linkedUser === null && canUpdateLink) {
         actions.push({
             verb: "link",
             label: "Link to user",
