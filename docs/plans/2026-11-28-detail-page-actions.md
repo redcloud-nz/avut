@@ -94,7 +94,7 @@ Untouched: D4H catalogue/member/team pages (↗ only), self-audit campaign (out 
 
 ### Group C — module pages (visual checkpoint)
 
-- [ ] **Task 6 — skill-track package and group; skill-package-builder package, group, skill** `visual`
+- [x] **Task 6 — skill-track package and group; skill-package-builder package, group, skill** `visual`
   - **Files:** `src/modules/skill-track/components/{package-content,group-content}.tsx`, `src/modules/skill-package-builder/components/{package-menu,package-content,group-menu,group-content,skill-menu,skill-content,update-package,update-group,update-skill}.tsx`, `content/help/skill-track/packages.mdx`, `content/help/skill-package-builder.mdx`.
   - **Do:** Per the map. Builder package: Publish/Unpublish leave the ⋮ for a titled Publishing card (one line on whether it's published and what that means for subscribers).
   - **Done when:** map rows hold; `npm run check` passes.

@@ -49,90 +49,89 @@ export function SkillPackageBuilder_Skill_Content({ skillId }: { skillId: SkillI
                 <Saratoga.Title badges={<RecordStatusBadge status={skill.status} />}>
                     {skill.name}
                 </Saratoga.Title>
-                <Saratoga.Actions>
-                    <SkillPackageBuilder_Skill_Menu skill={skill} />
-                </Saratoga.Actions>
             </Saratoga.Header>
-            <Saratoga.Columns>
-                <Saratoga.Column slot="main">
-                    <RecordCard
-                        label="Skill"
-                        updatedAt={skill.updatedAt}
-                        historyHref={route(
-                            "/orgs/[slug]/skill-package-builder/packages/[package_id]/skills/[skill_id]/history",
-                            {
-                                slug: organization.slug,
-                                package_id: skill.skillPackageId,
-                                skill_id: skill.id,
-                            },
-                        )}
-                        action={
+            {/* Nothing for a secondary column: full width. */}
+            <div className="space-y-4">
+                <RecordCard
+                    label="Skill"
+                    updatedAt={skill.updatedAt}
+                    historyHref={route(
+                        "/orgs/[slug]/skill-package-builder/packages/[package_id]/skills/[skill_id]/history",
+                        {
+                            slug: organization.slug,
+                            package_id: skill.skillPackageId,
+                            skill_id: skill.id,
+                        },
+                    )}
+                    action={
+                        <>
                             <Protect permissions={{ skillPackage: ["update"] }}>
-                                <SkillPackageBuilder_UpdateSkill_Dialog skill={skill} />
+                                <SkillPackageBuilder_UpdateSkill_Dialog skill={skill} primary />
                             </Protect>
-                        }
-                    >
-                        <CardContent>
-                            <DataList>
-                                <RecordCardId label="Skill ID" id={skill.id} />
-                                <DataItem>
-                                    <DataItemTitle>Name</DataItemTitle>
-                                    <DataItemValue>{skill.name}</DataItemValue>
-                                </DataItem>
-                                <DataItem>
-                                    <DataItemTitle>Package</DataItemTitle>
-                                    <DataItemValue>
-                                        <Link
-                                            href={route(
-                                                "/orgs/[slug]/skill-package-builder/packages/[package_id]",
-                                                {
-                                                    slug: organization.slug,
-                                                    package_id: skill.skillPackageId,
-                                                },
-                                            )}
-                                        >
-                                            {skill.skillPackage.name}
-                                        </Link>
-                                    </DataItemValue>
-                                </DataItem>
-                                <DataItem>
-                                    <DataItemTitle>Group</DataItemTitle>
-                                    <DataItemValue>
-                                        <Link
-                                            href={route(
-                                                "/orgs/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]",
-                                                {
-                                                    slug: organization.slug,
-                                                    package_id: skill.skillPackageId,
-                                                    group_id: skill.skillGroup.id,
-                                                },
-                                            )}
-                                        >
-                                            {skill.skillGroup.name}
-                                        </Link>
-                                    </DataItemValue>
-                                </DataItem>
-                                <DataItem>
-                                    <DataItemTitle>Description</DataItemTitle>
-                                    <DataItemValue>{skill.description}</DataItemValue>
-                                </DataItem>
-                                <DataItem>
-                                    <DataItemTitle>Required</DataItemTitle>
-                                    <DataItemValue>
-                                        {skill.defaultRequired ? "Yes" : "No"}
-                                    </DataItemValue>
-                                </DataItem>
-                                <DataItem>
-                                    <DataItemTitle>Revalidation Frequency</DataItemTitle>
-                                    <DataItemValue>
-                                        {skill.frequency ? `${skill.frequency} months` : "None"}
-                                    </DataItemValue>
-                                </DataItem>
-                            </DataList>
-                        </CardContent>
-                    </RecordCard>
-                </Saratoga.Column>
-            </Saratoga.Columns>
+                            <SkillPackageBuilder_Skill_Menu skill={skill} />
+                        </>
+                    }
+                >
+                    <CardContent>
+                        <DataList>
+                            <RecordCardId label="Skill ID" id={skill.id} />
+                            <DataItem>
+                                <DataItemTitle>Name</DataItemTitle>
+                                <DataItemValue>{skill.name}</DataItemValue>
+                            </DataItem>
+                            <DataItem>
+                                <DataItemTitle>Package</DataItemTitle>
+                                <DataItemValue>
+                                    <Link
+                                        href={route(
+                                            "/orgs/[slug]/skill-package-builder/packages/[package_id]",
+                                            {
+                                                slug: organization.slug,
+                                                package_id: skill.skillPackageId,
+                                            },
+                                        )}
+                                    >
+                                        {skill.skillPackage.name}
+                                    </Link>
+                                </DataItemValue>
+                            </DataItem>
+                            <DataItem>
+                                <DataItemTitle>Group</DataItemTitle>
+                                <DataItemValue>
+                                    <Link
+                                        href={route(
+                                            "/orgs/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]",
+                                            {
+                                                slug: organization.slug,
+                                                package_id: skill.skillPackageId,
+                                                group_id: skill.skillGroup.id,
+                                            },
+                                        )}
+                                    >
+                                        {skill.skillGroup.name}
+                                    </Link>
+                                </DataItemValue>
+                            </DataItem>
+                            <DataItem>
+                                <DataItemTitle>Description</DataItemTitle>
+                                <DataItemValue>{skill.description}</DataItemValue>
+                            </DataItem>
+                            <DataItem>
+                                <DataItemTitle>Required</DataItemTitle>
+                                <DataItemValue>
+                                    {skill.defaultRequired ? "Yes" : "No"}
+                                </DataItemValue>
+                            </DataItem>
+                            <DataItem>
+                                <DataItemTitle>Revalidation Frequency</DataItemTitle>
+                                <DataItemValue>
+                                    {skill.frequency ? `${skill.frequency} months` : "None"}
+                                </DataItemValue>
+                            </DataItem>
+                        </DataList>
+                    </CardContent>
+                </RecordCard>
+            </div>
         </Saratoga.Root>
     );
 }

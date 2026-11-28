@@ -5,7 +5,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect } from "react";
+import { RefObject, useEffect } from "react";
 import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
@@ -23,15 +23,20 @@ import {
 } from "@/components/ui/dialog";
 import { ObjectName } from "@/components/ui/typography";
 import { useOrganization } from "@/hooks/use-organization";
+import { useReturnFocus } from "@/hooks/use-return-focus";
 import { SkillPackage } from "@/lib/schemas/skill-package";
 import { trpc } from "@/trpc/client";
 
 export function SkillPackageBuilder_PublishPackage_Dialog({
     skillPackage,
+    returnFocusRef,
 }: {
     skillPackage: SkillPackage;
+    /** Where focus goes on close, since the Publishing card button is gone once it succeeds. */
+    returnFocusRef?: RefObject<HTMLElement | null>;
 }) {
     const organization = useOrganization();
+    const returnFocus = useReturnFocus(returnFocusRef);
 
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["publish"] as const));
     const dialogOpen = action === "publish";
@@ -67,7 +72,7 @@ export function SkillPackageBuilder_PublishPackage_Dialog({
 
     return (
         <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
-            <DialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
+            <DialogContent {...returnFocus}>
                 <DialogHeader>
                     <DialogTitle>Publish package</DialogTitle>
                     <DialogDescription>

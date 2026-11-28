@@ -4,19 +4,12 @@
  */
 "use client";
 
-import Link from "next/link";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { ObjectIcons } from "@/components/icons";
-import {
-    DropdownMenuGroup,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
+import { type MenuActionProps } from "@/components/ui/menu-action";
+import { RecordCardMenu } from "@/components/ui/record-card-actions";
 import { useHasPermission } from "@/hooks/use-has-permission";
-import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
 import { Skill } from "@/lib/schemas/skill";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
@@ -34,9 +27,13 @@ interface SkillPackageBuilder_Skill_MenuProps {
     };
 }
 
+/**
+ * The Skill card's ⋮ (the page's primary record card): Archive, Move, Restore or Recover, and
+ * Delete. Edit is the card's pencil, History its "Updated" footer.
+ *
+ * Mounts the dialogs they open.
+ */
 export function SkillPackageBuilder_Skill_Menu({ skill }: SkillPackageBuilder_Skill_MenuProps) {
-    const organization = useOrganization();
-
     const [action, setAction] = useQueryState(
         "action",
         parseAsStringLiteral(["delete", "archive", "restore", "recover", "move"] as const),
@@ -46,79 +43,51 @@ export function SkillPackageBuilder_Skill_Menu({ skill }: SkillPackageBuilder_Sk
     const canDelete = useHasPermission({ skillPackage: ["delete"] });
 
     const actions: MenuActionProps[] = [];
-    if (skill.status == "Active") {
+    if (skill.status === "Active" && canUpdate) {
         actions.push({
             verb: "archive",
             label: "Archive",
             icon: <ObjectIcons.Archive />,
             onSelect: () => setAction("archive", { history: "push" }),
-            disabled: !canUpdate,
         });
     }
-    if (skill.status != "Deleted") {
+    if (skill.status !== "Deleted" && canUpdate) {
         actions.push({
             verb: "move",
             label: "Move",
             icon: <ObjectIcons.Move />,
             onSelect: () => setAction("move", { history: "push" }),
-            disabled: !canUpdate,
         });
     }
-    if (skill.status == "Archived") {
+    if (skill.status === "Archived" && canUpdate) {
         actions.push({
             verb: "restore",
             label: "Restore",
             icon: <ObjectIcons.Restore />,
             onSelect: () => setAction("restore", { history: "push" }),
-            disabled: !canUpdate,
         });
     }
-    if (skill.status == "Deleted") {
+    if (skill.status === "Deleted" && canDelete) {
         actions.push({
             verb: "recover",
             label: "Recover from rubbish",
             icon: <ObjectIcons.Recover />,
             onSelect: () => setAction("recover", { history: "push" }),
-            disabled: !canDelete,
         });
-    } else {
+    }
+    if (skill.status !== "Deleted" && canDelete) {
         actions.push({
             verb: "delete",
             label: "Delete",
             icon: <ObjectIcons.Delete />,
             onSelect: () => setAction("delete", { history: "push" }),
-            disabled: !canDelete,
             destructive: true,
         });
     }
 
     return (
         <>
-            <EntityActionMenu
-                actions={actions}
-                category="Skills"
-                before={
-                    <>
-                        <DropdownMenuGroup>
-                            <DropdownMenuItem asChild>
-                                <Link
-                                    href={route(
-                                        "/orgs/[slug]/skill-package-builder/packages/[package_id]/skills/[skill_id]/history",
-                                        {
-                                            slug: organization.slug,
-                                            package_id: skill.skillPackageId,
-                                            skill_id: skill.id,
-                                        },
-                                    )}
-                                >
-                                    <ObjectIcons.History /> History
-                                </Link>
-                            </DropdownMenuItem>
-                        </DropdownMenuGroup>
-                        <DropdownMenuSeparator />
-                    </>
-                }
-            />
+            <RecordCardMenu actions={actions} category="Skills" primary />
 
             <SkillPackageBuilder_DeleteSkill_Dialog
                 skill={skill}

@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { useEffect } from "react";
+import { RefObject, useEffect } from "react";
 import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
@@ -23,16 +23,21 @@ import {
 } from "@/components/ui/dialog";
 import { ObjectName } from "@/components/ui/typography";
 import { useOrganization } from "@/hooks/use-organization";
+import { useReturnFocus } from "@/hooks/use-return-focus";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { trpc } from "@/trpc/client";
 
 export function SkillTrack_SubscribeToPackage_Dialog({
     skillPackage,
+    returnFocusRef,
     ...props
 }: DialogProps & {
     skillPackage: { id: SkillPackageId; name: string };
+    /** Where focus goes on close, since the Subscribe button is gone once it succeeds. */
+    returnFocusRef?: RefObject<HTMLElement | null>;
 }) {
     const organization = useOrganization();
+    const returnFocus = useReturnFocus(returnFocusRef);
 
     const mutation = useMutation(
         trpc.skillPackageSubscriptions.subscribeToPackage.mutationOptions({
@@ -61,7 +66,7 @@ export function SkillTrack_SubscribeToPackage_Dialog({
 
     return (
         <Dialog {...props}>
-            <DialogContent>
+            <DialogContent {...returnFocus}>
                 <DialogHeader>
                     <DialogTitle>Subscribe to Package</DialogTitle>
                     <DialogDescription>
